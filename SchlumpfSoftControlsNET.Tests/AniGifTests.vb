@@ -138,7 +138,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Function
 
         Private Shared Function FindSolutionRoot(startDirectory As String) As String
-            Dim current As DirectoryInfo = New DirectoryInfo(startDirectory)
+            Dim current As New DirectoryInfo(startDirectory)
 
             While current IsNot Nothing
                 Dim solutionPath As String = Path.Combine(current.FullName, "SchlumpfSoftControlsNET.sln")

@@ -41,11 +41,13 @@
   <ItemGroup>
     <None Remove="AniGifControl\AniGifControl.AniGif.bmp" />
     <None Remove="AniGifControl\AniGifControl.Standard.gif" />
+    <None Remove="ColorProgressBarControl\ColorProgressBarControl.ColorProgressBar.bmp" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="AniGifControl\AniGifControl.AniGif.bmp" />
     <EmbeddedResource Include="AniGifControl\AniGifControl.Standard.gif" />
+    <EmbeddedResource Include="ColorProgressBarControl\ColorProgressBarControl.ColorProgressBar.bmp" />
   </ItemGroup>
 
   <ItemGroup>
@@ -59,11 +61,11 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="README.md">
+    <None Include="..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="LICENSE.md">
+    <None Include="..\LICENSE.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

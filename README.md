@@ -1,8 +1,8 @@
-# SchlumpfSoftControls 3
+# SchlumpfSoftControlsNET
 
 Eine Sammlung verschiedener Controls.
 
-Diese Sammlung ist die 3. Ausgabe der SchlumpfSoft Controls.
+Diese Sammlung ist die NET Ausgabe der SchlumpfSoft Controls.
 
 Es wurden gegenüber der vorherigen Versionen einige Änderungen vorgenommen und neue Controls hinzugefügt sowie die Struktur geändert.
 
@@ -16,12 +16,13 @@ Es wurden gegenüber der vorherigen Versionen einige Änderungen vorgenommen und n
 >
 > [Version 2.](https://github.com/Hanibal1963/SchlumpfSoftControls2)
 >
+> Die [3.Version](https://github.com/Hanibal1963/SchlumpfSoftControls3) ist weiterhin verfügbar, wird allerdings nicht mehr gepflegt.
 
 ---
 
 ## Die Sammlung enthält aktuell folgende Controls
 
-- **[AniGifControl](SchlumpfSoftControls/AniGifControl/AniGifControl.md)** - Ein Control zum Anzeigen von animierten GIF - Grafiken.
+- **[AniGifControl](SchlumpfSoftControlsNET/Doc/AniGifControl.md)** - Ein Control zum Anzeigen von animierten GIF - Grafiken.
 - **[ColorProgressBarControl](SchlumpfSoftControls/ColorProgressBarControl/ColorProgressBarControl.md)** - Ein Control zum Anzeigen eines anpassbaren Fortschrittsbalkens mit verschiedenen Farben.
 - **[DriveWatcherControl](SchlumpfSoftControls/DriveWatcherControl/DriveWatcherControl.md)** - Ein Control zum Überwachen von Laufwerken und Anzeigen von Informationen über diese.
 - **[ExplorerTreeViewControl](SchlumpfSoftControls/ExplorerTreeViewControl/ExplorerTreeViewControl.md)** - Ein Control zum Anzeigen und Navigieren der Windows Verzeichnisstruktur (ähnlich dem linken Bereich des Windows Explorers).

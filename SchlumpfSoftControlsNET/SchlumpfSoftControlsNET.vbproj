@@ -1,0 +1,101 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net462;net47;net471;net472;net48;net481;net8.0-windows;net9.0-windows;net10.0-windows</TargetFrameworks>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyTitle>SchlumpfSoft ControlsNET</AssemblyTitle>
+    <AssemblyName>SchlumpfSoftControlsNET</AssemblyName>
+    <RootNamespace>SchlumpfSoft.ControlsNET</RootNamespace>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <OptionStrict>On</OptionStrict>
+    <PackageId>SchlumpfSoft.ControlsNET</PackageId>
+    <Authors>Andreas Sauer</Authors>
+    <Version>1.2026.0</Version>
+    <Company>SchlumpfSoft</Company>
+    <Product>SchlumpfSoftControlsNET</Product>
+    <Description>Eine Sammlung verschiedener Controls.</Description>
+    <Copyright>Copyright (c) 2026 Andreas Sauer</Copyright>
+    <PackageIcon>Icon.png</PackageIcon>
+    <NeutralLanguage>de-DE</NeutralLanguage>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <PackageReadmeFile>INFO.md</PackageReadmeFile>
+    <Title>SchlumpfSoft ControlsNET</Title>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>embedded</DebugType>
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>embedded</DebugType>
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="AniGifControl\AniGifControl.AniGif.bmp" />
+    <None Remove="AniGifControl\AniGifControl.Standard.gif" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="AniGifControl\AniGifControl.AniGif.bmp" />
+    <EmbeddedResource Include="AniGifControl\AniGifControl.Standard.gif" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Import Include="System.Data" />
+    <Import Include="System.Drawing" />
+    <Import Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="INFO.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="LICENSE.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="My Project\Resources.Designer.vb">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Update="My Project\Settings.Designer.vb">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="My Project\Resources.resx">
+      <CustomToolNamespace>My.Resources</CustomToolNamespace>
+      <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="My Project\Settings.settings">
+      <CustomToolNamespace>My</CustomToolNamespace>
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.vb</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+</Project>

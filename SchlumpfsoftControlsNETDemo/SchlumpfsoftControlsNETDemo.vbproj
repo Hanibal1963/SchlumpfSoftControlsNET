@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{24A877F2-F545-4167-AE5B-11D54950EB23}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <StartupObject>SchlumpfsoftControlsNETDemo.My.MyApplication</StartupObject>
+    <RootNamespace>SchlumpfsoftControlsNETDemo</RootNamespace>
+    <AssemblyName>SchlumpfsoftControlsNETDemo</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+    <MyType>WindowsForms</MyType>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DocumentationFile>SchlumpfsoftControlsNETDemo.xml</DocumentationFile>
+    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DocumentationFile>SchlumpfsoftControlsNETDemo.xml</DocumentationFile>
+    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionExplicit>On</OptionExplicit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionCompare>Binary</OptionCompare>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionStrict>On</OptionStrict>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OptionInfer>On</OptionInfer>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+  <ItemGroup>
+    <Import Include="Microsoft.VisualBasic" />
+    <Import Include="System" />
+    <Import Include="System.Collections" />
+    <Import Include="System.Collections.Generic" />
+    <Import Include="System.Data" />
+    <Import Include="System.Drawing" />
+    <Import Include="System.Diagnostics" />
+    <Import Include="System.Windows.Forms" />
+    <Import Include="System.Linq" />
+    <Import Include="System.Xml.Linq" />
+    <Import Include="System.Threading.Tasks" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="FormAniGif.Designer.vb">
+      <DependentUpon>FormAniGif.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormAniGif.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormMain.Designer.vb">
+      <DependentUpon>FormMain.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormMain.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="My Project\AssemblyInfo.vb" />
+    <Compile Include="My Project\Application.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Application.myapp</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="My Project\Resources.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="My Project\Settings.Designer.vb">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="FormAniGif.resx">
+      <DependentUpon>FormAniGif.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormMain.resx">
+      <DependentUpon>FormMain.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="My Project\Resources.resx">
+      <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+      <CustomToolNamespace>My.Resources</CustomToolNamespace>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="My Project\Application.myapp">
+      <Generator>MyApplicationCodeGenerator</Generator>
+      <LastGenOutput>Application.Designer.vb</LastGenOutput>
+    </None>
+    <None Include="My Project\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <CustomToolNamespace>My</CustomToolNamespace>
+      <LastGenOutput>Settings.Designer.vb</LastGenOutput>
+    </None>
+    <None Include="App.config" />
+    <None Include="Resources\ExtendedRTF_Testdatei.rtf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\AniGif_Anim100.gif" />
+    <Content Include="Resources\AniGif_Anim101.gif" />
+    <Content Include="Resources\AniGif_Anim102.gif" />
+    <Content Include="Resources\AniGif_Anim103.gif" />
+    <Content Include="Resources\AniGif_Anim104.gif" />
+    <Content Include="Resources\AniGif_Anim105.gif" />
+    <Content Include="Resources\AniGif_Anim106.gif" />
+    <Content Include="Resources\AniGif_Anim107.gif" />
+    <Content Include="Resources\AniGif_Anim108.gif" />
+    <Content Include="Resources\AniGif_Anim109.gif" />
+    <Content Include="Resources\AniGif_Anim110.gif" />
+    <Content Include="Resources\AniGif_Anim111.gif" />
+    <Content Include="Resources\AniGif_Anim112.gif" />
+    <Content Include="Resources\AniGif_Anim113.gif" />
+    <Content Include="Resources\AniGif_Anim114.gif" />
+    <Content Include="Resources\AniGif_Anim115.gif" />
+    <Content Include="Resources\AniGif_Anim116.gif" />
+    <Content Include="Resources\AniGif_Anim117.gif" />
+    <Content Include="Resources\AniGif_Anim118.gif" />
+    <Content Include="Resources\AniGif_Anim119.gif" />
+    <Content Include="Resources\AniGif_Anim120.gif" />
+    <Content Include="Resources\ExtendedRTF_Backcolor.png" />
+    <Content Include="Resources\ExtendedRTF_Bold.png" />
+    <Content Include="Resources\ExtendedRTF_Delformat.png" />
+    <Content Include="Resources\ExtendedRTF_Fontdown.png" />
+    <Content Include="Resources\ExtendedRTF_Fontformat.png" />
+    <Content Include="Resources\ExtendedRTF_Fontup.png" />
+    <Content Include="Resources\ExtendedRTF_Forecolor.png" />
+    <Content Include="Resources\ExtendedRTF_Italic.png" />
+    <Content Include="Resources\ExtendedRTF_LeftIndentDown.png" />
+    <Content Include="Resources\ExtendedRTF_LeftIndentUp.png" />
+    <Content Include="Resources\ExtendedRTF_Setdown.png" />
+    <Content Include="Resources\ExtendedRTF_Setup.png" />
+    <Content Include="Resources\ExtendedRTF_Strikeout.png" />
+    <Content Include="Resources\ExtendedRTF_Textcenter.png" />
+    <Content Include="Resources\ExtendedRTF_Textleft.png" />
+    <Content Include="Resources\ExtendedRTF_Textright.png" />
+    <Content Include="Resources\ExtendedRTF_Togglebullets.png" />
+    <Content Include="Resources\ExtendedRTF_Underline.png" />
+    <Content Include="Resources\ImagecomboBox_Error.png" />
+    <Content Include="Resources\ImagecomboBox_Help.png" />
+    <Content Include="Resources\ImagecomboBox_Info.png" />
+    <Content Include="Resources\ImagecomboBox_Warning.png" />
+    <Content Include="Resources\Information.png" />
+    <Content Include="Resources\PapaSchlumpf1.png" />
+    <Content Include="Resources\PapaSchlumpf2.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SchlumpfSoftControlsNET\SchlumpfSoftControlsNET.vbproj">
+      <Project>{d8f4d41e-a47e-4875-a3c8-4b66725f4164}</Project>
+      <Name>SchlumpfSoftControlsNET</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
+</Project>

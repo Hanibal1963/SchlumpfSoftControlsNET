@@ -1,0 +1,301 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="DriveWatcherInfoText" xml:space="preserve">
+    <value>Lege einen der folgenden Datenträger ein oder erstelle einen und beobachte die Reaktion.
+
+- USB-Stick
+- CD oder DVD Laufwerk fest verbaut oder über USB-Adapter
+- Festplatten über USB-Adapter
+- USB-Floppylaufwerk
+- Virtuelle Festplatte</value>
+    <comment>Beschreibungstext</comment>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="Information" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Information.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Hintergrund für Infoboxen</comment>
+  </data>
+  <data name="ExtendedRTF_Backcolor" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Backcolor.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Bold" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Bold.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Delformat" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Delformat.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Fontdown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Fontdown.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Fontformat" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Fontformat.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Fontup" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Fontup.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Forecolor" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Forecolor.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Italic" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Italic.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_LeftIndentDown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_LeftIndentDown.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_LeftIndentUp" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_LeftIndentUp.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Setdown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Setdown.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Setup" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Setup.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Strikeout" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Strikeout.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Testdatei" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Testdatei.rtf;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+    <comment>Beispieldatei</comment>
+  </data>
+  <data name="ExtendedRTF_Textcenter" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Textcenter.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Textleft" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Textleft.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Textright" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Textright.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Togglebullets" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Togglebullets.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExtendedRTF_Underline" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ExtendedRTF_Underline.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ImagecomboBox_Error" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ImagecomboBox_Error.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ImagecomboBox_Help" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ImagecomboBox_Help.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ImagecomboBox_Info" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ImagecomboBox_Info.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ImagecomboBox_Warning" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ImagecomboBox_Warning.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Password_LabelInfoText1" xml:space="preserve">
+    <value>1. Gib ein Passwort ein und bestätige es mit der Eingabetaste.
+2. Wiederhole die Eingabe des Passwots und bestätige mit der Eingabetaste.
+3. Beim betätigen des Buttons "Ok" wird das Fenster geschlossen.
+4. Öffne das Fenster erneut und gib das von dir festgelegte Passwort ein.</value>
+    <comment>Beschreibungstext</comment>
+  </data>
+  <data name="Password_LabelPwInput1Text" xml:space="preserve">
+    <value>Bitte Passwort eingeben:</value>
+  </data>
+  <data name="Password_LabelPwInput2Text" xml:space="preserve">
+    <value>Bitte Passwort wiederholen:</value>
+  </data>
+  <data name="Password_LabelMsg_Fail" xml:space="preserve">
+    <value>Das Passwort ist inkorrekt</value>
+  </data>
+  <data name="Password_LabelMsg_Ok" xml:space="preserve">
+    <value>Das Passwort korrekt</value>
+  </data>
+  <data name="Password_LabelInfoText2" xml:space="preserve">
+    <value>1. Gib das von dir zuletzt eingegebene Passwort ein.
+2. Beim betätigen des Buttons "Passwort löschen" wird das Passwort gelöscht und das Fenster geschlossen, Bei einem erneuten öffnen des Fensters kannst du wieder ein Passwort festlegen.
+3. Beim betätigen des Buttons "OK" wird nur das Fenster geschlossen und das gespeicherte Passwort bleibt erhalten.</value>
+    <comment>Beschreibungstext</comment>
+  </data>
+  <data name="PapaSchlumpf1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\PapaSchlumpf1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Beispielbild</comment>
+  </data>
+  <data name="AniGif_Anim100" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim100.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim101" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim101.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim102" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim102.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim103" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim103.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim104" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim104.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim105" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim105.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim106" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim106.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim107" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim107.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim108" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim108.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim109" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim109.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim110" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim110.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim111" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim111.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim112" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim112.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim113" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim113.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim114" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim114.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim115" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim115.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim116" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim116.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim117" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim117.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim118" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim118.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim119" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim119.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AniGif_Anim120" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AniGif_Anim120.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="PapaSchlumpf2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\PapaSchlumpf2.jpg;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Beispielbild</comment>
+  </data>
+</root>

@@ -9,6 +9,9 @@ Der Standard-Fortschrittsbalken in Windows ist ein einfacher Balken, der den For
 Der `ColorProgressBarControl` hingegen kann in verschiedenen Farben und Stilen angezeigt werden.
 
 Als Anregung diente der Artikel [A Better ProgressBar - Using Panels!](https://www.codeproject.com/Articles/31903/A-Better-ProgressBar-Using-Panels) von Saul Johnson.
+> **Hinweis**
+> 
+> Die Seite mit dem Artikel scheint mittlerweile nicht mehr zu existieren.
 
 Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Beschreibung nur Ausschnitte aus dem Original C# Code enthält und ich wenig Ahnung von C# habe, habe ich das Control in VB NET umgesetzt.
 

@@ -45,7 +45,7 @@ Public Class FormMain
 				'         Case btn Is Me.BtnNotifyForm : My.Forms.FormNotifyForm.ShowDialog(Me)
 				'         Case btn Is BtnPassword : My.Forms.FormPassword.ShowDialog(Me)
 				'         Case btn Is Me.BtnSevenSegment : My.Forms.FormSevenSegment.ShowDialog(Me)
-				'Case btn Is Me.BtnShape : My.Forms.FormShape.ShowDialog(Me)
+			Case btn Is Me.BtnShape : My.Forms.FormShape.ShowDialog(Me)
 			Case btn Is Me.BtnTransparentLabel : My.Forms.FormTransparentLabel.ShowDialog(Me)
 				'Case btn Is Me.BtnWizard : My.Forms.FormWizard.ShowDialog(Me)
 		End Select

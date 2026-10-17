@@ -31,7 +31,7 @@ Es wurden gegenüber der vorherigen Versionen einige Änderungen vorgenommen und n
 - **[IniFileControl](SchlumpfSoftControls/IniFileControl/IniFileControl.md)** - Ein Control zum Anzeigen und Bearbeiten von INI-Dateien mit einer benutzerfreundlichen Oberfläche.
 - **[NotifyFormControl](SchlumpfSoftControls/NotifyFormControl/NotifyFormControl.md)** - Ein Control zum Erstellen von Benachrichtigungsformularen, die über der Taskleiste oder anderen Anwendungen angezeigt werden können.
 - **[SevenSegmentControl](SchlumpfSoftControls/SevenSegmentControl/SevenSegmentControl.md)** - Ein Control zum Anzeigen von Zahlen im Sieben-Segment-Stil, ähnlich wie bei digitalen Anzeigen.
-- **[ShapeControl](SchlumpfSoftControls/ShapeControl/ShapeControl.md)** - Ein Control zum Zeichnen von verschiedenen geometrischen Formen wie Rechtecken, Ellipsen, Linien usw.
+- **[ShapeControl](SchlumpfSoftControlsNET/Doc/ShapeControl.md)** - Ein Control zum Zeichnen von verschiedenen geometrischen Formen wie Rechtecken, Ellipsen, Linien usw.
 - **[TransparentLabelControl](SchlumpfSoftControlsNET/Doc/TransparentLabelControl.md)** - Ein Control zum Anzeigen von transparenten Texten über anderen Steuerelementen oder Hintergründen.
 - **[WizardControl](SchlumpfSoftControls/WizardControl/WizardControl.md)** - Ein Control zum Erstellen von mehrseitigen Assistenten (Wizards) mit benutzerdefinierten Seiten und Navigation.
 - **[ImageComboBoxControl](SchlumpfSoftControls/ImageComboBoxControl/ImageComboBoxControl.md)** - Ein Control zum Anzeigen einer Combobox mit Symbolen.

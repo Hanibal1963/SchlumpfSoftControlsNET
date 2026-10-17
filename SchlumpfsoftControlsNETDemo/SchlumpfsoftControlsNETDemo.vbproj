@@ -98,6 +98,12 @@
     <Compile Include="FormMain.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FormShape.Designer.vb">
+      <DependentUpon>FormShape.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormShape.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FormTransparentLabel.Designer.vb">
       <DependentUpon>FormTransparentLabel.vb</DependentUpon>
     </Compile>
@@ -133,6 +139,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FormMain.resx">
       <DependentUpon>FormMain.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormShape.resx">
+      <DependentUpon>FormShape.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormTransparentLabel.resx">
       <DependentUpon>FormTransparentLabel.vb</DependentUpon>

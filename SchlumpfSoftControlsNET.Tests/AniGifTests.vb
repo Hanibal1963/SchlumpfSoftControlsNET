@@ -10,10 +10,15 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
     Public Class AniGifTests
         <TestMethod>
         Public Sub ImageSizeMode_HasExpectedValues()
+
+            ' NOTE: Überprüfen der folgenden Zeilen 
+#Disable Warning MSTEST0032 ' Überprüfen oder entfernen Sie die Assertion, da ihre Bedingung immer erfüllt ist. 
             Assert.AreEqual(0, CInt(ImageSizeMode.Normal))
             Assert.AreEqual(1, CInt(ImageSizeMode.CenterImage))
             Assert.AreEqual(2, CInt(ImageSizeMode.Zoom))
             Assert.AreEqual(3, CInt(ImageSizeMode.Fill))
+#Enable Warning
+
         End Sub
 
         <TestMethod>

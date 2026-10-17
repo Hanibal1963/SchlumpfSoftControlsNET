@@ -42,12 +42,16 @@
     <None Remove="AniGifControl\AniGifControl.AniGif.bmp" />
     <None Remove="AniGifControl\AniGifControl.Standard.gif" />
     <None Remove="ColorProgressBarControl\ColorProgressBarControl.ColorProgressBar.bmp" />
+    <None Remove="DriveWatcherControl\DriveWatcherControl.DriveWatcher.bmp" />
+    <None Remove="TransparentLabelControl\TransparentLabelControl.TransparentLabel.bmp" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="AniGifControl\AniGifControl.AniGif.bmp" />
     <EmbeddedResource Include="AniGifControl\AniGifControl.Standard.gif" />
     <EmbeddedResource Include="ColorProgressBarControl\ColorProgressBarControl.ColorProgressBar.bmp" />
+    <EmbeddedResource Include="DriveWatcherControl\DriveWatcherControl.DriveWatcher.bmp" />
+    <EmbeddedResource Include="TransparentLabelControl\TransparentLabelControl.TransparentLabel.bmp" />
   </ItemGroup>
 
   <ItemGroup>

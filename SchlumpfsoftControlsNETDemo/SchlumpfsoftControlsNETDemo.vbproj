@@ -80,10 +80,34 @@
     <Compile Include="FormAniGif.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FormColorProgressBar.Designer.vb">
+      <DependentUpon>FormColorProgressBar.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormColorProgressBar.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormDriveWatcher.Designer.vb">
+      <DependentUpon>FormDriveWatcher.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormDriveWatcher.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FormMain.Designer.vb">
       <DependentUpon>FormMain.vb</DependentUpon>
     </Compile>
     <Compile Include="FormMain.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormShape.Designer.vb">
+      <DependentUpon>FormShape.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormShape.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormTransparentLabel.Designer.vb">
+      <DependentUpon>FormTransparentLabel.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormTransparentLabel.vb">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="My Project\AssemblyInfo.vb" />
@@ -107,8 +131,20 @@
     <EmbeddedResource Include="FormAniGif.resx">
       <DependentUpon>FormAniGif.vb</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="FormColorProgressBar.resx">
+      <DependentUpon>FormColorProgressBar.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormDriveWatcher.resx">
+      <DependentUpon>FormDriveWatcher.vb</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="FormMain.resx">
       <DependentUpon>FormMain.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormShape.resx">
+      <DependentUpon>FormShape.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormTransparentLabel.resx">
+      <DependentUpon>FormTransparentLabel.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="My Project\Resources.resx">
       <Generator>VbMyResourcesResXFileCodeGenerator</Generator>

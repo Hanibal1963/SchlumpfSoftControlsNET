@@ -32,26 +32,23 @@ Public Class FormMain
 #If DEBUG Then
 		Dim unused = MessageBox.Show($"Button ""{btn.Name}"" wurde geklickt.")
 #End If
-        Select Case True
+		Select Case True
 			'NOTE: Die folgenden Zeilen sind auskommentiert, da die entsprechenden Formulare nicht implementiert sind.
 			Case btn Is Me.BtnAniGif : My.Forms.FormAniGif.ShowDialog(Me)
-            'Case btn Is Me.BtnColorProgressBar : My.Forms.FormColorProgressBar.ShowDialog(Me)
-            'Case btn Is Me.BtnDriveWatcher : My.Forms.FormDriveWatcher.ShowDialog(Me)
-            'Case btn Is Me.BtnExplorerTreeView : My.Forms.FormExplorerTreeView.ShowDialog(Me)
-            'Case btn Is Me.BtnExtendedRTF : My.Forms.FormExtendedRTF.ShowDialog(Me)
-            'Case btn Is Me.BtnFileList : My.Forms.FormFileList.ShowDialog(Me)
-            'Case btn Is Me.BtnImageComboBox : My.Forms.FormImageComboBox.ShowDialog(Me)
-            'Case btn Is Me.BtnINIFile : My.Forms.FormINIFile.ShowDialog(Me)
-            '         Case btn Is Me.BtnNotifyForm : My.Forms.FormNotifyForm.ShowDialog(Me)
-            '         Case btn Is BtnPassword : My.Forms.FormPassword.ShowDialog(Me)
-            '         Case btn Is Me.BtnSevenSegment : My.Forms.FormSevenSegment.ShowDialog(Me)
-            'Case btn Is Me.BtnShape : My.Forms.FormShape.ShowDialog(Me)
-            'Case btn Is Me.BtnTransparentLabel : My.Forms.FormTransparentLabel.ShowDialog(Me)
-            'Case btn Is Me.BtnWizard : My.Forms.FormWizard.ShowDialog(Me)
-        End Select
+			Case btn Is Me.BtnColorProgressBar : My.Forms.FormColorProgressBar.ShowDialog(Me)
+			Case btn Is Me.BtnDriveWatcher : My.Forms.FormDriveWatcher.ShowDialog(Me)
+				'Case btn Is Me.BtnExplorerTreeView : My.Forms.FormExplorerTreeView.ShowDialog(Me)
+				'Case btn Is Me.BtnExtendedRTF : My.Forms.FormExtendedRTF.ShowDialog(Me)
+				'Case btn Is Me.BtnFileList : My.Forms.FormFileList.ShowDialog(Me)
+				'Case btn Is Me.BtnImageComboBox : My.Forms.FormImageComboBox.ShowDialog(Me)
+				'Case btn Is Me.BtnINIFile : My.Forms.FormINIFile.ShowDialog(Me)
+				'         Case btn Is Me.BtnNotifyForm : My.Forms.FormNotifyForm.ShowDialog(Me)
+				'         Case btn Is BtnPassword : My.Forms.FormPassword.ShowDialog(Me)
+				'         Case btn Is Me.BtnSevenSegment : My.Forms.FormSevenSegment.ShowDialog(Me)
+			Case btn Is Me.BtnShape : My.Forms.FormShape.ShowDialog(Me)
+			Case btn Is Me.BtnTransparentLabel : My.Forms.FormTransparentLabel.ShowDialog(Me)
+				'Case btn Is Me.BtnWizard : My.Forms.FormWizard.ShowDialog(Me)
+		End Select
 	End Sub
 
-	Private Sub BtnAniGif_Click(sender As Object, e As EventArgs) Handles BtnAniGif.Click
-
-	End Sub
 End Class

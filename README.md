@@ -23,16 +23,16 @@ Es wurden gegenüber der vorherigen Versionen einige Änderungen vorgenommen und n
 ## Die Sammlung enthält aktuell folgende Controls
 
 - **[AniGifControl](SchlumpfSoftControlsNET/Doc/AniGifControl.md)** - Ein Control zum Anzeigen von animierten GIF - Grafiken.
-- **[ColorProgressBarControl](SchlumpfSoftControls/ColorProgressBarControl/ColorProgressBarControl.md)** - Ein Control zum Anzeigen eines anpassbaren Fortschrittsbalkens mit verschiedenen Farben.
-- **[DriveWatcherControl](SchlumpfSoftControls/DriveWatcherControl/DriveWatcherControl.md)** - Ein Control zum Überwachen von Laufwerken und Anzeigen von Informationen über diese.
+- **[ColorProgressBarControl](SchlumpfSoftControlsNET/Doc/ColorProgressBarControl.md)** - Ein Control zum Anzeigen eines anpassbaren Fortschrittsbalkens mit verschiedenen Farben.
+- **[DriveWatcherControl](SchlumpfSoftControlsNET/Doc/DriveWatcherControl.md)** - Ein Control zum Überwachen von Laufwerken und Anzeigen von Informationen über diese.
 - **[ExplorerTreeViewControl](SchlumpfSoftControls/ExplorerTreeViewControl/ExplorerTreeViewControl.md)** - Ein Control zum Anzeigen und Navigieren der Windows Verzeichnisstruktur (ähnlich dem linken Bereich des Windows Explorers).
 - **[ExtendedRTFControl](SchlumpfSoftControls/ExtendedRTFControl/ExtendedRTFControl.md)** - Ein Control zum Anzeigen von Rich Text Format (RTF) Inhalten mit erweiterten Funktionen.
 - **[FileListControl](SchlumpfSoftControls/FileListControl/FileListControl.md)** - Ein Control zum Anzeigen von Dateien in einer Liste mit verschiedenen Ansichten und Funktionen.
 - **[IniFileControl](SchlumpfSoftControls/IniFileControl/IniFileControl.md)** - Ein Control zum Anzeigen und Bearbeiten von INI-Dateien mit einer benutzerfreundlichen Oberfläche.
 - **[NotifyFormControl](SchlumpfSoftControls/NotifyFormControl/NotifyFormControl.md)** - Ein Control zum Erstellen von Benachrichtigungsformularen, die über der Taskleiste oder anderen Anwendungen angezeigt werden können.
 - **[SevenSegmentControl](SchlumpfSoftControls/SevenSegmentControl/SevenSegmentControl.md)** - Ein Control zum Anzeigen von Zahlen im Sieben-Segment-Stil, ähnlich wie bei digitalen Anzeigen.
-- **[ShapeControl](SchlumpfSoftControls/ShapeControl/ShapeControl.md)** - Ein Control zum Zeichnen von verschiedenen geometrischen Formen wie Rechtecken, Ellipsen, Linien usw.
-- **[TransparentLabelControl](SchlumpfSoftControls/TransparentLabelControl/TransparentLabelControl.md)** - Ein Control zum Anzeigen von transparenten Texten über anderen Steuerelementen oder Hintergründen.
+- **[ShapeControl](SchlumpfSoftControlsNET/Doc/ShapeControl.md)** - Ein Control zum Zeichnen von verschiedenen geometrischen Formen wie Rechtecken, Ellipsen, Linien usw.
+- **[TransparentLabelControl](SchlumpfSoftControlsNET/Doc/TransparentLabelControl.md)** - Ein Control zum Anzeigen von transparenten Texten über anderen Steuerelementen oder Hintergründen.
 - **[WizardControl](SchlumpfSoftControls/WizardControl/WizardControl.md)** - Ein Control zum Erstellen von mehrseitigen Assistenten (Wizards) mit benutzerdefinierten Seiten und Navigation.
 - **[ImageComboBoxControl](SchlumpfSoftControls/ImageComboBoxControl/ImageComboBoxControl.md)** - Ein Control zum Anzeigen einer Combobox mit Symbolen.
 - **[PasswordControl](SchlumpfSoftControls/PasswordControl/PasswordControl.md)** - Ein Control zum Eingeben und Validieren von Passwörtern.

@@ -125,7 +125,7 @@ Public Class FormAniGif
     End Sub
 
     Private Function GetAniResName(AniNumber As Int32) As String
-        Return $"AniGif_Anim{CStr(100 + Me._AniGifAnimationNumber)}"
+        Return $"AniGif_Anim{CStr(100 + AniNumber)}"
     End Function
 
 End Class

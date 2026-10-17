@@ -36,7 +36,7 @@ Public Class FormMain
 			'NOTE: Die folgenden Zeilen sind auskommentiert, da die entsprechenden Formulare nicht implementiert sind.
 			Case btn Is Me.BtnAniGif : My.Forms.FormAniGif.ShowDialog(Me)
 			Case btn Is Me.BtnColorProgressBar : My.Forms.FormColorProgressBar.ShowDialog(Me)
-				'Case btn Is Me.BtnDriveWatcher : My.Forms.FormDriveWatcher.ShowDialog(Me)
+			Case btn Is Me.BtnDriveWatcher : My.Forms.FormDriveWatcher.ShowDialog(Me)
 				'Case btn Is Me.BtnExplorerTreeView : My.Forms.FormExplorerTreeView.ShowDialog(Me)
 				'Case btn Is Me.BtnExtendedRTF : My.Forms.FormExtendedRTF.ShowDialog(Me)
 				'Case btn Is Me.BtnFileList : My.Forms.FormFileList.ShowDialog(Me)

@@ -13,8 +13,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projektmappenelemente", "Pr
 	ProjectSection(SolutionItems) = preProject
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
+		Infodateien\Control-Vorschlaege.md = Infodateien\Control-Vorschlaege.md
 		LICENSE.md = LICENSE.md
+		Infodateien\Links.md = Infodateien\Links.md
 		README.md = README.md
+		Infodateien\Symole für Markdown.md = Infodateien\Symole für Markdown.md
+		Infodateien\TODO Liste.md = Infodateien\TODO Liste.md
+		Infodateien\VS-Marketplace-Vorlage.md = Infodateien\VS-Marketplace-Vorlage.md
 	EndProjectSection
 EndProject
 Global

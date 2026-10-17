@@ -12,6 +12,10 @@ Als Anregung diente der Artikel [A Better ProgressBar - Using Panels!](https://w
 > **Hinweis**
 > 
 > Die Seite mit dem Artikel scheint mittlerweile nicht mehr zu existieren.
+> 
+> Ich habe allerdings eine im "Web Archiv" gespeicherte Version dieser Seite gefunden.
+>
+> [Web Archiv Kopie](https://web.archive.org/web/20250319060356/https://www.codeproject.com/Articles/31903/A-Better-ProgressBar-Using-Panels)
 
 Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Beschreibung nur Ausschnitte aus dem Original C# Code enthält und ich wenig Ahnung von C# habe, habe ich das Control in VB NET umgesetzt.
 

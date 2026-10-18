@@ -83,12 +83,12 @@ Namespace SchlumpfSoftControlsNET.Tests.PasswordControl
 
         Private Shared Sub RaiseKeyDownEnter(tb As TextBox)
             Dim methodInfo As MethodInfo = GetType(TextBox).GetMethod("OnKeyDown", BindingFlags.Instance Or BindingFlags.NonPublic)
-            methodInfo.Invoke(tb, New Object() {New KeyEventArgs(Keys.Enter)})
+            Dim unused = methodInfo.Invoke(tb, New Object() {New KeyEventArgs(Keys.Enter)})
         End Sub
 
         Private Shared Sub RaiseClick(control As Control)
             Dim methodInfo As MethodInfo = GetType(Control).GetMethod("OnClick", BindingFlags.Instance Or BindingFlags.NonPublic)
-            methodInfo.Invoke(control, New Object() {EventArgs.Empty})
+            Dim unused = methodInfo.Invoke(control, New Object() {EventArgs.Empty})
         End Sub
 
         Private Shared Function FindControl(Of T As Control)(root As Control, controlName As String) As T

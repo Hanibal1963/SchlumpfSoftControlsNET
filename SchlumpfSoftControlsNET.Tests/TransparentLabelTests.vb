@@ -34,7 +34,9 @@ Namespace SchlumpfSoftControlsNET.Tests.TransparentLabelControl
                     Assert.Fail("Es wurde keine ArgumentException ausgelöst.")
                 Catch ex As ArgumentException
                     Assert.AreEqual("value", ex.ParamName)
+#Disable Warning MSTEST0046 ' Verwenden Sie Assert anstelle von StringAssert
                     StringAssert.Contains(ex.Message, "nur Color.Transparent")
+#Enable Warning MSTEST0046 ' Verwenden Sie Assert anstelle von StringAssert
                 End Try
             End Using
         End Sub

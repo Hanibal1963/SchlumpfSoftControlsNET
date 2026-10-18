@@ -35,7 +35,7 @@ Es wurden gegenüber der vorherigen Versionen einige Änderungen vorgenommen und n
 - **[TransparentLabelControl](SchlumpfSoftControlsNET/Doc/TransparentLabelControl.md)** - Ein Control zum Anzeigen von transparenten Texten über anderen Steuerelementen oder Hintergründen.
 - **[WizardControl](SchlumpfSoftControls/WizardControl/WizardControl.md)** - Ein Control zum Erstellen von mehrseitigen Assistenten (Wizards) mit benutzerdefinierten Seiten und Navigation.
 - **[ImageComboBoxControl](SchlumpfSoftControls/ImageComboBoxControl/ImageComboBoxControl.md)** - Ein Control zum Anzeigen einer Combobox mit Symbolen.
-- **[PasswordControl](SchlumpfSoftControls/PasswordControl/PasswordControl.md)** - Ein Control zum Eingeben und Validieren von Passwörtern.
+- **[PasswordControl](SchlumpfSoftControlsNET/Doc/PasswordControl.md)** - Ein Control zum Eingeben und Validieren von Passwörtern.
 
 ---
 

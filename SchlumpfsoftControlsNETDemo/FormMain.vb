@@ -43,7 +43,7 @@ Public Class FormMain
 				'Case btn Is Me.BtnImageComboBox : My.Forms.FormImageComboBox.ShowDialog(Me)
 				'Case btn Is Me.BtnINIFile : My.Forms.FormINIFile.ShowDialog(Me)
 				'         Case btn Is Me.BtnNotifyForm : My.Forms.FormNotifyForm.ShowDialog(Me)
-				'         Case btn Is BtnPassword : My.Forms.FormPassword.ShowDialog(Me)
+			Case btn Is BtnPassword : My.Forms.FormPassword.ShowDialog(Me)
 				'         Case btn Is Me.BtnSevenSegment : My.Forms.FormSevenSegment.ShowDialog(Me)
 			Case btn Is Me.BtnShape : My.Forms.FormShape.ShowDialog(Me)
 			Case btn Is Me.BtnTransparentLabel : My.Forms.FormTransparentLabel.ShowDialog(Me)

@@ -89,5 +89,85 @@ Namespace My.Resources
                 Return CType(obj,System.Drawing.Bitmap)
             End Get
         End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property DriveWatcherControl_DriveWatcher() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("DriveWatcherControl_DriveWatcher", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property PasswordControl_noshow() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("PasswordControl.noshow", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property PasswordControl_noshowgray() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("PasswordControl.noshowgray", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property PasswordControl_Password() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("PasswordControl.Password", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property PasswordControl_show() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("PasswordControl.show", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property PasswordControl_showgray() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("PasswordControl.showgray", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property ShapeControl_Shape() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("ShapeControl_Shape", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property TransparentLabelControl_TransparentLabel() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("TransparentLabelControl_TransparentLabel", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
     End Module
 End Namespace

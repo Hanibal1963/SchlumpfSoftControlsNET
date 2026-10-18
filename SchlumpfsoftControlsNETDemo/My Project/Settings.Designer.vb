@@ -53,6 +53,30 @@ Namespace My
                 Return defaultInstance
             End Get
         End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("")>  _
+        Public Property Password_PasswordCode() As String
+            Get
+                Return CType(Me("Password_PasswordCode"),String)
+            End Get
+            Set
+                Me("Password_PasswordCode") = value
+            End Set
+        End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("")>  _
+        Public Property IniFile_IniPath() As String
+            Get
+                Return CType(Me("IniFile_IniPath"),String)
+            End Get
+            Set
+                Me("IniFile_IniPath") = value
+            End Set
+        End Property
     End Class
 End Namespace
 

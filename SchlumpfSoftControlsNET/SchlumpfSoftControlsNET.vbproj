@@ -25,9 +25,13 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Title>SchlumpfSoft ControlsNET</Title>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	<PackageOutputPath>D:\MyNuget</PackageOutputPath>
     <AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
+    <RepositoryUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</PackageProjectUrl>
   </PropertyGroup>
-
+	
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugType>embedded</DebugType>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>

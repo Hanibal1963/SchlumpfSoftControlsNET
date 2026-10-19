@@ -22,7 +22,7 @@ Partial Class FormAniGif
     'Das Bearbeiten mit dem Code-Editor ist nicht möglich.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FormMain))
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FormAniGif))
         Me.AniGif = New SchlumpfSoft.ControlsNET.AniGifControl.AniGif()
         Me.CheckBox_AutoPlay = New System.Windows.Forms.CheckBox()
         Me.CheckBox_CustomDisplaySpeed = New System.Windows.Forms.CheckBox()
@@ -42,14 +42,12 @@ Partial Class FormAniGif
         '
         'AniGif
         '
-        Me.AniGif.AutoPlay = False
         Me.AniGif.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle
-        Me.AniGif.CustomDisplaySpeed = False
         Me.AniGif.FramesPerSecond = New Decimal(New Integer() {10, 0, 0, 0})
         Me.AniGif.Gif = CType(resources.GetObject("AniGif.Gif"), System.Drawing.Bitmap)
-        Me.AniGif.GifSizeMode = SchlumpfSoft.ControlsNET.AniGifControl.ImageSizeMode.Normal
         Me.AniGif.Location = New System.Drawing.Point(12, 12)
         Me.AniGif.Name = "AniGif"
+        Me.AniGif.Padding = New System.Windows.Forms.Padding(0)
         Me.AniGif.Size = New System.Drawing.Size(247, 232)
         Me.AniGif.TabIndex = 0
         Me.AniGif.ZoomFactor = New Decimal(New Integer() {50, 0, 0, 0})
@@ -150,7 +148,6 @@ Partial Class FormAniGif
         Me.Button_StartAnimation.TabIndex = 11
         Me.Button_StartAnimation.Text = "Animation starten"
         Me.Button_StartAnimation.UseVisualStyleBackColor = True
-        AddHandler Me.Button_StartAnimation.Click, AddressOf Me.Button_StartAnimation_Click
         '
         'Button_StopAnimation
         '
@@ -160,13 +157,12 @@ Partial Class FormAniGif
         Me.Button_StopAnimation.TabIndex = 12
         Me.Button_StopAnimation.Text = "Animation stoppen"
         Me.Button_StopAnimation.UseVisualStyleBackColor = True
-        AddHandler Me.Button_StopAnimation.Click, AddressOf Me.Button_StopAnimation_Click
         '
         'FormAniGif
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(525, 333)
+        Me.ClientSize = New System.Drawing.Size(513, 334)
         Me.Controls.Add(Me.Button_StopAnimation)
         Me.Controls.Add(Me.Button_StartAnimation)
         Me.Controls.Add(Me.Label_Zoomfaktor)
@@ -190,6 +186,7 @@ Partial Class FormAniGif
         CType(Me.NumericUpDown_ZoomFactor, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
+
     End Sub
     Private WithEvents AniGif As SchlumpfSoft.ControlsNET.AniGifControl.AniGif
     Private WithEvents CheckBox_AutoPlay As CheckBox

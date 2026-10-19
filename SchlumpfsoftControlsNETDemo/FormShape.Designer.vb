@@ -41,7 +41,7 @@ Partial Class FormShape
         '
         'PictureBox
         '
-        Me.PictureBox.Image = My.Resources.Resources.PapaSchlumpf1
+        Me.PictureBox.Image = Global.SchlumpfsoftControlsNETDemo.My.Resources.Resources.PapaSchlumpf1
         Me.PictureBox.Location = New System.Drawing.Point(55, 46)
         Me.PictureBox.Name = "PictureBox"
         Me.PictureBox.Size = New System.Drawing.Size(135, 135)
@@ -141,13 +141,9 @@ Partial Class FormShape
         '
         'Shape
         '
-        Me.Shape.DiagonalLineModus = SchlumpfSoft.ControlsNET.ShapeControl.DiagonalLineModes.TopLeftToBottomRight
-        Me.Shape.FillColor = System.Drawing.Color.RosyBrown
-        Me.Shape.LineColor = System.Drawing.Color.Black
-        Me.Shape.LineWidth = 2.0!
+        Me.Shape.FillColor = System.Drawing.Color.Transparent
         Me.Shape.Location = New System.Drawing.Point(34, 23)
         Me.Shape.Name = "Shape"
-        Me.Shape.ShapeModus = SchlumpfSoft.ControlsNET.ShapeControl.ShapeModes.HorizontalLine
         Me.Shape.Size = New System.Drawing.Size(187, 175)
         Me.Shape.TabIndex = 0
         '
@@ -159,7 +155,7 @@ Partial Class FormShape
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(538, 349)
+        Me.ClientSize = New System.Drawing.Size(538, 233)
         Me.Controls.Add(Me.GroupBox_Options)
         Me.Controls.Add(Me.Shape)
         Me.Controls.Add(Me.PictureBox)

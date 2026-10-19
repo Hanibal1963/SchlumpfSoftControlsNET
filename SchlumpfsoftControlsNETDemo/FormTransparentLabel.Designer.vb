@@ -29,7 +29,7 @@ Partial Class FormTransparentLabel
         '
         'PictureBox
         '
-        Me.PictureBox.Image = My.Resources.Resources.PapaSchlumpf1
+        Me.PictureBox.Image = Global.SchlumpfsoftControlsNETDemo.My.Resources.Resources.PapaSchlumpf1
         Me.PictureBox.Location = New System.Drawing.Point(44, 52)
         Me.PictureBox.Name = "PictureBox"
         Me.PictureBox.Size = New System.Drawing.Size(138, 140)
@@ -50,7 +50,7 @@ Partial Class FormTransparentLabel
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(424, 241)
+        Me.ClientSize = New System.Drawing.Size(280, 249)
         Me.Controls.Add(Me.TransparentLabel)
         Me.Controls.Add(Me.PictureBox)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
@@ -61,6 +61,7 @@ Partial Class FormTransparentLabel
         Me.Text = "TransparentLabel Demo"
         CType(Me.PictureBox, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
+
     End Sub
     Private WithEvents PictureBox As PictureBox
     Friend WithEvents TransparentLabel As SchlumpfSoft.ControlsNET.TransparentLabelControl.TransparentLabel

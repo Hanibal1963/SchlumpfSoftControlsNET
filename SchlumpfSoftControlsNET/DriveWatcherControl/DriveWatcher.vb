@@ -26,7 +26,11 @@ Namespace DriveWatcherControl
     <DesignTimeVisible(True)>
     <Description("Steuerelement zum Überwachen der Anzahl der Laufwerke.")>
     <ToolboxBitmap(GetType(DriveWatcher), "DriveWatcherControl.DriveWatcher.bmp")>
-    Public Class DriveWatcher : Inherits Component
+    Public Class DriveWatcher
+
+        Inherits Component
+
+        Private Const DriveEventDebounceMs As Int32 = 200
 
 #Region "Variablen"
 
@@ -38,7 +42,8 @@ Namespace DriveWatcherControl
         Private _LastDriveEventName As String = ""
         Private _LastDriveEventType As DriveEventType = DriveEventType.None
         Private _LastDriveEventTimeUtc As DateTime = DateTime.MinValue
-        Private Const DriveEventDebounceMs As Int32 = 200
+
+#End Region
 
         Private Enum DriveEventType
             None = 0
@@ -49,8 +54,6 @@ Namespace DriveWatcherControl
             MediaInserted = 5
             MediaRemoved = 6
         End Enum
-
-#End Region
 
 #Region "Öffentliche Ereignisse"
 
@@ -280,10 +283,6 @@ Namespace DriveWatcherControl
             Me.OnNetworkDriveRemoved(arg)
 
         End Sub
-
-
-
-
 
         ''' <summary>
         ''' Löst das öffentliche Ereignis <see cref="DriveAdded"/> aus.

@@ -154,7 +154,7 @@ Partial Class FormShape
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(538, 233)
+        Me.ClientSize = New System.Drawing.Size(538, 238)
         Me.Controls.Add(Me.GroupBox_Options)
         Me.Controls.Add(Me.Shape)
         Me.Controls.Add(Me.PictureBox)

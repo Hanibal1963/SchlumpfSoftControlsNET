@@ -47,6 +47,12 @@
     <None Remove="AniGifControl\AniGifControl.Standard.gif" />
     <None Remove="ColorProgressBarControl\ColorProgressBarControl.ColorProgressBar.bmp" />
     <None Remove="DriveWatcherControl\DriveWatcherControl.DriveWatcher.bmp" />
+    <None Remove="PasswordControl\PasswordControl.noshow.png" />
+    <None Remove="PasswordControl\PasswordControl.noshowgray.png" />
+    <None Remove="PasswordControl\PasswordControl.Password.bmp" />
+    <None Remove="PasswordControl\PasswordControl.show.png" />
+    <None Remove="PasswordControl\PasswordControl.showgray.png" />
+    <None Remove="ShapeControl\ShapeControl.Shape.bmp" />
     <None Remove="TransparentLabelControl\TransparentLabelControl.TransparentLabel.bmp" />
   </ItemGroup>
 
@@ -55,6 +61,12 @@
     <EmbeddedResource Include="AniGifControl\AniGifControl.Standard.gif" />
     <EmbeddedResource Include="ColorProgressBarControl\ColorProgressBarControl.ColorProgressBar.bmp" />
     <EmbeddedResource Include="DriveWatcherControl\DriveWatcherControl.DriveWatcher.bmp" />
+    <EmbeddedResource Include="PasswordControl\PasswordControl.noshow.png" />
+    <EmbeddedResource Include="PasswordControl\PasswordControl.noshowgray.png" />
+    <EmbeddedResource Include="PasswordControl\PasswordControl.Password.bmp" />
+    <EmbeddedResource Include="PasswordControl\PasswordControl.show.png" />
+    <EmbeddedResource Include="PasswordControl\PasswordControl.showgray.png" />
+    <EmbeddedResource Include="ShapeControl\ShapeControl.Shape.bmp" />
     <EmbeddedResource Include="TransparentLabelControl\TransparentLabelControl.TransparentLabel.bmp" />
   </ItemGroup>
 

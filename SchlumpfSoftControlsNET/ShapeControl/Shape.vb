@@ -121,7 +121,7 @@ Namespace ShapeControl
         <Browsable(True)>
         <Category("Appearance")>
         <Description("Legt die Füllfarbe für die Form fest oder gibt diese zurück.")>
-        <DefaultValue(GetType(Color), "Gray")>
+        <DefaultValue(GetType(Color), "Transparent")>
         Public Property FillColor() As Color
             Get
                 Return Me._FillColor

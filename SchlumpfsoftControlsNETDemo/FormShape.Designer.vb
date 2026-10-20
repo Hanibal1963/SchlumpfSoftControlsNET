@@ -141,8 +141,7 @@ Partial Class FormShape
         '
         'Shape
         '
-        Me.Shape.FillColor = System.Drawing.Color.Transparent
-        Me.Shape.Location = New System.Drawing.Point(34, 23)
+        Me.Shape.Location = New System.Drawing.Point(35, 23)
         Me.Shape.Name = "Shape"
         Me.Shape.Size = New System.Drawing.Size(187, 175)
         Me.Shape.TabIndex = 0

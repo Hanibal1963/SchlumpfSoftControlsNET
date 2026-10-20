@@ -399,6 +399,7 @@ Namespace AniGifControl
             Me.InitializeComponent() 'Designer-Initialisierung
             Me.SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.OptimizedDoubleBuffer Or ControlStyles.UserPaint, True)
             Me.UpdateStyles()
+            Me.InitializeDefaults()
         End Sub
 
         ''' <summary>
@@ -422,6 +423,17 @@ Namespace AniGifControl
 #End Region
 
 #Region "Interne Methoden"
+
+        Private Sub InitializeDefaults()
+            Me._FramesPerSecond = 30D
+            Me._ZoomFactor = 50D
+            Me._GifSizeMode = ImageSizeMode.Normal
+            Me._Gif = My.Resources.AniGifControl_Standard
+            Me._CustomDisplaySpeed = False
+            Me._Autoplay = False
+            Me._IsAnimating = False
+            Me._IsDisposed = False
+        End Sub
 
         Protected Overloads Overrides Sub InitLayout()
             MyBase.InitLayout()

@@ -19,14 +19,6 @@
 
         ' Erforderlich für den Windows Form-Designer
         Private components As System.ComponentModel.IContainer
-        Private _ProgressUnit As Integer = 20
-        Private _ProgressValue As Integer = 1
-        Private _MaxValue As Integer = 10
-        Private _ShowBorder As Boolean
-        Private _IsGlossy As Boolean
-        Private _BarColor As System.Drawing.Color
-        Private _EmptyColor As System.Drawing.Color
-        Private _BorderColor As System.Drawing.Color
         Private WithEvents ProgressFull As System.Windows.Forms.Panel
         Private WithEvents ProgressEmpty As System.Windows.Forms.Panel
         Private WithEvents GlossLeft As System.Windows.Forms.Panel

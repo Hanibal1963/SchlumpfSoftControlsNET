@@ -100,9 +100,6 @@ Partial Class FormColorProgressBar
         'ColorProgressBar
         '
         Me.ColorProgressBar.BackColor = System.Drawing.Color.Black
-        Me.ColorProgressBar.BarColor = System.Drawing.Color.Blue
-        Me.ColorProgressBar.BorderColor = System.Drawing.Color.Black
-        Me.ColorProgressBar.EmptyColor = System.Drawing.Color.Silver
         Me.ColorProgressBar.Location = New System.Drawing.Point(23, 35)
         Me.ColorProgressBar.Name = "ColorProgressBar"
         Me.ColorProgressBar.Padding = New System.Windows.Forms.Padding(1)
@@ -113,7 +110,7 @@ Partial Class FormColorProgressBar
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(501, 181)
+        Me.ClientSize = New System.Drawing.Size(501, 176)
         Me.Controls.Add(Me.LabelProgressValue)
         Me.Controls.Add(Me.Button_EmptyColorChange)
         Me.Controls.Add(Me.Button_BorderColorChange)

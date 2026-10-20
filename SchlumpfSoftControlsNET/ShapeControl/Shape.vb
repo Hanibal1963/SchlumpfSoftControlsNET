@@ -17,7 +17,9 @@ Namespace ShapeControl
     <Description("Steuerelement zum Darstellen von Linien, Rechtecken und Ellipsen (gefüllt oder ungefüllt).")>
     <ToolboxItem(True)>
     <ToolboxBitmap(GetType(Shape), "ShapeControl.Shape.bmp")>
-    Public Class Shape : Inherits Control
+    Public Class Shape
+
+        Inherits Control
 
 #Region "Variablen"
 
@@ -270,29 +272,25 @@ Namespace ShapeControl
         Public Sub New()
             ' Dieser Aufruf ist für den Designer erforderlich.
             Me.InitializeComponent()
-            ' NOTE: Die folgenden beiden Zeilen sind nicht notwendig da die Initialisierung über Attribute erfolgt (siehe auskommentierte Sub InitializeVariables)
-            ' Eigene Standardwerte und Zeichenstile werden nach der Designer-Initialisierung gesetzt.
-            'Me.InitializeVariables()
             Me.InitializeStyles()
+            ' Eigene Standardwerte und Zeichenstile werden nach der Designer-Initialisierung gesetzt.
+            Me.InitializeDefaults()
         End Sub
 
 #End Region
 
 #Region "Interne Methoden"
 
-        ' NOTE: Die Initialisierung der Standardwerte erfolgt über die Attribute <DefaultValue(...)> der jeweiligen Eigenschaften.
-        '''' <summary>
-        '''' Initialisiert die Standardwerte des Steuerelements.
-        '''' </summary>
-        'Private Sub InitializeVariables()
-
-        '    Me._ShapeModus = ShapeModes.HorizontalLine ' Standardform: horizontale Linie
-        '    Me._DiagonalLineModus = DiagonalLineModes.TopLeftToBottomRight ' Standardrichtung der diagonalen Linie
-        '    Me._LineColor = Color.Black ' Standardfarbe für Linien und Rahmen
-        '    Me._LineWidth = 2 ' Standard-Linienbreite in Pixeln
-        '    Me._FillColor = Color.Gray ' Standardfüllung für gefüllte Formen
-
-        'End Sub
+        ''' <summary>
+        ''' Initialisiert die Standardwerte des Steuerelements.
+        ''' </summary>
+        Private Sub InitializeDefaults()
+            Me._ShapeModus = ShapeModes.HorizontalLine ' Standardform: horizontale Linie
+            Me._DiagonalLineModus = DiagonalLineModes.TopLeftToBottomRight ' Standardrichtung der diagonalen Linie
+            Me._LineColor = Color.Black ' Standardfarbe für Linien und Rahmen
+            Me._LineWidth = 2 ' Standard-Linienbreite in Pixeln
+            Me._FillColor = Color.Transparent ' Standardfüllung für gefüllte Formen
+        End Sub
 
         ''' <summary>
         ''' Initialisiert die Zeichenstile des Steuerelements.

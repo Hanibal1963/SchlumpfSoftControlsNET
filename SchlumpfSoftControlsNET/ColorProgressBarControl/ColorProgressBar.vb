@@ -22,6 +22,15 @@ Namespace ColorProgressBarControl
 
         Inherits UserControl
 
+        Private _ProgressUnit As Integer = 20
+        Private _ProgressValue As Integer = 1
+        Private _MaxValue As Integer = 10
+        Private _ShowBorder As Boolean = True
+        Private _IsGlossy As Boolean = True
+        Private _BarColor As System.Drawing.Color = Color.Blue
+        Private _EmptyColor As System.Drawing.Color = Color.Silver
+        Private _BorderColor As System.Drawing.Color = Color.Black
+
         ''' <summary>
         ''' Initialisiert das Steuerelement, aktiviert flimmerfreies Zeichnen und setzt die Standarddarstellung.
         ''' </summary>

@@ -10,6 +10,7 @@ Public Class FormColorProgressBar
 
     Public Sub New()
         Me.InitializeComponent()
+        Me.NumericUpDown_ProgressValue.Value = 10
         Me.ColorProgressBar.Value = CInt(Me.NumericUpDown_ProgressValue.Value)
         Me.ColorProgressBar.ProgressMaximumValue = CInt(Me.NumericUpDown_ProgressValue.Maximum)
         Me.CheckBox_ShowGliss.Checked = Me.ColorProgressBar.IsGlossy

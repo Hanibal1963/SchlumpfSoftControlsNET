@@ -25,8 +25,8 @@ Es wurden gegenüber der vorherigen Versionen einige Änderungen vorgenommen und n
 - **[AniGifControl](SchlumpfSoftControlsNET/Doc/AniGifControl.md)** - Ein Control zum Anzeigen von animierten GIF - Grafiken.
 - **[ColorProgressBarControl](SchlumpfSoftControlsNET/Doc/ColorProgressBarControl.md)** - Ein Control zum Anzeigen eines anpassbaren Fortschrittsbalkens mit verschiedenen Farben.
 - **[DriveWatcherControl](SchlumpfSoftControlsNET/Doc/DriveWatcherControl.md)** - Ein Control zum Überwachen von Laufwerken und Anzeigen von Informationen über diese.
-- **[ExplorerTreeViewControl](SchlumpfSoftControls/ExplorerTreeViewControl/ExplorerTreeViewControl.md)** - Ein Control zum Anzeigen und Navigieren der Windows Verzeichnisstruktur (ähnlich dem linken Bereich des Windows Explorers).
-- **[ExtendedRTFControl](SchlumpfSoftControls/ExtendedRTFControl/ExtendedRTFControl.md)** - Ein Control zum Anzeigen von Rich Text Format (RTF) Inhalten mit erweiterten Funktionen.
+- **[ExplorerTreeViewControl](SchlumpfSoftControlsNET/Doc/ExplorerTreeViewControl.md)** - Ein Control zum Anzeigen und Navigieren der Windows Verzeichnisstruktur (ähnlich dem linken Bereich des Windows Explorers).
+- **[ExtendedRTFControl](SchlumpfSoftControlsNET/Doc/ExtendedRTFControl.md)** - Ein Control zum Anzeigen von Rich Text Format (RTF) Inhalten mit erweiterten Funktionen.
 - **[FileListControl](SchlumpfSoftControls/FileListControl/FileListControl.md)** - Ein Control zum Anzeigen von Dateien in einer Liste mit verschiedenen Ansichten und Funktionen.
 - **[IniFileControl](SchlumpfSoftControls/IniFileControl/IniFileControl.md)** - Ein Control zum Anzeigen und Bearbeiten von INI-Dateien mit einer benutzerfreundlichen Oberfläche.
 - **[NotifyFormControl](SchlumpfSoftControls/NotifyFormControl/NotifyFormControl.md)** - Ein Control zum Erstellen von Benachrichtigungsformularen, die über der Taskleiste oder anderen Anwendungen angezeigt werden können.

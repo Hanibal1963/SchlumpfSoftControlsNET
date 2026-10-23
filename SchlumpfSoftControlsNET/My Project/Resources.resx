@@ -134,6 +134,82 @@
     <value>..\DriveWatcherControl\DriveWatcherControl.DriveWatcher.bmp;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
     <comment>ToolboxBitmap</comment>
   </data>
+  <data name="ExplorerTreeViewControl.Computer" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.Computer.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für Computer</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.DriveCDRom" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.DriveCDRom.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für CD Laufwerk</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.DriveDisk" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.DriveDisk.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für Diskettenlaufwerk</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.DriveFixed" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.DriveFixed.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für Festplatte</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.DriveNetwork" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.DriveNetwork.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für Netzlaufwerk</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.DriveNoRoot" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.DriveNoRoot.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für Laufwerk ohne Rootverzeichnis</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.DriveRamDisk" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.DriveRamDisk.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für RAM Laufwerk</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.DriveRemovable" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.DriveRemovable.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für USB Sticks oder Laufwerk</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.DriveSystem" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.DriveSystem.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für Systemlaufwerk</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.DriveUnknown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.DriveUnknown.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für unbekanntes Laufwerk</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.ExplorerTreeView" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.ExplorerTreeView.bmp;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>ToolboxBitmap</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.Folder" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.Folder.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für Ordner allgemein</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.FolderDesktop" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.FolderDesktop.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für Ordner Desktop</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.FolderDocuments" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.FolderDocuments.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für Ordner Dokumente</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.FolderDownloads" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.FolderDownloads.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für Ordner Downloads</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.FolderMusic" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.FolderMusic.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für Ordner Musik</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.FolderPictures" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.FolderPictures.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für Ordner Bilder</comment>
+  </data>
+  <data name="ExplorerTreeViewControl.FolderVideos" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExplorerTreeViewControl\ExplorerTreeViewControl.FolderVideos.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>Symbol für Ordner Videos</comment>
+  </data>
+  <data name="ExtendedRTFControl.ExtendedRTF" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\ExtendedRTFControl\ExtendedRTFControl.ExtendedRTF.bmp;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>ToolboxBitmap</comment>
+  </data>
   <data name="PasswordControl.noshow" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\PasswordControl\PasswordControl.noshow.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
     <comment>Button Symbol aktiv</comment>

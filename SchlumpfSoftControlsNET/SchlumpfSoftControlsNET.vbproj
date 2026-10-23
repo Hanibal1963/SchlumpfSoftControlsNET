@@ -47,6 +47,31 @@
     <None Remove="AniGifControl\AniGifControl.Standard.gif" />
     <None Remove="ColorProgressBarControl\ColorProgressBarControl.ColorProgressBar.bmp" />
     <None Remove="DriveWatcherControl\DriveWatcherControl.DriveWatcher.bmp" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.Computer.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveCDRom.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveDisk.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveFixed.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveNetwork.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveNoRoot.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveRamDisk.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveRemovable.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveSystem.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveUnknown.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.ExplorerTreeView.bmp" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.Folder.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderDesktop.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderDocuments.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderDownloads.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderMusic.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderPictures.png" />
+    <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderVideos.png" />
+    <None Remove="ExtendedRTFControl\ExtendedRTFControl.ExtendedRTF.bmp" />
+    <None Remove="PasswordControl\PasswordControl.noshow.png" />
+    <None Remove="PasswordControl\PasswordControl.noshowgray.png" />
+    <None Remove="PasswordControl\PasswordControl.Password.bmp" />
+    <None Remove="PasswordControl\PasswordControl.show.png" />
+    <None Remove="PasswordControl\PasswordControl.showgray.png" />
+    <None Remove="ShapeControl\ShapeControl.Shape.bmp" />
     <None Remove="TransparentLabelControl\TransparentLabelControl.TransparentLabel.bmp" />
   </ItemGroup>
 
@@ -55,6 +80,31 @@
     <EmbeddedResource Include="AniGifControl\AniGifControl.Standard.gif" />
     <EmbeddedResource Include="ColorProgressBarControl\ColorProgressBarControl.ColorProgressBar.bmp" />
     <EmbeddedResource Include="DriveWatcherControl\DriveWatcherControl.DriveWatcher.bmp" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.Computer.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveCDRom.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveDisk.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveFixed.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveNetwork.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveNoRoot.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveRamDisk.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveRemovable.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveSystem.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.DriveUnknown.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.ExplorerTreeView.bmp" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.Folder.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderDesktop.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderDocuments.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderDownloads.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderMusic.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderPictures.png" />
+    <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderVideos.png" />
+    <EmbeddedResource Include="ExtendedRTFControl\ExtendedRTFControl.ExtendedRTF.bmp" />
+    <EmbeddedResource Include="PasswordControl\PasswordControl.noshow.png" />
+    <EmbeddedResource Include="PasswordControl\PasswordControl.noshowgray.png" />
+    <EmbeddedResource Include="PasswordControl\PasswordControl.Password.bmp" />
+    <EmbeddedResource Include="PasswordControl\PasswordControl.show.png" />
+    <EmbeddedResource Include="PasswordControl\PasswordControl.showgray.png" />
+    <EmbeddedResource Include="ShapeControl\ShapeControl.Shape.bmp" />
     <EmbeddedResource Include="TransparentLabelControl\TransparentLabelControl.TransparentLabel.bmp" />
   </ItemGroup>
 

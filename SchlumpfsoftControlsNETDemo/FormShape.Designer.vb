@@ -141,8 +141,7 @@ Partial Class FormShape
         '
         'Shape
         '
-        Me.Shape.FillColor = System.Drawing.Color.Transparent
-        Me.Shape.Location = New System.Drawing.Point(34, 23)
+        Me.Shape.Location = New System.Drawing.Point(35, 23)
         Me.Shape.Name = "Shape"
         Me.Shape.Size = New System.Drawing.Size(187, 175)
         Me.Shape.TabIndex = 0
@@ -155,7 +154,7 @@ Partial Class FormShape
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(538, 233)
+        Me.ClientSize = New System.Drawing.Size(538, 238)
         Me.Controls.Add(Me.GroupBox_Options)
         Me.Controls.Add(Me.Shape)
         Me.Controls.Add(Me.PictureBox)

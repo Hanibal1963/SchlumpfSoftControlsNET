@@ -283,6 +283,16 @@ Namespace My.Resources
         '''<summary>
         '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
         '''</summary>
+        Friend ReadOnly Property ExtendedRTFControl_ExtendedRTF() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("ExtendedRTFControl.ExtendedRTF", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
         Friend ReadOnly Property PasswordControl_noshow() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("PasswordControl.noshow", resourceCulture)

@@ -98,6 +98,12 @@
     <Compile Include="FormExplorerTreeView.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FormExtendedRTF.Designer.vb">
+      <DependentUpon>FormExtendedRTF.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormExtendedRTF.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FormMain.Designer.vb">
       <DependentUpon>FormMain.vb</DependentUpon>
     </Compile>
@@ -152,6 +158,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FormExplorerTreeView.resx">
       <DependentUpon>FormExplorerTreeView.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormExtendedRTF.resx">
+      <DependentUpon>FormExtendedRTF.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormMain.resx">
       <DependentUpon>FormMain.vb</DependentUpon>

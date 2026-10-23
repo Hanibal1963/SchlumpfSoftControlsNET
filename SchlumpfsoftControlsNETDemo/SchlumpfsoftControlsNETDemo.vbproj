@@ -92,6 +92,12 @@
     <Compile Include="FormDriveWatcher.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FormExplorerTreeView.Designer.vb">
+      <DependentUpon>FormExplorerTreeView.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormExplorerTreeView.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FormMain.Designer.vb">
       <DependentUpon>FormMain.vb</DependentUpon>
     </Compile>
@@ -143,6 +149,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FormDriveWatcher.resx">
       <DependentUpon>FormDriveWatcher.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormExplorerTreeView.resx">
+      <DependentUpon>FormExplorerTreeView.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormMain.resx">
       <DependentUpon>FormMain.vb</DependentUpon>

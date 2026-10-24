@@ -30,8 +30,8 @@
     <RepositoryUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</PackageProjectUrl>
-    <AssemblyVersion>1.2026.1024.1</AssemblyVersion>
-    <FileVersion>1.2026.1024.1</FileVersion>
+    <AssemblyVersion>1.2026.1024.4</AssemblyVersion>
+    <FileVersion>1.2026.1024.4</FileVersion>
   </PropertyGroup>
 	
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -95,6 +95,11 @@
     <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderVideos.png" />
     <None Remove="ExtendedRTFControl\ExtendedRTFControl.ExtendedRTF.bmp" />
     <None Remove="FileListControl\FileListControl.FileList.bmp" />
+    <None Remove="NotifyFormControl\NotifyFormControl.CriticalError.png" />
+    <None Remove="NotifyFormControl\NotifyFormControl.Information.png" />
+    <None Remove="NotifyFormControl\NotifyFormControl.NotifyForm.bmp" />
+    <None Remove="NotifyFormControl\NotifyFormControl.Question.png" />
+    <None Remove="NotifyFormControl\NotifyFormControl.Warning.png" />
     <None Remove="PasswordControl\PasswordControl.noshow.png" />
     <None Remove="PasswordControl\PasswordControl.noshowgray.png" />
     <None Remove="PasswordControl\PasswordControl.Password.bmp" />
@@ -129,6 +134,11 @@
     <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderVideos.png" />
     <EmbeddedResource Include="ExtendedRTFControl\ExtendedRTFControl.ExtendedRTF.bmp" />
     <EmbeddedResource Include="FileListControl\FileListControl.FileList.bmp" />
+    <EmbeddedResource Include="NotifyFormControl\NotifyFormControl.CriticalError.png" />
+    <EmbeddedResource Include="NotifyFormControl\NotifyFormControl.Information.png" />
+    <EmbeddedResource Include="NotifyFormControl\NotifyFormControl.NotifyForm.bmp" />
+    <EmbeddedResource Include="NotifyFormControl\NotifyFormControl.Question.png" />
+    <EmbeddedResource Include="NotifyFormControl\NotifyFormControl.Warning.png" />
     <EmbeddedResource Include="PasswordControl\PasswordControl.noshow.png" />
     <EmbeddedResource Include="PasswordControl\PasswordControl.noshowgray.png" />
     <EmbeddedResource Include="PasswordControl\PasswordControl.Password.bmp" />
@@ -160,6 +170,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.13" />
   </ItemGroup>
 

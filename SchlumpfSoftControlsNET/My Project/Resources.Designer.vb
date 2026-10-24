@@ -303,6 +303,56 @@ Namespace My.Resources
         '''<summary>
         '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
         '''</summary>
+        Friend ReadOnly Property NotifyFormControl_CriticalError() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("NotifyFormControl.CriticalError", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property NotifyFormControl_Information() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("NotifyFormControl.Information", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property NotifyFormControl_NotifyForm() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("NotifyFormControl.NotifyForm", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property NotifyFormControl_Question() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("NotifyFormControl.Question", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property NotifyFormControl_Warning() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("NotifyFormControl.Warning", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
         Friend ReadOnly Property PasswordControl_noshow() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("PasswordControl.noshow", resourceCulture)

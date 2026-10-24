@@ -29,7 +29,7 @@ Es wurden gegenüber der vorherigen Versionen einige Änderungen vorgenommen und n
 - **[ExtendedRTFControl](SchlumpfSoftControlsNET/Doc/ExtendedRTFControl.md)** - Ein Control zum Anzeigen von Rich Text Format (RTF) Inhalten mit erweiterten Funktionen.
 - **[FileListControl](SchlumpfSoftControlsNET/Doc/FileListControl.md)** - Ein Control zum Anzeigen von Dateien in einer Liste mit verschiedenen Ansichten und Funktionen.
 - **[IniFileControl](SchlumpfSoftControls/IniFileControl/IniFileControl.md)** - Ein Control zum Anzeigen und Bearbeiten von INI-Dateien mit einer benutzerfreundlichen Oberfläche.
-- **[NotifyFormControl](SchlumpfSoftControls/NotifyFormControl/NotifyFormControl.md)** - Ein Control zum Erstellen von Benachrichtigungsformularen, die über der Taskleiste oder anderen Anwendungen angezeigt werden können.
+- **[NotifyFormControl](SchlumpfSoftControlsNET/Doc/NotifyFormControl.md)** - Ein Control zum Erstellen von Benachrichtigungsformularen, die über der Taskleiste oder anderen Anwendungen angezeigt werden können.
 - **[SevenSegmentControl](SchlumpfSoftControls/SevenSegmentControl/SevenSegmentControl.md)** - Ein Control zum Anzeigen von Zahlen im Sieben-Segment-Stil, ähnlich wie bei digitalen Anzeigen.
 - **[ShapeControl](SchlumpfSoftControlsNET/Doc/ShapeControl.md)** - Ein Control zum Zeichnen von verschiedenen geometrischen Formen wie Rechtecken, Ellipsen, Linien usw.
 - **[TransparentLabelControl](SchlumpfSoftControlsNET/Doc/TransparentLabelControl.md)** - Ein Control zum Anzeigen von transparenten Texten über anderen Steuerelementen oder Hintergründen.

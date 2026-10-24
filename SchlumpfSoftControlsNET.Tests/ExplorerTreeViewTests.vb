@@ -22,7 +22,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
 
                 Assert.IsNotNull(tv)
                 Assert.AreEqual(1, tv.Nodes.Count)
-                StringAssert.StartsWith(tv.Nodes(0).Text, "Dieser Computer")
+                Assert.StartsWith(tv.Nodes(0).Text, "Dieser Computer")
                 Assert.IsTrue(String.IsNullOrEmpty(control.SelectedPath))
             End Using
         End Sub

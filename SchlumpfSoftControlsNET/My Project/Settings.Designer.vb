@@ -57,12 +57,12 @@ Namespace My
         <Global.System.Configuration.UserScopedSettingAttribute(),  _
          Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
          Global.System.Configuration.DefaultSettingValueAttribute("")>  _
-        Public Property Einstellung() As String
+        Public Property ListViewColumnOrder() As String
             Get
-                Return CType(Me("Einstellung"),String)
+                Return CType(Me("ListViewColumnOrder"),String)
             End Get
             Set
-                Me("Einstellung") = value
+                Me("ListViewColumnOrder") = value
             End Set
         End Property
     End Class

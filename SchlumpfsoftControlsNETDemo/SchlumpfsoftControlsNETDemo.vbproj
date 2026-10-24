@@ -104,6 +104,12 @@
     <Compile Include="FormExtendedRTF.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FormFileList.Designer.vb">
+      <DependentUpon>FormFileList.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormFileList.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FormMain.Designer.vb">
       <DependentUpon>FormMain.vb</DependentUpon>
     </Compile>
@@ -161,6 +167,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FormExtendedRTF.resx">
       <DependentUpon>FormExtendedRTF.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormFileList.resx">
+      <DependentUpon>FormFileList.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormMain.resx">
       <DependentUpon>FormMain.vb</DependentUpon>

@@ -210,6 +210,10 @@
     <value>..\ExtendedRTFControl\ExtendedRTFControl.ExtendedRTF.bmp;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
     <comment>ToolboxBitmap</comment>
   </data>
+  <data name="FileListControl.FileList" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\FileListControl\FileListControl.FileList.bmp;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <comment>ToolboxBitmap</comment>
+  </data>
   <data name="PasswordControl.noshow" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\PasswordControl\PasswordControl.noshow.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
     <comment>Button Symbol aktiv</comment>

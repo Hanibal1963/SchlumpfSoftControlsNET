@@ -22,7 +22,7 @@ Namespace ColorProgressBarControl
 
         Inherits UserControl
 
-        Private _ProgressUnit As Integer = 20
+        Private ReadOnly _ProgressUnit As Integer = 20
         Private _ProgressValue As Integer = 1
         Private _MaxValue As Integer = 10
         Private _ShowBorder As Boolean = True

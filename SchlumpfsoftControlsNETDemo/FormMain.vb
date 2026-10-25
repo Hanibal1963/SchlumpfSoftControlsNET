@@ -27,11 +27,14 @@ Public Class FormMain
 	End Sub
 
 	Private Sub Button_Click(sender As Object, e As EventArgs)
+
 		' Klickverarbeitung hier implementieren
 		Dim btn As Button = CType(sender, Button)
+
 #If DEBUG Then
 		Dim unused = MessageBox.Show($"Button ""{btn.Name}"" wurde geklickt.")
 #End If
+
 		Select Case True
 
 			'NOTE: Die folgenden Zeilen sind auskommentiert, da die entsprechenden Formulare nicht implementiert sind.
@@ -45,12 +48,13 @@ Public Class FormMain
 				'Case btn Is Me.BtnINIFile : My.Forms.FormINIFile.ShowDialog(Me)
 			Case btn Is Me.BtnNotifyForm : My.Forms.FormNotifyForm.ShowDialog(Me)
 			Case btn Is Me.BtnPassword : My.Forms.FormPassword.ShowDialog(Me)
-				'         Case btn Is Me.BtnSevenSegment : My.Forms.FormSevenSegment.ShowDialog(Me)
+			Case btn Is Me.BtnSevenSegment : My.Forms.FormSevenSegment.ShowDialog(Me)
 			Case btn Is Me.BtnShape : My.Forms.FormShape.ShowDialog(Me)
 			Case btn Is Me.BtnTransparentLabel : My.Forms.FormTransparentLabel.ShowDialog(Me)
 			Case btn Is Me.BtnWizard : My.Forms.FormWizard.ShowDialog(Me)
 
 		End Select
+
 	End Sub
 
 End Class

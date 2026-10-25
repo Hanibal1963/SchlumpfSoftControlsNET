@@ -132,7 +132,7 @@ Namespace SchlumpfSoftControlsNET.Tests.SevenSegmentControl
                 Assert.AreEqual(New Padding(10, 4, 10, 4), display.DigitPadding)
                 Assert.IsNull(display.Value)
                 Assert.AreEqual(4, display.Controls.Count)
-                Assert.AreEqual(4, GetDigits(display).Count)
+                Assert.HasCount(4, display.Controls)
             End Using
         End Sub
 
@@ -159,7 +159,7 @@ Namespace SchlumpfSoftControlsNET.Tests.SevenSegmentControl
                 Dim digits As List(Of SingleDigit) = GetDigits(display)
 
                 Assert.AreEqual("12.3", display.Value)
-                Assert.AreEqual(4, digits.Count)
+                Assert.HasCount(4, display.Controls)
                 Assert.AreEqual(&H6D, digits(0).CustomBitPattern)
                 Assert.IsFalse(digits(0).DecimalPointActive)
                 Assert.AreEqual(&H5D, digits(1).CustomBitPattern)

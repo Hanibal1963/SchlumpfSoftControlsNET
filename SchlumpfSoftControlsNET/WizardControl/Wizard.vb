@@ -22,6 +22,8 @@ Namespace WizardControl
 
         Inherits UserControl
 
+#Region "Variablen"
+
         Friend _ImageHeader As Image               ' Bild, das in der Kopfzeile von Standardseiten angezeigt wird
         Friend _ImageWelcome As Image              ' Bild, das auf Begrüßungs- und Abschlussseiten angezeigt wird
         Friend _WelcomeFont As Font                ' Schriftart für die Beschreibung auf Begrüßungs- und Abschlussseiten (optional, fällt sonst auf Font zurück)
@@ -36,7 +38,7 @@ Namespace WizardControl
         Friend ReadOnly _OffsetNext As New Point(164, 36)  ' Abstand für Positionierung der Weiter-Schaltfläche (X- und Y-Offset)
         Friend ReadOnly _OffsetBack As New Point(244, 36)  ' Abstand für Positionierung der Zurück-Schaltfläche (X- und Y-Offset)
 
-
+#End Region
 
         ''' <summary>
         ''' Delegattyp für das Ereignis, das vor dem Wechsel der Assistentenseiten ausgelöst wird. Ermöglicht

@@ -403,6 +403,26 @@ Namespace My.Resources
         '''<summary>
         '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
         '''</summary>
+        Friend ReadOnly Property SevenSegmentControl_MultiDigit() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("SevenSegmentControl.MultiDigit", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property SevenSegmentControl_SingleDigit() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("SevenSegmentControl.SingleDigit", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
         Friend ReadOnly Property ShapeControl_Shape() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("ShapeControl_Shape", resourceCulture)

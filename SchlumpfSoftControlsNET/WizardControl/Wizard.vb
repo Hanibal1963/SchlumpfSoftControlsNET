@@ -279,6 +279,10 @@ Namespace WizardControl
 
 #Region "ausgeblendete Eigenschaften"
 
+        ''' <summary>
+        ''' Ruft die aktuell ausgewählte Seite ab oder legt diese fest.
+        ''' </summary>
+        ''' <returns></returns>
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         Public Property SelectedPage As WizardPage
@@ -290,9 +294,13 @@ Namespace WizardControl
             End Set
         End Property
 
+        ''' <summary>
+        ''' 
+        ''' </summary>
+        ''' <returns></returns>
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
-        Friend Property SelectedIndex As Int32
+        Public Property SelectedIndex As Int32
             Get
                 Return Me._Pages.IndexOf(Me._SelectedPage)
             End Get
@@ -308,6 +316,10 @@ Namespace WizardControl
             End Set
         End Property
 
+        ''' <summary>
+        ''' Ruft einen Wert ab, der angibt, ob die Schaltfläche "Weiter" aktiviert ist, oder legt diesen fest.
+        ''' </summary>
+        ''' <returns></returns>
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         Public Property NextEnabled As Boolean
@@ -319,6 +331,10 @@ Namespace WizardControl
             End Set
         End Property
 
+        ''' <summary>
+        ''' Ruft einen Wert ab, der angibt, ob die Schaltfläche "Zurück" aktiviert ist, oder legt diesen fest.
+        ''' </summary>
+        ''' <returns></returns>
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         Public Property BackEnabled As Boolean
@@ -330,6 +346,10 @@ Namespace WizardControl
             End Set
         End Property
 
+        ''' <summary>
+        ''' Ruft den Text der Schaltfläche "Weiter" ab oder legt diesen fest.
+        ''' </summary>
+        ''' <returns></returns>
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         Public Property NextText As String
@@ -341,6 +361,10 @@ Namespace WizardControl
             End Set
         End Property
 
+        ''' <summary>
+        ''' Ruft den Text der Schaltfläche "Zurück" ab oder legt diesen fest.
+        ''' </summary>
+        ''' <returns></returns>
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         Public Property BackText As String
@@ -352,6 +376,10 @@ Namespace WizardControl
             End Set
         End Property
 
+        ''' <summary>
+        ''' Ruft den Text der Schaltfläche "Abbrechen" ab oder legt diesen fest.
+        ''' </summary>
+        ''' <returns></returns>
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         Public Property CancelText As String
@@ -363,6 +391,10 @@ Namespace WizardControl
             End Set
         End Property
 
+        ''' <summary>
+        ''' Ruft den Text der Schaltfläche "Hilfe" ab oder legt diesen fest.
+        ''' </summary>
+        ''' <returns></returns>
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         Public Property HelpText As String

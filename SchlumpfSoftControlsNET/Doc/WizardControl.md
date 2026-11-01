@@ -17,13 +17,13 @@ Sinn dieses Projekts ist für mich der Lerneffekt sowie eventuelle Anpassungen v
 - `HeaderTitleFont`: Ruft die Schriftart ab, die zum Anzeigen des Titels einer Standardseite verwendet wird, oder legt diese fest.
 - `WelcomeFont`: Ruft die Schriftart ab, die zum Anzeigen der Beschreibung einer Begrüßungs- oder Abschlussseite verwendet wird, oder legt diese fest.
 - `WelcomeTitleFont`: Ruft die Schriftart ab, die zum Anzeigen des Titels einer Begrüßungs- oder Abschlussseite verwendet wird, oder legt diese fest.
-- `SelectedPage` (ausgeblendet): Gibt die aktuell aktive Assistentenseite zurück oder aktiviert eine übergebene Seite.
-- `NextEnabled` (ausgeblendet): Aktiviert oder deaktiviert die Schaltfläche „Weiter“.
-- `BackEnabled` (ausgeblendet): Aktiviert oder deaktiviert die Schaltfläche „Zurück“.
-- `NextText` (ausgeblendet): Gibt den Text der Schaltfläche „Weiter“ zurück oder legt ihn fest.
-- `BackText` (ausgeblendet): Gibt den Text der Schaltfläche „Zurück“ zurück oder legt ihn fest.
-- `CancelText` (ausgeblendet): Gibt den Text der Schaltfläche „Abbrechen/Beenden“ zurück oder legt ihn fest.
-- `HelpText` (ausgeblendet): Gibt den Text der Schaltfläche „Hilfe“ zurück oder legt ihn fest.
+- `SelectedPage`: Gibt die aktuell aktive Assistentenseite zurück oder aktiviert eine übergebene Seite.
+- `NextEnabled`: Aktiviert oder deaktiviert die Schaltfläche „Weiter“.
+- `BackEnabled`: Aktiviert oder deaktiviert die Schaltfläche „Zurück“.
+- `NextText`: Gibt den Text der Schaltfläche „Weiter“ zurück oder legt ihn fest.
+- `BackText`: Gibt den Text der Schaltfläche „Zurück“ zurück oder legt ihn fest.
+- `CancelText`: Gibt den Text der Schaltfläche „Abbrechen/Beenden“ zurück oder legt ihn fest.
+- `HelpText`: Gibt den Text der Schaltfläche „Hilfe“ zurück oder legt ihn fest.
 
 ## Methoden
 

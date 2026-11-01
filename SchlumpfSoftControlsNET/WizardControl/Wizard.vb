@@ -40,36 +40,7 @@ Namespace WizardControl
 
 #End Region
 
-        ''' <summary>
-        ''' Delegattyp für das Ereignis, das vor dem Wechsel der Assistentenseiten ausgelöst wird. Ermöglicht
-        ''' Validierung und das ggf. Verhindern des Seitenwechsels.
-        ''' </summary>
-        ''' <remarks>
-        ''' Setzen Sie <c>e.Cancel = True</c>, um den Seitenwechsel zu verhindern.
-        ''' </remarks>
-        ''' <param name="sender">
-        ''' Das auslösende Objekt (typischerweise die <see cref="Wizard"/> -Instanz).
-        ''' </param>
-        ''' <param name="e">
-        ''' Ein <see cref="BeforeSwitchPagesEventArgs"/>, das die Ereignisdaten enthält (Alter/Neuer Index,
-        ''' Abbruchflag).
-        ''' </param>
-        Public Delegate Sub BeforeSwitchPagesEventHandler(sender As Object, e As BeforeSwitchPagesEventArgs)
-
-        ''' <summary>
-        ''' Delegattyp für das Ereignis, das nach dem Wechsel der Assistentenseiten ausgelöst wird. Ermöglicht das
-        ''' Initialisieren und Aktualisieren der neu aktiven Seite.
-        ''' </summary>
-        ''' <remarks>
-        ''' Verwenden Sie dieses Ereignis, um Fokus zu setzen, Daten zu laden oder UI-Elemente anzupassen.
-        ''' </remarks>
-        ''' <param name="sender">
-        ''' Das auslösende Objekt (typischerweise die <see cref="Wizard"/> -Instanz).
-        ''' </param>
-        ''' <param name="e">
-        ''' Ein <see cref="AfterSwitchPagesEventArgs"/>, das die Ereignisdaten enthält (Alter/Neuer Index).
-        ''' </param>
-        Public Delegate Sub AfterSwitchPagesEventHandler(sender As Object, e As AfterSwitchPagesEventArgs)
+#Region "Events"
 
         ''' <summary>
         ''' Tritt auf, bevor die Seiten des Assistenten gewechselt werden, um dem Benutzer die Möglichkeit zur
@@ -77,7 +48,7 @@ Namespace WizardControl
         ''' </summary>
         <Category("Behavior")>
         <Description("Tritt auf, bevor die Seiten des Assistenten gewechselt werden, um dem Benutzer die Möglichkeit zur Validierung zu geben.")>
-        Public Event BeforeSwitchPages As BeforeSwitchPagesEventHandler
+        Public Event BeforeSwitchPages As EventHandler(Of BeforeSwitchPagesEventArgs)
 
         ''' <summary>
         ''' Tritt auf, nachdem die Seiten des Assistenten gewechselt wurden, und gibt dem Benutzer die Möglichkeit, die
@@ -85,7 +56,7 @@ Namespace WizardControl
         ''' </summary>
         <Category("Behavior")>
         <Description("Tritt auf, nachdem die Seiten des Assistenten gewechselt wurden, und gibt dem Benutzer die Möglichkeit, die neue Seite einzurichten.")>
-        Public Event AfterSwitchPages As AfterSwitchPagesEventHandler
+        Public Event AfterSwitchPages As EventHandler(Of AfterSwitchPagesEventArgs)
 
         ''' <summary>
         ''' Tritt auf wenn der Benutzer auf Abbrechen geklickt hat.
@@ -108,6 +79,10 @@ Namespace WizardControl
         <Category("Behavior")>
         <Description("Tritt auf, wenn der Benutzer auf die Hilfeschaltfläche klickt.")>
         Public Event Help As EventHandler
+
+#End Region
+
+#Region "Eigenschaften"
 
         ''' <summary>
         ''' Ruft die Sichtbarkeit Status der Hilfeschaltfläche ab oder legt diesen fest.
@@ -145,9 +120,10 @@ Namespace WizardControl
         ''' <value>
         ''' Die Auflistung der Seiten als <see cref="PagesCollection"/>.
         ''' </value>
-        <DesignerSerializationVisibility(DesignerSerializationVisibility.Content)>
+        <Browsable(True)>
         <Category("Design")>
         <Description("Ruft die Auflistung der Assistentenseiten in diesem Registerkartensteuerelement ab.")>
+        <DesignerSerializationVisibility(DesignerSerializationVisibility.Content)>
         <Editor(GetType(PagesCollectionEditor), GetType(Design.UITypeEditor))>
         Public ReadOnly Property Pages As PagesCollection
             Get
@@ -199,6 +175,7 @@ Namespace WizardControl
         ''' <summary>
         ''' Ruft ab oder legt fest, an welcher Kante des übergeordneten Containers ein Steuerelement angedockt ist.
         ''' </summary>
+        <Browsable(True)>
         <Category("Layout")>
         <Description("Ruft ab oder legt fest, an welcher Kante des übergeordneten Containers ein Steuerelement angedockt ist.")>
         <DefaultValue(DockStyle.Fill)>
@@ -210,6 +187,97 @@ Namespace WizardControl
                 MyBase.Dock = value
             End Set
         End Property
+
+        ''' <summary>
+        ''' Ruft die Schriftart ab, die zum Anzeigen der Beschreibung einer Standardseite verwendet wird, oder legt
+        ''' diese fest.
+        ''' </summary>
+        <Browsable(True)>
+        <Category("Appearance")>
+        <Description("Ruft die Schriftart ab, die zum Anzeigen der Beschreibung einer Standardseite verwendet wird, oder legt diese fest.")>
+        <DefaultValue(GetType(Font), "Font")>
+        Public Property HeaderFont As Font
+            Get
+                Return If(Me._HeaderFont, MyBase.Font)
+            End Get
+            Set(value As Font)
+                If Me._HeaderFont IsNot value Then
+                    Me._HeaderFont = value
+                    Me.Invalidate()
+                End If
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Ruft die Schriftart ab, die zum Anzeigen des Titels einer Standardseite verwendet wird, oder legt diese
+        ''' fest.
+        ''' </summary>
+        ''' <returns></returns>
+        <Browsable(True)>
+        <Category("Appearance")>
+        <Description("Ruft die Schriftart ab, die zum Anzeigen des Titels einer Standardseite verwendet wird, oder legt diese fest.")>
+        <DefaultValue(GetType(Font), "Font")>
+        Public Property HeaderTitleFont As Font
+            Get
+                Return If(
+                    Me._HeaderTitleFont,
+                    New Font(MyBase.Font.FontFamily, MyBase.Font.Size + 2.0F, FontStyle.Bold))
+            End Get
+            Set(value As Font)
+                If Me._HeaderTitleFont IsNot value Then
+                    Me._HeaderTitleFont = value
+                    Me.Invalidate()
+                End If
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Ruft die Schriftart ab, die zum Anzeigen der Beschreibung einer Begrüßungs- oder Abschlussseite verwendet
+        ''' wird, oder legt diese fest.
+        ''' </summary>
+        ''' <returns></returns>
+        <Browsable(True)>
+        <Category("Appearance")>
+        <Description("Ruft die Schriftart ab, die zum Anzeigen der Beschreibung einer Begrüßungs- oder Abschlussseite verwendet wird, oder legt diese fest.")>
+        <DefaultValue(GetType(Font), "Font")>
+        Public Property WelcomeFont As Font
+            Get
+                Return If(Me._WelcomeFont, MyBase.Font)
+            End Get
+            Set(value As Font)
+                If Me._WelcomeFont IsNot value Then
+                    Me._WelcomeFont = value
+                    Me.Invalidate()
+                End If
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Ruft die Schriftart ab, die zum Anzeigen des Titels einer Begrüßungs- oder Abschlussseite verwendet wird,
+        ''' oder legt diese fest.
+        ''' </summary>
+        ''' <returns></returns>
+        <Browsable(True)>
+        <Category("Appearance")>
+        <Description("Ruft die Schriftart ab, die zum Anzeigen des Titels einer Begrüßungs- oder Abschlussseite verwendet wird, oder legt diese fest.")>
+        <DefaultValue(GetType(Font), "Font")>
+        Public Property WelcomeTitleFont As Font
+            Get
+                Return If(
+                    Me._WelcomeTitleFont,
+                    New Font(MyBase.Font.FontFamily, MyBase.Font.Size + 10.0F, FontStyle.Bold))
+            End Get
+            Set(value As Font)
+                If Me._WelcomeTitleFont IsNot value Then
+                    Me._WelcomeTitleFont = value
+                    Me.Invalidate()
+                End If
+            End Set
+        End Property
+
+#End Region
+
+#Region "ausgeblendete Eigenschaften"
 
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
@@ -237,89 +305,6 @@ Namespace WizardControl
                     Throw New ArgumentOutOfRangeException($"SelectedIndex", value, $"Der Seitenindex muss zwischen 0 und {Me._Pages.Count - 1} liegen ")
                 End If
                 Me.ActivatePage(value)
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ruft die Schriftart ab, die zum Anzeigen der Beschreibung einer Standardseite verwendet wird, oder legt
-        ''' diese fest.
-        ''' </summary>
-        <Category("Appearance")>
-        <Description("Ruft die Schriftart ab, die zum Anzeigen der Beschreibung einer Standardseite verwendet wird, oder legt diese fest.")>
-        <DefaultValue(GetType(Font), "Font")>
-        Public Property HeaderFont As Font
-            Get
-                Return If(Me._HeaderFont, MyBase.Font)
-            End Get
-            Set(value As Font)
-                If Me._HeaderFont IsNot value Then
-                    Me._HeaderFont = value
-                    Me.Invalidate()
-                End If
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ruft die Schriftart ab, die zum Anzeigen des Titels einer Standardseite verwendet wird, oder legt diese
-        ''' fest.
-        ''' </summary>
-        ''' <returns></returns>
-        <Category("Appearance")>
-        <Description("Ruft die Schriftart ab, die zum Anzeigen des Titels einer Standardseite verwendet wird, oder legt diese fest.")>
-        <DefaultValue(GetType(Font), "Font")>
-        Public Property HeaderTitleFont As Font
-            Get
-                Return If(
-                    Me._HeaderTitleFont,
-                    New Font(MyBase.Font.FontFamily, MyBase.Font.Size + 2.0F, FontStyle.Bold))
-            End Get
-            Set(value As Font)
-                If Me._HeaderTitleFont IsNot value Then
-                    Me._HeaderTitleFont = value
-                    Me.Invalidate()
-                End If
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ruft die Schriftart ab, die zum Anzeigen der Beschreibung einer Begrüßungs- oder Abschlussseite verwendet
-        ''' wird, oder legt diese fest.
-        ''' </summary>
-        ''' <returns></returns>
-        <Category("Appearance")>
-        <Description("Ruft die Schriftart ab, die zum Anzeigen der Beschreibung einer Begrüßungs- oder Abschlussseite verwendet wird, oder legt diese fest.")>
-        <DefaultValue(GetType(Font), "Font")>
-        Public Property WelcomeFont As Font
-            Get
-                Return If(Me._WelcomeFont, MyBase.Font)
-            End Get
-            Set(value As Font)
-                If Me._WelcomeFont IsNot value Then
-                    Me._WelcomeFont = value
-                    Me.Invalidate()
-                End If
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ruft die Schriftart ab, die zum Anzeigen des Titels einer Begrüßungs- oder Abschlussseite verwendet wird,
-        ''' oder legt diese fest.
-        ''' </summary>
-        ''' <returns></returns>
-        <Category("Appearance")>
-        <Description("Ruft die Schriftart ab, die zum Anzeigen des Titels einer Begrüßungs- oder Abschlussseite verwendet wird, oder legt diese fest.")>
-        <DefaultValue(GetType(Font), "Font")>
-        Public Property WelcomeTitleFont As Font
-            Get
-                Return If(
-                    Me._WelcomeTitleFont,
-                    New Font(MyBase.Font.FontFamily, MyBase.Font.Size + 10.0F, FontStyle.Bold))
-            End Get
-            Set(value As Font)
-                If Me._WelcomeTitleFont IsNot value Then
-                    Me._WelcomeTitleFont = value
-                    Me.Invalidate()
-                End If
             End Set
         End Property
 
@@ -388,6 +373,8 @@ Namespace WizardControl
                 Me.ButtonHelp.Text = value
             End Set
         End Property
+
+#End Region
 
         Public Sub New()
             Me.InitializeComponent()
@@ -583,6 +570,8 @@ Namespace WizardControl
             End If
         End Sub
 
+#Region "Ereignisbehandlung"
+
         Private Sub ButtonHelp_Click(sender As Object, e As EventArgs) Handles ButtonHelp.Click
             Me.OnHelp(EventArgs.Empty)
         End Sub
@@ -603,6 +592,7 @@ Namespace WizardControl
             End If
         End Sub
 
+#End Region
 
     End Class
 

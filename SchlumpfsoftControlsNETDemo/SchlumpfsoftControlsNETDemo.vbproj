@@ -110,6 +110,12 @@
     <Compile Include="FormFileList.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FormImageComboBox.Designer.vb">
+      <DependentUpon>FormImageComboBox.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormImageComboBox.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FormIniFile.Designer.vb">
       <DependentUpon>FormIniFile.vb</DependentUpon>
     </Compile>
@@ -194,6 +200,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FormFileList.resx">
       <DependentUpon>FormFileList.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormImageComboBox.resx">
+      <DependentUpon>FormImageComboBox.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormIniFile.resx">
       <DependentUpon>FormIniFile.vb</DependentUpon>

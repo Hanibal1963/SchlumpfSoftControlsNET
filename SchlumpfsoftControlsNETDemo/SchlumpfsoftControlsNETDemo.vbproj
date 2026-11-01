@@ -110,6 +110,12 @@
     <Compile Include="FormFileList.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FormIniFile.Designer.vb">
+      <DependentUpon>FormIniFile.vb</DependentUpon>
+    </Compile>
+    <Compile Include="FormIniFile.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FormMain.Designer.vb">
       <DependentUpon>FormMain.vb</DependentUpon>
     </Compile>
@@ -188,6 +194,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FormFileList.resx">
       <DependentUpon>FormFileList.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormIniFile.resx">
+      <DependentUpon>FormIniFile.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormMain.resx">
       <DependentUpon>FormMain.vb</DependentUpon>

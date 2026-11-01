@@ -45,7 +45,7 @@ Public Class FormMain
 			Case btn Is Me.BtnExtendedRTF : My.Forms.FormExtendedRTF.ShowDialog(Me)
 			Case btn Is Me.BtnFileList : My.Forms.FormFileList.ShowDialog(Me)
 				'Case btn Is Me.BtnImageComboBox : My.Forms.FormImageComboBox.ShowDialog(Me)
-				'Case btn Is Me.BtnINIFile : My.Forms.FormINIFile.ShowDialog(Me)
+			Case btn Is Me.BtnINIFile : My.Forms.FormINIFile.ShowDialog(Me)
 			Case btn Is Me.BtnNotifyForm : My.Forms.FormNotifyForm.ShowDialog(Me)
 			Case btn Is Me.BtnPassword : My.Forms.FormPassword.ShowDialog(Me)
 			Case btn Is Me.BtnSevenSegment : My.Forms.FormSevenSegment.ShowDialog(Me)

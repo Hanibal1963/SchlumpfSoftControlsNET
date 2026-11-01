@@ -7,30 +7,6 @@ Imports SchlumpfSoft.ControlsNET.NotifyFormControl
 Namespace SchlumpfSoftControlsNET.Tests.NotifyFormControl
     <TestClass>
     Public Class NotifyFormTests
-        <TestMethod>
-        Public Sub NotifyFormDesign_HasExpectedValues()
-
-            ' NOTE: Überprüfung der folgenden Zeilen
-#Disable Warning MSTEST0032 ' Überprüfen oder entfernen Sie die Assertion, da ihre Bedingung immer erfüllt ist.
-            Assert.AreEqual(0, CInt(NotifyFormDesign.Bright))
-            Assert.AreEqual(1, CInt(NotifyFormDesign.Colorful))
-            Assert.AreEqual(2, CInt(NotifyFormDesign.Dark))
-#Enable Warning MSTEST0032 ' Überprüfen oder entfernen Sie die Assertion, da ihre Bedingung immer erfüllt ist.
-
-        End Sub
-
-        <TestMethod>
-        Public Sub NotifyFormStyle_HasExpectedValues()
-
-            ' NOTE: Überprüfung der folgenden Zeilen
-#Disable Warning MSTEST0032 ' Überprüfen oder entfernen Sie die Assertion, da ihre Bedingung immer erfüllt ist.
-            Assert.AreEqual(0, CInt(NotifyFormStyle.Information))
-            Assert.AreEqual(1, CInt(NotifyFormStyle.Question))
-            Assert.AreEqual(2, CInt(NotifyFormStyle.CriticalError))
-            Assert.AreEqual(3, CInt(NotifyFormStyle.Exclamation))
-#Enable Warning MSTEST0032 ' Überprüfen oder entfernen Sie die Assertion, da ihre Bedingung immer erfüllt ist.
-
-        End Sub
 
         <TestMethod>
         Public Sub Constructor_SetsExpectedDefaults()

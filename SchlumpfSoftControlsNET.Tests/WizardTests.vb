@@ -12,19 +12,6 @@ Namespace SchlumpfSoftControlsNET.Tests.WizardControl
     Public Class WizardTests
 
         <TestMethod>
-        Public Sub PageStyle_HasExpectedValues()
-
-            ' NOTE: Überprüfung der folgenden Zeilen
-#Disable Warning MSTEST0032 ' Überprüfen oder entfernen Sie die Assertion, da ihre Bedingung immer erfüllt ist.
-            Assert.AreEqual(0, CInt(PageStyle.Standard))
-            Assert.AreEqual(1, CInt(PageStyle.Welcome))
-            Assert.AreEqual(2, CInt(PageStyle.Finish))
-            Assert.AreEqual(3, CInt(PageStyle.Custom))
-#Enable Warning MSTEST0032 ' Überprüfen oder entfernen Sie die Assertion, da ihre Bedingung immer erfüllt ist.
-
-        End Sub
-
-        <TestMethod>
         Public Sub PageTypes_DefaultStyles_MatchExpectedValues()
             Using standardPage As New PageStandard(),
                   welcomePage As New PageWelcome(),

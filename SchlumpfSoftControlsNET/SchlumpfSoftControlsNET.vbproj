@@ -30,8 +30,8 @@
     <RepositoryUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</PackageProjectUrl>
-    <AssemblyVersion>1.2026.1101.9</AssemblyVersion>
-    <FileVersion>1.2026.1101.9</FileVersion>
+    <AssemblyVersion>1.2026.1101.16</AssemblyVersion>
+    <FileVersion>1.2026.1101.16</FileVersion>
   </PropertyGroup>
 	
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -95,6 +95,11 @@
     <None Remove="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderVideos.png" />
     <None Remove="ExtendedRTFControl\ExtendedRTFControl.ExtendedRTF.bmp" />
     <None Remove="FileListControl\FileListControl.FileList.bmp" />
+    <None Remove="IniFileControl\IniFileControl.CommentEdit.bmp" />
+    <None Remove="IniFileControl\IniFileControl.ContentView.bmp" />
+    <None Remove="IniFileControl\IniFileControl.EntryValueEdit.bmp" />
+    <None Remove="IniFileControl\IniFileControl.IniFile.bmp" />
+    <None Remove="IniFileControl\IniFileControl.ListEdit.bmp" />
     <None Remove="NotifyFormControl\NotifyFormControl.CriticalError.png" />
     <None Remove="NotifyFormControl\NotifyFormControl.Information.png" />
     <None Remove="NotifyFormControl\NotifyFormControl.NotifyForm.bmp" />
@@ -139,6 +144,11 @@
     <EmbeddedResource Include="ExplorerTreeViewControl\ExplorerTreeViewControl.FolderVideos.png" />
     <EmbeddedResource Include="ExtendedRTFControl\ExtendedRTFControl.ExtendedRTF.bmp" />
     <EmbeddedResource Include="FileListControl\FileListControl.FileList.bmp" />
+    <EmbeddedResource Include="IniFileControl\IniFileControl.CommentEdit.bmp" />
+    <EmbeddedResource Include="IniFileControl\IniFileControl.ContentView.bmp" />
+    <EmbeddedResource Include="IniFileControl\IniFileControl.EntryValueEdit.bmp" />
+    <EmbeddedResource Include="IniFileControl\IniFileControl.IniFile.bmp" />
+    <EmbeddedResource Include="IniFileControl\IniFileControl.ListEdit.bmp" />
     <EmbeddedResource Include="NotifyFormControl\NotifyFormControl.CriticalError.png" />
     <EmbeddedResource Include="NotifyFormControl\NotifyFormControl.Information.png" />
     <EmbeddedResource Include="NotifyFormControl\NotifyFormControl.NotifyForm.bmp" />

@@ -6,32 +6,6 @@ Imports SchlumpfSoft.ControlsNET.ShapeControl
 Namespace SchlumpfSoftControlsNET.Tests.ShapeControl
     <TestClass>
     Public Class ShapeTests
-        <TestMethod>
-        Public Sub ShapeModes_HasExpectedValues()
-
-            ' NOTE: Überprüfung der folgenden Zeilen
-#Disable Warning MSTEST0032 ' Überprüfen oder entfernen Sie die Assertion, da ihre Bedingung immer erfüllt ist.
-            Assert.AreEqual(0, CInt(ShapeModes.HorizontalLine))
-            Assert.AreEqual(1, CInt(ShapeModes.VerticalLine))
-            Assert.AreEqual(2, CInt(ShapeModes.DiagonalLine))
-            Assert.AreEqual(3, CInt(ShapeModes.Rectangle))
-            Assert.AreEqual(4, CInt(ShapeModes.FilledRectangle))
-            Assert.AreEqual(5, CInt(ShapeModes.Ellipse))
-            Assert.AreEqual(6, CInt(ShapeModes.FilledEllipse))
-#Enable Warning MSTEST0032 ' Überprüfen oder entfernen Sie die Assertion, da ihre Bedingung immer erfüllt ist.
-
-        End Sub
-
-        <TestMethod>
-        Public Sub DiagonalLineModes_HasExpectedValues()
-
-            ' NOTE: Überprüfung der folgenden Zeilen
-#Disable Warning MSTEST0032 ' Überprüfen oder entfernen Sie die Assertion, da ihre Bedingung immer erfüllt ist.
-            Assert.AreEqual(0, CInt(DiagonalLineModes.TopLeftToBottomRight))
-            Assert.AreEqual(1, CInt(DiagonalLineModes.BottomLeftToTopRight))
-#Enable Warning MSTEST0032 ' Überprüfen oder entfernen Sie die Assertion, da ihre Bedingung immer erfüllt ist.
-
-        End Sub
 
         <TestMethod>
         Public Sub LineWidth_IsClampedToMinimumOne()

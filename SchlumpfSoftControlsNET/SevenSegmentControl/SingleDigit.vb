@@ -72,7 +72,7 @@ Namespace SevenSegmentControl
             End Get
             Set(value As Int32)
                 Me._SegmentWidth = value
-                Me.CalculatePoints(Me._SegmentPoints, Me._DigitHeight, Me._DigitWidth, Me._SegmentWidth)
+                CalculatePoints(Me._SegmentPoints, Me._DigitHeight, Me._DigitWidth, Me._SegmentWidth)
                 Me.Invalidate()
             End Set
         End Property
@@ -379,7 +379,7 @@ Namespace SevenSegmentControl
             For i = 0 To 6
                 Me._SegmentPoints(i) = New Point(5) {}
             Next
-            Me.CalculatePoints(Me._SegmentPoints, Me._DigitHeight, Me._DigitWidth, Me._SegmentWidth)
+            CalculatePoints(Me._SegmentPoints, Me._DigitHeight, Me._DigitWidth, Me._SegmentWidth)
             Me.ResumeLayout(False)
         End Sub
 
@@ -461,7 +461,7 @@ Namespace SevenSegmentControl
         ''' <param name="DigitHeight">Virtuelle Höhe der Anzeige.</param>
         ''' <param name="DigitWidth">Virtuelle Breite der Anzeige.</param>
         ''' <param name="SegmentWidth">Dicke der einzelnen Segmente.</param>
-        Private Sub CalculatePoints(ByRef SegmentCornerPoints As Point()(), DigitHeight As Int32, DigitWidth As Int32, SegmentWidth As Int32)
+        Private Shared Sub CalculatePoints(ByRef SegmentCornerPoints As Point()(), DigitHeight As Int32, DigitWidth As Int32, SegmentWidth As Int32)
             Dim halfHeight As Int32 = CInt(DigitHeight / 2)
             Dim halfWidth As Int32 = CInt(SegmentWidth / 2)
             Dim p = 0

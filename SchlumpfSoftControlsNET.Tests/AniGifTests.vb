@@ -1,5 +1,7 @@
 Imports System.Drawing
 Imports System.IO
+Imports System.Reflection
+Imports System.Windows.Forms
 
 Imports Microsoft.VisualStudio.TestTools.UnitTesting
 
@@ -121,6 +123,61 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 End Using
             End Using
         End Sub
+
+        <TestMethod>
+        Public Sub TimerTick_PausesWhenControlIsInvisibleAndContinuesWhenVisible()
+            Using control As New AniGif()
+                Using animatedGif As Bitmap = LoadAnimatedGif()
+                    control.Gif = animatedGif
+                    control.CustomDisplaySpeed = True
+                    control.StartAnimation()
+
+                    control.Visible = False
+                    Dim frameBeforeHiddenTick As Integer = GetCurrentFrame(control)
+                    InvokeTimerTick(control)
+                    Assert.AreEqual(frameBeforeHiddenTick, GetCurrentFrame(control))
+
+                    control.Visible = True
+                    InvokeTimerTick(control)
+                    Assert.AreNotEqual(frameBeforeHiddenTick, GetCurrentFrame(control))
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub TimerTick_PausesWhenParentIsInvisible()
+            Using parentPanel As New Panel()
+                Using control As New AniGif()
+                    parentPanel.Controls.Add(control)
+
+                    Using animatedGif As Bitmap = LoadAnimatedGif()
+                        control.Gif = animatedGif
+                        control.CustomDisplaySpeed = True
+                        control.StartAnimation()
+
+                        parentPanel.Visible = False
+                        Dim frameBeforeHiddenTick As Integer = GetCurrentFrame(control)
+                        InvokeTimerTick(control)
+
+                        Assert.AreEqual(frameBeforeHiddenTick, GetCurrentFrame(control))
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        Private Shared Sub InvokeTimerTick(control As AniGif)
+            Dim timerTickMethod As MethodInfo = GetType(AniGif).GetMethod("Timer_Tick", BindingFlags.Instance Or BindingFlags.NonPublic)
+            Assert.IsNotNull(timerTickMethod)
+
+            timerTickMethod.Invoke(control, New Object() {control, EventArgs.Empty})
+        End Sub
+
+        Private Shared Function GetCurrentFrame(control As AniGif) As Integer
+            Dim frameField As FieldInfo = GetType(AniGif).GetField("_Frame", BindingFlags.Instance Or BindingFlags.NonPublic)
+            Assert.IsNotNull(frameField)
+
+            Return CInt(frameField.GetValue(control))
+        End Function
 
         Private Shared Function LoadAnimatedGif() As Bitmap
             Dim solutionRoot As String = FindSolutionRoot(AppContext.BaseDirectory)

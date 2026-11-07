@@ -16,7 +16,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 **Nutzen:** Weniger unnötige Repaints, bessere Laufzeit auf schwachen Systemen.
 
-## 2) Ressourcenlebenszyklus härten
+## 2) Ressourcenlebenszyklus härten (umgesetzt)
 
 **Umsetzung:**
 

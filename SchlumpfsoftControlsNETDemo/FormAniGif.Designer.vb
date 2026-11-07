@@ -36,6 +36,7 @@ Partial Class FormAniGif
         Me.Label_Zoomfaktor = New System.Windows.Forms.Label()
         Me.Button_StartAnimation = New System.Windows.Forms.Button()
         Me.Button_StopAnimation = New System.Windows.Forms.Button()
+        Me.CheckBox_AdaptiveTiming = New System.Windows.Forms.CheckBox()
         CType(Me.NumericUpDown_CustomDisplaySpeed, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.NumericUpDown_ZoomFactor, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -74,7 +75,7 @@ Partial Class FormAniGif
         '
         'NumericUpDown_CustomDisplaySpeed
         '
-        Me.NumericUpDown_CustomDisplaySpeed.Location = New System.Drawing.Point(280, 65)
+        Me.NumericUpDown_CustomDisplaySpeed.Location = New System.Drawing.Point(280, 150)
         Me.NumericUpDown_CustomDisplaySpeed.Maximum = New Decimal(New Integer() {50, 0, 0, 0})
         Me.NumericUpDown_CustomDisplaySpeed.Name = "NumericUpDown_CustomDisplaySpeed"
         Me.NumericUpDown_CustomDisplaySpeed.Size = New System.Drawing.Size(47, 20)
@@ -83,14 +84,15 @@ Partial Class FormAniGif
         '
         'Label_Animation
         '
-        Me.Label_Animation.Location = New System.Drawing.Point(12, 261)
+        Me.Label_Animation.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle
+        Me.Label_Animation.Location = New System.Drawing.Point(12, 260)
         Me.Label_Animation.Name = "Label_Animation"
         Me.Label_Animation.Size = New System.Drawing.Size(496, 16)
         Me.Label_Animation.TabIndex = 4
         '
         'Button_Back
         '
-        Me.Button_Back.Location = New System.Drawing.Point(12, 291)
+        Me.Button_Back.Location = New System.Drawing.Point(12, 290)
         Me.Button_Back.Name = "Button_Back"
         Me.Button_Back.Size = New System.Drawing.Size(108, 24)
         Me.Button_Back.TabIndex = 5
@@ -99,7 +101,7 @@ Partial Class FormAniGif
         '
         'Button_Forward
         '
-        Me.Button_Forward.Location = New System.Drawing.Point(126, 291)
+        Me.Button_Forward.Location = New System.Drawing.Point(126, 290)
         Me.Button_Forward.Name = "Button_Forward"
         Me.Button_Forward.Size = New System.Drawing.Size(108, 24)
         Me.Button_Forward.TabIndex = 6
@@ -108,7 +110,7 @@ Partial Class FormAniGif
         '
         'NumericUpDown_ZoomFactor
         '
-        Me.NumericUpDown_ZoomFactor.Location = New System.Drawing.Point(280, 136)
+        Me.NumericUpDown_ZoomFactor.Location = New System.Drawing.Point(280, 221)
         Me.NumericUpDown_ZoomFactor.Name = "NumericUpDown_ZoomFactor"
         Me.NumericUpDown_ZoomFactor.Size = New System.Drawing.Size(47, 20)
         Me.NumericUpDown_ZoomFactor.TabIndex = 7
@@ -117,7 +119,7 @@ Partial Class FormAniGif
         '
         Me.ComboBox_SizeMode.FormattingEnabled = True
         Me.ComboBox_SizeMode.Items.AddRange(New Object() {"normale Anzeige", "zentrierte Anzeige", "gezoomte Anzeige", "ausgefüllte Anzeige"})
-        Me.ComboBox_SizeMode.Location = New System.Drawing.Point(280, 100)
+        Me.ComboBox_SizeMode.Location = New System.Drawing.Point(280, 185)
         Me.ComboBox_SizeMode.Name = "ComboBox_SizeMode"
         Me.ComboBox_SizeMode.Size = New System.Drawing.Size(163, 21)
         Me.ComboBox_SizeMode.TabIndex = 8
@@ -125,7 +127,7 @@ Partial Class FormAniGif
         'Label_FramesPerSecound
         '
         Me.Label_FramesPerSecound.AutoSize = True
-        Me.Label_FramesPerSecound.Location = New System.Drawing.Point(333, 67)
+        Me.Label_FramesPerSecound.Location = New System.Drawing.Point(333, 152)
         Me.Label_FramesPerSecound.Name = "Label_FramesPerSecound"
         Me.Label_FramesPerSecound.Size = New System.Drawing.Size(81, 13)
         Me.Label_FramesPerSecound.TabIndex = 9
@@ -134,7 +136,7 @@ Partial Class FormAniGif
         'Label_Zoomfaktor
         '
         Me.Label_Zoomfaktor.AutoSize = True
-        Me.Label_Zoomfaktor.Location = New System.Drawing.Point(333, 138)
+        Me.Label_Zoomfaktor.Location = New System.Drawing.Point(333, 223)
         Me.Label_Zoomfaktor.Name = "Label_Zoomfaktor"
         Me.Label_Zoomfaktor.Size = New System.Drawing.Size(110, 13)
         Me.Label_Zoomfaktor.TabIndex = 10
@@ -142,7 +144,7 @@ Partial Class FormAniGif
         '
         'Button_StartAnimation
         '
-        Me.Button_StartAnimation.Location = New System.Drawing.Point(280, 172)
+        Me.Button_StartAnimation.Location = New System.Drawing.Point(242, 290)
         Me.Button_StartAnimation.Name = "Button_StartAnimation"
         Me.Button_StartAnimation.Size = New System.Drawing.Size(108, 24)
         Me.Button_StartAnimation.TabIndex = 11
@@ -151,18 +153,29 @@ Partial Class FormAniGif
         '
         'Button_StopAnimation
         '
-        Me.Button_StopAnimation.Location = New System.Drawing.Point(280, 202)
+        Me.Button_StopAnimation.Location = New System.Drawing.Point(356, 290)
         Me.Button_StopAnimation.Name = "Button_StopAnimation"
         Me.Button_StopAnimation.Size = New System.Drawing.Size(108, 24)
         Me.Button_StopAnimation.TabIndex = 12
         Me.Button_StopAnimation.Text = "Animation stoppen"
         Me.Button_StopAnimation.UseVisualStyleBackColor = True
         '
+        'CheckBox_AdaptiveTiming
+        '
+        Me.CheckBox_AdaptiveTiming.AutoSize = True
+        Me.CheckBox_AdaptiveTiming.Location = New System.Drawing.Point(280, 61)
+        Me.CheckBox_AdaptiveTiming.Name = "CheckBox_AdaptiveTiming"
+        Me.CheckBox_AdaptiveTiming.Size = New System.Drawing.Size(102, 17)
+        Me.CheckBox_AdaptiveTiming.TabIndex = 13
+        Me.CheckBox_AdaptiveTiming.Text = "Adaptive Timing"
+        Me.CheckBox_AdaptiveTiming.UseVisualStyleBackColor = True
+        '
         'FormAniGif
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(513, 334)
+        Me.ClientSize = New System.Drawing.Size(513, 324)
+        Me.Controls.Add(Me.CheckBox_AdaptiveTiming)
         Me.Controls.Add(Me.Button_StopAnimation)
         Me.Controls.Add(Me.Button_StartAnimation)
         Me.Controls.Add(Me.Label_Zoomfaktor)
@@ -201,4 +214,5 @@ Partial Class FormAniGif
     Private WithEvents Label_Zoomfaktor As Label
     Private WithEvents Button_StartAnimation As Button
     Friend WithEvents Button_StopAnimation As Button
+    Private WithEvents CheckBox_AdaptiveTiming As CheckBox
 End Class

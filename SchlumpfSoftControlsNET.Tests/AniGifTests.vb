@@ -316,7 +316,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Dim timerTickMethod As MethodInfo = GetType(AniGif).GetMethod("Timer_Tick", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(timerTickMethod)
 
-            timerTickMethod.Invoke(control, New Object() {control, EventArgs.Empty})
+            Dim unused = timerTickMethod.Invoke(control, New Object() {control, EventArgs.Empty})
         End Sub
 
         Private Shared Function GetCurrentFrame(control As AniGif) As Integer

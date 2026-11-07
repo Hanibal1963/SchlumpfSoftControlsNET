@@ -75,5 +75,5 @@ Weitere Infos unter:
 
 ## Optimierungs und Verbesserungsmöglichkeiten
 
-- [Optimierungsvorschläge](AniGifControlOptimirungsvorschläge.md)
+- [Optimierungsvorschläge](AniGifControlOptimirungsvorschläge.md) (teilweise umgesetzt)
 - [Erweiterungsvorschläge](AniGifControlErweiterunsvorschläge.md)

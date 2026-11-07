@@ -32,8 +32,11 @@ Weitere Infos unter:
 - `AutoPlay`: Steuert, ob die GIF-Animation automatisch gestartet wird, sobald ein Bild vorhanden ist.
 - `Gif`: Gibt die animierte GIF-Grafik zurück oder legt diese fest.
 - `GifSizeMode`: Gibt den Anzeigemodus (Skalierung/Ausrichtung) der GIF-Grafik zurück oder legt ihn fest.
-- `CustomDisplaySpeed`: Legt fest, ob die benutzerdefinierte Anzeigegeschwindigkeit (Timer/FPS) oder die im GIF hinterlegte Bildfolge (`ImageAnimator`) verwendet wird.
+- `CustomDisplaySpeed`: Legt fest, ob die benutzerdefinierte Anzeigegeschwindigkeit (Timer/FPS) oder normalisierte GIF-Metadaten-Delays verwendet werden.
 - `FramesPerSecond`: Legt die benutzerdefinierte Anzeigegeschwindigkeit in Bildern pro Sekunde (FPS) fest.
+- `MinimumFrameIntervalMs`: Legt die untere Grenze für normalisierte Frame-Delays in Millisekunden fest.
+- `MaximumFrameIntervalMs`: Legt die obere Grenze für normalisierte Frame-Delays in Millisekunden fest.
+- `AdaptiveTiming`: Aktiviert optional eine adaptive Drift-Korrektur bei UI-Thread-Last.
 - `ZoomFactor`: Legt den Zoomfaktor in Prozent fest, mit dem das GIF skaliert wird.
 - `MaximumSize`: Ausgeblendet, da für dieses Control nicht relevant.
 - `MinimumSize`: Ausgeblendet, da für dieses Control nicht relevant.
@@ -62,7 +65,9 @@ Weitere Infos unter:
 ## Hinweise
 
 - Repaints werden bei laufender Animation nur noch angefordert, wenn das Control sichtbar ist.
+- Frame-Delays werden aus den GIF-Metadaten (`0x5100`) gelesen, mit Fallbacks versehen und auf `MinimumFrameIntervalMs`/`MaximumFrameIntervalMs` begrenzt.
 - Im Timer-Modus wird nur bei einem tatsächlichen Framewechsel neu gezeichnet.
+- Mit `AdaptiveTiming = True` wird das nächste Intervall über eine Drift-Korrektur an die tatsächliche UI-Thread-Laufzeit angepasst.
 - Beim Austausch von `Gif` werden laufender Timer und `ImageAnimator` vor dem Wechsel gestoppt; intern erzeugte Bilder werden freigegeben.
 
 ## Optimierungs und Verbesserungsmöglichkeiten

@@ -6,6 +6,7 @@
 
 Imports System
 Imports System.ComponentModel
+Imports System.Diagnostics
 Imports System.Drawing
 Imports System.Drawing.Imaging
 Imports System.Windows.Forms
@@ -34,12 +35,20 @@ Namespace AniGifControl
         Private _MaxFrame As Int32 ' Letzter gültiger Frame-Index des geladenen GIFs
         Private _Autoplay As Boolean ' Steuert, ob die Animation automatisch starten soll
         Private _ZoomFactor As Decimal ' Zoomfaktor in Prozent für den Zoom-Modus
-        Private _CustomDisplaySpeed As Boolean ' True = Timer/FPS verwenden, False = GIF-interne Verzögerung verwenden
+        Private _CustomDisplaySpeed As Boolean ' True = Timer/FPS verwenden, False = GIF-Metadaten-Verzögerung verwenden
         Private _GifSizeMode As ImageSizeMode ' Art der Darstellung (Normal, Stretch, Zoom, ...)
         Private _Gif As Bitmap ' Aktuell angezeigtes Bild (intern immer als Bitmap gehalten)
         Private _OwnsGif As Boolean ' Kennzeichnet, ob _Gif vom Control geklont/erstellt wurde und damit freigegeben werden muss
         Private _IsAnimating As Boolean ' Interner Status, ob aktuell eine Animation aktiv läuft
         Private _IsDisposed As Boolean  ' Kennzeichnet, dass die Ressourcenfreigabe des Controls begonnen hat
+        Private _MinimumFrameIntervalMs As Int32 ' Untere Grenze für normalisierte Frame-Intervalle
+        Private _MaximumFrameIntervalMs As Int32 ' Obere Grenze für normalisierte Frame-Intervalle
+        Private _NormalizedFrameDelaysMs() As Int32 ' Normalisierte Delay-Werte je Frame
+        Private _LastFrameTickTimestamp As Int64 ' Zeitstempel des letzten Timer-Ticks
+        Private _AdaptiveTiming As Boolean ' Aktiviert Drift-Korrektur auf Basis der UI-Thread-Last
+
+        Private Const DefaultFrameDelayMs As Int32 = 100
+        Private Const FrameDelayPropertyTag As Int32 = &H5100
 
 #End Region
 
@@ -171,6 +180,54 @@ Namespace AniGifControl
             Set(value As Decimal)
                 Me._FramesPerSecond = FunctionDefinitions.CheckFramesPerSecondValue(value)
                 RaiseEvent FramesPerSecondChanged()
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Legt das minimale Frame-Intervall in Millisekunden fest, das nach der Delay-Normalisierung verwendet wird.
+        ''' </summary>
+        <Browsable(True)>
+        <Category("Behavior")>
+        <Description("Legt das minimale Frame-Intervall in Millisekunden fest.")>
+        <DefaultValue(20)>
+        Public Property MinimumFrameIntervalMs As Int32
+            Get
+                Return Me._MinimumFrameIntervalMs
+            End Get
+            Set(value As Int32)
+                Me.SetMinimumFrameIntervalMs(value)
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Legt das maximale Frame-Intervall in Millisekunden fest, das nach der Delay-Normalisierung verwendet wird.
+        ''' </summary>
+        <Browsable(True)>
+        <Category("Behavior")>
+        <Description("Legt das maximale Frame-Intervall in Millisekunden fest.")>
+        <DefaultValue(500)>
+        Public Property MaximumFrameIntervalMs As Int32
+            Get
+                Return Me._MaximumFrameIntervalMs
+            End Get
+            Set(value As Int32)
+                Me.SetMaximumFrameIntervalMs(value)
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Legt fest, ob das Timer-Intervall adaptiv an erkannte UI-Thread-Last angepasst wird.
+        ''' </summary>
+        <Browsable(True)>
+        <Category("Behavior")>
+        <Description("Aktiviert adaptive Drift-Korrektur für die Frame-Wiedergabe.")>
+        <DefaultValue(False)>
+        Public Property AdaptiveTiming As Boolean
+            Get
+                Return Me._AdaptiveTiming
+            End Get
+            Set(value As Boolean)
+                Me.SetAdaptiveTiming(value)
             End Set
         End Property
 
@@ -435,6 +492,11 @@ Namespace AniGifControl
             Me._Autoplay = False
             Me._IsAnimating = False
             Me._IsDisposed = False
+            Me._MinimumFrameIntervalMs = 20
+            Me._MaximumFrameIntervalMs = 500
+            Me._NormalizedFrameDelaysMs = Array.Empty(Of Int32)()
+            Me._LastFrameTickTimestamp = 0
+            Me._AdaptiveTiming = False
         End Sub
 
         Protected Overloads Overrides Sub InitLayout()
@@ -489,27 +551,19 @@ Namespace AniGifControl
                 ' Kein Bild vorhanden -> Animationszähler zurücksetzen und sauber stoppen
                 Me._MaxFrame = 0
                 Me._Frame = 0
+                Me._NormalizedFrameDelaysMs = Array.Empty(Of Int32)()
                 Me.UpdateTimerState()
                 Me.Invalidate()
                 Exit Sub
             End If
 
-            ' prüfen ob das Bild animiert werden kann
-            If ImageAnimator.CanAnimate(Me._Gif) = False AndAlso Me._Autoplay = True Then
+            ' Werte für die Timer-Wiedergabe vorbereiten
+            Me._Dimension = New FrameDimension(Me._Gif.FrameDimensionsList(0))
+            Dim frameCount As Int32 = Me._Gif.GetFrameCount(Me._Dimension)
+            Me._MaxFrame = Math.Max(0, frameCount - 1)
+            Me._Frame = 0
 
-                ' Anzahl der Frames auf 0 setzen (für nicht animiertes bild)
-                Me._MaxFrame = 0
-                Me._Frame = 0
-
-            Else
-
-                ' Werte für Benutzerdefinierte Geschwindigkeit speichern
-                ' (FrameDimension + Anzahl Frames werden für Timer_Tick benötigt)
-                Me._Dimension = New FrameDimension(Me._Gif.FrameDimensionsList(0))
-                Me._MaxFrame = Me._Gif.GetFrameCount(Me._Dimension) - 1
-                Me._Frame = 0
-
-            End If
+            Me.RefreshFrameDelayCache()
 
             ' neu zeichnen
             Me.Invalidate()
@@ -554,7 +608,80 @@ Namespace AniGifControl
             ' Sicherheitsprüfung
             If Me._FramesPerSecond < 1D Then Me._FramesPerSecond = 1D
 
+            Me.RefreshFrameDelayCache()
             Me.UpdateTimerState()
+
+        End Sub
+
+        Private Function NormalizeFrameIntervalMs(value As Int32) As Int32
+
+            Dim minInterval As Int32 = Math.Max(1, Me._MinimumFrameIntervalMs)
+            Dim maxInterval As Int32 = Math.Max(minInterval, Me._MaximumFrameIntervalMs)
+            Return Math.Min(maxInterval, Math.Max(minInterval, value))
+
+        End Function
+
+        Private Function GetDefaultFrameIntervalMs() As Int32
+
+            Dim fpsInterval As Int32 = CInt(Math.Round(1000D / Math.Max(Me._FramesPerSecond, 1D), MidpointRounding.AwayFromZero))
+            Return Me.NormalizeFrameIntervalMs(Math.Max(1, fpsInterval))
+
+        End Function
+
+        Private Function GetFrameIntervalForIndex(frameIndex As Int32) As Int32
+
+            If Me._CustomDisplaySpeed OrElse Me._NormalizedFrameDelaysMs Is Nothing OrElse Me._NormalizedFrameDelaysMs.Length = 0 Then
+                Return Me.GetDefaultFrameIntervalMs()
+            End If
+
+            Dim safeIndex As Int32 = Math.Min(Math.Max(frameIndex, 0), Me._NormalizedFrameDelaysMs.Length - 1)
+            Return Me._NormalizedFrameDelaysMs(safeIndex)
+
+        End Function
+
+        Private Function ApplyAdaptiveTiming(targetIntervalMs As Int32, elapsedMs As Int32, lastScheduledIntervalMs As Int32) As Int32
+
+            If Not Me._AdaptiveTiming OrElse elapsedMs <= 0 Then
+                Return Me.NormalizeFrameIntervalMs(targetIntervalMs)
+            End If
+
+            Dim driftMs As Int32 = elapsedMs - Math.Max(1, lastScheduledIntervalMs)
+            Dim adjustedInterval As Int32 = targetIntervalMs - driftMs
+            Return Me.NormalizeFrameIntervalMs(adjustedInterval)
+
+        End Function
+
+        Private Sub RefreshFrameDelayCache()
+
+            If Me._Gif Is Nothing OrElse Me._MaxFrame <= 0 Then
+                Me._NormalizedFrameDelaysMs = Array.Empty(Of Int32)()
+                Return
+            End If
+
+            Dim frameCount As Int32 = Me._MaxFrame + 1
+            Dim normalizedDelays(frameCount - 1) As Int32
+            Dim fallbackDelay As Int32 = Me.GetDefaultFrameIntervalMs()
+
+            For i As Int32 = 0 To normalizedDelays.Length - 1
+                normalizedDelays(i) = fallbackDelay
+            Next
+
+            Try
+                Dim delayProperty As PropertyItem = Me._Gif.GetPropertyItem(FrameDelayPropertyTag)
+                If delayProperty IsNot Nothing AndAlso delayProperty.Value IsNot Nothing AndAlso delayProperty.Value.Length >= 4 Then
+                    Dim availableCount As Int32 = Math.Min(frameCount, delayProperty.Value.Length \ 4)
+                    For i As Int32 = 0 To availableCount - 1
+                        Dim delayInCentiseconds As Int32 = BitConverter.ToInt32(delayProperty.Value, i * 4)
+                        Dim delayInMs As Int32 = delayInCentiseconds * 10
+                        If delayInMs <= 0 Then delayInMs = fallbackDelay
+                        normalizedDelays(i) = Me.NormalizeFrameIntervalMs(delayInMs)
+                    Next
+                End If
+            Catch ex As ArgumentException
+                ' Kein Delay-Metadatenblock vorhanden -> Fallback-Delays bleiben aktiv.
+            End Try
+
+            Me._NormalizedFrameDelaysMs = normalizedDelays
 
         End Sub
 
@@ -602,27 +729,34 @@ Namespace AniGifControl
 
         Private Sub Timer_Tick(sender As Object, e As EventArgs) Handles Timer.Tick
 
-            ' Bild animieren wenn AutoPlay und Benutzerdefinierte Geschwindigkeit aktiv
-            If Not Me._IsDisposed AndAlso Not Me.IsDisposed AndAlso Not Me.DesignMode AndAlso Me.AutoPlay Then
+            If Me._IsDisposed OrElse Me.IsDisposed OrElse Me.DesignMode OrElse Not Me.AutoPlay Then Exit Sub
+            If Me._Gif Is Nothing Then Exit Sub
+            If Not Me.IsControlTreeVisible() Then Exit Sub
 
-                If Me._Gif Is Nothing Then Exit Sub
-                If Not Me.IsControlTreeVisible() Then Exit Sub
+            ' wenn Frames = 0 ist das Bild nicht animiert -> Ende
+            If Me._MaxFrame = 0 Then Exit Sub
 
-                ' wenn Frames = 0 ist das Bild nicht animiert -> Ende
-                If Me._MaxFrame = 0 Then Exit Sub
-
-                ' Nur bei echtem Framewechsel umschalten/zeichnen
-                Dim nextFrame As Int32 = Me._Frame + 1
-                If nextFrame > Me._MaxFrame Then nextFrame = 0
-                If nextFrame = Me._Frame Then Exit Sub
-
-                Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, nextFrame)
-                Me._Frame = nextFrame
-
-                ' Nur neu zeichnen wenn das Control sichtbar ist
-                Me.InvalidateIfVisible()
-
+            Dim currentTimestamp As Int64 = Stopwatch.GetTimestamp()
+            Dim elapsedMs As Int32 = 0
+            If Me._LastFrameTickTimestamp > 0 Then
+                elapsedMs = CInt(Math.Max(0, (currentTimestamp - Me._LastFrameTickTimestamp) * 1000L \ Stopwatch.Frequency))
             End If
+            Me._LastFrameTickTimestamp = currentTimestamp
+
+            ' Nur bei echtem Framewechsel umschalten/zeichnen
+            Dim nextFrame As Int32 = Me._Frame + 1
+            If nextFrame > Me._MaxFrame Then nextFrame = 0
+            If nextFrame = Me._Frame Then Exit Sub
+
+            Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, nextFrame)
+            Me._Frame = nextFrame
+
+            Dim targetIntervalMs As Int32 = Me.GetFrameIntervalForIndex(Me._Frame)
+            Dim adjustedIntervalMs As Int32 = Me.ApplyAdaptiveTiming(targetIntervalMs, elapsedMs, Me.Timer.Interval)
+            Me.Timer.Interval = adjustedIntervalMs
+
+            ' Nur neu zeichnen wenn das Control sichtbar ist
+            Me.InvalidateIfVisible()
 
         End Sub
 
@@ -668,6 +802,44 @@ Namespace AniGifControl
 
         End Sub
 
+        Private Sub SetMinimumFrameIntervalMs(value As Int32)
+
+            Dim validatedValue As Int32 = Math.Max(1, value)
+            If Me._MinimumFrameIntervalMs = validatedValue Then Return
+
+            Me._MinimumFrameIntervalMs = validatedValue
+            If Me._MaximumFrameIntervalMs < Me._MinimumFrameIntervalMs Then
+                Me._MaximumFrameIntervalMs = Me._MinimumFrameIntervalMs
+            End If
+
+            Me.RefreshFrameDelayCache()
+            Me.UpdateTimerState()
+
+        End Sub
+
+        Private Sub SetMaximumFrameIntervalMs(value As Int32)
+
+            Dim validatedValue As Int32 = Math.Max(1, value)
+            If Me._MaximumFrameIntervalMs = validatedValue Then Return
+
+            Me._MaximumFrameIntervalMs = validatedValue
+            If Me._MaximumFrameIntervalMs < Me._MinimumFrameIntervalMs Then
+                Me._MinimumFrameIntervalMs = Me._MaximumFrameIntervalMs
+            End If
+
+            Me.RefreshFrameDelayCache()
+            Me.UpdateTimerState()
+
+        End Sub
+
+        Private Sub SetAdaptiveTiming(value As Boolean)
+
+            If Me._AdaptiveTiming = value Then Return
+            Me._AdaptiveTiming = value
+            Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
+
+        End Sub
+
         Private Sub SetZoomFactor(value As Decimal)
 
             Dim validatedZoomFactor As Decimal = FunctionDefinitions.CheckZoomFactorValue(value)
@@ -689,30 +861,14 @@ Namespace AniGifControl
             If Me.DesignMode OrElse Not Me._Autoplay OrElse Me._Gif Is Nothing Then Return
             If Not Me.IsControlTreeVisible() Then Return
 
-            If Me._CustomDisplaySpeed Then
-
-                ' Timer-basierte Wiedergabe mit fixer FPS
-                If Me._MaxFrame > 0 Then
-                    Me.Timer.Interval = CInt(Math.Max(1D, 1000D / Math.Max(Me._FramesPerSecond, 1D)))
-                    Me.Timer.Start()
-                    Me._IsAnimating = True
-                    RaiseEvent AnimationStarted(Me, EventArgs.Empty)
-                Else
-                    RaiseEvent NoAnimation(Me, EventArgs.Empty)
-
-                End If
-
+            If Me._MaxFrame > 0 Then
+                Me.Timer.Interval = Me.GetFrameIntervalForIndex(Me._Frame)
+                Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
+                Me.Timer.Start()
+                Me._IsAnimating = True
+                RaiseEvent AnimationStarted(Me, EventArgs.Empty)
             Else
-
-                ' GIF-interne Frame-Delays über ImageAnimator verwenden
-                If ImageAnimator.CanAnimate(Me._Gif) Then
-                    ImageAnimator.Animate(Me._Gif, Me._AnimationHandler)
-                    Me._IsAnimating = True
-                    RaiseEvent AnimationStarted(Me, EventArgs.Empty)
-                Else
-                    RaiseEvent NoAnimation(Me, EventArgs.Empty)
-                End If
-
+                RaiseEvent NoAnimation(Me, EventArgs.Empty)
             End If
 
         End Sub
@@ -725,6 +881,7 @@ Namespace AniGifControl
             If Me._Gif IsNot Nothing Then
                 ImageAnimator.StopAnimate(Me._Gif, Me._AnimationHandler)
             End If
+            Me._LastFrameTickTimestamp = 0
             Me._IsAnimating = False
 
             If raiseAnimationStopped AndAlso wasAnimating Then

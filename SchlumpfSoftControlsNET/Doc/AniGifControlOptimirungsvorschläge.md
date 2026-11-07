@@ -28,7 +28,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 **Nutzen:** Verhindert Speicherlecks und Zombie-Timer.
 
-## 3) Frame-Timing präzisieren
+## 3) Frame-Timing präzisieren (umgesetzt)
 
 **Umsetzung:**
 
@@ -62,11 +62,11 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## Empfohlene Reihenfolge
 
-1. Ressourcenlebenszyklus
+~~1. Ressourcenlebenszyklus~~
 
-2. Rendering-Pipeline
+~~2. Rendering-Pipeline~~
 
-3. Frame-Timing
+~~3. Frame-Timing~~
 
 4. Qualitätsoptionen
 

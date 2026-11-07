@@ -11,6 +11,7 @@ Public Class FormAniGif
     Private _AniGifAnimationNumber As Int32
 
     Public Sub New()
+
         Me.InitializeComponent()
         Me.AniGif.AutoPlay = False
         Me.CheckBox_AutoPlay.Checked = Me.AniGif.AutoPlay
@@ -34,6 +35,7 @@ Public Class FormAniGif
         Me._AniGifAnimationNumber = 0
         Me.Button_Back.Enabled = False
         Me.ChangeAni()
+
     End Sub
 
     Private Sub AniGif_NoAnimation(sender As Object, e As EventArgs) Handles AniGif.NoAnimation
@@ -64,64 +66,92 @@ Public Class FormAniGif
         Me.Button_StopAnimation.Enabled = False
     End Sub
 
-    Private Sub CheckBox_AutoPlay_CheckedChanged(sender As Object, e As EventArgs) Handles CheckBox_AutoPlay.CheckedChanged
-        Me.AniGif.AutoPlay = CType(sender, CheckBox).Checked
+    Private Sub CheckBox_CheckedChanged(sender As Object, e As EventArgs) Handles _
+            CheckBox_AdaptiveTiming.CheckedChanged, CheckBox_CustomDisplaySpeed.CheckedChanged, CheckBox_AutoPlay.CheckedChanged
+
+        Select Case True
+
+            Case sender Is Me.CheckBox_AdaptiveTiming
+                Me.AniGif.AdaptiveTiming = CType(sender, CheckBox).Checked
+
+            Case sender Is Me.CheckBox_AutoPlay
+                Me.AniGif.AutoPlay = CType(sender, CheckBox).Checked
+
+            Case sender Is Me.CheckBox_CustomDisplaySpeed
+                Me.AniGif.CustomDisplaySpeed = CType(sender, CheckBox).Checked
+                Me.AniGif.FramesPerSecond = Me.NumericUpDown_CustomDisplaySpeed.Value
+                Me.NumericUpDown_CustomDisplaySpeed.Enabled = CType(sender, CheckBox).Checked
+
+        End Select
+
     End Sub
 
-    Private Sub CheckBox_CustomDisplaySpeed_CheckedChanged(sender As Object, e As EventArgs) Handles CheckBox_CustomDisplaySpeed.CheckedChanged
-        Me.AniGif.CustomDisplaySpeed = CType(sender, CheckBox).Checked
-        Me.AniGif.FramesPerSecond = Me.NumericUpDown_CustomDisplaySpeed.Value
-        Me.NumericUpDown_CustomDisplaySpeed.Enabled = CType(sender, CheckBox).Checked
+    Private Sub NumericUpDown_CustomDisplaySpeed_ValueChanged(sender As Object, e As EventArgs) Handles _
+        NumericUpDown_CustomDisplaySpeed.ValueChanged, NumericUpDown_ZoomFactor.ValueChanged
+
+        Select Case True
+            Case sender Is Me.NumericUpDown_CustomDisplaySpeed
+                Me.AniGif.FramesPerSecond = CType(sender, NumericUpDown).Value
+
+            Case sender Is Me.NumericUpDown_ZoomFactor
+                Me.AniGif.ZoomFactor = CType(sender, NumericUpDown).Value
+
+        End Select
+
     End Sub
 
-    Private Sub NumericUpDown_CustomDisplaySpeed_ValueChanged(sender As Object, e As EventArgs) Handles NumericUpDown_CustomDisplaySpeed.ValueChanged
-        Me.AniGif.FramesPerSecond = CType(sender, NumericUpDown).Value
-    End Sub
+    Private Sub ComboBox_SizeMode_SelectedIndexChanged(sender As Object, e As EventArgs) Handles _
+        ComboBox_SizeMode.SelectedIndexChanged
 
-    Private Sub ComboBox_SizeMode_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ComboBox_SizeMode.SelectedIndexChanged
         Me.NumericUpDown_ZoomFactor.Enabled = False
         Select Case CType(sender, ComboBox).SelectedIndex
+
             Case 0
                 Me.AniGif.GifSizeMode = SchlumpfSoft.ControlsNET.AniGifControl.ImageSizeMode.Normal
+
             Case 1
                 Me.AniGif.GifSizeMode = SchlumpfSoft.ControlsNET.AniGifControl.ImageSizeMode.CenterImage
+
             Case 2
                 Me.AniGif.GifSizeMode = SchlumpfSoft.ControlsNET.AniGifControl.ImageSizeMode.Zoom
+
                 Me.NumericUpDown_ZoomFactor.Enabled = True
             Case 3
                 Me.AniGif.GifSizeMode = SchlumpfSoft.ControlsNET.AniGifControl.ImageSizeMode.Fill
+
         End Select
     End Sub
 
-    Private Sub Button_Back_Click(sender As Object, e As EventArgs) Handles Button_Back.Click
-        If Me._AniGifAnimationNumber > 0 Then Me._AniGifAnimationNumber -= 1
-        Me.Button_Forward.Enabled = True
-        If Me._AniGifAnimationNumber = 0 Then CType(sender, Button).Enabled = False
-        Me.ChangeAni()
-    End Sub
+    Private Sub Button_Click(sender As Object, e As EventArgs) Handles _
+        Button_Back.Click, Button_Forward.Click, Button_StartAnimation.Click, Button_StopAnimation.Click
 
-    Private Sub Button_Forward_Click(sender As Object, e As EventArgs) Handles Button_Forward.Click
-        If Me._AniGifAnimationNumber < 20 Then Me._AniGifAnimationNumber += 1
-        Me.Button_Back.Enabled = True
-        If Me._AniGifAnimationNumber = 20 Then CType(sender, Button).Enabled = False
-        Me.ChangeAni()
-    End Sub
+        Select Case True
 
-    Private Sub Button_StartAnimation_Click(sender As Object, e As EventArgs) Handles Button_StartAnimation.Click
-        Me.AniGif.StartAnimation()
-    End Sub
+            Case sender Is Me.Button_Back
+                If Me._AniGifAnimationNumber > 0 Then Me._AniGifAnimationNumber -= 1
+                Me.Button_Forward.Enabled = True
+                If Me._AniGifAnimationNumber = 0 Then CType(sender, Button).Enabled = False
+                Me.ChangeAni()
 
-    Private Sub Button_StopAnimation_Click(sender As Object, e As EventArgs) Handles Button_StopAnimation.Click
-        Me.AniGif.StopAnimation()
+            Case sender Is Me.Button_Forward
+                If Me._AniGifAnimationNumber < 20 Then Me._AniGifAnimationNumber += 1
+                Me.Button_Back.Enabled = True
+                If Me._AniGifAnimationNumber = 20 Then CType(sender, Button).Enabled = False
+                Me.ChangeAni()
+
+            Case sender Is Me.Button_StartAnimation
+                Me.AniGif.StartAnimation()
+
+            Case sender Is Me.Button_StopAnimation
+                Me.AniGif.StopAnimation()
+
+        End Select
+
     End Sub
 
     Private Sub ChangeAni()
         Me.Label_Animation.Text = Me.GetAniResName(Me._AniGifAnimationNumber)
         Me.AniGif.Gif = CType(My.Resources.ResourceManager.GetObject(Me.GetAniResName(Me._AniGifAnimationNumber)), Bitmap)
-    End Sub
-
-    Private Sub NumericUpDown_ZoomFactor_ValueChanged(sender As Object, e As EventArgs) Handles NumericUpDown_ZoomFactor.ValueChanged
-        Me.AniGif.ZoomFactor = CType(sender, NumericUpDown).Value
     End Sub
 
     Private Function GetAniResName(AniNumber As Int32) As String

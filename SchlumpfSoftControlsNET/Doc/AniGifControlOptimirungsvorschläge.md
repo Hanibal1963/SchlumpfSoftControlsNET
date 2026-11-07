@@ -40,13 +40,13 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 **Nutzen:** Ruhigere Wiedergabe und konsistente Darstellung zwischen GIF-Dateien.
 
-## 4) Qualitätsoptionen beim Skalieren
+## 4) Qualitätsoptionen beim Skalieren (umgesetzt)
 
 **Umsetzung:**
 
-- Für `GifSizeMode` Interpolationsmodus konfigurierbar machen.
+- Für die `GifSizeMode`-Einstellungen `Zoom` und `Fill` den Interpolationsmodus über `ScalingQualityPreset` festlegen.
 
-- Pixel-art vs. Foto-Inhalt über Presets steuern (`NearestNeighbor`, `HighQualityBicubic`).
+- Pixel-Art und Foto-Inhalt über die Presets `PixelArt` (`NearestNeighbor`) und `Photo` (`HighQualityBicubic`) steuern.
 
 **Nutzen:** Bessere Bildqualität bei Zoom/Skalierung.
 
@@ -68,6 +68,6 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ~~3. Frame-Timing~~
 
-4. Qualitätsoptionen
+~~4. Qualitätsoptionen~~
 
 5. Diagnostik

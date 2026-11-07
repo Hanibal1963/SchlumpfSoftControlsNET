@@ -67,7 +67,9 @@ Public Class FormAniGif
     End Sub
 
     Private Sub CheckBox_CheckedChanged(sender As Object, e As EventArgs) Handles _
-            CheckBox_AdaptiveTiming.CheckedChanged, CheckBox_CustomDisplaySpeed.CheckedChanged, CheckBox_AutoPlay.CheckedChanged
+            CheckBox_AdaptiveTiming.CheckedChanged,
+            CheckBox_CustomDisplaySpeed.CheckedChanged,
+            CheckBox_AutoPlay.CheckedChanged
 
         Select Case True
 
@@ -87,7 +89,8 @@ Public Class FormAniGif
     End Sub
 
     Private Sub NumericUpDown_CustomDisplaySpeed_ValueChanged(sender As Object, e As EventArgs) Handles _
-        NumericUpDown_CustomDisplaySpeed.ValueChanged, NumericUpDown_ZoomFactor.ValueChanged
+        NumericUpDown_CustomDisplaySpeed.ValueChanged,
+        NumericUpDown_ZoomFactor.ValueChanged
 
         Select Case True
             Case sender Is Me.NumericUpDown_CustomDisplaySpeed
@@ -100,30 +103,56 @@ Public Class FormAniGif
 
     End Sub
 
-    Private Sub ComboBox_SizeMode_SelectedIndexChanged(sender As Object, e As EventArgs) Handles _
-        ComboBox_SizeMode.SelectedIndexChanged
+    Private Sub ComboBox_SelectedIndexChanged(sender As Object, e As EventArgs) Handles _
+        ComboBox_SizeMode.SelectedIndexChanged,
+        ComboBox_ScalingQualityPreset.SelectedIndexChanged
 
-        Me.NumericUpDown_ZoomFactor.Enabled = False
-        Select Case CType(sender, ComboBox).SelectedIndex
+        Select Case True
+            Case sender Is Me.ComboBox_SizeMode
+                Me.NumericUpDown_ZoomFactor.Enabled = False
+                Select Case CType(sender, ComboBox).SelectedIndex
 
-            Case 0
-                Me.AniGif.GifSizeMode = SchlumpfSoft.ControlsNET.AniGifControl.ImageSizeMode.Normal
+                    Case 0
+                        Me.AniGif.GifSizeMode = AniGifControl.ImageSizeMode.Normal
+                        Me.ComboBox_ScalingQualityPreset.Enabled = False
 
-            Case 1
-                Me.AniGif.GifSizeMode = SchlumpfSoft.ControlsNET.AniGifControl.ImageSizeMode.CenterImage
+                    Case 1
+                        Me.AniGif.GifSizeMode = AniGifControl.ImageSizeMode.CenterImage
+                        Me.ComboBox_ScalingQualityPreset.Enabled = False
 
-            Case 2
-                Me.AniGif.GifSizeMode = SchlumpfSoft.ControlsNET.AniGifControl.ImageSizeMode.Zoom
+                    Case 2
+                        Me.AniGif.GifSizeMode = AniGifControl.ImageSizeMode.Zoom
+                        Me.ComboBox_ScalingQualityPreset.Enabled = True
+                        Me.NumericUpDown_ZoomFactor.Enabled = True
 
-                Me.NumericUpDown_ZoomFactor.Enabled = True
-            Case 3
-                Me.AniGif.GifSizeMode = SchlumpfSoft.ControlsNET.AniGifControl.ImageSizeMode.Fill
+                    Case 3
+                        Me.AniGif.GifSizeMode = AniGifControl.ImageSizeMode.Fill
+                        Me.ComboBox_ScalingQualityPreset.Enabled = False
+
+                End Select
+
+            Case sender Is Me.ComboBox_ScalingQualityPreset
+                Select Case CType(sender, ComboBox).SelectedIndex
+
+                    Case 0
+                        Me.AniGif.ScalingQualityPreset = AniGifControl.GifScalingQualityPreset.Photo
+
+                    Case 1
+                        Me.AniGif.ScalingQualityPreset = AniGifControl.GifScalingQualityPreset.PixelArt
+
+                End Select
 
         End Select
+
+
+
     End Sub
 
     Private Sub Button_Click(sender As Object, e As EventArgs) Handles _
-        Button_Back.Click, Button_Forward.Click, Button_StartAnimation.Click, Button_StopAnimation.Click
+        Button_Back.Click,
+        Button_Forward.Click,
+        Button_StartAnimation.Click,
+        Button_StopAnimation.Click
 
         Select Case True
 

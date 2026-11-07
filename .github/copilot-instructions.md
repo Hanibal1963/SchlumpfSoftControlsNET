@@ -4,6 +4,7 @@
 
 - Bevorzuge kleine, rückverfolgbare Commits.
 - Erhalte und erweitere vorhandene XML-Kommentare.
+- Füge Inline-Kommentare zum besseren Verständnis der Funktionsweise des Codes hinzu.
 - Verwende Tabs und die standardmäßigen Datei-Header-Optionen.
 - Keine neuen NuGet-Abhängigkeiten ohne Rücksprache.
 - Arbeite bei größeren Änderungen schrittweise und gib nach jedem Schritt explizit frei, bevor der nächste Schritt ausgeführt wird. **Im Guided-Modus vor jedem größeren Schritt Rückfrage/Freigabe einholen.**

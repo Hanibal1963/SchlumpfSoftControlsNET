@@ -37,6 +37,9 @@ Partial Class FormAniGif
         Me.Button_StartAnimation = New System.Windows.Forms.Button()
         Me.Button_StopAnimation = New System.Windows.Forms.Button()
         Me.CheckBox_AdaptiveTiming = New System.Windows.Forms.CheckBox()
+        Me.Label_SizeMode = New System.Windows.Forms.Label()
+        Me.Label_ScalingQualityPreset = New System.Windows.Forms.Label()
+        Me.ComboBox_ScalingQualityPreset = New System.Windows.Forms.ComboBox()
         CType(Me.NumericUpDown_CustomDisplaySpeed, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.NumericUpDown_ZoomFactor, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -75,7 +78,7 @@ Partial Class FormAniGif
         '
         'NumericUpDown_CustomDisplaySpeed
         '
-        Me.NumericUpDown_CustomDisplaySpeed.Location = New System.Drawing.Point(280, 150)
+        Me.NumericUpDown_CustomDisplaySpeed.Location = New System.Drawing.Point(461, 154)
         Me.NumericUpDown_CustomDisplaySpeed.Maximum = New Decimal(New Integer() {50, 0, 0, 0})
         Me.NumericUpDown_CustomDisplaySpeed.Name = "NumericUpDown_CustomDisplaySpeed"
         Me.NumericUpDown_CustomDisplaySpeed.Size = New System.Drawing.Size(47, 20)
@@ -119,19 +122,19 @@ Partial Class FormAniGif
         '
         Me.ComboBox_SizeMode.FormattingEnabled = True
         Me.ComboBox_SizeMode.Items.AddRange(New Object() {"normale Anzeige", "zentrierte Anzeige", "gezoomte Anzeige", "ausgefüllte Anzeige"})
-        Me.ComboBox_SizeMode.Location = New System.Drawing.Point(280, 185)
+        Me.ComboBox_SizeMode.Location = New System.Drawing.Point(372, 182)
         Me.ComboBox_SizeMode.Name = "ComboBox_SizeMode"
-        Me.ComboBox_SizeMode.Size = New System.Drawing.Size(163, 21)
+        Me.ComboBox_SizeMode.Size = New System.Drawing.Size(136, 21)
         Me.ComboBox_SizeMode.TabIndex = 8
         '
         'Label_FramesPerSecound
         '
         Me.Label_FramesPerSecound.AutoSize = True
-        Me.Label_FramesPerSecound.Location = New System.Drawing.Point(333, 152)
+        Me.Label_FramesPerSecound.Location = New System.Drawing.Point(277, 156)
         Me.Label_FramesPerSecound.Name = "Label_FramesPerSecound"
-        Me.Label_FramesPerSecound.Size = New System.Drawing.Size(81, 13)
+        Me.Label_FramesPerSecound.Size = New System.Drawing.Size(162, 13)
         Me.Label_FramesPerSecound.TabIndex = 9
-        Me.Label_FramesPerSecound.Text = "Bilder/Sekunde"
+        Me.Label_FramesPerSecound.Text = "Geschwindigkeit Bilder/Sekunde"
         '
         'Label_Zoomfaktor
         '
@@ -170,11 +173,41 @@ Partial Class FormAniGif
         Me.CheckBox_AdaptiveTiming.Text = "Adaptive Timing"
         Me.CheckBox_AdaptiveTiming.UseVisualStyleBackColor = True
         '
+        'Label_SizeMode
+        '
+        Me.Label_SizeMode.AutoSize = True
+        Me.Label_SizeMode.Location = New System.Drawing.Point(277, 185)
+        Me.Label_SizeMode.Name = "Label_SizeMode"
+        Me.Label_SizeMode.Size = New System.Drawing.Size(76, 13)
+        Me.Label_SizeMode.TabIndex = 14
+        Me.Label_SizeMode.Text = "Anzeigemodus"
+        '
+        'Label_ScalingQualityPreset
+        '
+        Me.Label_ScalingQualityPreset.AutoSize = True
+        Me.Label_ScalingQualityPreset.Location = New System.Drawing.Point(277, 123)
+        Me.Label_ScalingQualityPreset.Name = "Label_ScalingQualityPreset"
+        Me.Label_ScalingQualityPreset.Size = New System.Drawing.Size(79, 13)
+        Me.Label_ScalingQualityPreset.TabIndex = 15
+        Me.Label_ScalingQualityPreset.Text = "Anzeigequalität"
+        '
+        'ComboBox_ScalingQualityPreset
+        '
+        Me.ComboBox_ScalingQualityPreset.FormattingEnabled = True
+        Me.ComboBox_ScalingQualityPreset.Items.AddRange(New Object() {"Foto", "Pixel Art"})
+        Me.ComboBox_ScalingQualityPreset.Location = New System.Drawing.Point(382, 120)
+        Me.ComboBox_ScalingQualityPreset.Name = "ComboBox_ScalingQualityPreset"
+        Me.ComboBox_ScalingQualityPreset.Size = New System.Drawing.Size(126, 21)
+        Me.ComboBox_ScalingQualityPreset.TabIndex = 16
+        '
         'FormAniGif
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(513, 324)
+        Me.Controls.Add(Me.ComboBox_ScalingQualityPreset)
+        Me.Controls.Add(Me.Label_ScalingQualityPreset)
+        Me.Controls.Add(Me.Label_SizeMode)
         Me.Controls.Add(Me.CheckBox_AdaptiveTiming)
         Me.Controls.Add(Me.Button_StopAnimation)
         Me.Controls.Add(Me.Button_StartAnimation)
@@ -215,4 +248,7 @@ Partial Class FormAniGif
     Private WithEvents Button_StartAnimation As Button
     Friend WithEvents Button_StopAnimation As Button
     Private WithEvents CheckBox_AdaptiveTiming As CheckBox
+    Private WithEvents Label_SizeMode As Label
+    Private WithEvents Label_ScalingQualityPreset As Label
+    Private WithEvents ComboBox_ScalingQualityPreset As ComboBox
 End Class

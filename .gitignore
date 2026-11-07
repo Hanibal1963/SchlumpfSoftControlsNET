@@ -11,11 +11,10 @@
 *.sln.docstates
 *.env
 /Control-Vorschlaege.md
+/Links.md
 /Symole für Markdown.md
 /TODO Liste.md
 /VS-Marketplace-Vorlage.md
-/Links.md
-/SchlumpfSoftControlsNET.sln
 
 # Benutzerspezifische Dateien (MonoDevelop/Xamarin Studio)
 *.userprefs

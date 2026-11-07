@@ -443,6 +443,16 @@ Namespace AniGifControl
             Me.UpdateTimerState()
         End Sub
 
+        Protected Overrides Sub OnVisibleChanged(e As EventArgs)
+            MyBase.OnVisibleChanged(e)
+            Me.UpdateTimerState()
+        End Sub
+
+        Protected Overrides Sub OnParentChanged(e As EventArgs)
+            MyBase.OnParentChanged(e)
+            Me.UpdateTimerState()
+        End Sub
+
         Protected Overrides Sub OnPaint(e As PaintEventArgs)
 
             MyBase.OnPaint(e)
@@ -468,12 +478,6 @@ Namespace AniGifControl
 
             ' Zeichenfläche festlegen und Bild zeichnen
             g.DrawImage(Me._Gif, New Rectangle(rectstartpoint, rectstartsize))
-
-            ' Bild animieren wenn AutoPlay aktiv und Benutzerdefinierte Geschwindigkeit deaktiviert
-            If Not Me.DesignMode AndAlso Me._Autoplay AndAlso Not Me._CustomDisplaySpeed Then
-                ' im Bild gespeicherte Geschwindigkeit verwenden
-                ImageAnimator.UpdateFrames()
-            End If
 
         End Sub
 
@@ -556,10 +560,18 @@ Namespace AniGifControl
 
         Private Sub OnNextFrame(o As Object, e As EventArgs)
 
-            ' Callback von ImageAnimator: nur neu zeichnen, Frame-Umschaltung macht ImageAnimator selbst
-            If Not Me._IsDisposed AndAlso Not Me.IsDisposed AndAlso Me.AutoPlay AndAlso Not Me.DesignMode Then
-                Me.InvalidateIfVisible() 'neu zeichnen nur wenn sichtbar
-            End If
+            If Me._IsDisposed OrElse Me.IsDisposed OrElse Not Me.AutoPlay OrElse Me.DesignMode Then Return
+            If Me._Gif Is Nothing OrElse Me._MaxFrame <= 0 Then Return
+            If Not Me.IsControlTreeVisible() Then Return
+
+            Dim nextFrame As Int32 = Me._Frame + 1
+            If nextFrame > Me._MaxFrame Then nextFrame = 0
+            If nextFrame = Me._Frame Then Return
+
+            ' Callback von ImageAnimator: Frame berechnen und danach explizit neu zeichnen.
+            Me._Frame = nextFrame
+            ImageAnimator.UpdateFrames(Me._Gif)
+            Me.InvalidateIfVisible()
 
         End Sub
 
@@ -567,12 +579,26 @@ Namespace AniGifControl
 
             If Me._IsDisposed OrElse Me.IsDisposed Then Return
             If Not Me.IsHandleCreated Then Return
-            If Not Me.Visible Then Return
+            If Not Me.IsControlTreeVisible() Then Return
             If Me.ClientSize.Width <= 0 OrElse Me.ClientSize.Height <= 0 Then Return
 
             Me.Invalidate()
 
         End Sub
+
+        Private Function IsControlTreeVisible() As Boolean
+
+            If Not Me.Visible Then Return False
+
+            Dim currentParent As Control = Me.Parent
+            While currentParent IsNot Nothing
+                If Not currentParent.Visible Then Return False
+                currentParent = currentParent.Parent
+            End While
+
+            Return True
+
+        End Function
 
         Private Sub Timer_Tick(sender As Object, e As EventArgs) Handles Timer.Tick
 
@@ -580,6 +606,7 @@ Namespace AniGifControl
             If Not Me._IsDisposed AndAlso Not Me.IsDisposed AndAlso Not Me.DesignMode AndAlso Me.AutoPlay Then
 
                 If Me._Gif Is Nothing Then Exit Sub
+                If Not Me.IsControlTreeVisible() Then Exit Sub
 
                 ' wenn Frames = 0 ist das Bild nicht animiert -> Ende
                 If Me._MaxFrame = 0 Then Exit Sub
@@ -660,6 +687,7 @@ Namespace AniGifControl
             Me.StopAnimationCore(True)
 
             If Me.DesignMode OrElse Not Me._Autoplay OrElse Me._Gif Is Nothing Then Return
+            If Not Me.IsControlTreeVisible() Then Return
 
             If Me._CustomDisplaySpeed Then
 

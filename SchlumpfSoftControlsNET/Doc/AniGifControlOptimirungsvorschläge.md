@@ -4,7 +4,7 @@
 
 Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe.
 
-## 1) Rendering-Pipeline entkoppeln
+## 1) Rendering-Pipeline entkoppeln (umgesetzt)
 
 **Umsetzung:**
 

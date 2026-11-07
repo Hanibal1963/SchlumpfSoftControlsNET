@@ -2,11 +2,15 @@
 
 Ein Control zum Anzeigen von Benachrichtigungsfenstern.
 
-Der ursprüngliche Code zu diesem Projekt stammt aus den Tiefen des Internets.
+Der ursprüngliche Code zu diesem Projekt stammt aus einer nicht mehr verfügbaren Quelle.
 
-Leider ist die Quelle offensichtlich nicht mehr verfügbar.
+## Konstruktoren
 
-Falls jemand die ursprüngliche Quelle kennt oder finden sollte, dann bitte eine Nachricht an mich damit ich diese hier benennen kann.
+- `New()`: Initialisiert eine neue Instanz von `NotifyForm` mit Standardwerten.
+
+## Ereignisse
+
+- Keine öffentlichen Ereignisse vorhanden.
 
 ## Eigenschaften
 
@@ -16,11 +20,15 @@ Falls jemand die ursprüngliche Quelle kennt oder finden sollte, dann bitte eine
 - `Style`: Legt das anzuzeigende Symbol im Benachrichtigungsfenster fest (`Information`, `Question`, `CriticalError`, `Exclamation`).
 - `Title`: Legt den Text der Titelzeile des Benachrichtigungsfensters fest.
 
-## Methoden
+## Funktionen
 
-- `New()`: Initialisiert eine neue Instanz von `NotifyForm` mit Standardwerten.
 - `Show()`: Zeigt das Meldungsfenster mit den aktuellen Einstellungen an.
 
-## Ereignisse
+## Hilfstypen/Strukturen
 
-- Keine öffentlichen Ereignisse vorhanden.
+- `NotifyformStyle`: Definiert die unterstützten Symboltypen der Benachrichtigung.
+- `NotifyFormDesign`: Definiert die verfügbaren Designvarianten.
+
+## Hinweise
+
+- `ShowTime = 0` deaktiviert das automatische Schließen des Benachrichtigungsfensters.

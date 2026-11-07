@@ -2,57 +2,52 @@
 
 Diese Bibliothek enthält zwei Controls:
 
-- **SevenSegmentSingleDigit:** Ein Control, das eine einzelne Ziffer von 0 bis 9 anzeigt.
-- **MultiDigitSevenSegment:** Ein Control, das mehrere Ziffern anzeigt und damit ganze Zahlen darstellen kann.
+- **SevenSegmentSingleDigit**: Ein Control, das eine einzelne Ziffer von 0 bis 9 anzeigt.
+- **MultiDigitSevenSegment**: Ein Control, das mehrere Ziffern anzeigt und damit ganze Zahlen darstellen kann.
 
-Ich habe für ein anderes Projekt versucht eine 7-Segmentanzeige zu programmieren.
+## Konstruktoren
 
-Nach einigen Fehlversuchen und einer intensive Internetrecherche, bin ich auf GitHub fündig geworden.
-([SevenSegment von Dimitry Brant](https://github.com/dbrant/SevenSegment))
+- `SevenSegmentSingleDigit.New()`: Initialisiert eine neue Instanz der `SingleDigit`-Klasse.
+- `MultiDigitSevenSegment.New()`: Initialisiert eine neue Instanz von `MultiDigit`.
 
-Ich habe mich entschlossen den Code in VisualBasic neu zu erstellen da ich mit C# keinerlei Erfahrung habe.
+## Ereignisse
 
-## Beschreibung der Controls
+- `SevenSegmentSingleDigit`: Keine eigenen öffentlichen Ereignisse.
+- `MultiDigitSevenSegment`: Keine eigenen öffentlichen Ereignisse.
 
-### Eigenschaften - SevenSegmentSingleDigit
+## Eigenschaften
 
-- `InactiveColor`: Legt die Farbe inaktiver Segmente fest oder gibt diese zurück.
-- `SegmentWidth`: Legt die Breite der LED-Segmente fest oder gibt diese zurück.
-- `ItalicFactor`: Scherkoeffizient für die Kursivschrift der Anzeige.
-- `DigitValue`: Legt das anzuzeigende Zeichen fest oder gibt dieses zurück.
-- `CustomBitPattern`: Legt ein benutzerdefiniertes Bitmuster für die sieben Segmente fest.
-- `ShowDecimalPoint`: Gibt an, ob die Dezimalpunkt-LED angezeigt wird.
-- `DecimalPointActive`: Gibt an, ob die Dezimalpunkt-LED aktiv ist.
-- `ShowColon`: Gibt an, ob die Doppelpunkt-LEDs angezeigt werden.
-- `ColonActive`: Gibt an, ob die Doppelpunkt-LEDs aktiv sind.
-- `BackColor`: Legt die Hintergrundfarbe des Controls fest oder gibt diese zurück.
-- `ForeColor`: Legt die Vordergrundfarbe der Segmente des Controls fest oder gibt diese zurück.
+- `SevenSegmentSingleDigit.InactiveColor`: Legt die Farbe inaktiver Segmente fest oder gibt diese zurück.
+- `SevenSegmentSingleDigit.SegmentWidth`: Legt die Breite der LED-Segmente fest oder gibt diese zurück.
+- `SevenSegmentSingleDigit.ItalicFactor`: Scherkoeffizient für die Kursivschrift der Anzeige.
+- `SevenSegmentSingleDigit.DigitValue`: Legt das anzuzeigende Zeichen fest oder gibt dieses zurück.
+- `SevenSegmentSingleDigit.CustomBitPattern`: Legt ein benutzerdefiniertes Bitmuster für die sieben Segmente fest.
+- `SevenSegmentSingleDigit.ShowDecimalPoint`: Gibt an, ob die Dezimalpunkt-LED angezeigt wird.
+- `SevenSegmentSingleDigit.DecimalPointActive`: Gibt an, ob die Dezimalpunkt-LED aktiv ist.
+- `SevenSegmentSingleDigit.ShowColon`: Gibt an, ob die Doppelpunkt-LEDs angezeigt werden.
+- `SevenSegmentSingleDigit.ColonActive`: Gibt an, ob die Doppelpunkt-LEDs aktiv sind.
+- `SevenSegmentSingleDigit.BackColor`: Legt die Hintergrundfarbe des Controls fest oder gibt diese zurück.
+- `SevenSegmentSingleDigit.ForeColor`: Legt die Vordergrundfarbe der Segmente des Controls fest oder gibt diese zurück.
+- `MultiDigitSevenSegment.InactiveColor`: Legt die Farbe inaktiver Segmente fest oder gibt diese zurück.
+- `MultiDigitSevenSegment.SegmentWidth`: Legt die Breite der LED-Segmente fest oder gibt diese zurück.
+- `MultiDigitSevenSegment.ItalicFactor`: Scherkoeffizient für die Kursivschrift der Anzeige.
+- `MultiDigitSevenSegment.ShowDecimalPoint`: Gibt an, ob die Dezimalpunkt-LED angezeigt wird.
+- `MultiDigitSevenSegment.DigitCount`: Anzahl der Digits in diesem Control.
+- `MultiDigitSevenSegment.DigitPadding`: Auffüllung, die für jedes Digit im Control gilt.
+- `MultiDigitSevenSegment.Value`: Der auf dem Control anzuzeigende Wert.
+- `MultiDigitSevenSegment.BackColor`: Legt die Hintergrundfarbe des Controls fest oder gibt diese zurück.
+- `MultiDigitSevenSegment.ForeColor`: Legt die Vordergrundfarbe der Segmente des Controls fest oder gibt diese zurück.
 
-### Methoden - SevenSegmentSingleDigit
+## Funktionen
 
-- `New()`: Initialisiert eine neue Instanz der `SingleDigit`-Klasse.
+- Keine zusätzlichen öffentlichen Funktionen dokumentiert.
 
-### Ereignisse - SevenSegmentSingleDigit
+## Hilfstypen/Strukturen
 
-- Keine eigenen öffentlichen Ereignisse.
+- `SevenSegmentSingleDigit`: Einzelnes 7-Segment-Control.
+- `MultiDigitSevenSegment`: Mehrstelliges 7-Segment-Control.
 
-### Eigenschaften - MultiDigitSevenSegment
+## Hinweise
 
-- `InactiveColor`: Legt die Farbe inaktiver Segmente fest oder gibt diese zurück.
-- `SegmentWidth`: Legt die Breite der LED-Segmente fest oder gibt diese zurück.
-- `ItalicFactor`: Scherkoeffizient für die Kursivschrift der Anzeige.
-- `ShowDecimalPoint`: Gibt an, ob die Dezimalpunkt-LED angezeigt wird.
-- `DigitCount`: Anzahl der Digits in diesem Control.
-- `DigitPadding`: Auffüllung, die für jedes Digit im Control gilt.
-- `Value`: Der auf dem Control anzuzeigende Wert.
-- `BackColor`: Legt die Hintergrundfarbe des Controls fest oder gibt diese zurück.
-- `ForeColor`: Legt die Vordergrundfarbe der Segmente des Controls fest oder gibt diese zurück.
-
-### Methoden - MultiDigitSevenSegment
-
-- `New()`: Initialisiert eine neue Instanz von `MultiDigit`.
-
-### Ereignisse - MultiDigitSevenSegment
-
-- Keine eigenen öffentlichen Ereignisse.
+- Die Datei dokumentiert zwei öffentliche Controls in einer gemeinsamen Übersicht.
 

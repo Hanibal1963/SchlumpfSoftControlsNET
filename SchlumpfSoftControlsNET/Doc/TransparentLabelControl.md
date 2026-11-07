@@ -1,12 +1,16 @@
 # TransparentLabel Control
 
-Ein .NET Windows Forms Steuerelement (`TransparentLabel`) zum Anzeigen von Text mit durchscheinendem (quasi transparentem) Hintergrund über anderen Steuerelementen oder Grafiken.
+Ein .NET-Windows-Forms-Steuerelement (`TransparentLabel`) zum Anzeigen von Text mit durchscheinendem Hintergrund über anderen Steuerelementen oder Grafiken.
 
 Es eignet sich besonders für Oberflächen, bei denen der Hintergrund durchscheinen soll, z. B. bei überlagerten Texten auf Bildern oder farbigen Flächen.
 
-Die Idee hinter diesem Projekt ist, z.Bsp. einen Text teilweise über ein Bild zu legen ohne sich großartig Gedanken über Grafikroutinen zu machen.
+## Konstruktoren
 
-Mit diesem Control ist das in wenigen Zeilen Code erledigt bzw. im Designer zusammengeklickt.
+- `New()`: Initialisiert eine neue Instanz der Klasse `TransparentLabel`.
+
+## Ereignisse
+
+- Keine eigenen Ereignisse definiert.
 
 ## Eigenschaften
 
@@ -16,10 +20,14 @@ Mit diesem Control ist das in wenigen Zeilen Code erledigt bzw. im Designer zusa
 - `FlatStyle` (Shadows): Ausgeblendet, da für dieses Control nicht relevant.
 - `CreateParams` (Protected Override, ReadOnly): Liefert angepasste Erstellungsparameter und aktiviert `WS_EX_TRANSPARENT`, damit der Hintergrund durchscheinen kann.
 
-## Methoden
+## Funktionen
 
-- `New()`: Initialisiert eine neue Instanz der Klasse `TransparentLabel`.
+- Keine zusätzlichen öffentlichen Funktionen dokumentiert.
 
-## Ereignisse
+## Hilfstypen/Strukturen
 
-- Keine eigenen Ereignisse definiert.
+- Keine zusätzlichen öffentlichen Hilfstypen oder Strukturen dokumentiert.
+
+## Hinweise
+
+- Die Darstellung nutzt transparente Zeichenlogik und ist für überlagerte Texte auf bereits gezeichnetem Hintergrund vorgesehen.

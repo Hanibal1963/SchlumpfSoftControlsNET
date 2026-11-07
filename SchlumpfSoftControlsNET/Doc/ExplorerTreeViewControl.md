@@ -1,10 +1,18 @@
 ﻿# ExplorerTreeViewControl
 
-Eine wiederverwendbare WinForms-Komponente zur Anzeige und Navigation der Windows Verzeichnisstruktur (ähnlich dem linken Bereich des Windows Explorers).
+Eine wiederverwendbare WinForms-Komponente zur Anzeige und Navigation der Windows-Verzeichnisstruktur (ähnlich dem linken Bereich des Windows-Explorers).
 
 Unterstützt Laufwerke, spezielle Benutzerordner (Desktop, Dokumente, Downloads, Musik, Bilder, Videos) sowie die rekursive Navigation durch Unterordner.
 
-Änderungen am Dateisystem (neue / gelöschte / umbenannte Ordner, Laufwerks-Hotplug) werden dynamisch erkannt.
+Änderungen am Dateisystem (neue, gelöschte oder umbenannte Ordner, Laufwerks-Hotplug) werden dynamisch erkannt.
+
+## Konstruktoren
+
+- `New()`: Initialisiert das Steuerelement, lädt die erforderlichen Bilder und setzt den Wurzelknoten des TreeViews.
+
+## Ereignisse
+
+- `SelectedPathChanged`: Wird ausgelöst, wenn sich der ausgewählte Pfad geändert hat.
 
 ## Eigenschaften
 
@@ -19,11 +27,14 @@ Unterstützt Laufwerke, spezielle Benutzerordner (Desktop, Dokumente, Downloads,
 - `ForeColor`: Legt die Vordergrundfarbe für das Anzeigen von Text fest oder gibt diese zurück.
 - `Font`: Legt die Schriftart für den Text im Steuerelement fest oder gibt diese zurück.
 
-## Methoden
+## Funktionen
 
-- `New()`: Initialisiert das Steuerelement, lädt die erforderlichen Bilder und setzt den Wurzelknoten des TreeViews.
 - `ExpandPath(path As String) As Boolean`: Öffnet und selektiert den Knoten zum angegebenen Verzeichnispfad (auch bei noch nicht geladenen Unterknoten) und liefert `True` bei Erfolg, sonst `False`.
 
-## Ereignisse
+## Hilfstypen/Strukturen
 
-- `SelectedPathChanged`: Wird ausgelöst, wenn sich der ausgewählte Pfad geändert hat.
+- `SelectedPathChangedEventArgs`: Enthält die Ereignisdaten für Pfadänderungen.
+
+## Hinweise
+
+- Dateisystemänderungen werden über interne FileSystemWatcher und Laufwerksüberwachung nachgeführt.

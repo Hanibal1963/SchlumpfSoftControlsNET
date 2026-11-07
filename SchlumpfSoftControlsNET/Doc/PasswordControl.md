@@ -39,3 +39,8 @@ Beim Bestätigen der Eingabe wird aus dem Passwort ein PBKDF2-Hash erzeugt, zus�
 ## Hinweise
 
 - Sicherheitsmerkmale: PBKDF2 mit SHA-256, zufälliger Salt pro Passwort, konstanter Bytevergleich zur Verringerung von Timing-Angriffen sowie DPAPI-Schutz für gespeicherte oder weitergegebene Hashwerte.
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](PasswordControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](PasswordControlErweiterunsvorschläge.md)

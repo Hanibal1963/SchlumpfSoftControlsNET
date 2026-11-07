@@ -51,3 +51,8 @@ Diese Bibliothek enthält zwei Controls:
 
 - Die Datei dokumentiert zwei öffentliche Controls in einer gemeinsamen Übersicht.
 
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](SevenSegmentControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](SevenSegmentControlErweiterunsvorschläge.md)
+

@@ -64,3 +64,7 @@ Weitere Infos unter:
 - Repaints werden bei laufender Animation nur noch angefordert, wenn das Control sichtbar ist.
 - Im Timer-Modus wird nur bei einem tatsächlichen Framewechsel neu gezeichnet.
 
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](AniGifControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](AniGifControlErweiterunsvorschläge.md)

@@ -38,3 +38,8 @@ Steuerelement zum Darstellen einer Linie, eines Rechtecks oder einer Ellipse.
 ## Hinweise
 
 - Das Steuerelement zeichnet ausschließlich einfache Formen (Linie, Rechteck, Ellipse) und ist für leichte UI-Dekorationen ausgelegt.
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](ShapeControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](ShapeControlErweiterunsvorschläge.md)

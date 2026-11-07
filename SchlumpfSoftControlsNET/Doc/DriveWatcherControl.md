@@ -46,3 +46,8 @@ DriveWatcher Control wurde mit folgenden Geräten getestet:
 ## Hinweise
 
 - Das Control reagiert auf Laufwerksänderungen des Betriebssystems und meldet diese über die genannten Ereignisse.
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](DriveWatcherControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](DriveWatcherControlErweiterunsvorschläge.md)

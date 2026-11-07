@@ -56,3 +56,8 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 - Werte außerhalb des gültigen Bereichs von `0` bis `ProgressMaximumValue` werden über die Guard-Logik der `Value`-Eigenschaft abgefangen.
 
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](ColorProgressBarControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](ColorProgressBarControlErweiterunsvorschläge.md)
+

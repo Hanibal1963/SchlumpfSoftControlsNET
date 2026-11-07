@@ -38,3 +38,8 @@ Unterstützt Laufwerke, spezielle Benutzerordner (Desktop, Dokumente, Downloads,
 ## Hinweise
 
 - Dateisystemänderungen werden über interne FileSystemWatcher und Laufwerksüberwachung nachgeführt.
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](ExplorerTreeViewControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](ExplorerTreeViewControlErweiterunsvorschläge.md)

@@ -43,3 +43,8 @@ Erweiterte RichTextBox für Windows Forms mit komfortablen Formatierungs- und Ab
 ## Hinweise
 
 - Die Konstante `MIN_FONT_SIZE` wird verwendet und muss im Projekt definiert sein (z. B. als `Private Const MIN_FONT_SIZE As Single = 6.0F` in der Klasse).
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](ExtendedRTFControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](ExtendedRTFControlErweiterunsvorschläge.md)

@@ -42,3 +42,8 @@ Die Breite der Spalten passt sich automatisch an den Inhalt an.
 ## Hinweise
 
 - Sortierung und Spaltenreihenfolge werden über den ListView-Zustand gesteuert und können benutzerspezifisch variieren.
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](FileListControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](FileListControlErweiterunsvorschläge.md)

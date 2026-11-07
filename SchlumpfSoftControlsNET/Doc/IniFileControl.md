@@ -84,3 +84,8 @@ Das Set beinhaltet die folgenden Controls:
 ## Hinweise
 
 - Die Dokumentation fasst mehrere öffentliche Controls des IniFile-Sets in einer Datei zusammen.
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](IniFileControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](IniFileControlErweiterunsvorschläge.md)

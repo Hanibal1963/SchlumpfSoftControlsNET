@@ -31,3 +31,8 @@ Es eignet sich besonders für Oberflächen, bei denen der Hintergrund durchschei
 ## Hinweise
 
 - Die Darstellung nutzt transparente Zeichenlogik und ist für überlagerte Texte auf bereits gezeichnetem Hintergrund vorgesehen.
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](TransparentLabelControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](TransparentLabelControlErweiterunsvorschläge.md)

@@ -57,3 +57,8 @@ Anregungen zu diesem Control stammen unter anderem aus folgenden Webseiten:
 ## Hinweise
 
 - Die Dokumentation fasst mehrere öffentliche Typen (`ImageComboBox`, `ImageComboBoxItem`, `ImageComboBoxCollection`, `ImageComboBoxCollectionEditor`) in einer Datei zusammen.
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](ImageComboBoxControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](ImageComboBoxControlErweiterunsvorschläge.md)

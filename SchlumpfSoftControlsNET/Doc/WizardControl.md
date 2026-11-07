@@ -50,3 +50,8 @@ Dieses Steuerelement wurde in Anlehnung an den [Wizard](https://marketplace.visu
 ## Hinweise
 
 - Seitenwechsel können über `BeforeSwitchPages` validiert und abgebrochen werden.
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](WizardControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](WizardControlErweiterunsvorschläge.md)

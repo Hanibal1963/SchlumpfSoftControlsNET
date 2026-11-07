@@ -32,3 +32,8 @@ Der ursprüngliche Code zu diesem Projekt stammt aus einer nicht mehr verfügbar
 ## Hinweise
 
 - `ShowTime = 0` deaktiviert das automatische Schließen des Benachrichtigungsfensters.
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](NotifyFormControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](NotifyFormControlErweiterunsvorschläge.md)

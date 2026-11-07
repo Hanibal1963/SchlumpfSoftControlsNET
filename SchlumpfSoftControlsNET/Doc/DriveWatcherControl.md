@@ -1,36 +1,53 @@
-# DriveWatcher Control
+ï»¿# DriveWatcher Control
 
-Ein Control zum Überwachen von logischen Laufwerken (Volumes) unter Windows.
+Ein Control zum Ãœberwachen von logischen Laufwerken (Volumes) unter Windows.
 
-Grundlage und Anregung für dieses Control stammen aus dem Internet.
+Grundlage und Anregung fÃ¼r dieses Control stammen aus dem Internet.
 
-[ActiveVB - VB.NET Tipp 0055: Hinzufügen und Entfernen von USB-Wechselmedien erkennen](http://www.activevb.de/tipps/vbnettipps/tipp0055.html)
+[ActiveVB - VB.NET Tipp 0055: HinzufÃ¼gen und Entfernen von USB-Wechselmedien erkennen](http://www.activevb.de/tipps/vbnettipps/tipp0055.html)
 
-Wenn ein neues Laufwerk angeschlossen oder erstellt wird (z. B. eine virtuelle Festplatte), wird ein Ereignis ausgelöst und es werden verschiedene Eigenschaften übergeben.
+Wenn ein neues Laufwerk angeschlossen oder erstellt wird (z. B. eine virtuelle Festplatte), wird ein Ereignis ausgelÃ¶st und es werden verschiedene Eigenschaften Ã¼bergeben.
 
-Wenn ein Laufwerk getrennt wird, wird ebenfalls ein Ereignis ausgelöst und der Laufwerksname übergeben.
+Wenn ein Laufwerk getrennt wird, wird ebenfalls ein Ereignis ausgelÃ¶st und der Laufwerksname Ã¼bergeben.
 
-DriveWatcher Control wurde mit folgenden Geräten getestet:
+DriveWatcher Control wurde mit folgenden GerÃ¤ten getestet:
 
 - USB-Stick
-- CD- oder DVD-Laufwerk (fest verbaut oder über USB-Adapter)
-- Festplatten über USB-Adapter
+- CD- oder DVD-Laufwerk (fest verbaut oder Ã¼ber USB-Adapter)
+- Festplatten Ã¼ber USB-Adapter
 - USB-Floppylaufwerk
 - Virtuelle Festplatte
 
-## Eigenschaften
+## Konstruktoren
 
-- Keine öffentlichen Eigenschaften.
-
-## Methoden
-
-- `New()`: Initialisiert eine neue Instanz von `DriveWatcher` und richtet den internen Empfang von Geräteänderungen ein.
+- `New()`: Initialisiert eine neue Instanz von `DriveWatcher` und richtet den internen Empfang von GerÃ¤teÃ¤nderungen ein.
 
 ## Ereignisse
 
-- `DriveAdded`: Wird ausgelöst, wenn ein logisches Laufwerk (Volume) hinzugefügt wurde.
-- `DriveRemoved`: Wird ausgelöst, wenn ein logisches Laufwerk (Volume) entfernt wurde.
-- `MediaInserted`: Wird ausgelöst, wenn ein Medium in einem bestehenden Wechsel-/CD-/DVD-Laufwerk eingelegt wurde.
-- `MediaRemoved`: Wird ausgelöst, wenn ein Medium aus einem bestehenden Wechsel-/CD-/DVD-Laufwerk entfernt wurde.
-- `NetworkDriveAdded`: Wird ausgelöst, wenn ein Netzlaufwerk hinzugefügt wurde.
-- `NetworkDriveRemoved`: Wird ausgelöst, wenn ein Netzlaufwerk entfernt wurde.
+- `DriveAdded`: Wird ausgelÃ¶st, wenn ein logisches Laufwerk (Volume) hinzugefÃ¼gt wurde.
+- `DriveRemoved`: Wird ausgelÃ¶st, wenn ein logisches Laufwerk (Volume) entfernt wurde.
+- `MediaInserted`: Wird ausgelÃ¶st, wenn ein Medium in einem bestehenden Wechsel-/CD-/DVD-Laufwerk eingelegt wurde.
+- `MediaRemoved`: Wird ausgelÃ¶st, wenn ein Medium aus einem bestehenden Wechsel-/CD-/DVD-Laufwerk entfernt wurde.
+- `NetworkDriveAdded`: Wird ausgelÃ¶st, wenn ein Netzlaufwerk hinzugefÃ¼gt wurde.
+- `NetworkDriveRemoved`: Wird ausgelÃ¶st, wenn ein Netzlaufwerk entfernt wurde.
+
+## Eigenschaften
+
+- Keine Ã¶ffentlichen Eigenschaften.
+
+## Funktionen
+
+- Keine zusÃ¤tzlichen Ã¶ffentlichen Funktionen dokumentiert.
+
+## Hilfstypen/Strukturen
+
+- Keine zusÃ¤tzlichen Ã¶ffentlichen Hilfstypen oder Strukturen dokumentiert.
+
+## Hinweise
+
+- Das Control reagiert auf LaufwerksÃ¤nderungen des Betriebssystems und meldet diese Ã¼ber die genannten Ereignisse.
+
+## Optimierungs und VerbesserungsmÃ¶glichkeiten
+
+- [OptimierungsvorschlÃ¤ge](DriveWatcherControlOptimirungsvorschlÃ¤ge.md)
+- [ErweiterungsvorschlÃ¤ge](DriveWatcherControlErweiterunsvorschlÃ¤ge.md)

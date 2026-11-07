@@ -11,7 +11,7 @@
     <OptionStrict>On</OptionStrict>
     <PackageId>SchlumpfSoft.ControlsNET</PackageId>
     <Authors>Andreas Sauer</Authors>
-    <Version>1.2026.0</Version>
+    <Version>1.2026.1101</Version>
     <Company>SchlumpfSoft</Company>
     <Product>SchlumpfSoftControlsNET</Product>
     <Description>Eine Sammlung verschiedener Controls.</Description>
@@ -30,8 +30,8 @@
     <RepositoryUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</PackageProjectUrl>
-    <AssemblyVersion>1.2026.1101.19</AssemblyVersion>
-    <FileVersion>1.2026.1101.19</FileVersion>
+    <AssemblyVersion>1.2026.1107.0</AssemblyVersion>
+    <FileVersion>1.2026.1107.0</FileVersion>
   </PropertyGroup>
 	
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

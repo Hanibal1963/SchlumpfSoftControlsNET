@@ -41,9 +41,9 @@ Es wurden gegenüber der vorherigen Versionen einige Änderungen vorgenommen und n
 
 ## geplante Änderungen und Erweiterungen
 
-- &#x1F4A1; Neues Control zum Auslesen und Bearbeiten der EXIF Tags von Bildern hinzufügen.
-- &#x1F4A1; Neues Control zum Auslesen und Bearbeiten von ID3 Tags von Musikdateien hinzufügen.
-- &#x1F4A1; Neues Control zum Auswählen einer Uhrzeit hinzufügen.
-- &#x1F4A1; Neues Control zur Anzeige und Extraktion von Icons aus DLLs oder EXEs.
-- &#x2714; Neues Control zur Eingabe und zum Validieren von Passwörtern hinzufügen.
-- &#x2714; Neues Control zum Anzeigen einer Combobox mit Symbolen.
+- &#x2605; Neues Control zum Auslesen und Bearbeiten der EXIF Tags von Bildern hinzufügen.
+- &#x2605; Neues Control zum Auslesen und Bearbeiten von ID3 Tags von Musikdateien hinzufügen.
+- &#x2605; Neues Control zum Auswählen einer Uhrzeit hinzufügen.
+- &#x2605; Neues Control zur Anzeige und Extraktion von Icons aus DLLs oder EXEs.
+- &#x2713; Neues Control zur Eingabe und zum Validieren von Passwörtern hinzufügen.
+- &#x2713; Neues Control zum Anzeigen einer Combobox mit Symbolen.

@@ -2,7 +2,7 @@
 
 Ein benutzerdefiniertes Windows Forms-Steuerelement zur Anzeige eines farbigen Fortschrittsbalkens mit optionalem Rahmen und Glanzeffekt.
 
-Die Idee hinter dem `ColorProgressBarControl` ist es, einen Fortschrittsbalken zu erstellen, der in optisch anpassbar ist.
+Die Idee hinter dem `ColorProgressBarControl` ist es, einen Fortschrittsbalken zu erstellen, der optisch anpassbar ist.
 
 Der Standard-Fortschrittsbalken in Windows ist ein einfacher Balken, der den Fortschritt in Form einer Füllung anzeigt.
 
@@ -10,15 +10,23 @@ Der `ColorProgressBarControl` hingegen kann in verschiedenen Farben und Stilen a
 
 Als Anregung diente der Artikel [A Better ProgressBar - Using Panels!](https://www.codeproject.com/Articles/31903/A-Better-ProgressBar-Using-Panels) von Saul Johnson.
 
-Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Beschreibung nur Ausschnitte aus dem Original C# Code enthält und ich wenig Ahnung von C# habe, habe ich das Control in VB NET umgesetzt.
+Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Beschreibung nur Ausschnitte aus dem Original-C#-Code enthält, wurde das Control in VB NET umgesetzt.
 
 > &#x26A0; **Hinweis**
 >
 > Die Seite mit dem Artikel scheint mittlerweile nicht mehr zu existieren.
 >
-> Ich habe allerdings eine im "Web Archiv" gespeicherte Version dieser Seite gefunden.
+> Eine im Web-Archiv gespeicherte Version der Seite ist verfügbar.
 >
 > [Web Archiv Kopie](https://web.archive.org/web/20250319060356/<https://www.codeproject.com/Articles/31903/A-Better-ProgressBar-Using-Panels>)
+
+## Konstruktoren
+
+- `New()`: Initialisiert das Steuerelement, aktiviert flimmerfreies Zeichnen und setzt die Standarddarstellung.
+
+## Ereignisse
+
+- `Click`: Klicks auf die inneren Panels werden an das Steuerelement weitergeleitet, damit ein einheitliches Click-Ereignis entsteht.
 
 ## Eigenschaften
 
@@ -36,11 +44,20 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 - `ForeColor` (überschrieben, ausgeblendet): Vordergrundfarbe wird vom Steuerelement nicht verwendet.
 - `Padding` (überladen, ausgeblendet): Inneres Padding wird intern zur Rahmendarstellung verwaltet.
 
-## Methoden
+## Funktionen
 
-- `New()`: Initialisiert das Steuerelement, aktiviert flimmerfreies Zeichnen und setzt die Standarddarstellung.
+- Keine zusätzlichen öffentlichen Funktionen dokumentiert.
 
-## Ereignisse
+## Hilfstypen/Strukturen
 
-- `Click`: Klicks auf die inneren Panels werden an das Steuerelement weitergeleitet, damit ein einheitliches Click-Ereignis entsteht.
+- Keine zusätzlichen öffentlichen Hilfstypen oder Strukturen dokumentiert.
+
+## Hinweise
+
+- Werte außerhalb des gültigen Bereichs von `0` bis `ProgressMaximumValue` werden über die Guard-Logik der `Value`-Eigenschaft abgefangen.
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](ColorProgressBarControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](ColorProgressBarControlErweiterunsvorschläge.md)
 

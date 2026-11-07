@@ -2,7 +2,15 @@
 
 Steuerelement zum Darstellen einer Linie, eines Rechtecks oder einer Ellipse.
 
-`ShapeControl` ist ein leichtgewichtiges WinForms-Control zur Darstellung einfacher Vektorformen ohne Abhängigkeit zu GDI+ High-Level Wrappern oder externen Bibliotheken. Es eignet sich für UI-Trennlinien, einfache Markierungen, Status-Indikatoren oder visuelle Gruppierungen.
+`ShapeControl` ist ein leichtgewichtiges WinForms-Control zur Darstellung einfacher Vektorformen ohne Abhängigkeit zu GDI+-High-Level-Wrappern oder externen Bibliotheken. Es eignet sich für UI-Trennlinien, einfache Markierungen, Status-Indikatoren oder visuelle Gruppierungen.
+
+## Konstruktoren
+
+- `New()`: Initialisiert eine neue Instanz von `Shape` und richtet Standardwerte sowie Zeichenstile ein.
+
+## Ereignisse
+
+- Keine steuerelement-spezifischen Ereignisse dokumentiert.
 
 ## Eigenschaften
 
@@ -19,10 +27,19 @@ Steuerelement zum Darstellen einer Linie, eines Rechtecks oder einer Ellipse.
 - `RightToLeft`: Im Designer ausgeblendet, da für dieses Steuerelement nicht relevant.
 - `Text`: Im Designer ausgeblendet, da für dieses Steuerelement nicht relevant.
 
-## Methoden
+## Funktionen
 
-- `New()`: Initialisiert eine neue Instanz von `Shape` und richtet Standardwerte sowie Zeichenstile ein.
+- Keine zusätzlichen öffentlichen Funktionen dokumentiert.
 
-## Ereignisse
+## Hilfstypen/Strukturen
 
-- Keine steuerelement-spezifischen Ereignisse dokumentiert.
+- Keine zusätzlichen öffentlichen Hilfstypen oder Strukturen dokumentiert.
+
+## Hinweise
+
+- Das Steuerelement zeichnet ausschließlich einfache Formen (Linie, Rechteck, Ellipse) und ist für leichte UI-Dekorationen ausgelegt.
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](ShapeControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](ShapeControlErweiterunsvorschläge.md)

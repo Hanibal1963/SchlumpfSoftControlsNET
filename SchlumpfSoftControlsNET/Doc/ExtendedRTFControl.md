@@ -1,37 +1,50 @@
-# ExtendedRTF Control
+ï»¿# ExtendedRTF Control
 
-Erweiterte RichTextBox für Windows Forms mit komfortablen Formatierungs- und Abfrage-Hilfen (Schriftgröße, Stil-Flags, Farben, Einzüge, Ausrichtung) sowie Redraw-Suppression (flackerreduziertes Batch-Update).
+Erweiterte RichTextBox fÃ¼r Windows Forms mit komfortablen Formatierungs- und Abfragehilfen (SchriftgrÃ¶ÃŸe, Stil-Flags, Farben, EinzÃ¼ge, Ausrichtung) sowie Redraw-Suppression (flackerreduziertes Batch-Update).
 
-- Toolbox: Über Attribute für die Toolbox vorbereitet (`ProvideToolboxControlAttribute`, `ToolboxItem(True)`, `ToolboxBitmap`).
-- Mischzustände: Abfragen liefern, wo sinnvoll, `Nothing` (Nullable), wenn die Auswahl uneinheitlich formatiert ist.
-- Redraw-Suppression: Internes, verschachtelbares Batching mittels `WM_SETREDRAW` verringert Flackern bei Massenänderungen.
-- Ereignis-Steuerung: Interne Scans unterdrücken `SelectionChanged`, um UI-Flackern/Feedback-Schleifen zu vermeiden.
+- Toolbox: Ãœber Attribute fÃ¼r die Toolbox vorbereitet (`ProvideToolboxControlAttribute`, `ToolboxItem(True)`, `ToolboxBitmap`).
+- MischzustÃ¤nde: Abfragen liefern, wo sinnvoll, `Nothing` (Nullable), wenn die Auswahl uneinheitlich formatiert ist.
+- Redraw-Suppression: Internes, verschachtelbares Batching mittels `WM_SETREDRAW` verringert Flackern bei MassenÃ¤nderungen.
+- Ereignis-Steuerung: Interne Scans unterdrÃ¼cken `SelectionChanged`, um UI-Flackern und Feedback-Schleifen zu vermeiden.
 
-> **Hinweis:**
->
->Die Konstante `MIN_FONT_SIZE` wird verwendet, muss aber im Projekt definiert sein (z. B. als `Private Const MIN_FONT_SIZE As Single = 6.0F` in der Klasse).>
+## Konstruktoren
 
-## Eigenschaften
-
-- `SelectionFontSize`: Liest oder setzt die Schriftgröße der aktuellen Auswahl bzw. am Caret; bei uneinheitlicher Auswahl wird `Nothing` zurückgegeben.
-- `SelectionBold`: Liest oder setzt den Fettdruck der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
-- `SelectionItalic`: Liest oder setzt Kursiv (`Italic`) der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
-- `SelectionUnderline`: Liest oder setzt Unterstreichung der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
-- `SelectionStrikeout`: Liest oder setzt Durchstreichung der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
-- `SelectionForeColor`: Liest oder setzt die aktuelle Vordergrundfarbe (Textfarbe) der Auswahl bzw. am Caret.
-- `SelectionBackColor`: Liest oder setzt die aktuelle Hintergrund-/Highlightfarbe der Auswahl bzw. am Caret.
-- `SelectionLeftIndent`: Liest oder setzt den linken Absatz-Einzug (in Pixel) der aktuellen Absatz-/Absatzauswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
-
-## Methoden
-
-- `ClearFormatting()`: Entfernt Formatierungen (Schriftstil, Vorder-/Hintergrundfarbe, Bullet-Aufzählung) aus der aktuellen Auswahl oder – ohne Auswahl – ab der Caret-Position.
-- `SetSelectionAlignment(alignment)`: Setzt die horizontale Ausrichtung der aktuellen Absatz-/Absatzauswahl.
-- `ToggleBold()`: Schaltet Fettdruck für aktuelle Auswahl bzw. Caret um.
-- `ToggleItalic()`: Schaltet Kursiv für aktuelle Auswahl bzw. Caret um.
-- `ToggleUnderline()`: Schaltet Unterstreichung für aktuelle Auswahl bzw. Caret um.
-- `ToggleStrikeout()`: Schaltet Durchstreichung für aktuelle Auswahl bzw. Caret um.
-- `ToggleBullet()`: Schaltet Bullet-Aufzählung für aktuelle Absatz-/Absatzauswahl um.
+- Keine zusÃ¤tzlichen Ã¶ffentlichen Konstruktoren dokumentiert.
 
 ## Ereignisse
 
-- Keine zusätzlichen öffentlichen Ereignisse definiert (es gelten die geerbten Ereignisse der `RichTextBox`).
+- Keine zusÃ¤tzlichen Ã¶ffentlichen Ereignisse definiert (es gelten die geerbten Ereignisse der `RichTextBox`).
+
+## Eigenschaften
+
+- `SelectionFontSize`: Liest oder setzt die SchriftgrÃ¶ÃŸe der aktuellen Auswahl bzw. am Caret; bei uneinheitlicher Auswahl wird `Nothing` zurÃ¼ckgegeben.
+- `SelectionBold`: Liest oder setzt den Fettdruck der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurÃ¼ckgegeben.
+- `SelectionItalic`: Liest oder setzt Kursiv (`Italic`) der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurÃ¼ckgegeben.
+- `SelectionUnderline`: Liest oder setzt Unterstreichung der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurÃ¼ckgegeben.
+- `SelectionStrikeout`: Liest oder setzt Durchstreichung der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurÃ¼ckgegeben.
+- `SelectionForeColor`: Liest oder setzt die aktuelle Vordergrundfarbe (Textfarbe) der Auswahl bzw. am Caret.
+- `SelectionBackColor`: Liest oder setzt die aktuelle Hintergrund-/Highlightfarbe der Auswahl bzw. am Caret.
+- `SelectionLeftIndent`: Liest oder setzt den linken Absatz-Einzug (in Pixel) der aktuellen Absatz-/Absatzauswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurÃ¼ckgegeben.
+
+## Funktionen
+
+- `ClearFormatting()`: Entfernt Formatierungen (Schriftstil, Vorder-/Hintergrundfarbe, Bullet-AufzÃ¤hlung) aus der aktuellen Auswahl oder ohne Auswahl ab der Caret-Position.
+- `SetSelectionAlignment(alignment)`: Setzt die horizontale Ausrichtung der aktuellen Absatz-/Absatzauswahl.
+- `ToggleBold()`: Schaltet Fettdruck fÃ¼r aktuelle Auswahl bzw. Caret um.
+- `ToggleItalic()`: Schaltet Kursiv fÃ¼r aktuelle Auswahl bzw. Caret um.
+- `ToggleUnderline()`: Schaltet Unterstreichung fÃ¼r aktuelle Auswahl bzw. Caret um.
+- `ToggleStrikeout()`: Schaltet Durchstreichung fÃ¼r aktuelle Auswahl bzw. Caret um.
+- `ToggleBullet()`: Schaltet Bullet-AufzÃ¤hlung fÃ¼r aktuelle Absatz-/Absatzauswahl um.
+
+## Hilfstypen/Strukturen
+
+- Keine zusÃ¤tzlichen Ã¶ffentlichen Hilfstypen oder Strukturen dokumentiert.
+
+## Hinweise
+
+- Die Konstante `MIN_FONT_SIZE` wird verwendet und muss im Projekt definiert sein (z. B. als `Private Const MIN_FONT_SIZE As Single = 6.0F` in der Klasse).
+
+## Optimierungs und VerbesserungsmÃ¶glichkeiten
+
+- [OptimierungsvorschlÃ¤ge](ExtendedRTFControlOptimirungsvorschlÃ¤ge.md)
+- [ErweiterungsvorschlÃ¤ge](ExtendedRTFControlErweiterunsvorschlÃ¤ge.md)

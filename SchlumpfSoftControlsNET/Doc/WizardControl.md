@@ -2,26 +2,11 @@
 
 Ein Control zum Erstellen eines Assistenten.
 
-Dieses Steuerelement wurde von mir in Anlehnung an den [Wizard](https://marketplace.visualstudio.com/items?itemName=vs-publisher-106990.RuWizard) von [Klaus Rutkowski](https://marketplace.visualstudio.com/publishers/vs-publisher-106990) entwickelt.
+Dieses Steuerelement wurde in Anlehnung an den [Wizard](https://marketplace.visualstudio.com/items?itemName=vs-publisher-106990.RuWizard) von [Klaus Rutkowski](https://marketplace.visualstudio.com/publishers/vs-publisher-106990) entwickelt.
 
-Sinn dieses Projekts ist für mich der Lerneffekt sowie eventuelle Anpassungen vornehmen zu können.
+## Konstruktoren
 
-## Eigenschaften
-
-- `VisibleHelp`: Ruft die Sichtbarkeit Status der Hilfeschaltfläche ab oder legt diesen fest.
-- `Pages`: Ruft die Auflistung der Assistentenseiten in diesem Registerkartensteuerelement ab.
-- `ImageHeader`: Ruft das in der Kopfzeile der Standardseiten angezeigte Bild ab oder legt dieses fest.
-- `ImageWelcome`: Ruft das auf den Begrüßungs- und Abschlussseiten angezeigte Bild ab oder legt es fest.
-- `Dock`: Ruft ab oder legt fest, an welcher Kante des übergeordneten Containers ein Steuerelement angedockt ist.
-- `HeaderFont`: Ruft die Schriftart ab, die zum Anzeigen der Beschreibung einer Standardseite verwendet wird, oder legt diese fest.
-- `HeaderTitleFont`: Ruft die Schriftart ab, die zum Anzeigen des Titels einer Standardseite verwendet wird, oder legt diese fest.
-- `WelcomeFont`: Ruft die Schriftart ab, die zum Anzeigen der Beschreibung einer Begrüßungs- oder Abschlussseite verwendet wird, oder legt diese fest.
-- `WelcomeTitleFont`: Ruft die Schriftart ab, die zum Anzeigen des Titels einer Begrüßungs- oder Abschlussseite verwendet wird, oder legt diese fest.
-
-## Methoden
-
-- `Next()`: Entspricht einem Klick auf die Schaltfläche „Weiter“.
-- `Back()`: Entspricht einem Klick auf die Schaltfläche „Zurück“.
+- `New()`: Initialisiert eine neue Instanz des Assistenten-Controls.
 
 ## Ereignisse
 
@@ -30,3 +15,43 @@ Sinn dieses Projekts ist für mich der Lerneffekt sowie eventuelle Anpassungen v
 - `Cancel`: Tritt auf, wenn der Benutzer auf „Abbrechen“ geklickt hat.
 - `Finish`: Tritt auf, wenn der Assistent abgeschlossen ist, und gibt dem Benutzer die Möglichkeit, zusätzliche Aufgaben zu erledigen.
 - `Help`: Tritt auf, wenn der Benutzer auf die Hilfeschaltfläche klickt.
+
+## Eigenschaften
+
+- `VisibleHelp`: Ruft den Sichtbarkeitsstatus der Hilfeschaltfläche ab oder legt diesen fest.
+- `Pages`: Ruft die Auflistung der Assistentenseiten in diesem Registerkartensteuerelement ab.
+- `ImageHeader`: Ruft das in der Kopfzeile der Standardseiten angezeigte Bild ab oder legt dieses fest.
+- `ImageWelcome`: Ruft das auf den Begrüßungs- und Abschlussseiten angezeigte Bild ab oder legt es fest.
+- `Dock`: Ruft ab oder legt fest, an welcher Kante des übergeordneten Containers ein Steuerelement angedockt ist.
+- `HeaderFont`: Ruft die Schriftart ab, die zum Anzeigen der Beschreibung einer Standardseite verwendet wird, oder legt diese fest.
+- `HeaderTitleFont`: Ruft die Schriftart ab, die zum Anzeigen des Titels einer Standardseite verwendet wird, oder legt diese fest.
+- `WelcomeFont`: Ruft die Schriftart ab, die zum Anzeigen der Beschreibung einer Begrüßungs- oder Abschlussseite verwendet wird, oder legt diese fest.
+- `WelcomeTitleFont`: Ruft die Schriftart ab, die zum Anzeigen des Titels einer Begrüßungs- oder Abschlussseite verwendet wird, oder legt diese fest.
+- `SelectedPage`: Gibt die aktuell aktive Assistentenseite zurück oder aktiviert eine übergebene Seite.
+- `NextEnabled`: Aktiviert oder deaktiviert die Schaltfläche „Weiter“.
+- `BackEnabled`: Aktiviert oder deaktiviert die Schaltfläche „Zurück“.
+- `NextText`: Gibt den Text der Schaltfläche „Weiter“ zurück oder legt ihn fest.
+- `BackText`: Gibt den Text der Schaltfläche „Zurück“ zurück oder legt ihn fest.
+- `CancelText`: Gibt den Text der Schaltfläche „Abbrechen/Beenden“ zurück oder legt ihn fest.
+- `HelpText`: Gibt den Text der Schaltfläche „Hilfe“ zurück oder legt ihn fest.
+
+## Funktionen
+
+- `Next()`: Entspricht einem Klick auf die Schaltfläche „Weiter“.
+- `Back()`: Entspricht einem Klick auf die Schaltfläche „Zurück“.
+
+## Hilfstypen/Strukturen
+
+- `WizardPage`: Basistyp für Assistentenseiten.
+- `PagesCollection`: Sammlung der Seiten innerhalb des Assistenten.
+- `BeforeSwitchPagesEventArgs`: Ereignisdaten vor dem Seitenwechsel.
+- `AfterSwitchPagesEventArgs`: Ereignisdaten nach dem Seitenwechsel.
+
+## Hinweise
+
+- Seitenwechsel können über `BeforeSwitchPages` validiert und abgebrochen werden.
+
+## Optimierungs und Verbesserungsmöglichkeiten
+
+- [Optimierungsvorschläge](WizardControlOptimirungsvorschläge.md)
+- [Erweiterungsvorschläge](WizardControlErweiterunsvorschläge.md)

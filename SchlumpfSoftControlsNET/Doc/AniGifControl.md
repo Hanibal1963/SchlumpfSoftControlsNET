@@ -52,8 +52,8 @@ Weitere Infos unter:
 
 ## Funktionen
 
-- `StartAnimation()`: Startet die Animation (falls noch nicht aktiv).
-- `StopAnimation()`: Stoppt die Animation und beendet Timer sowie `ImageAnimator`.
+- `StartAnimation()`: Startet die Animation (falls noch nicht aktiv); nach `Dispose()` ohne Wirkung.
+- `StopAnimation()`: Stoppt die Animation und beendet Timer sowie `ImageAnimator`; nach `Dispose()` ohne Wirkung.
 
 ## Hilfstypen/Strukturen
 
@@ -63,6 +63,7 @@ Weitere Infos unter:
 
 - Repaints werden bei laufender Animation nur noch angefordert, wenn das Control sichtbar ist.
 - Im Timer-Modus wird nur bei einem tatsächlichen Framewechsel neu gezeichnet.
+- Beim Austausch von `Gif` werden laufender Timer und `ImageAnimator` vor dem Wechsel gestoppt; intern erzeugte Bilder werden freigegeben.
 
 ## Optimierungs und Verbesserungsmöglichkeiten
 

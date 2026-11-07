@@ -406,6 +406,7 @@ Namespace AniGifControl
         ''' Startet die Animation (falls noch nicht aktiv).
         ''' </summary>
         Public Sub StartAnimation()
+            If Me._IsDisposed OrElse Me.IsDisposed Then Return
             If Not Me.AutoPlay Then
                 Me.AutoPlay = True
             End If
@@ -415,6 +416,7 @@ Namespace AniGifControl
         ''' Stoppt die Animation und beendet Timer sowie ImageAnimator.
         ''' </summary>
         Public Sub StopAnimation()
+            If Me._IsDisposed OrElse Me.IsDisposed Then Return
             If Me.AutoPlay Then
                 Me.AutoPlay = False
             End If
@@ -600,9 +602,7 @@ Namespace AniGifControl
         Private Sub SetGifImage(value As Bitmap)
 
             ' Vorherige Animation stoppen bevor neues Bild gesetzt wird
-            If Me._Gif IsNot Nothing Then
-                ImageAnimator.StopAnimate(Me._Gif, Me._AnimationHandler)
-            End If
+            Me.StopAnimationCore(False)
 
             If Me._OwnsGif AndAlso Me._Gif IsNot Nothing Then
                 ' Vorheriges, intern besessenes Bild freigeben

@@ -270,6 +270,12 @@
     <Content Include="Resources\AniGif_Anim118.gif" />
     <Content Include="Resources\AniGif_Anim119.gif" />
     <Content Include="Resources\AniGif_Anim120.gif" />
+    <Content Include="Resources\AniGif_Back.png" />
+    <Content Include="Resources\AniGif_Forward.png" />
+    <Content Include="Resources\AniGif_Pause.png" />
+    <Content Include="Resources\AniGif_Resume.png" />
+    <Content Include="Resources\AniGif_Start.png" />
+    <Content Include="Resources\AniGif_Stopp.png" />
     <Content Include="Resources\ExtendedRTF_Backcolor.png" />
     <Content Include="Resources\ExtendedRTF_Bold.png" />
     <Content Include="Resources\ExtendedRTF_Delformat.png" />

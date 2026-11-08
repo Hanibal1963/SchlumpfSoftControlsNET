@@ -559,6 +559,16 @@ Namespace AniGifControl
             Me.InvalidateIfVisible()
         End Sub
 
+        ''' <summary>
+        ''' Gibt den aktuellen Wiedergabezustand zurück (Playing, Paused, Stopped).
+        ''' </summary>
+        ''' <returns>
+        ''' Der aktuelle Wiedergabezustand.
+        ''' </returns>
+        Public Function GetPlaybackState() As PlaybackState
+            Return Me._playbackState
+        End Function
+
 #End Region
 
 #Region "Interne Methoden"

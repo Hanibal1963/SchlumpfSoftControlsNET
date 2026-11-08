@@ -9,7 +9,7 @@ Namespace AniGifControl
     ''' <summary>
     ''' Legt den aktuellen Wiedergabestatus einer Animation fest.
     ''' </summary>
-    Friend Enum PlaybackState
+    Public Enum PlaybackState
 
         ''' <summary>
         ''' Die Animation ist gestoppt.

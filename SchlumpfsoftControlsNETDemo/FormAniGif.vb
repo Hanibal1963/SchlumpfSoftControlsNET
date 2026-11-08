@@ -5,6 +5,7 @@
 ' --------------------------------------------------------------------------------------------------------
 
 Imports SchlumpfSoft.ControlsNET
+Imports SchlumpfSoft.ControlsNET.AniGifControl
 
 Public Class FormAniGif
 
@@ -40,11 +41,13 @@ Public Class FormAniGif
 
         Dim autoplay As Boolean = Me.AniGif.AutoPlay
         Dim msg As String
+
         If autoplay Then
             msg = $"Die Animation wird automatisch abgespielt."
         Else
             msg = $"Die Animation wird nicht automatisch abgespielt."
         End If
+
         Me.Label_EventMessage.Text = msg
         Me.CheckBox_AutoPlay.Checked = autoplay
 
@@ -52,22 +55,39 @@ Public Class FormAniGif
 
     Private Sub AniGif_AnimationStarted(sender As Object, e As EventArgs) Handles AniGif.AnimationStarted
 
-        Dim msg As String = $"Die Animation wurde gestartet."
+        Dim msg As String = $""
+        msg = $"Die Animation wird abgespielt."
         Me.Label_EventMessage.Text = msg
         Me.Button_StartAnimation.Enabled = False
         Me.Button_StopAnimation.Enabled = True
-        Me.Button_Pause.Enabled = True
         Me.Button_Resume.Enabled = False
+        Me.Button_Pause.Enabled = True
 
     End Sub
 
     Private Sub AniGif_AnimationStopped(sender As Object, e As EventArgs) Handles AniGif.AnimationStopped
 
-        Dim msg As String = $"Die Animation wurde gestoppt."
+        Dim msg As String = $""
+
+        Select Case Me.AniGif.GetPlaybackState
+
+            Case PlaybackState.Paused
+                msg = $"Die Animation wurde pausiert."
+                Me.Button_Resume.Enabled = True
+                Me.Button_Pause.Enabled = False
+                Me.Button_StartAnimation.Enabled = False
+                Me.Button_StopAnimation.Enabled = True
+
+            Case PlaybackState.Stopped
+                msg = $"Die Animation wurde gestoppt."
+                Me.Button_StartAnimation.Enabled = True
+                Me.Button_StopAnimation.Enabled = False
+                Me.Button_Resume.Enabled = False
+                Me.Button_Pause.Enabled = False
+
+        End Select
+
         Me.Label_EventMessage.Text = msg
-        Me.Button_StartAnimation.Enabled = True
-        Me.Button_StopAnimation.Enabled = False
-        Me.Button_Pause.Enabled = False
 
     End Sub
 
@@ -181,7 +201,7 @@ Public Class FormAniGif
                 Me.AniGif.PauseAnimation()
 
             Case sender Is Me.Button_Resume
-
+                Me.AniGif.ResumeAnimation()
 
             Case sender Is Me.Button_StartAnimation
                 Me.AniGif.StartAnimation()

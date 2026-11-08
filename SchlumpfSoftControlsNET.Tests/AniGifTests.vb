@@ -36,6 +36,53 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        Public Sub GetPlaybackState_ReflectsPlaybackTransitions()
+            Using control As New AniGif()
+                Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
+
+                control.StartAnimation()
+                Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
+
+                control.PauseAnimation()
+                Assert.AreEqual(PlaybackState.Paused, control.GetPlaybackState())
+
+                control.ResumeAnimation()
+                Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
+
+                control.StopAnimation()
+                Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub GetPlaybackState_RemainsPlayingWhileHidden()
+            Using control As New AniGif()
+                control.StartAnimation()
+                Assert.IsTrue(GetTimer(control).Enabled)
+
+                ' Der gewünschte Wiedergabezustand bleibt trotz angehaltenem Timer erhalten.
+                control.Visible = False
+                Assert.IsFalse(GetTimer(control).Enabled)
+                Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
+
+                control.Visible = True
+                Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub GetPlaybackState_ReturnsStoppedAfterDisposal()
+            Using control As New AniGif()
+                control.StartAnimation()
+                control.PauseAnimation()
+                Assert.AreEqual(PlaybackState.Paused, control.GetPlaybackState())
+
+                control.Dispose()
+                Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
+            End Using
+        End Sub
+
+        <TestMethod>
         Public Sub FramesPerSecond_IsClampedToValidRange()
             Using control As New AniGif()
                 control.FramesPerSecond = 0D

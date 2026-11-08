@@ -182,6 +182,7 @@ Public Class FormAniGif
 
             Case sender Is Me.Button_Resume
 
+
             Case sender Is Me.Button_StartAnimation
                 Me.AniGif.StartAnimation()
 

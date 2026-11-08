@@ -1,4 +1,4 @@
-﻿# AniGif Control
+﻿# AniGifControl
 
 Ein Control zum Anzeigen von animierten GIF-Grafiken.
 
@@ -24,13 +24,13 @@ Weitere Infos unter:
 
 - `NoAnimation`: Wird ausgelöst, wenn die Grafik nicht animiert werden kann.
 - `AutoPlayChanged`: Wird ausgelöst, wenn sich die Eigenschaft `AutoPlay` geändert hat.
-- `AnimationStarted`: Wird ausgelöst, wenn die Animation gestartet wurde.
-- `AnimationStopped`: Wird ausgelöst, wenn die Animation gestoppt wurde.
+- `AnimationStarted`: Wird ausgelöst, wenn die Animation startet oder nach einer Unterbrechung fortgesetzt wird.
+- `AnimationStopped`: Wird ausgelöst, wenn eine laufende Animation angehalten oder gestoppt wird, beispielsweise durch Pause oder Unsichtbarkeit.
 
 ## 3. Eigenschaften
 
-- `AutoPlay`: Steuert, ob die GIF-Animation automatisch gestartet wird, sobald ein Bild vorhanden ist.
-- `Gif`: Gibt die animierte GIF-Grafik zurück oder legt diese fest.
+- `AutoPlay`: Steuert, ob die GIF-Animation automatisch gestartet wird, sobald ein animierbares Bild vorhanden und das Control sichtbar ist. Eine explizite Pause verändert den Wert nicht.
+- `Gif`: Gibt die aktuell verwendete Bitmap zurück oder legt eine GIF-Grafik fest. Bei der Zuweisung wird eine eigene Kopie erstellt; `Nothing` stellt eine Kopie des Standardbilds wieder her.
 - `GifSizeMode`: Gibt den Anzeigemodus (Skalierung/Ausrichtung) der GIF-Grafik zurück oder legt ihn fest.
 - `ScalingQualityPreset`: Legt die Interpolation für `ImageSizeMode.Zoom` und `ImageSizeMode.Fill` fest. Standard ist `Photo`; ein Wechsel fordert eine Neuzeichnung an. Andere Werte als `Photo` und `PixelArt` lösen `System.ComponentModel.InvalidEnumArgumentException` aus.
 - `CustomDisplaySpeed`: Legt fest, ob die benutzerdefinierte Anzeigegeschwindigkeit (Timer/FPS) oder normalisierte GIF-Metadaten-Delays verwendet werden.
@@ -56,8 +56,13 @@ Weitere Infos unter:
 
 ## 4. Funktionen
 
-- `StartAnimation()`: Startet die Animation (falls noch nicht aktiv); nach `Dispose()` ohne Wirkung.
-- `StopAnimation()`: Stoppt die Animation und beendet Timer sowie `ImageAnimator`; nach `Dispose()` ohne Wirkung.
+- `StartAnimation()`: Setzt `AutoPlay` auf `True` und startet die Animation beziehungsweise setzt eine Pause beim aktuellen Frame fort. Ein bereits laufender Start ist wirkungslos.
+- `PauseAnimation()`: Hält eine laufende Wiedergabe beim aktuellen Frame an, ohne `AutoPlay` zu ändern. Bei bereits pausierter oder gestoppter Wiedergabe bleibt der Aufruf ohne Wirkung.
+- `ResumeAnimation()`: Setzt eine pausierte Wiedergabe beim aktuellen Frame fort. Dessen vollständiges Intervall beginnt neu; bei unsichtbarem Control wird bis zur erneuten Sichtbarkeit gewartet. Ohne vorherige Pause bleibt der Aufruf ohne Wirkung.
+- `SeekFrame(index As Int32)`: Wählt den nullbasierten Frame `index` aus, ohne den Wiedergabezustand zu ändern. Gültig sind Werte von `0` bis zum letzten Frame; bei einem statischen Bild ist nur `0` gültig. Ungültige Werte lösen `ArgumentOutOfRangeException` aus, ein fehlendes Bild löst `InvalidOperationException` aus. Bei laufender Wiedergabe beginnt das Intervall des gewählten Frames neu.
+- `StopAnimation()`: Setzt `AutoPlay` auf `False` und stoppt die Wiedergabe. Der aktuelle Frame bleibt erhalten.
+
+Alle genannten Methoden bleiben nach `Dispose()` ohne Wirkung und sollen auf dem UI-Thread des Controls aufgerufen werden.
 
 ## 5. Hilfstypen/Strukturen
 
@@ -69,9 +74,11 @@ Weitere Infos unter:
 - `ScalingQualityPreset` wirkt nur bei `Zoom` und `Fill`; `Normal` und `CenterImage` bleiben unverändert. `Photo` entspricht der bisherigen Standarddarstellung.
 - Repaints werden bei laufender Animation nur noch angefordert, wenn das Control sichtbar ist.
 - Frame-Delays werden aus den GIF-Metadaten (`0x5100`) gelesen, mit Fallbacks versehen und auf `MinimumFrameIntervalMs`/`MaximumFrameIntervalMs` begrenzt.
-- Im Timer-Modus wird nur bei einem tatsächlichen Framewechsel neu gezeichnet.
+- Beide Geschwindigkeitsarten verwenden den Timer; neu gezeichnet wird nur bei einem tatsächlichen Framewechsel.
 - Mit `AdaptiveTiming = True` wird das nächste Intervall über eine Drift-Korrektur an die tatsächliche UI-Thread-Laufzeit angepasst.
-- Beim Austausch von `Gif` werden laufender Timer und `ImageAnimator` vor dem Wechsel gestoppt; intern erzeugte Bilder werden freigegeben.
+- Pause und Fortsetzen verändern `AutoPlay` nicht. `AnimationStopped` beziehungsweise `AnimationStarted` werden nur beim tatsächlichen Anhalten beziehungsweise Wiederanlaufen ausgelöst; eine Frameauswahl löst diese Ereignisse nicht aus.
+- Beim Austausch von `Gif` werden laufende Wiedergabemechanismen gestoppt, intern erzeugte Bilder freigegeben und der Frame auf `0` gesetzt. Eine explizite Pause bleibt erhalten.
+- Jede Instanz besitzt eine eigene Bitmap-Kopie des Standardbilds, damit Frameänderungen andere Instanzen nicht beeinflussen.
 
 ## 7. Optimierungsvorschläge
 
@@ -79,7 +86,7 @@ Weitere Infos unter:
 
 Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe.
 
-### 7.2. Rendering-Pipeline entkoppeln (umgesetzt)
+### 7.2. ~~Rendering-Pipeline entkoppeln~~ (umgesetzt)
 
 **Umsetzung:**
 
@@ -91,7 +98,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 **Nutzen:** Weniger unnötige Repaints, bessere Laufzeit auf schwachen Systemen.
 
-### 7.3. Ressourcenlebenszyklus härten (umgesetzt)
+### 7.3. ~~Ressourcenlebenszyklus härten~~ (umgesetzt)
 
 **Umsetzung:**
 
@@ -103,7 +110,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 **Nutzen:** Verhindert Speicherlecks und Zombie-Timer.
 
-### 7.4. Frame-Timing präzisieren (umgesetzt)
+### 7.4. ~~Frame-Timing präzisieren~~ (umgesetzt)
 
 **Umsetzung:**
 
@@ -115,7 +122,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 **Nutzen:** Ruhigere Wiedergabe und konsistente Darstellung zwischen GIF-Dateien.
 
-### 7.5. Qualitätsoptionen beim Skalieren (umgesetzt)
+### 7.5. ~~Qualitätsoptionen beim Skalieren~~ (umgesetzt)
 
 **Umsetzung:**
 
@@ -137,35 +144,34 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.8. Empfohlene Reihenfolge
 
-1. ~~Ressourcenlebenszyklus~~
-2. ~~Rendering-Pipeline~~
-3. ~~Frame-Timing~~
-4. ~~Qualitätsoptionen~~
+1. ~~Ressourcenlebenszyklus~~ (umgesetzt)
+2. ~~Rendering-Pipeline~~ (umgesetzt)
+3. ~~Frame-Timing~~ (umgesetzt)
+4. ~~Qualitätsoptionen~~ (umgesetzt)
 5. Diagnostik
 
 ## 8. Erweiterungsvorschläge
 
-## 8.1 Playback-API erweitern
+### 8.1. ~~Playback-API erweitern~~ (umgesetzt)
 
-**Vorschlag:** `PauseAnimation()`, `ResumeAnimation()`, `SeekFrame(index)` ergänzen.
-**Umsetzung:** Internen Zustand (`Stopped/Playing/Paused`) einführen und Timer-/Animator-Verhalten daran koppeln.
+**Umsetzung:** `PauseAnimation()`, `ResumeAnimation()` und `SeekFrame(index)` verwenden einen internen Wiedergabezustand und steuern den Timer entsprechend.
 
-## 8.2 Loop- und Segmentsteuerung
+### 8.2 Loop- und Segmentsteuerung
 
 **Vorschlag:** Eigenschaften `LoopCount`, `PlayRangeStart`, `PlayRangeEnd`.
 **Umsetzung:** Framezähler mit optionalem Abbruch bzw. Segmentwiedergabe.
 
-## 8.3 Eventmodell ausbauen
+### 8.3 Eventmodell ausbauen
 
 **Vorschlag:** `FrameChanged`, `PlaybackCompleted`, `PlaybackError`.
 **Umsetzung:** Ereignisse nach erfolgreichem Framewechsel bzw. Fehlerpfad auslösen.
 
-## 8.4 Quellenvielfalt erhöhen
+### 8.4 Quellenvielfalt erhöhen
 
 **Vorschlag:** Laden aus Stream/ByteArray/Dateipfad.
 **Umsetzung:** Überladene `LoadGif(...)`-Methoden mit einheitlicher Validierung.
 
-## 8.5 Design-Time-Unterstützung
+### 8.5 Design-Time-Unterstützung
 
 **Vorschlag:** Smart-Tag für AutoPlay/Speed/SizeMode.
 **Umsetzung:** DesignerActionList ergänzen.

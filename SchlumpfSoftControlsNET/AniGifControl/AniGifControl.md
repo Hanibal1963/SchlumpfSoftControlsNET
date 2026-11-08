@@ -89,7 +89,9 @@ Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlay
 
 Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe.
 
-### 7.2. ~~Rendering-Pipeline entkoppeln~~ (umgesetzt)
+### 7.2. Rendering-Pipeline entkoppeln
+
+**Status:** Umgesetzt.
 
 **Umsetzung:**
 
@@ -101,7 +103,9 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 **Nutzen:** Weniger unnötige Repaints, bessere Laufzeit auf schwachen Systemen.
 
-### 7.3. ~~Ressourcenlebenszyklus härten~~ (umgesetzt)
+### 7.3. Ressourcenlebenszyklus härten
+
+**Status:** Umgesetzt.
 
 **Umsetzung:**
 
@@ -113,7 +117,9 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 **Nutzen:** Verhindert Speicherlecks und Zombie-Timer.
 
-### 7.4. ~~Frame-Timing präzisieren~~ (umgesetzt)
+### 7.4. Frame-Timing präzisieren
+
+**Status:** Umgesetzt.
 
 **Umsetzung:**
 
@@ -125,7 +131,9 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 **Nutzen:** Ruhigere Wiedergabe und konsistente Darstellung zwischen GIF-Dateien.
 
-### 7.5. ~~Qualitätsoptionen beim Skalieren~~ (umgesetzt)
+### 7.5. Qualitätsoptionen beim Skalieren
+
+**Status:** Umgesetzt.
 
 **Umsetzung:**
 
@@ -147,15 +155,17 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.8. Empfohlene Reihenfolge
 
-1. ~~Ressourcenlebenszyklus~~ (umgesetzt)
-2. ~~Rendering-Pipeline~~ (umgesetzt)
-3. ~~Frame-Timing~~ (umgesetzt)
-4. ~~Qualitätsoptionen~~ (umgesetzt)
+1. Ressourcenlebenszyklus
+2. Rendering-Pipeline
+3. Frame-Timing
+4. Qualitätsoptionen
 5. Diagnostik
 
 ## 8. Erweiterungsvorschläge
 
-### 8.1. ~~Playback-API erweitern~~ (umgesetzt)
+### 8.1. Playback-API erweitern
+
+**Status:** Umgesetzt.
 
 **Umsetzung:** `PauseAnimation()`, `ResumeAnimation()` und `SeekFrame(index)` verwenden einen internen Wiedergabezustand und steuern den Timer entsprechend.
 

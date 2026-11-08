@@ -16,18 +16,18 @@ Weitere Infos unter:
 
 [Buchleser freigegeben auf onedrive](https://onedrive.live.com/?id=root&cid=D73E81A6F971DBA7&qt=people&personId=de18bb46da92110)
 
-## Konstruktoren
+## 1. Konstruktoren
 
 - `New()`: Initialisiert eine neue Instanz des Controls und setzt die Standarddarstellung.
 
-## Ereignisse
+## 2. Ereignisse
 
 - `NoAnimation`: Wird ausgelöst, wenn die Grafik nicht animiert werden kann.
 - `AutoPlayChanged`: Wird ausgelöst, wenn sich die Eigenschaft `AutoPlay` geändert hat.
 - `AnimationStarted`: Wird ausgelöst, wenn die Animation gestartet wurde.
 - `AnimationStopped`: Wird ausgelöst, wenn die Animation gestoppt wurde.
 
-## Eigenschaften
+## 3. Eigenschaften
 
 - `AutoPlay`: Steuert, ob die GIF-Animation automatisch gestartet wird, sobald ein Bild vorhanden ist.
 - `Gif`: Gibt die animierte GIF-Grafik zurück oder legt diese fest.
@@ -54,17 +54,17 @@ Weitere Infos unter:
 - `Font`: Ausgeblendet, da für dieses Control nicht relevant.
 - `ForeColor`: Ausgeblendet, da für dieses Control nicht relevant.
 
-## Funktionen
+## 4. Funktionen
 
 - `StartAnimation()`: Startet die Animation (falls noch nicht aktiv); nach `Dispose()` ohne Wirkung.
 - `StopAnimation()`: Stoppt die Animation und beendet Timer sowie `ImageAnimator`; nach `Dispose()` ohne Wirkung.
 
-## Hilfstypen/Strukturen
+## 5. Hilfstypen/Strukturen
 
 - `ImageSizeMode`: Definiert die verfügbaren Modi zur Größenanpassung und Ausrichtung der GIF-Grafik.
 - `GifScalingQualityPreset`: `Photo` verwendet `HighQualityBicubic` für geglättete Bilder; `PixelArt` verwendet `NearestNeighbor` und `PixelOffsetMode.Half` für harte Pixelkanten.
 
-## Hinweise
+## 6. Hinweise
 
 - `ScalingQualityPreset` wirkt nur bei `Zoom` und `Fill`; `Normal` und `CenterImage` bleiben unverändert. `Photo` entspricht der bisherigen Standarddarstellung.
 - Repaints werden bei laufender Animation nur noch angefordert, wenn das Control sichtbar ist.
@@ -73,7 +73,99 @@ Weitere Infos unter:
 - Mit `AdaptiveTiming = True` wird das nächste Intervall über eine Drift-Korrektur an die tatsächliche UI-Thread-Laufzeit angepasst.
 - Beim Austausch von `Gif` werden laufender Timer und `ImageAnimator` vor dem Wechsel gestoppt; intern erzeugte Bilder werden freigegeben.
 
-## Optimierungs und Verbesserungsmöglichkeiten
+## 7. Optimierungsvorschläge
 
-- [Optimierungsvorschläge](AniGifControlOptimirungsvorschläge.md) (teilweise umgesetzt)
-- [Erweiterungsvorschläge](AniGifControlErweiterunsvorschläge.md)
+### 7.1. Zielbild
+
+Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe.
+
+### 7.2. Rendering-Pipeline entkoppeln (umgesetzt)
+
+**Umsetzung:**
+
+- Frame-Berechnung und Zeichenanforderung trennen.
+
+- Nur dann `Invalidate()` auslösen, wenn sich der Frame tatsächlich geändert hat.
+
+- Bei `Visible = False` bzw. `Parent.Visible = False` Updates pausieren.
+
+**Nutzen:** Weniger unnötige Repaints, bessere Laufzeit auf schwachen Systemen.
+
+### 7.3. Ressourcenlebenszyklus härten (umgesetzt)
+
+**Umsetzung:**
+
+- Bei Austausch von `Gif` altes Bild/Timer sicher freigeben.
+
+- `Dispose(Boolean)` vollständig implementieren (Timer, Handles, Event-Abos).
+
+- Guard gegen mehrfaches `StartAnimation()`/`StopAnimation()` einbauen.
+
+**Nutzen:** Verhindert Speicherlecks und Zombie-Timer.
+
+### 7.4. Frame-Timing präzisieren (umgesetzt)
+
+**Umsetzung:**
+
+- GIF-Frame-Delays aus Metadaten konsistent normalisieren.
+
+- Mindest-/Maximalintervall definieren, um Ausreißer abzufangen.
+
+- Optionales „Adaptive Timing“ für UI-Thread-Last vorsehen.
+
+**Nutzen:** Ruhigere Wiedergabe und konsistente Darstellung zwischen GIF-Dateien.
+
+### 7.5. Qualitätsoptionen beim Skalieren (umgesetzt)
+
+**Umsetzung:**
+
+- Für die `GifSizeMode`-Einstellungen `Zoom` und `Fill` den Interpolationsmodus über `ScalingQualityPreset` festlegen.
+
+- Pixel-Art und Foto-Inhalt über die Presets `PixelArt` (`NearestNeighbor`) und `Photo` (`HighQualityBicubic`) steuern.
+
+**Nutzen:** Bessere Bildqualität bei Zoom/Skalierung.
+
+### 7.6. Diagnostik für Betrieb hinzufügen
+
+**Umsetzung:**
+
+- Interne Metriken (FPS-ist, Dropped Frames, Renderzeit) optional erfassen.
+
+- Über Debug-Eigenschaft oder Event ausgebbar machen.
+
+**Nutzen:** Erleichtert Fehlersuche bei Performanceproblemen.
+
+### 7.8. Empfohlene Reihenfolge
+
+1. ~~Ressourcenlebenszyklus~~
+2. ~~Rendering-Pipeline~~
+3. ~~Frame-Timing~~
+4. ~~Qualitätsoptionen~~
+5. Diagnostik
+
+## 8. Erweiterungsvorschläge
+
+## 8.1 Playback-API erweitern
+
+**Vorschlag:** `PauseAnimation()`, `ResumeAnimation()`, `SeekFrame(index)` ergänzen.
+**Umsetzung:** Internen Zustand (`Stopped/Playing/Paused`) einführen und Timer-/Animator-Verhalten daran koppeln.
+
+## 8.2 Loop- und Segmentsteuerung
+
+**Vorschlag:** Eigenschaften `LoopCount`, `PlayRangeStart`, `PlayRangeEnd`.
+**Umsetzung:** Framezähler mit optionalem Abbruch bzw. Segmentwiedergabe.
+
+## 8.3 Eventmodell ausbauen
+
+**Vorschlag:** `FrameChanged`, `PlaybackCompleted`, `PlaybackError`.
+**Umsetzung:** Ereignisse nach erfolgreichem Framewechsel bzw. Fehlerpfad auslösen.
+
+## 8.4 Quellenvielfalt erhöhen
+
+**Vorschlag:** Laden aus Stream/ByteArray/Dateipfad.
+**Umsetzung:** Überladene `LoadGif(...)`-Methoden mit einheitlicher Validierung.
+
+## 8.5 Design-Time-Unterstützung
+
+**Vorschlag:** Smart-Tag für AutoPlay/Speed/SizeMode.
+**Umsetzung:** DesignerActionList ergänzen.

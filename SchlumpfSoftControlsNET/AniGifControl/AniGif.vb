@@ -37,7 +37,7 @@ Namespace AniGifControl
         Private _ZoomFactor As Decimal ' Zoomfaktor in Prozent für den Zoom-Modus
         Private _CustomDisplaySpeed As Boolean ' True = Timer/FPS verwenden, False = GIF-Metadaten-Verzögerung verwenden
         Private _GifSizeMode As ImageSizeMode ' Art der Darstellung (Normal, Stretch, Zoom, ...)
-		Private _scalingQualityPreset As GifScalingQualityPreset
+        Private _scalingQualityPreset As GifScalingQualityPreset
         Private _Gif As Bitmap ' Aktuell angezeigtes Bild (intern immer als Bitmap gehalten)
         Private _OwnsGif As Boolean ' Kennzeichnet, ob _Gif vom Control geklont/erstellt wurde und damit freigegeben werden muss
         Private _IsAnimating As Boolean ' Interner Status, ob aktuell eine Animation aktiv läuft
@@ -150,24 +150,24 @@ Namespace AniGifControl
             End Set
         End Property
 
-		''' <summary>
-		''' Legt das Qualitäts-Preset für die GIF-Skalierung in den Modi Zoom und Fill fest. Der Standardwert ist Photo.
-		''' </summary>
-		''' <exception cref="InvalidEnumArgumentException">
-		''' Der Wert ist kein gültiges Qualitäts-Preset.
-		''' </exception>
-		<Browsable(True)>
-		<Category("Appearance")>
-		<Description("Legt die Qualität der GIF-Skalierung für Zoom und Fill fest.")>
-		<DefaultValue(GifScalingQualityPreset.Photo)>
-		Public Property ScalingQualityPreset As GifScalingQualityPreset
-			Get
-				Return Me._scalingQualityPreset
-			End Get
-			Set(value As GifScalingQualityPreset)
-				Me.SetScalingQualityPreset(value)
-			End Set
-		End Property
+        ''' <summary>
+        ''' Legt das Qualitäts-Preset für die GIF-Skalierung in den Modi Zoom und Fill fest. Der Standardwert ist Photo.
+        ''' </summary>
+        ''' <exception cref="InvalidEnumArgumentException">
+        ''' Der Wert ist kein gültiges Qualitäts-Preset.
+        ''' </exception>
+        <Browsable(True)>
+        <Category("Appearance")>
+        <Description("Legt die Qualität der GIF-Skalierung für Zoom und Fill fest.")>
+        <DefaultValue(GifScalingQualityPreset.Photo)>
+        Public Property ScalingQualityPreset As GifScalingQualityPreset
+            Get
+                Return Me._scalingQualityPreset
+            End Get
+            Set(value As GifScalingQualityPreset)
+                Me.SetScalingQualityPreset(value)
+            End Set
+        End Property
 
         ''' <summary>
         ''' Legt fest, ob die benutzerdefinierte Anzeigegeschwindigkeit (Timer/FPS) oder die im GIF hinterlegte
@@ -507,7 +507,7 @@ Namespace AniGifControl
             Me._FramesPerSecond = 30D
             Me._ZoomFactor = 50D
             Me._GifSizeMode = ImageSizeMode.Normal
-			Me._scalingQualityPreset = GifScalingQualityPreset.Photo
+            Me._scalingQualityPreset = GifScalingQualityPreset.Photo
             Me._Gif = My.Resources.AniGifControl_Standard
             Me._CustomDisplaySpeed = False
             Me._Autoplay = False
@@ -554,15 +554,15 @@ Namespace AniGifControl
 
             ' Qualitätsverbesserung nur bei Skalierung
             If Me._GifSizeMode = ImageSizeMode.Zoom OrElse Me._GifSizeMode = ImageSizeMode.Fill Then
-				If Me._scalingQualityPreset = GifScalingQualityPreset.PixelArt Then
-					g.InterpolationMode = Drawing2D.InterpolationMode.NearestNeighbor
-					g.PixelOffsetMode = Drawing2D.PixelOffsetMode.Half
-					g.SmoothingMode = Drawing2D.SmoothingMode.None
-				Else
-					g.InterpolationMode = Drawing2D.InterpolationMode.HighQualityBicubic
-					g.PixelOffsetMode = Drawing2D.PixelOffsetMode.HighQuality
-					g.SmoothingMode = Drawing2D.SmoothingMode.HighQuality
-				End If
+                If Me._scalingQualityPreset = GifScalingQualityPreset.PixelArt Then
+                    g.InterpolationMode = Drawing2D.InterpolationMode.NearestNeighbor
+                    g.PixelOffsetMode = Drawing2D.PixelOffsetMode.Half
+                    g.SmoothingMode = Drawing2D.SmoothingMode.None
+                Else
+                    g.InterpolationMode = Drawing2D.InterpolationMode.HighQualityBicubic
+                    g.PixelOffsetMode = Drawing2D.PixelOffsetMode.HighQuality
+                    g.SmoothingMode = Drawing2D.SmoothingMode.HighQuality
+                End If
             End If
 
             ' Zeichenfläche festlegen und Bild zeichnen
@@ -821,17 +821,17 @@ Namespace AniGifControl
 
         End Sub
 
-		Private Sub SetScalingQualityPreset(value As GifScalingQualityPreset)
+        Private Sub SetScalingQualityPreset(value As GifScalingQualityPreset)
 
-			If value <> GifScalingQualityPreset.Photo AndAlso value <> GifScalingQualityPreset.PixelArt Then
-				Throw New InvalidEnumArgumentException(NameOf(value), CInt(value), GetType(GifScalingQualityPreset))
-			End If
+            If value <> GifScalingQualityPreset.Photo AndAlso value <> GifScalingQualityPreset.PixelArt Then
+                Throw New InvalidEnumArgumentException(NameOf(value), CInt(value), GetType(GifScalingQualityPreset))
+            End If
 
-			If Me._scalingQualityPreset = value Then Return
-			Me._scalingQualityPreset = value
-			Me.Invalidate()
+            If Me._scalingQualityPreset = value Then Return
+            Me._scalingQualityPreset = value
+            Me.Invalidate()
 
-		End Sub
+        End Sub
 
         Private Sub SetCustomDisplaySpeed(value As Boolean)
 

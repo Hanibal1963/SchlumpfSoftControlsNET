@@ -5,6 +5,7 @@
 
         Inherits System.Windows.Forms.UserControl
 
+        ' UserControl überschreibt Dispose, um die Komponentenliste zu bereinigen.
         <System.Diagnostics.DebuggerNonUserCode()>
         Protected Overrides Sub Dispose(ByVal disposing As Boolean)
             Try
@@ -22,6 +23,7 @@
 
         'Wird vom Windows Form-Designer benötigt.
         Private components As System.ComponentModel.IContainer
+        Private WithEvents Timer As System.Windows.Forms.Timer
 
         'Hinweis: Die folgende Prozedur ist für den Windows Form-Designer erforderlich.
         'Das Bearbeiten ist mit dem Windows Form-Designer möglich.  
@@ -47,7 +49,6 @@
 
         End Sub
 
-        Private WithEvents Timer As System.Windows.Forms.Timer
     End Class
 
 End Namespace

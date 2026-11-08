@@ -84,9 +84,9 @@
             Me.ProgressFull.ResumeLayout(False)
             Me.ProgressEmpty.ResumeLayout(False)
             Me.ResumeLayout(False)
-
         End Sub
 
     End Class
 
 End Namespace
+

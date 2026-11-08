@@ -23,7 +23,7 @@ Es wurden gegenüber der vorherigen Versionen einige Änderungen vorgenommen und n
 ## Die Sammlung enthält aktuell folgende Controls
 
 - **[AniGifControl](SchlumpfSoftControlsNET/AniGifControl/AniGifControl.md)** - Ein Control zum Anzeigen von animierten GIF - Grafiken.
-- **[ColorProgressBarControl](SchlumpfSoftControlsNET/Doc/ColorProgressBarControl.md)** - Ein Control zum Anzeigen eines anpassbaren Fortschrittsbalkens mit verschiedenen Farben.
+- **[ColorProgressBarControl](SchlumpfSoftControlsNET/ColorProgressBarControl/ColorProgressBarControl.md)** - Ein Control zum Anzeigen eines anpassbaren Fortschrittsbalkens mit verschiedenen Farben.
 - **[DriveWatcherControl](SchlumpfSoftControlsNET/Doc/DriveWatcherControl.md)** - Ein Control zum Überwachen von Laufwerken und Anzeigen von Informationen über diese.
 - **[ExplorerTreeViewControl](SchlumpfSoftControlsNET/Doc/ExplorerTreeViewControl.md)** - Ein Control zum Anzeigen und Navigieren der Windows Verzeichnisstruktur (ähnlich dem linken Bereich des Windows Explorers).
 - **[ExtendedRTFControl](SchlumpfSoftControlsNET/Doc/ExtendedRTFControl.md)** - Ein Control zum Anzeigen von Rich Text Format (RTF) Inhalten mit erweiterten Funktionen.

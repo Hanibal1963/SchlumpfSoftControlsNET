@@ -137,14 +137,10 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.8. Empfohlene Reihenfolge
 
-~~1. Ressourcenlebenszyklus~~
-
-~~2. Rendering-Pipeline~~
-
-~~3. Frame-Timing~~
-
-~~4. Qualitätsoptionen~~
-
+1. ~~Ressourcenlebenszyklus~~
+2. ~~Rendering-Pipeline~~
+3. ~~Frame-Timing~~
+4. ~~Qualitätsoptionen~~
 5. Diagnostik
 
 ## 8. Erweiterungsvorschläge

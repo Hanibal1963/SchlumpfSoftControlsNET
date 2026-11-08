@@ -6,15 +6,15 @@ Unterstützt Laufwerke, spezielle Benutzerordner (Desktop, Dokumente, Downloads,
 
 Änderungen am Dateisystem (neue, gelöschte oder umbenannte Ordner, Laufwerks-Hotplug) werden dynamisch erkannt.
 
-## Konstruktoren
+## 1. Konstruktoren
 
 - `New()`: Initialisiert das Steuerelement, lädt die erforderlichen Bilder und setzt den Wurzelknoten des TreeViews.
 
-## Ereignisse
+## 2. Ereignisse
 
 - `SelectedPathChanged`: Wird ausgelöst, wenn sich der ausgewählte Pfad geändert hat.
 
-## Eigenschaften
+## 3. Eigenschaften
 
 - `SelectedPath` (nur lesen): Gibt den aktuell ausgewählten Pfad zurück.
 - `LineColor`: Gibt die Farbe der Linien zwischen den Knoten zurück oder legt diese fest.
@@ -27,19 +27,107 @@ Unterstützt Laufwerke, spezielle Benutzerordner (Desktop, Dokumente, Downloads,
 - `ForeColor`: Legt die Vordergrundfarbe für das Anzeigen von Text fest oder gibt diese zurück.
 - `Font`: Legt die Schriftart für den Text im Steuerelement fest oder gibt diese zurück.
 
-## Funktionen
+## 4. Funktionen
 
 - `ExpandPath(path As String) As Boolean`: Öffnet und selektiert den Knoten zum angegebenen Verzeichnispfad (auch bei noch nicht geladenen Unterknoten) und liefert `True` bei Erfolg, sonst `False`.
 
-## Hilfstypen/Strukturen
+## 5. Hilfstypen/Strukturen
 
 - `SelectedPathChangedEventArgs`: Enthält die Ereignisdaten für Pfadänderungen.
 
-## Hinweise
+## 6. Hinweise
 
 - Dateisystemänderungen werden über interne FileSystemWatcher und Laufwerksüberwachung nachgeführt.
 
-## Optimierungs und Verbesserungsmöglichkeiten
+## 7. Optimierungsvorschläge
 
-- [Optimierungsvorschläge](ExplorerTreeViewControlOptimirungsvorschläge.md)
-- [Erweiterungsvorschläge](ExplorerTreeViewControlErweiterunsvorschläge.md)
+### 7.1. Zielbild
+
+Schnelle Navigation in großen Verzeichnisstrukturen mit reaktiver UI.
+
+### 7.2. Lazy-Loading weiter ausbauen
+
+**Umsetzung:**
+
+- Unterknoten nur bei Expand laden.
+
+- Platzhalterknoten nutzen und nachladen.
+
+- Metadaten (Exists/AccessDenied) vorhalten.
+
+**Nutzen:** Schneller Initialstart, weniger I/O-Spitzen.
+
+### 7.3. Dateisystemzugriffe entkoppeln
+
+**Umsetzung:**
+
+- Auflistungen in Hintergrund-Tasks ausführen.
+
+- UI-Update gebündelt per `BeginInvoke` anwenden.
+
+**Nutzen:** UI friert bei langsamen Netzlaufwerken nicht ein.
+
+### 7.4. Caching für Icons und SpecialFolders
+
+**Umsetzung:**
+
+- Drive-/Folder-Icons zentral cachen.
+
+- KnownFolder-Auflösung einmalig pro Session durchführen.
+
+**Nutzen:** Reduzierte Systemaufrufe und schnelleres Rendering.
+
+### 7.5. Fehlerbehandlung verbessern
+
+**Umsetzung:**
+
+- `UnauthorizedAccessException`, `PathTooLongException`, Offline-Shares gezielt behandeln.
+
+- Defekte Knoten visuell markieren statt Ausnahme weiterreichen.
+
+**Nutzen:** Robuste Navigation auch in problematischen Ordnern.
+
+### 7.6. Refresh-Strategie optimieren
+
+**Umsetzung:**
+
+- Dateiänderungen per Debounce bündeln.
+
+- Nur betroffene Teilbäume aktualisieren.
+
+**Nutzen:** Weniger Flackern und CPU-Last bei häufigen Änderungen.
+
+### 7.7. Empfohlene Reihenfolge
+
+1. Lazy-Loading/Ladepfad
+2. Async-I/O
+3. Fehlerbehandlung
+4. Caching
+5. Teilbaum-Refresh
+
+## 8. Erweiterungsvorschläge
+
+### 8.1. Kontextmenü-Integration
+
+**Vorschlag:** Optionales Shell-nahes Kontextmenü je Knoten.
+**Umsetzung:** Ereignis `BuildContextMenu(node, menu)` bereitstellen.
+
+### 8.2. Multi-Selection-Modus
+
+**Vorschlag:** Mehrfachauswahl von Ordnern.
+**Umsetzung:** Interne Selektionsverwaltung plus API `SelectedPaths`.
+
+### 8.3. Such- und Filterfunktion
+
+**Vorschlag:** Knoten per Muster/Präfix filtern.
+**Umsetzung:** In-Memory-Filter mit Highlighting und optionalem „nur Treffer“-Modus.
+
+### 8.4. Drag&Drop-Unterstützung
+
+**Vorschlag:** Dateien/Ordner in den Tree ziehen oder verschieben.
+**Umsetzung:** `AllowDrop` aktivieren, Zielpfad über Ereignisse validieren.
+
+### 8.5. Bookmark/Favoriten
+
+**Vorschlag:** Häufige Pfade als Favoritenknoten.
+**Umsetzung:** Persistente Favoritenliste mit eigener Root-Gruppe.

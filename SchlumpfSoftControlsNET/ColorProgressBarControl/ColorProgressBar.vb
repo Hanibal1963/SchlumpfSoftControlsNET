@@ -40,7 +40,8 @@ Namespace ColorProgressBarControl
             Me.InitializeComponent()
 
             Me.DoubleBuffered = True
-            Me.SetStyle(ControlStyles.OptimizedDoubleBuffer Or ControlStyles.AllPaintingInWmPaint Or ControlStyles.UserPaint, True)
+            Me.SetStyle(ControlStyles.OptimizedDoubleBuffer Or ControlStyles.AllPaintingInWmPaint Or
+                        ControlStyles.UserPaint Or ControlStyles.ResizeRedraw Or ControlStyles.StandardClick, True)
             Me.UpdateStyles()
 
             ' Standardwerte setzen
@@ -65,7 +66,7 @@ Namespace ColorProgressBarControl
             Set(value As Int32)
                 ' Wert auf den gültigen Bereich begrenzen, damit keine ungültigen Zustände entstehen.
                 Me._ProgressValue = Math.Max(0, Math.Min(value, Me._MaxValue))
-                Me.UpdateProgress()
+                Me.Invalidate()
             End Set
         End Property
 
@@ -89,7 +90,7 @@ Namespace ColorProgressBarControl
 
                 ' Falls der aktuelle Wert über dem neuen Maximum liegt, wird er automatisch reduziert.
                 Me._ProgressValue = Math.Min(Me._ProgressValue, Me._MaxValue)
-                Me.UpdateProgress()
+                Me.Invalidate()
             End Set
         End Property
 
@@ -106,7 +107,7 @@ Namespace ColorProgressBarControl
             End Get
             Set(value As Color)
                 Me._BarColor = value
-                Me.ProgressFull.BackColor = Me._BarColor
+                Me.Invalidate()
             End Set
         End Property
 
@@ -123,7 +124,7 @@ Namespace ColorProgressBarControl
             End Get
             Set(value As Color)
                 Me._EmptyColor = value
-                Me.ProgressEmpty.BackColor = Me._EmptyColor
+                Me.Invalidate()
             End Set
         End Property
 
@@ -141,6 +142,7 @@ Namespace ColorProgressBarControl
             Set(value As Color)
                 Me._BorderColor = value
                 Me.BackColor = Me._BorderColor
+                Me.Invalidate()
             End Set
         End Property
 
@@ -157,7 +159,8 @@ Namespace ColorProgressBarControl
             End Get
             Set(value As Boolean)
                 Me._ShowBorder = value
-                Me.UpdateProgress()
+                Me.UpdatePadding()
+                Me.Invalidate()
             End Set
         End Property
 
@@ -174,7 +177,7 @@ Namespace ColorProgressBarControl
             End Get
             Set(value As Boolean)
                 Me._IsGlossy = value
-                Me.UpdateProgress()
+                Me.Invalidate()
             End Set
         End Property
 
@@ -273,69 +276,67 @@ Namespace ColorProgressBarControl
 #Region "interne Methoden"
 
         ''' <summary>
-        ''' Setzt die initialen Standardfarben und den Ausgangszustand der enthaltenen Panels.
+        ''' Zeichnet den Fortschritt, den leeren Bereich und den optionalen Glanzeffekt.
+        ''' </summary>
+        ''' <param name="e">Stellt die Zeichenfläche und den zu aktualisierenden Bereich bereit.</param>
+        Protected Overrides Sub OnPaint(e As PaintEventArgs)
+
+            ' Das Padding lässt den von der Hintergrundfarbe gezeichneten Rahmen frei.
+            Dim clientBounds As Rectangle = Me.ClientRectangle
+            Dim contentWidth As Int32 = Math.Max(0, clientBounds.Width - Me.Padding.Horizontal)
+            Dim contentHeight As Int32 = Math.Max(0, clientBounds.Height - Me.Padding.Vertical)
+            Dim contentX As Int32 = clientBounds.X + Me.Padding.Left
+            Dim contentY As Int32 = clientBounds.Y + Me.Padding.Top
+
+            If contentWidth > 0 AndAlso contentHeight > 0 Then
+                ' Zwischenwerte verwenden weiterhin die Außenbreite; bei Maximum wird die Innenfläche gefüllt.
+                Dim fillWidth As Int32
+                If Me._ProgressValue = Me._MaxValue Then
+                    fillWidth = contentWidth
+                Else
+                    Dim ratio As Double = CDbl(Me._ProgressValue) / CDbl(Me._MaxValue)
+                    fillWidth = CInt(Math.Round(ratio * CDbl(Me.Width)))
+                    fillWidth = Math.Max(0, Math.Min(contentWidth, fillWidth))
+                End If
+
+                If fillWidth > 0 Then
+                    Using barBrush As New SolidBrush(Me._BarColor)
+                        e.Graphics.FillRectangle(barBrush, contentX, contentY, fillWidth, contentHeight)
+                    End Using
+                End If
+
+                If fillWidth < contentWidth Then
+                    Using emptyBrush As New SolidBrush(Me._EmptyColor)
+                        e.Graphics.FillRectangle(emptyBrush, contentX + fillWidth, contentY, contentWidth - fillWidth, contentHeight)
+                    End Using
+                End If
+
+                ' Der halbtransparente Glanz liegt über beiden Bereichen im oberen Drittel.
+                Dim glossHeight As Int32 = Math.Min(contentHeight, Me.Height \ 3)
+                If Me._IsGlossy AndAlso glossHeight > 0 Then
+                    Using glossBrush As New SolidBrush(Color.FromArgb(100, 255, 255, 255))
+                        e.Graphics.FillRectangle(glossBrush, contentX, contentY, contentWidth, glossHeight)
+                    End Using
+                End If
+            End If
+
+            MyBase.OnPaint(e)
+        End Sub
+
+        ''' <summary>
+        ''' Setzt die initiale Rahmenfarbe des Steuerelements.
         ''' </summary>
         Private Sub InitializeDefaults()
 
-            Me.GlossLeft.BackColor = Color.FromArgb(100, 255, 255, 255)
-            Me.GlossRight.BackColor = Color.FromArgb(100, 255, 255, 255)
             Me.BackColor = Me._BorderColor
-            Me.ProgressEmpty.BackColor = Me._EmptyColor
-            Me.ProgressFull.BackColor = Me._BarColor
 
         End Sub
 
         ''' <summary>
-        ''' Aktualisiert die Höhe der Glanz-Overlays in Abhängigkeit von der aktuellen Steuerelementhöhe.
+        ''' Aktualisiert den Innenabstand entsprechend der Rahmenoption.
         ''' </summary>
-        Private Sub UpdateGloss()
+        Private Sub UpdatePadding()
 
-            ' Der Glanz belegt das obere Drittel der Höhe und skaliert dynamisch bei Größenänderungen.
-            Dim glossHeight As Int32 = Math.Max(0, Me.Height \ 3)
-
-            ' Die berechnete Höhe auf beide Glanzflächen anwenden.
-            Me.GlossLeft.Height = glossHeight
-            Me.GlossRight.Height = glossHeight
-
-        End Sub
-
-        ''' <summary>
-        ''' Berechnet die sichtbare Fortschrittsbreite neu und aktualisiert Glanz- sowie Rahmendarstellung.
-        ''' </summary>
-        Private Sub UpdateProgress()
-
-            ' Sicherheitsnetz: Maximalwert darf niemals 0 oder negativ sein.
-            If Me._MaxValue <= 0 Then
-                Me._MaxValue = 1
-            End If
-
-            ' Füllbreite proportional aus dem Verhältnis Value/Maximum berechnen.
-            Dim fillWidth As Int32 = 0
-            If Me._ProgressValue > 0 Then
-                Dim ratio As Double = CDbl(Me._ProgressValue) / CDbl(Me._MaxValue)
-                fillWidth = CInt(Math.Round(ratio * CDbl(Me.Width)))
-
-                ' Ergebnis auf die Control-Breite begrenzen.
-                fillWidth = Math.Max(0, Math.Min(Me.Width, fillWidth))
-            End If
-
-            Me.ProgressFull.Width = fillWidth
-
-            ' Glanz-Overlays abhängig von IsGlossy ein-/ausblenden.
-            If Me._IsGlossy Then
-                Me.GlossLeft.Visible = True
-                Me.GlossRight.Visible = True
-            Else
-                Me.GlossLeft.Visible = False
-                Me.GlossRight.Visible = False
-            End If
-
-            ' Sonderfall: Bei vollem Fortschritt bis zur Innenkante (mit Rahmen) bzw. Vollbreite (ohne Rahmen) füllen.
-            If Me._ProgressValue = Me._MaxValue Then
-                Me.ProgressFull.Width = If(Me._ShowBorder, Me.Width - 2, Me.Width)
-            End If
-
-            ' Innenabstand steuert die Rahmendarstellung: 1px mit Rahmen, 0px ohne Rahmen.
             Dim expectedPadding As Padding = If(Me._ShowBorder, New Padding(1), New Padding(0))
 
             If Not MyBase.Padding.Equals(expectedPadding) Then
@@ -349,32 +350,8 @@ Namespace ColorProgressBarControl
         ''' </summary>
         Private Sub ColorProgressBar_PaddingChanged(sender As Object, e As EventArgs) Handles Me.PaddingChanged
 
-            Dim expectedPadding As Padding = If(Me._ShowBorder, New Padding(1), New Padding(0))
+            Me.UpdatePadding()
 
-            If Not MyBase.Padding.Equals(expectedPadding) Then
-                MyBase.Padding = expectedPadding
-            End If
-
-        End Sub
-
-        ''' <summary>
-        ''' Reagiert auf Größenänderungen und berechnet Fortschritt sowie Glanzdarstellung neu.
-        ''' </summary>
-        Private Sub ColorProgressBar_Resize(sender As Object, e As EventArgs) Handles Me.Resize
-
-            If Me.Value <= Me._MaxValue Then
-                Me.UpdateProgress()
-                Me.UpdateGloss()
-            End If
-
-        End Sub
-
-        ''' <summary>
-        ''' Leitet Klicks von inneren Panels an das Steuerelement weiter, damit ein einheitliches Click-Ereignis
-        ''' entsteht.
-        ''' </summary>
-        Private Sub Panel_Click(sender As Object, e As EventArgs) Handles GlossLeft.Click, GlossRight.Click, ProgressFull.Click, ProgressEmpty.Click
-            Me.OnClick(e)
         End Sub
 
 #End Region

@@ -25,8 +25,8 @@
 ## Dokumentationsdateien
 
 - README.md: Enthält eine kurze Projektbeschreibung, Installationsanweisungen, Beispiele und Lizenzinformationen.
-- Lage: Dokumentationsdateien liegen im Ordner `Doc`.
 - Dateiname: Die Dateinamen der Dokumentationsdateien sollen den Namen der Klasse oder des Moduls widerspiegeln, auf das sie sich beziehen, und die Endung `.md` haben. Beispiel: `MyClass.md` für die Klasse `MyClass`.
+- Lage: Dokumentationsdateien liegen im selben Ordner wie die Klasse oder des Moduls, auf das sie sich beziehen.
 - Struktur der Dokumentationsdateien:
   - Die erste Überschrift der Dokumentationsdateien soll den Namen der Klasse oder des Moduls widerspiegeln, auf das sie sich beziehen. Beispiel: `# MyClass` für die Klasse `MyClass` und soll eine Kurzbeschreibung (1-3 Sätze zum Zweck der Klasse/Funktion) enthalten.
   - Abschnitt `## Konstruktoren` mit allen öffentlichen Konstruktoren inkl. kurzer Beschreibung, Parameterbedingungen und Verhalten bei ungültigen Eingaben (Exceptions).

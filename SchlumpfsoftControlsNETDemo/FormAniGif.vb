@@ -40,13 +40,7 @@ Public Class FormAniGif
     Private Sub AniGif_AutoPlayChanged(sender As Object, e As EventArgs) Handles AniGif.AutoPlayChanged
 
         Dim autoplay As Boolean = Me.AniGif.AutoPlay
-        Dim msg As String
-
-        If autoplay Then
-            msg = $"Die Animation wird automatisch abgespielt."
-        Else
-            msg = $"Die Animation wird nicht automatisch abgespielt."
-        End If
+        Dim msg = If(autoplay, $"Die Animation wird automatisch abgespielt.", $"Die Animation wird nicht automatisch abgespielt.")
 
         Me.Label_EventMessage.Text = msg
         Me.CheckBox_AutoPlay.Checked = autoplay
@@ -55,7 +49,7 @@ Public Class FormAniGif
 
     Private Sub AniGif_AnimationStarted(sender As Object, e As EventArgs) Handles AniGif.AnimationStarted
 
-        Dim msg As String = $""
+        Dim msg As String
         msg = $"Die Animation wird abgespielt."
         Me.Label_EventMessage.Text = msg
         Me.Button_StartAnimation.Enabled = False

@@ -10,7 +10,7 @@ Anregungen zu diesem Control stammen unter anderem aus folgenden Webseiten:
 - [How to Display Images in ComboBox in 5 Minutes](https://web.archive.org/web/20120222054732/<http://www.codeproject.com/Articles/106467/How-to-Display-Images-in-ComboBox-in-5-Minutes>)
 - [Image ComboBox Control](https://web.archive.org/web/20250819110747/<https://www.codeproject.com/Articles/10670/Image-ComboBox-Control>)
 
-## Konstruktoren
+## 1. Konstruktoren
 
 - `ImageComboBox.New()`: Initialisiert eine neue Instanz der Klasse `ImageComboBox`.
 - `ImageComboBoxItem.New()`: Initialisiert eine neue Instanz der Klasse `ImageComboBoxItem`.
@@ -18,14 +18,14 @@ Anregungen zu diesem Control stammen unter anderem aus folgenden Webseiten:
 - `ImageComboBoxItem.New(value As String, image As System.Drawing.Image)`: Initialisiert eine neue Instanz der Klasse `ImageComboBoxItem` mit Textwert und Bild.
 - `ImageComboBoxCollectionEditor.New()`: Initialisiert eine neue Instanz der Klasse `ImageComboBoxCollectionEditor`.
 
-## Ereignisse
+## 2. Ereignisse
 
 - `ImageComboBox`: Keine öffentlichen, spezifischen Ereignisse im Control dokumentiert.
 - `ImageComboBoxItem`: Keine öffentlichen Ereignisse dokumentiert.
 - `ImageComboBoxCollection.UpdateItems`: Tritt auf, wenn sich die Elemente der Kollektion geändert haben.
 - `ImageComboBoxCollectionEditor`: Keine öffentlichen Ereignisse dokumentiert.
 
-## Eigenschaften
+## 3. Eigenschaften
 
 - `ImageComboBox.Items`: Ruft die Elemente der ComboBox ab.
 - `ImageComboBox.Elements`: Ruft die designbare Elementekollektion der ComboBox ab.
@@ -35,7 +35,7 @@ Anregungen zu diesem Control stammen unter anderem aus folgenden Webseiten:
 - `ImageComboBoxCollection.Item(index As Integer)`: Ruft das `ImageComboBoxItem` am angegebenen Index ab oder legt es fest.
 - `ImageComboBoxCollectionEditor`: Keine öffentlichen oder geschützten Eigenschaften dokumentiert.
 
-## Funktionen
+## 4. Funktionen
 
 - `ImageComboBox.CreateControlsInstance() As ControlCollection`: Erstellt die Steuerelementsammlung und stellt sicher, dass die Elementekollektion initialisiert ist.
 - `ImageComboBoxItem.ToString() As String`: Gibt den Textwert des Elements zurück.
@@ -48,17 +48,101 @@ Anregungen zu diesem Control stammen unter anderem aus folgenden Webseiten:
 - `ImageComboBoxCollectionEditor.CreateCollectionItemType() As Type`: Gibt den Typ der bearbeitbaren Sammlungselemente zurück.
 - `ImageComboBoxCollectionEditor.CreateNewItemTypes() As Type()`: Gibt die im Collection-Editor zulässigen neuen Elementtypen zurück.
 
-## Hilfstypen/Strukturen
+## 5. Hilfstypen/Strukturen
 
 - `ImageComboBoxItem`: Datenträger für Textwert und optionales Bild.
 - `ImageComboBoxCollection`: Verwaltungsklasse für `ImageComboBoxItem`-Elemente.
 - `ImageComboBoxCollectionEditor`: Design-Time-Editor für die Elementekollektion.
 
-## Hinweise
+## 6. Hinweise
 
 - Die Dokumentation fasst mehrere öffentliche Typen (`ImageComboBox`, `ImageComboBoxItem`, `ImageComboBoxCollection`, `ImageComboBoxCollectionEditor`) in einer Datei zusammen.
 
-## Optimierungs und Verbesserungsmöglichkeiten
+## 7. Optimierungsvorschläge
 
-- [Optimierungsvorschläge](ImageComboBoxControlOptimirungsvorschläge.md)
-- [Erweiterungsvorschläge](ImageComboBoxControlErweiterunsvorschläge.md)
+### 7.1. Zielbild
+
+Schnelle Darstellung vieler Einträge mit konsistenter Bildqualität.
+
+### 7.2. Draw-/Measure-Logik vereinheitlichen
+
+**Umsetzung:**
+
+- Itemhöhe aus Font und Bildgröße zentral berechnen.
+
+- Trunkierung/Alignment konsistent in DrawItem anwenden.
+
+**Nutzen:** Vorhersagbares Layout bei unterschiedlichen DPI.
+
+### 7.3. Bildhandling optimieren
+
+**Umsetzung:**
+
+- Thumbnails bzw. skalierte Caches pro DPI-Stufe erzeugen.
+
+- Null-Bilder mit Platzhalter behandeln.
+
+**Nutzen:** Weniger Rendering-Artefakte und bessere Performance.
+
+### 7.4. Collectionsynchronisation härten
+
+**Umsetzung:**
+
+- `Elements` und `Items` bidirektional konsistent halten.
+
+- Bei Batch-Änderungen Update-Events bündeln.
+
+**Nutzen:** Verhindert Inkonsistenzen im Designer und zur Laufzeit.
+
+### 7.5. Ressourcenbereinigung verbessern
+
+**Umsetzung:**
+
+- Eigene Image-Ressourcen optional durch Control entsorgen lassen (Ownership-Flag).
+
+**Nutzen:** Reduziert Memory-Leaks bei dynamischen Bildern.
+
+### 7.6. Keyboard/Accessibility optimieren
+
+**Umsetzung:**
+
+- Tastaturnavigation testen und ggf. nachziehen.
+
+- AccessibleName/Description pro Item ableiten.
+
+**Nutzen:** Höhere Usability und Barrierefreiheit.
+
+### 7.7. Empfohlene Reihenfolge
+
+1. Draw-/Measure-Konsistenz
+2. Collection-Synchronisierung
+3. Bildcache
+4. Cleanup
+5. Accessibility
+
+## 8. Erweiterungsvorschläge
+
+### 8.1. Datenbindung verbessern
+
+**Vorschlag:** Starke Binding-Unterstützung (`DataSource`, `DisplayMember`, `ValueMember`) mit Bildzuordnung.
+**Umsetzung:** Interne Mapping-Schicht zwischen Datenobjekt und `ImageComboBoxItem`.
+
+### 8.2. Async-Bildladen
+
+**Vorschlag:** Bilder aus Pfad/URL asynchron laden.
+**Umsetzung:** Platzhalterbild, CancellationToken und Cache.
+
+### 8.3. Gruppierte Einträge
+
+**Vorschlag:** Kategorien/Separatoren in Dropdownliste.
+**Umsetzung:** Virtuelle Gruppeneinträge mit eigener Zeichenlogik.
+
+### 8.4. AutoComplete mit Symbolen
+
+**Vorschlag:** Symbolunterstützte Vorschlagsliste beim Tippen.
+**Umsetzung:** Benutzerdefiniertes Popup mit gefilterten Items.
+
+### 8.5. Theme-Unterstützung
+
+**Vorschlag:** Light/Dark-Renderingprofile.
+**Umsetzung:** Theme-Objekt für Farben, Padding und Highlight.

@@ -29,12 +29,12 @@
 - Lage: Dokumentationsdateien liegen im selben Ordner wie die Klasse oder des Moduls, auf das sie sich beziehen.
 - Struktur der Dokumentationsdateien:
   - Die erste Überschrift der Dokumentationsdateien soll den Namen der Klasse oder des Moduls widerspiegeln, auf das sie sich beziehen. Beispiel: `# MyClass` für die Klasse `MyClass` und soll eine Kurzbeschreibung (1-3 Sätze zum Zweck der Klasse/Funktion) enthalten.
-  - Abschnitt `## Konstruktoren` mit allen öffentlichen Konstruktoren inkl. kurzer Beschreibung, Parameterbedingungen und Verhalten bei ungültigen Eingaben (Exceptions).
-  - Abschnitt `## Ereignisse` mit allen öffentlichen Ereignissen inkl. kurzer Beschreibung, Parameterbedingungen und Verhalten bei ungültigen Eingaben (Exceptions).
-  - Abschnitt `## Eigenschaften` mit allen öffentlichen Eigenschaften inkl. kurzer Beschreibung, Parameterbedingungen und Verhalten bei ungültigen Eingaben (Exceptions).
-  - Abschnitt `## Funktionen` mit allen öffentlichen Methoden/Shared-Methoden inkl. kurzer Beschreibung, Parameterbedingungen und Verhalten bei ungültigen Eingaben (Exceptions).
-  - Abschnitt `## Hilfstypen/Strukturen` mit allen öffentlichen Hilfstypen/Strukturen inkl. kurzer Beschreibung, Parameterbedingungen und Verhalten bei ungültigen Eingaben (Exceptions).
-  - Abschnitt `## Hinweise` für numerische Grenzen, Genauigkeit, Abhängigkeiten (z. B. `System.Drawing`) und Namespace-Besonderheiten.
+  - Abschnitt `## 1. Konstruktoren` mit allen öffentlichen Konstruktoren inkl. kurzer Beschreibung, Parameterbedingungen und Verhalten bei ungültigen Eingaben (Exceptions).
+  - Abschnitt `## 2. Ereignisse` mit allen öffentlichen Ereignissen inkl. kurzer Beschreibung, Parameterbedingungen und Verhalten bei ungültigen Eingaben (Exceptions).
+  - Abschnitt `## 3. Eigenschaften` mit allen öffentlichen Eigenschaften inkl. kurzer Beschreibung, Parameterbedingungen und Verhalten bei ungültigen Eingaben (Exceptions).
+  - Abschnitt `## 4. Funktionen` mit allen öffentlichen Methoden/Shared-Methoden inkl. kurzer Beschreibung, Parameterbedingungen und Verhalten bei ungültigen Eingaben (Exceptions).
+  - Abschnitt `## 5. Hilfstypen/Strukturen` mit allen öffentlichen Hilfstypen/Strukturen inkl. kurzer Beschreibung, Parameterbedingungen und Verhalten bei ungültigen Eingaben (Exceptions).
+  - Abschnitt `## 6. Hinweise` für numerische Grenzen, Genauigkeit, Abhängigkeiten (z. B. `System.Drawing`) und Namespace-Besonderheiten.
   - Optionale kurze Beispiele, wenn für die Nutzung hilfreich.
   - Die Reihenfolge der Überschriften bzw. Abschnitte soll wie oben beschrieben eingehalten werden. Zusätzliche Überschriften sind nur in Ausnahmefällen und auf Nachfrage erlaubt.
   

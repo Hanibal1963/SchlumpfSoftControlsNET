@@ -10,14 +10,14 @@ Das Set beinhaltet die folgenden Controls:
 - **ListEdit**: Ein Control zum Auswählen, Hinzufügen, Umbenennen oder Löschen von Abschnitten oder Einträgen.
 - **EntryValueEdit**: Ein Control zum Bearbeiten des Wertes eines Eintrags.
 
-## Konstruktoren
+## 1. Konstruktoren
 
 - `ContentView.New()`: Initialisiert das Control und übernimmt den initialen Titel.
 - `CommentEdit.New()`: Initialisiert das Control und setzt den Startzustand.
 - `ListEdit.New()`: Initialisiert das Control und übernimmt den Starttitel.
 - `EntryValueEdit.New()`: Initialisiert das Control und übernimmt den Starttitel.
 
-## Ereignisse
+## 2. Ereignisse
 
 - `IniFile.FileContentChanged`: Wird ausgelöst, wenn sich der Dateiinhalt geändert hat.
 - `IniFile.SectionNameExist`: Wird ausgelöst, wenn ein Abschnittsname bereits vorhanden ist.
@@ -29,7 +29,7 @@ Das Set beinhaltet die folgenden Controls:
 - `ListEdit.SelectedItemChanged`: Wird ausgelöst, wenn sich die Auswahl geändert hat.
 - `EntryValueEdit.ValueChanged`: Wird ausgelöst, wenn ein bearbeiteter Wert übernommen wurde.
 
-## Eigenschaften
+## 3. Eigenschaften
 
 - `IniFile.FileSaved`: Gibt an, ob der aktuelle Zustand bereits gespeichert wurde.
 - `IniFile.CommentPrefix`: Gibt das Präfixzeichen für Kommentare zurück oder legt es fest.
@@ -49,7 +49,7 @@ Das Set beinhaltet die folgenden Controls:
 - `EntryValueEdit.SelectedEntry`: Gibt den aktuell ausgewählten Eintrag zurück oder legt ihn fest.
 - `EntryValueEdit.Value`: Gibt den aktuell bearbeiteten Eintragswert zurück oder legt ihn fest.
 
-## Funktionen
+## 4. Funktionen
 
 - `IniFile.CreateNewFile()`: Erzeugt eine neue INI-Datei mit Beispielinhalt.
 - `IniFile.CreateNewFile(CommentPrefix As Char)`: Erzeugt eine neue INI-Datei mit Beispielinhalt und definierbarem Kommentar-Präfix.
@@ -73,7 +73,7 @@ Das Set beinhaltet die folgenden Controls:
 - `IniFile.SetSectionComment(Name As String, CommentLines() As String)`: Ersetzt den Kommentar eines Abschnitts vollständig.
 - `IniFile.SetEntryValue(Section As String, Entry As String, Value As String)`: Setzt den Wert eines Eintrags.
 
-## Hilfstypen/Strukturen
+## 5. Hilfstypen/Strukturen
 
 - `IniFile`: Kernkomponente für Laden, Speichern und Bearbeiten von INI-Dateien.
 - `ContentView`: Anzeige-Control für den aktuellen INI-Inhalt.
@@ -81,11 +81,97 @@ Das Set beinhaltet die folgenden Controls:
 - `ListEdit`: Editor-Control für Abschnitte und Einträge.
 - `EntryValueEdit`: Editor-Control für Eintragswerte.
 
-## Hinweise
+## 6. Hinweise
 
 - Die Dokumentation fasst mehrere öffentliche Controls des IniFile-Sets in einer Datei zusammen.
 
-## Optimierungs und Verbesserungsmöglichkeiten
+## 7. Optimierungsvorschläge
 
-- [Optimierungsvorschläge](IniFileControlOptimirungsvorschläge.md)
-- [Erweiterungsvorschläge](IniFileControlErweiterunsvorschläge.md)
+### 7.1. Zielbild
+
+Konsistente, robuste INI-Verarbeitung und reaktive UI-Teilcontrols.
+
+### 7.2. Datenmodell von UI trennen
+
+**Umsetzung:**
+
+- Parsing/Schreiblogik in klar getrennten Core-Service auslagern.
+
+- UI-Controls (`ContentView`, `CommentEdit`, `ListEdit`, `EntryValueEdit`) nur als Präsentationsschicht nutzen.
+
+**Nutzen:** Bessere Testbarkeit und geringere Kopplung.
+
+### 7.3. Parser robuster machen
+
+**Umsetzung:**
+
+- Edge-Cases abdecken: leere Zeilen, Escaping, doppelte Keys, BOM/Encoding.
+
+- Fehler- und Warnmodell (z. B. ParseWarnings) ergänzen.
+
+**Nutzen:** Stabileres Verhalten bei realen INI-Varianten.
+
+### 7.4. Änderungsverfolgung verbessern
+
+**Umsetzung:**
+
+- Dirty-Tracking pro Abschnitt/Eintrag einführen.
+
+- `AutoSave` entprellen (Debounce) und atomisch speichern.
+
+**Nutzen:** Weniger I/O-Spitzen, geringeres Datenverlustrisiko.
+
+### 7.5. Eventmodell konsolidieren
+
+**Umsetzung:**
+
+- Einheitliche Events für Add/Rename/Delete mit gemeinsamen EventArgs.
+
+- Reihenfolge und Garantien der Events dokumentieren.
+
+**Nutzen:** Einfachere Anbindung im Host-Code.
+
+### 7.6. Performance bei großen Dateien
+
+**Umsetzung:**
+
+- Interne Lookup-Strukturen für Sections/Entries (Dictionary) ergänzen.
+
+- `Get*`-Methoden ohne wiederholtes lineares Scannen umsetzen.
+
+**Nutzen:** Spürbar schneller bei großen INI-Dateien.
+
+### 7.7. Empfohlene Reihenfolge
+
+1. Parser-Härtung
+2. Datenmodell-Trennung
+3. Dirty-Tracking/Save
+4. Lookup-Optimierung
+5. Eventkonsolidierung
+
+## 8. Erweiterungsvorschläge
+
+### 8.1. Schema-/Validierungsregeln
+
+**Vorschlag:** Optionales INI-Schema (Pflichtsektionen, Pflichtkeys, Datentypen).
+**Umsetzung:** Validierungs-Engine mit Ergebnisobjekt (Fehler/Warnungen).
+
+### 8.2. Include- und Merge-Unterstützung
+
+**Vorschlag:** Mehrere INI-Dateien zusammenführen (`include=`-Konzept).
+**Umsetzung:** Resolver mit Prioritätsregeln und Konfliktstrategie.
+
+### 8.3. Historie und Undo/Redo
+
+**Vorschlag:** Änderungsverlauf für Abschnitt/Eintrag.
+**Umsetzung:** Kommandomodell über Add/Rename/Delete/SetValue.
+
+### 8.4. Vergleichsansicht
+
+**Vorschlag:** Zwei INI-Dateien gegenüberstellen.
+**Umsetzung:** Diff-API plus optionale Visualisierung in `ContentView`.
+
+### 8.5. Erweiterte Suche
+
+**Vorschlag:** Volltext- und strukturierte Suche über Schlüssel/Werte/Kommentare.
+**Umsetzung:** Indizierung beim Laden, Filter-API für UI-Controls.

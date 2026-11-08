@@ -26,7 +26,8 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 ## 2. Ereignisse
 
-- `Click`: Klicks auf die inneren Panels werden an das Steuerelement weitergeleitet, damit ein einheitliches Click-Ereignis entsteht.
+- `Click`: Klicks auf das Steuerelement lösen direkt das Click-Ereignis aus.
+- `Paint`: Registrierte Ereignishandler werden nach der Darstellung des Steuerelements aufgerufen und können diese ergänzen.
 
 ## 3. Eigenschaften
 
@@ -36,7 +37,7 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 - `EmptyColor`: Gibt die Farbe des leeren Fortschrittsbereichs zurück oder legt diese fest.
 - `BorderColor`: Gibt die Farbe des Rahmens zurück oder legt diese fest.
 - `ShowBorder`: Legt fest, ob ein Rahmen um die Fortschrittsanzeige angezeigt wird.
-- `IsGlossy`: Legt fest, ob ein Glanzeffekt auf der Fortschrittsleiste angezeigt wird.
+- `IsGlossy`: Legt fest, ob ein Glanzeffekt über dem gefüllten und dem leeren Fortschrittsbereich angezeigt wird.
 - `BackColor` (überschrieben, ausgeblendet): Hintergrundfarbe ist intern als Rahmenfarbe vorgesehen.
 - `BackgroundImage` (überschrieben, ausgeblendet): Hintergrundgrafik wird vom Steuerelement nicht unterstützt.
 - `BackgroundImageLayout` (überschrieben, ausgeblendet): Hintergrundgrafik-Layout wird vom Steuerelement nicht unterstützt.
@@ -55,6 +56,7 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 ## 6. Hinweise
 
 - Werte außerhalb des gültigen Bereichs von `0` bis `ProgressMaximumValue` werden über die Guard-Logik der `Value`-Eigenschaft abgefangen.
+- Die Darstellung erfolgt ohne interne Panels. Anwendungen, die über `Controls` auf diese Panels zugegriffen haben, müssen entsprechend angepasst werden.
 
 ## 7. Optimierungsvorschläge
 
@@ -64,11 +66,13 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ### 7.2. Vollständig owner-drawn rendern
 
+**Status:** Umgesetzt.
+
 **Umsetzung:**
 
-- Panel-basierte Darstellung auf ein einziges `OnPaint` konsolidieren.
+- Füllung, Leerbereich und Glanz werden in `OnPaint` gezeichnet; der Rahmen entsteht weiterhin durch Hintergrundfarbe und Padding.
 
-- `DoubleBuffered` + `AllPaintingInWmPaint` + `ResizeRedraw` aktiv halten.
+- `DoubleBuffered`, `UserPaint`, `AllPaintingInWmPaint` und `ResizeRedraw` sind aktiviert.
 
 **Nutzen:** Weniger Control-Overhead, stabilere Darstellung.
 
@@ -114,7 +118,7 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ### 7.7. Empfohlene Reihenfolge
 
-1. Owner-Draw-Rendering
+1. Owner-Draw-Rendering (umgesetzt)
 2. Layout-Caching
 3. GDI-Objektmanagement
 4. API-Konsistenz

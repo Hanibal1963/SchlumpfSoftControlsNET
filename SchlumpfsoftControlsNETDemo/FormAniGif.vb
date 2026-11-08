@@ -5,6 +5,7 @@
 ' --------------------------------------------------------------------------------------------------------
 
 Imports SchlumpfSoft.ControlsNET
+Imports SchlumpfSoft.ControlsNET.AniGifControl
 
 Public Class FormAniGif
 
@@ -14,24 +15,15 @@ Public Class FormAniGif
 
         Me.InitializeComponent()
         Me.AniGif.AutoPlay = False
-        Me.CheckBox_AutoPlay.Checked = Me.AniGif.AutoPlay
         Me.AniGif.CustomDisplaySpeed = False
+        Me.CheckBox_AutoPlay.Checked = Me.AniGif.AutoPlay
         Me.CheckBox_CustomDisplaySpeed.Checked = Me.AniGif.CustomDisplaySpeed
+        Me.ComboBox_ScalingQualityPreset.SelectedIndex = 0
+        Me.ComboBox_SizeMode.SelectedIndex = 0
         Me.NumericUpDown_CustomDisplaySpeed.Enabled = False
         Me.NumericUpDown_CustomDisplaySpeed.Value = Me.AniGif.FramesPerSecond
-
-#If DEBUG Then
-        Debug.Print($"Benutzerdefinierte Anzeigegeschwindigkeit wurde deaktiviert.")
-#End If
-
-        Me.ComboBox_SizeMode.SelectedIndex = 0
         Me.NumericUpDown_ZoomFactor.Enabled = False
         Me.NumericUpDown_ZoomFactor.Value = Me.AniGif.ZoomFactor
-
-#If DEBUG Then
-        Debug.Print($"Der Anzeigemodus wurde auf normale Anzeige festgelegt.")
-#End If
-
         Me._AniGifAnimationNumber = 0
         Me.Button_Back.Enabled = False
         Me.ChangeAni()
@@ -39,31 +31,64 @@ Public Class FormAniGif
     End Sub
 
     Private Sub AniGif_NoAnimation(sender As Object, e As EventArgs) Handles AniGif.NoAnimation
-        Dim unused = MsgBox($"Das Bild {Me.GetAniResName(Me._AniGifAnimationNumber)} kann nicht animiert werden!", MsgBoxStyle.Information, "AniGif Control")
+
+        Dim msg As String = $"Das Bild {Me.GetAniResName(Me._AniGifAnimationNumber)} kann nicht animiert werden!"
+        Me.Label_EventMessage.Text = msg
+
     End Sub
 
     Private Sub AniGif_AutoPlayChanged(sender As Object, e As EventArgs) Handles AniGif.AutoPlayChanged
-        Me.CheckBox_AutoPlay.Checked = Me.AniGif.AutoPlay
+
+        Dim autoplay As Boolean = Me.AniGif.AutoPlay
+        Dim msg As String
+
+        If autoplay Then
+            msg = $"Die Animation wird automatisch abgespielt."
+        Else
+            msg = $"Die Animation wird nicht automatisch abgespielt."
+        End If
+
+        Me.Label_EventMessage.Text = msg
+        Me.CheckBox_AutoPlay.Checked = autoplay
+
     End Sub
 
     Private Sub AniGif_AnimationStarted(sender As Object, e As EventArgs) Handles AniGif.AnimationStarted
 
-#If DEBUG Then
-        Debug.Print($"Die Animation wurde gestartet.")
-#End If
-
+        Dim msg As String = $""
+        msg = $"Die Animation wird abgespielt."
+        Me.Label_EventMessage.Text = msg
         Me.Button_StartAnimation.Enabled = False
         Me.Button_StopAnimation.Enabled = True
+        Me.Button_Resume.Enabled = False
+        Me.Button_Pause.Enabled = True
+
     End Sub
 
     Private Sub AniGif_AnimationStopped(sender As Object, e As EventArgs) Handles AniGif.AnimationStopped
 
-#If DEBUG Then
-        Debug.Print($"Die Animation wurde gestoppt.")
-#End If
+        Dim msg As String = $""
 
-        Me.Button_StartAnimation.Enabled = True
-        Me.Button_StopAnimation.Enabled = False
+        Select Case Me.AniGif.GetPlaybackState
+
+            Case PlaybackState.Paused
+                msg = $"Die Animation wurde pausiert."
+                Me.Button_Resume.Enabled = True
+                Me.Button_Pause.Enabled = False
+                Me.Button_StartAnimation.Enabled = False
+                Me.Button_StopAnimation.Enabled = True
+
+            Case PlaybackState.Stopped
+                msg = $"Die Animation wurde gestoppt."
+                Me.Button_StartAnimation.Enabled = True
+                Me.Button_StopAnimation.Enabled = False
+                Me.Button_Resume.Enabled = False
+                Me.Button_Pause.Enabled = False
+
+        End Select
+
+        Me.Label_EventMessage.Text = msg
+
     End Sub
 
     Private Sub CheckBox_CheckedChanged(sender As Object, e As EventArgs) Handles _
@@ -123,11 +148,13 @@ Public Class FormAniGif
                     Case 2
                         Me.AniGif.GifSizeMode = AniGifControl.ImageSizeMode.Zoom
                         Me.ComboBox_ScalingQualityPreset.Enabled = True
+                        Me.ComboBox_ScalingQualityPreset.SelectedIndex = 0
                         Me.NumericUpDown_ZoomFactor.Enabled = True
 
                     Case 3
                         Me.AniGif.GifSizeMode = AniGifControl.ImageSizeMode.Fill
                         Me.ComboBox_ScalingQualityPreset.Enabled = False
+                        Me.ComboBox_ScalingQualityPreset.SelectedIndex = 0
 
                 End Select
 
@@ -152,6 +179,8 @@ Public Class FormAniGif
         Button_Back.Click,
         Button_Forward.Click,
         Button_StartAnimation.Click,
+        Button_Pause.Click,
+        Button_Resume.Click,
         Button_StopAnimation.Click
 
         Select Case True
@@ -168,6 +197,12 @@ Public Class FormAniGif
                 If Me._AniGifAnimationNumber = 20 Then CType(sender, Button).Enabled = False
                 Me.ChangeAni()
 
+            Case sender Is Me.Button_Pause
+                Me.AniGif.PauseAnimation()
+
+            Case sender Is Me.Button_Resume
+                Me.AniGif.ResumeAnimation()
+
             Case sender Is Me.Button_StartAnimation
                 Me.AniGif.StartAnimation()
 
@@ -179,8 +214,11 @@ Public Class FormAniGif
     End Sub
 
     Private Sub ChangeAni()
-        Me.Label_Animation.Text = Me.GetAniResName(Me._AniGifAnimationNumber)
-        Me.AniGif.Gif = CType(My.Resources.ResourceManager.GetObject(Me.GetAniResName(Me._AniGifAnimationNumber)), Bitmap)
+
+        Dim aniresname As String = Me.GetAniResName(Me._AniGifAnimationNumber)
+        Me.Label_Animation.Text = $"Es wird ""{aniresname}"" angezeigt."
+        Me.AniGif.Gif = CType(My.Resources.ResourceManager.GetObject(aniresname), Bitmap)
+
     End Sub
 
     Private Function GetAniResName(AniNumber As Int32) As String

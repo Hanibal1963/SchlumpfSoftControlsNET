@@ -30,8 +30,8 @@
     <RepositoryUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</PackageProjectUrl>
-    <AssemblyVersion>1.2026.1107.4</AssemblyVersion>
-    <FileVersion>1.2026.1107.4</FileVersion>
+    <AssemblyVersion>1.2026.1108.9</AssemblyVersion>
+    <FileVersion>1.2026.1108.9</FileVersion>
   </PropertyGroup>
 	
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

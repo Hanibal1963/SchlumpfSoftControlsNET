@@ -52,9 +52,8 @@ Public Class FormColorProgressBar
 
     Private Sub ColorProgressBar_Click(sender As Object, e As EventArgs) Handles ColorProgressBar.Click
 
-#If DEBUG Then
-        Debug.Print($"Es wurde auf {CType(sender, ColorProgressBarControl.ColorProgressBar).Name} geklickt.")
-#End If
+        Dim msg As String = $"Es wurde auf {CType(sender, ColorProgressBarControl.ColorProgressBar).Name} geklickt."
+        Dim unused = MessageBox.Show(msg, Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Information)
 
     End Sub
 

@@ -164,12 +164,15 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
                                                  End Sub
 
                 ini.AddSection("Custom")
+                ' Der zweite Aufruf darf den serialisierten Inhalt nicht verändern.
+                Dim contentAfterFirstAdd = ini.GetFileContent()
                 ini.AddSection("Custom")
 
                 Assert.AreEqual(1, changeCount)
                 Assert.AreEqual(1, duplicateCount)
                 Assert.Contains("Custom", ini.GetSectionNames())
-                Assert.HasCount(4, ini.GetFileContent())
+                Assert.HasCount(4, ini.GetSectionNames())
+                CollectionAssert.AreEqual(contentAfterFirstAdd, ini.GetFileContent())
             End Using
         End Sub
 

@@ -35,6 +35,8 @@
   - Abschnitt `## 4. Funktionen` mit allen öffentlichen Methoden/Shared-Methoden inkl. kurzer Beschreibung, Parameterbedingungen und Verhalten bei ungültigen Eingaben (Exceptions).
   - Abschnitt `## 5. Hilfstypen/Strukturen` mit allen öffentlichen Hilfstypen/Strukturen inkl. kurzer Beschreibung, Parameterbedingungen und Verhalten bei ungültigen Eingaben (Exceptions).
   - Abschnitt `## 6. Hinweise` für numerische Grenzen, Genauigkeit, Abhängigkeiten (z. B. `System.Drawing`) und Namespace-Besonderheiten.
+  - Abschnitt `## 7. Optimierungsvorschläge` mit allen Vorschlägen zur Verbesserung der Leistung, Lesbarkeit oder Wartbarkeit. Die untegeordneten Überschriften werden händisch erstellt.
+  - Abschnitt `## 8. Erweiterungsvorschläge` mit allen Vorschlägen zur Erweiterung der Funktionalität. Die untegeordneten Überschriften werden händisch erstellt.
   - Optionale kurze Beispiele, wenn für die Nutzung hilfreich.
   - Die Reihenfolge der Überschriften bzw. Abschnitte soll wie oben beschrieben eingehalten werden. Zusätzliche Überschriften sind nur in Ausnahmefällen und auf Nachfrage erlaubt.
   

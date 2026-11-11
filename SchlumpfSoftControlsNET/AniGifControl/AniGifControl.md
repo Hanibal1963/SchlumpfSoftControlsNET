@@ -145,6 +145,8 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.6. Diagnostik für Betrieb hinzufügen
 
+**Status:** Offen.
+
 **Umsetzung:**
 
 - Interne Metriken (FPS-ist, Dropped Frames, Renderzeit) optional erfassen.
@@ -153,13 +155,141 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 **Nutzen:** Erleichtert Fehlersuche bei Performanceproblemen.
 
-### 7.8. Empfohlene Reihenfolge
+### 7.7. GIF-Zuweisungen nach der Ressourcenfreigabe absichern
 
-1. Ressourcenlebenszyklus
-2. Rendering-Pipeline
-3. Frame-Timing
-4. Qualitätsoptionen
-5. Diagnostik
+**Status:** Offen.
+
+**Ausgangslage:** `SetGifImage()` erstellt und speichert auch nach `Dispose()` eine Bitmap-Kopie. `DisposeAnimationResources()` gibt wegen des gesetzten Dispose-Zustands anschließend keine weitere Bitmap frei.
+
+**Umsetzung:**
+
+- Den Dispose-Zustand vor dem Klonen prüfen und für `Gif = Nothing` sowie für Bildzuweisungen ein einheitliches Verhalten festlegen, beispielsweise einen wirkungslosen Aufruf oder eine `ObjectDisposedException`.
+
+- Das gewählte Verhalten in den XML-Kommentaren und der API-Dokumentation beschreiben und mit Tests absichern. Das übergebene Bild darf dabei nicht freigegeben werden.
+
+**Nutzen:** Verhindert, dass ein bereits freigegebenes Control erneut eine eigene Bitmap ohne explizite spätere Freigabe hält.
+
+### 7.8. Skalierungsgeometrie an die Clientfläche anpassen
+
+**Status:** Offen.
+
+**Ausgangslage:** `GetRectStartSize()` in [FunctionDefinitions.vb](FunctionDefinitions.vb) berücksichtigt für `Zoom` und `Fill` nur die Orientierung des Bildes, nicht das Seitenverhältnis der Clientfläche. Beispielsweise wird ein quadratisches Bild bei einem Control von 400 × 100 und `ZoomFactor = 100` auf 400 × 400 skaliert und dadurch abgeschnitten. Bei 100 × 400 und `Fill` bleibt es dagegen 100 × 100 groß und füllt die Fläche nicht aus.
+
+**Umsetzung:**
+
+- Die Skalierungsfaktoren aus Clientbreite geteilt durch Bildbreite und Clienthöhe geteilt durch Bildhöhe berechnen. Für `Zoom` den kleineren Faktor mit `ZoomFactor / 100` multiplizieren; für `Fill` den größeren Faktor verwenden.
+
+- Leere Zeichenflächen und Rundungen berücksichtigen und die Position anhand der Clientfläche bestimmen. Tests für Hoch-, Quer- und quadratische Formate, unterschiedliche Zoomfaktoren und beide Qualitätsoptionen ergänzen.
+
+- Die Änderung der bisherigen Darstellung und die zugehörigen XML-Kommentare dokumentieren.
+
+**Nutzen:** `Zoom` passt das Bild zuverlässig in die verfügbare Fläche ein; `Fill` deckt sie vollständig ab.
+
+### 7.9. Unnötige Timer-Neustarts vermeiden
+
+**Status:** Offen.
+
+**Ausgangslage:** `UpdateTimerState()` stoppt die Wiedergabe zunächst immer, auch wenn sie nach einer Einstellungsänderung weiterlaufen soll. Zudem löst `FramesPerSecond` selbst bei unverändertem Wert die Aktualisierung aus. Bei laufender Animation entstehen dadurch zusätzliche Stopp- und Startereignisse.
+
+**Umsetzung:**
+
+- Den begrenzten FPS-Wert mit dem bisherigen Wert vergleichen und gleichwertige Zuweisungen vor dem Auslösen von `FramesPerSecondChanged` beenden.
+
+- In `UpdateTimerState()` zwischen tatsächlichen Zustandswechseln und reinen Konfigurationsänderungen unterscheiden. Geänderte Intervalle gezielt übernehmen, ohne die Wiedergabe unnötig zu stoppen oder Start-/Stoppereignisse auszulösen.
+
+- Sichtbarkeit, Pause, `NoAnimation` und wiedereintretende Ereignishandler mit Tests absichern. Das veränderte Ereignisverhalten bei Einstellungsänderungen dokumentieren.
+
+**Nutzen:** Weniger Timer-Neustarts, Ereignisse und Unterbrechungen bei unverändertem Wiedergabezustand.
+
+### 7.10. Frame-Delay-Metadaten wiederverwenden
+
+**Status:** Offen.
+
+**Ausgangslage:** `RefreshFrameDelayCache()` liest bei animierten Bildern die GIF-Metadaten erneut und erstellt ein neues Array, wenn `FramesPerSecond`, `MinimumFrameIntervalMs` oder `MaximumFrameIntervalMs` geändert wird.
+
+**Umsetzung:**
+
+- Die unveränderten Delay-Rohwerte beim Bildwechsel zwischenspeichern und bei Änderungen von FPS oder Intervallgrenzen daraus nur die erforderlichen normalisierten Werte und Fallbacks neu berechnen.
+
+- Fehlende, unvollständige und ungültige Metadaten, Bildwechsel und den Wechsel zwischen beiden Geschwindigkeitsarten testen. Den zusätzlichen Speicherbedarf berücksichtigen.
+
+- Da `Gif` die interne Bitmap zurückgibt, eine Cache-Invalidierung für mögliche externe Metadatenänderungen festlegen und das bestehende Verhalten dabei berücksichtigen.
+
+**Nutzen:** Kann wiederholte Metadatenzugriffe und Array-Neuanlagen bei Einstellungsänderungen reduzieren.
+
+### 7.11. Wiederholte Berechnungen pro Timer-Tick reduzieren
+
+**Status:** Offen.
+
+**Ausgangslage:** `Timer_Tick()` liest und berechnet die verstrichene Zeit auch bei deaktiviertem `AdaptiveTiming`. Im benutzerdefinierten Geschwindigkeitsmodus wird das FPS-Intervall bei jedem Framewechsel erneut berechnet.
+
+**Umsetzung:**
+
+- Zeitstempel und Zeitdifferenz nur für das adaptive Timing erfassen. Beim Aktivieren, Fortsetzen und bei einer Frameauswahl den Zeitstempel weiterhin korrekt initialisieren.
+
+- Das begrenzte FPS-Intervall bei Änderungen von FPS oder Intervallgrenzen vorberechnen und während der Wiedergabe wiederverwenden. Rundung, Fallbacks und Grenzen unverändert beibehalten.
+
+- Beide Geschwindigkeitsarten sowie das Ein- und Ausschalten von `AdaptiveTiming` mit Tests überprüfen.
+
+**Nutzen:** Weniger wiederholte Berechnungen im häufig aufgerufenen Timerpfad; der tatsächliche Effekt sollte gemessen werden.
+
+### 7.12. Sichtbarkeitsprüfung vereinfachen
+
+**Status:** Offen.
+
+**Ausgangslage:** `IsControlTreeVisible()` prüft nach `Visible` nochmals alle übergeordneten Controls. Im Timerpfad wird die Sichtbarkeit zusätzlich sowohl vor dem Framewechsel als auch in `InvalidateIfVisible()` geprüft.
+
+**Umsetzung:**
+
+- Die zusätzliche Elternschleife prüfen: Der Getter von [Control.Visible](https://learn.microsoft.com/dotnet/api/system.windows.forms.control.visible) berücksichtigt bereits die Sichtbarkeit des übergeordneten Controls.
+
+- Eine wiederholte Prüfung innerhalb desselben Ticks vermeiden, soweit dazwischen keine Zustandsänderung möglich ist. Die Schutzprüfungen für Dispose-Zustand, Handle und Clientgröße erhalten.
+
+- Sichtbarkeitswechsel des Controls und mehrerer verschachtelter Eltern sowie das Fortsetzen der Wiedergabe testen.
+
+**Nutzen:** Weniger redundante Abfragen pro Frame bei unverändertem Verhalten für ausgeblendete Controls.
+
+### 7.13. Aktualisierungsbereich bei Framewechseln begrenzen
+
+**Status:** Offen.
+
+**Ausgangslage:** `InvalidateIfVisible()` fordert bei einem Framewechsel die Neuzeichnung der gesamten Clientfläche an, auch wenn das Bild nur einen Teil davon belegt.
+
+**Umsetzung:**
+
+- Bei unveränderter Bildgeometrie prüfen, ob nur der nicht leere Schnitt des Bildzielrechtecks mit der Clientfläche über `Invalidate(Rectangle)` aktualisiert werden kann.
+
+- Bei Bild-, Größen- oder Layoutänderungen weiterhin ausreichend große Bereiche aktualisieren; alte und neue Bildpositionen, transparente Frames, Interpolationsränder und externe `Paint`-Handler berücksichtigen.
+
+- Darstellung und Hintergrund für alle Größenmodi mit Tests vergleichen und den Nutzen insbesondere bei kleinen Bildern in großen Controls messen.
+
+**Nutzen:** Kann die zu aktualisierende Fläche und damit den Zeichenaufwand verringern, ohne die bereits umgesetzte Bedingung für Framewechsel zu verändern.
+
+### 7.14. Ungenutzte ImageAnimator-Pfade entfernen
+
+**Status:** Offen.
+
+**Ausgangslage:** Beide Geschwindigkeitsarten verwenden den Timer. Für den privaten `OnNextFrame`-Handler wird kein `ImageAnimator.Animate()` registriert; `StopAnimationCore()` ruft dennoch `ImageAnimator.StopAnimate()` auf.
+
+**Umsetzung:**
+
+- Den ungenutzten Handler, das zugehörige Delegate und den überflüssigen `StopAnimate()`-Aufruf entfernen. Die ebenfalls ungenutzte Konstante `DefaultFrameDelayMs` prüfen.
+
+- Veraltete Kommentare und den XML-Kommentar von `StopAnimation()` an die Timer-basierte Wiedergabe anpassen. Start, Stopp, Pause, Sichtbarkeit und Ressourcenfreigabe in beiden Geschwindigkeitsarten testen.
+
+**Nutzen:** Vereinfacht die Wartung und vermeidet eine unnötige Abmeldung eines nicht registrierten Wiedergabemechanismus.
+
+### 7.15. Empfohlene Reihenfolge
+
+1. GIF-Zuweisungen nach Ressourcenfreigabe absichern (7.7).
+2. Skalierungsgeometrie korrigieren (7.8).
+3. Ungenutzte ImageAnimator-Pfade entfernen (7.14).
+4. Timer-Neustarts und Ereignisse gezielt steuern (7.9).
+5. Diagnostik und Messungen für die folgenden Optimierungen vorsehen (7.6).
+6. Frame-Delay-Metadaten wiederverwenden (7.10).
+7. Timer-Ticks verschlanken (7.11).
+8. Sichtbarkeitsprüfung vereinfachen (7.12).
+9. Aktualisierungsbereich bei Framewechseln begrenzen (7.13).
 
 ## 8. Erweiterungsvorschläge
 

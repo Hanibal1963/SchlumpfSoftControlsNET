@@ -18,6 +18,8 @@ Public Class FormAniGif
         Me.AniGif.CustomDisplaySpeed = False
         Me.CheckBox_AutoPlay.Checked = Me.AniGif.AutoPlay
         Me.CheckBox_CustomDisplaySpeed.Checked = Me.AniGif.CustomDisplaySpeed
+        Me.CheckBox_Diagnostics.Checked = Me.AniGif.DiagnosticsEnabled
+        Me.Button_Diagnostics.Enabled = Me.AniGif.DiagnosticsEnabled
         Me.ComboBox_ScalingQualityPreset.SelectedIndex = 0
         Me.ComboBox_SizeMode.SelectedIndex = 0
         Me.NumericUpDown_CustomDisplaySpeed.Enabled = False
@@ -88,20 +90,25 @@ Public Class FormAniGif
     Private Sub CheckBox_CheckedChanged(sender As Object, e As EventArgs) Handles _
             CheckBox_AdaptiveTiming.CheckedChanged,
             CheckBox_CustomDisplaySpeed.CheckedChanged,
-            CheckBox_AutoPlay.CheckedChanged
+            CheckBox_AutoPlay.CheckedChanged,
+            CheckBox_Diagnostics.CheckedChanged
 
         Select Case True
 
             Case sender Is Me.CheckBox_AdaptiveTiming
                 Me.AniGif.AdaptiveTiming = CType(sender, CheckBox).Checked
 
-            Case sender Is Me.CheckBox_AutoPlay
-                Me.AniGif.AutoPlay = CType(sender, CheckBox).Checked
-
             Case sender Is Me.CheckBox_CustomDisplaySpeed
                 Me.AniGif.CustomDisplaySpeed = CType(sender, CheckBox).Checked
                 Me.AniGif.FramesPerSecond = Me.NumericUpDown_CustomDisplaySpeed.Value
                 Me.NumericUpDown_CustomDisplaySpeed.Enabled = CType(sender, CheckBox).Checked
+
+            Case sender Is Me.CheckBox_AutoPlay
+                Me.AniGif.AutoPlay = CType(sender, CheckBox).Checked
+
+            Case sender Is Me.CheckBox_Diagnostics
+                Me.AniGif.DiagnosticsEnabled = CType(sender, CheckBox).Checked
+                Me.Button_Diagnostics.Enabled = CType(sender, CheckBox).Checked
 
         End Select
 
@@ -112,6 +119,7 @@ Public Class FormAniGif
         NumericUpDown_ZoomFactor.ValueChanged
 
         Select Case True
+
             Case sender Is Me.NumericUpDown_CustomDisplaySpeed
                 Me.AniGif.FramesPerSecond = CType(sender, NumericUpDown).Value
 
@@ -153,6 +161,7 @@ Public Class FormAniGif
                 End Select
 
             Case sender Is Me.ComboBox_ScalingQualityPreset
+
                 Select Case CType(sender, ComboBox).SelectedIndex
 
                     Case 0
@@ -165,8 +174,6 @@ Public Class FormAniGif
 
         End Select
 
-
-
     End Sub
 
     Private Sub Button_Click(sender As Object, e As EventArgs) Handles _
@@ -175,21 +182,16 @@ Public Class FormAniGif
         Button_StartAnimation.Click,
         Button_Pause.Click,
         Button_Resume.Click,
-        Button_StopAnimation.Click
+        Button_StopAnimation.Click,
+        Button_Diagnostics.Click
 
         Select Case True
 
             Case sender Is Me.Button_Back
-                If Me._AniGifAnimationNumber > 0 Then Me._AniGifAnimationNumber -= 1
-                Me.Button_Forward.Enabled = True
-                If Me._AniGifAnimationNumber = 0 Then CType(sender, Button).Enabled = False
-                Me.ChangeAni()
+                Me.ShowBackAni(sender)
 
             Case sender Is Me.Button_Forward
-                If Me._AniGifAnimationNumber < 20 Then Me._AniGifAnimationNumber += 1
-                Me.Button_Back.Enabled = True
-                If Me._AniGifAnimationNumber = 20 Then CType(sender, Button).Enabled = False
-                Me.ChangeAni()
+                Me.ShowNextAni(sender)
 
             Case sender Is Me.Button_Pause
                 Me.AniGif.PauseAnimation()
@@ -203,7 +205,48 @@ Public Class FormAniGif
             Case sender Is Me.Button_StopAnimation
                 Me.AniGif.StopAnimation()
 
+            Case sender Is Me.Button_Diagnostics
+                Me.ShowDiagnostics()
+
         End Select
+
+    End Sub
+
+    Private Sub ShowBackAni(sender As Object)
+
+        If Me._AniGifAnimationNumber > 0 Then Me._AniGifAnimationNumber -= 1
+        Me.Button_Forward.Enabled = True
+        If Me._AniGifAnimationNumber = 0 Then CType(sender, Button).Enabled = False
+        Me.ChangeAni()
+
+    End Sub
+
+    Private Sub ShowNextAni(sender As Object)
+
+        If Me._AniGifAnimationNumber < 20 Then Me._AniGifAnimationNumber += 1
+        Me.Button_Back.Enabled = True
+        If Me._AniGifAnimationNumber = 20 Then CType(sender, Button).Enabled = False
+        Me.ChangeAni()
+
+    End Sub
+
+    Private Sub ShowDiagnostics()
+
+        Dim msg As String = $""
+
+        With Me.AniGif.Diagnostics
+
+            msg &= $"Kumulierte aktive und zeichnungsfähige Wiedergabezeit: { .ActiveDuration} {vbCrLf}"
+            msg &= $"Mittlere Anzahl gezeichneter Timer-Frames pro aktiver Sekunde:  { .ActualFps}{vbCrLf}"
+            msg &= $"Anzahl mindestens einmal gezeichneter Timer-Frames: { .RenderedFrames}{vbCrLf}"
+            msg &= $"Anzahl vor dem Zeichnen durch spätere Timer-Frames ersetzter Frames: { .DroppedFrames}{vbCrLf}"
+            msg &= $"Anzahl erfolgreicher GIF-Zeichenaufrufe einschließlich Repaints: { .RenderOperations}{vbCrLf}"
+            msg &= $"Mittlere Dauer eines Zeichenaufrufs in Millisekunden: { .AverageRenderTimeMs}{vbCrLf}"
+            msg &= $"Längste Dauer eines Zeichenaufrufs in Millisekunden: { .MaxRenderTimeMs}{vbCrLf}"
+
+        End With
+
+        Dim unused = MessageBox.Show(msg, "Diagnostics", MessageBoxButtons.OK, MessageBoxIcon.Information)
 
     End Sub
 
@@ -218,5 +261,6 @@ Public Class FormAniGif
     Private Function GetAniResName(AniNumber As Int32) As String
         Return $"AniGif_Anim{CStr(100 + AniNumber)}"
     End Function
+
 
 End Class

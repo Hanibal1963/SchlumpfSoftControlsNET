@@ -534,6 +534,81 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        Public Sub TimerPlayback_AdvancesAndStopsInBothSpeedModes()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                Using source As Bitmap = LoadAnimatedGif()
+                    Using control As New AniGif()
+                        control.Gif = source
+                        control.CustomDisplaySpeed = customSpeed
+                        control.FramesPerSecond = 10D
+                        GetFrameDelays(control)(0) = 140
+                        GetFrameDelays(control)(1) = 240
+                        Dim timer As System.Windows.Forms.Timer = GetTimer(control)
+                        Dim events As New List(Of String)()
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+
+                        control.StartAnimation()
+                        Assert.IsTrue(timer.Enabled)
+                        Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
+                        Assert.AreEqual(If(customSpeed, 100, 140), timer.Interval)
+
+                        Dim dimension As New FrameDimension(source.FrameDimensionsList(0))
+                        Dim unused = source.SelectActiveFrame(dimension, 1)
+                        InvokeTimerTick(control)
+                        Assert.AreEqual(1, GetCurrentFrame(control))
+                        Assert.AreEqual(If(customSpeed, 100, 240), timer.Interval)
+                        AssertSamePixels(source, control.Gif)
+
+                        control.StopAnimation()
+                        Assert.IsFalse(timer.Enabled)
+                        Assert.IsFalse(control.AutoPlay)
+                        Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
+                        Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                        InvokeTimerTick(control)
+                        control.StopAnimation()
+                        Assert.AreEqual(1, GetCurrentFrame(control))
+                        AssertSamePixels(source, control.Gif)
+                        CollectionAssert.AreEqual(New String() {"started", "stopped"}, events.ToArray())
+                    End Using
+                End Using
+            Next
+        End Sub
+
+        <TestMethod>
+        Public Sub TimerPlayback_SpeedModeChangesPreserveFrameAndEventOrder()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                Using control As New AniGif()
+                    control.CustomDisplaySpeed = customSpeed
+                    control.FramesPerSecond = 10D
+                    GetFrameDelays(control)(1) = 240
+                    Dim timer As System.Windows.Forms.Timer = GetTimer(control)
+                    Dim events As New List(Of String)()
+                    AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                    AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+
+                    control.StartAnimation()
+                    InvokeTimerTick(control)
+                    Assert.AreEqual(1, GetCurrentFrame(control))
+                    Assert.AreEqual(If(customSpeed, 100, 240), timer.Interval)
+
+                    control.CustomDisplaySpeed = Not customSpeed
+                    Assert.IsTrue(timer.Enabled)
+                    Assert.AreEqual(1, GetCurrentFrame(control))
+                    Assert.AreEqual(If(customSpeed, 240, 100), timer.Interval)
+
+                    control.CustomDisplaySpeed = customSpeed
+                    Assert.IsTrue(timer.Enabled)
+                    Assert.IsTrue(control.AutoPlay)
+                    Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
+                    Assert.AreEqual(1, GetCurrentFrame(control))
+                    Assert.AreEqual(If(customSpeed, 100, 240), timer.Interval)
+                    CollectionAssert.AreEqual(New String() {"started", "stopped", "started", "stopped", "started"}, events.ToArray())
+                End Using
+            Next
+        End Sub
+
+        <TestMethod>
         Public Sub TimerTick_PausesWhenControlIsInvisibleAndContinuesWhenVisible()
             Using control As New AniGif()
                 Using animatedGif As Bitmap = LoadAnimatedGif()
@@ -572,6 +647,52 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     End Using
                 End Using
             End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub VisibilityChanges_SuppressFramesInBothSpeedModes()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                Using parent As New Panel()
+                    Using control As New AniGif()
+                        parent.Controls.Add(control)
+                        control.CustomDisplaySpeed = customSpeed
+                        Dim timer As System.Windows.Forms.Timer = GetTimer(control)
+                        Dim events As New List(Of String)()
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+
+                        control.StartAnimation()
+                        InvokeTimerTick(control)
+                        Assert.AreEqual(1, GetCurrentFrame(control))
+
+                        control.Visible = False
+                        Assert.IsFalse(timer.Enabled)
+                        Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
+                        InvokeTimerTick(control)
+                        Assert.AreEqual(1, GetCurrentFrame(control))
+
+                        control.Visible = True
+                        Assert.IsTrue(timer.Enabled)
+                        InvokeTimerTick(control)
+                        Assert.AreEqual(2, GetCurrentFrame(control))
+                        CollectionAssert.AreEqual(New String() {"started", "stopped", "started"}, events.ToArray())
+
+                        parent.Visible = False
+                        Assert.IsFalse(control.Visible)
+                        Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
+                        Dim eventCountWhileHidden As Integer = events.Count
+                        InvokeTimerTick(control)
+                        Assert.AreEqual(2, GetCurrentFrame(control))
+                        Assert.AreEqual(eventCountWhileHidden, events.Count)
+
+                        parent.Visible = True
+                        Assert.IsTrue(timer.Enabled)
+                        Assert.IsTrue(control.AutoPlay)
+                        InvokeTimerTick(control)
+                        Assert.AreEqual(3, GetCurrentFrame(control))
+                    End Using
+                End Using
+            Next
         End Sub
 
         <TestMethod>
@@ -824,6 +945,52 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        Public Sub GifReplacement_PreservesPlaybackAndReleasesImagesInBothSpeedModes()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                Using source As Bitmap = LoadAnimatedGif()
+                    Using control As New AniGif()
+                        control.CustomDisplaySpeed = customSpeed
+                        Dim sourceWidth As Integer = source.Width
+                        Dim previousImage As Bitmap = control.Gif
+                        Dim timer As System.Windows.Forms.Timer = GetTimer(control)
+                        Dim events As New List(Of String)()
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+
+                        control.StartAnimation()
+                        InvokeTimerTick(control)
+                        Assert.AreEqual(1, GetCurrentFrame(control))
+                        control.Gif = source
+                        Assert.ThrowsExactly(Of ArgumentException)(Sub() previousImage.GetPixel(0, 0))
+                        Assert.AreNotSame(source, control.Gif)
+                        Assert.AreEqual(sourceWidth, source.Width)
+                        Assert.AreEqual(0, GetCurrentFrame(control))
+                        Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
+                        Assert.IsTrue(timer.Enabled)
+                        CollectionAssert.AreEqual(New String() {"started", "started"}, events.ToArray())
+
+                        control.SeekFrame(1)
+                        control.PauseAnimation()
+                        previousImage = control.Gif
+                        control.Gif = source
+                        Assert.ThrowsExactly(Of ArgumentException)(Sub() previousImage.GetPixel(0, 0))
+                        Assert.AreEqual(sourceWidth, source.Width)
+                        Assert.AreEqual(0, GetCurrentFrame(control))
+                        Assert.AreEqual(PlaybackState.Paused, control.GetPlaybackState())
+                        Assert.IsFalse(timer.Enabled)
+                        CollectionAssert.AreEqual(New String() {"started", "started", "stopped"}, events.ToArray())
+
+                        control.ResumeAnimation()
+                        Assert.IsTrue(timer.Enabled)
+                        InvokeTimerTick(control)
+                        Assert.AreEqual(1, GetCurrentFrame(control))
+                        CollectionAssert.AreEqual(New String() {"started", "started", "stopped", "started"}, events.ToArray())
+                    End Using
+                End Using
+            Next
+        End Sub
+
+        <TestMethod>
         Public Sub GifReplacement_PreservesPauseAndResetsTheFrame()
             Using source As Bitmap = LoadAnimatedGif()
                 Using control As New AniGif()
@@ -842,6 +1009,42 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     Assert.IsTrue(GetTimer(control).Enabled)
                 End Using
             End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Dispose_StopsPlaybackAndReleasesResourcesInBothSpeedModes()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                Using control As New AniGif()
+                    control.CustomDisplaySpeed = customSpeed
+                    Dim ownedImage As Bitmap = control.Gif
+                    Dim timer As System.Windows.Forms.Timer = GetTimer(control)
+                    Dim timerDisposedCount As Integer = 0
+                    Dim events As New List(Of String)()
+                    AddHandler timer.Disposed, Sub(sender, e) timerDisposedCount += 1
+                    AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                    AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+
+                    control.StartAnimation()
+                    InvokeTimerTick(control)
+                    Assert.AreEqual(1, GetCurrentFrame(control))
+                    control.Dispose()
+                    Assert.IsTrue(control.IsDisposed)
+                    Assert.IsFalse(timer.Enabled)
+                    Assert.AreEqual(1, timerDisposedCount)
+                    Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
+                    Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                    Assert.IsNull(control.Gif)
+                    Assert.ThrowsExactly(Of ArgumentException)(Sub() ownedImage.GetPixel(0, 0))
+
+                    InvokeTimerTick(control)
+                    control.StartAnimation()
+                    control.StopAnimation()
+                    control.Dispose()
+                    Assert.AreEqual(1, GetCurrentFrame(control))
+                    Assert.AreEqual(1, timerDisposedCount)
+                    CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+                End Using
+            Next
         End Sub
 
         <TestMethod>

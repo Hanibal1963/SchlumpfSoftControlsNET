@@ -26,16 +26,13 @@ Namespace AniGifControl
 
 #Region "Variablen"
 
-        ' Gemeinsamer Handler für ImageAnimator zum Stoppen/Neu-Registrieren
-        Private ReadOnly _AnimationHandler As EventHandler = AddressOf Me.OnNextFrame
-
         Private _FramesPerSecond As Decimal ' Benutzerdefinierte Wiedergabegeschwindigkeit (nur aktiv bei CustomDisplaySpeed = True)
         Private _Dimension As FrameDimension ' GIF-Frame-Dimension (bei GIFs i. d. R. Time)
         Private _Frame As Int32 ' Aktueller Frame-Index für die Timer-basierte Wiedergabe
         Private _MaxFrame As Int32 ' Letzter gültiger Frame-Index des geladenen GIFs
         Private _Autoplay As Boolean ' Steuert, ob die Animation automatisch starten soll
         Private _ZoomFactor As Decimal ' Zoomfaktor in Prozent für den Zoom-Modus
-        Private _CustomDisplaySpeed As Boolean ' True = Timer/FPS verwenden, False = GIF-Metadaten-Verzögerung verwenden
+        Private _CustomDisplaySpeed As Boolean ' True = FPS-Intervall, False = GIF-Metadaten-Verzögerung verwenden
         Private _GifSizeMode As ImageSizeMode ' Art der Darstellung (Normal, Stretch, Zoom, ...)
         Private _scalingQualityPreset As GifScalingQualityPreset
         Private _Gif As Bitmap ' Aktuell angezeigtes Bild (intern immer als Bitmap gehalten)
@@ -49,7 +46,6 @@ Namespace AniGifControl
         Private _LastFrameTickTimestamp As Int64 ' Zeitstempel des letzten Timer-Ticks
         Private _AdaptiveTiming As Boolean ' Aktiviert Drift-Korrektur auf Basis der UI-Thread-Last
 
-        Private Const DefaultFrameDelayMs As Int32 = 100
         Private Const FrameDelayPropertyTag As Int32 = &H5100
 
 #End Region
@@ -188,8 +184,8 @@ Namespace AniGifControl
         End Property
 
         ''' <summary>
-        ''' Legt fest, ob die benutzerdefinierte Anzeigegeschwindigkeit (Timer/FPS) oder die im GIF hinterlegte
-        ''' Bildfolge mit normalisierten Frame-Verzögerungen verwendet wird.
+        ''' Legt fest, ob die timerbasierte Wiedergabe die benutzerdefinierte Anzeigegeschwindigkeit (FPS)
+        ''' oder die im GIF hinterlegten normalisierten Frame-Verzögerungen verwendet.
         ''' </summary>
         <Browsable(True)>
         <Category("Behavior")>
@@ -512,7 +508,7 @@ Namespace AniGifControl
         End Sub
 
         ''' <summary>
-        ''' Stoppt die Animation und beendet Timer sowie ImageAnimator. Der aktuelle Frame bleibt erhalten.
+        ''' Stoppt die Animation und hält den Timer an. Der aktuelle Frame bleibt erhalten.
         ''' </summary>
         Public Sub StopAnimation()
             If Me._IsDisposed OrElse Me.IsDisposed Then Return
@@ -688,7 +684,7 @@ Namespace AniGifControl
 
         Private Sub AniGif_CustomDisplaySpeedChanged() Handles Me.CustomDisplaySpeedChanged
 
-            ' Bei Moduswechsel zwischen Timer/ImageAnimator sofort neu konfigurieren
+            ' Nach einem Wechsel zwischen FPS und GIF-Verzögerungen den Timer neu konfigurieren.
             Me.UpdateTimerState()
 
         End Sub
@@ -705,7 +701,7 @@ Namespace AniGifControl
             Me._IsDisposed = True
             Me._playbackState = PlaybackState.Stopped
 
-            ' Animation vor dem Freigeben von Timer und Bitmap vollständig abmelden.
+            ' Den Timer vor dem Freigeben von Bitmap und Komponenten anhalten.
             Me.StopAnimationCore(False)
 
             ' Nur intern erzeugte Bitmaps freigeben (fremde Instanzen nicht ungefragt disposen).
@@ -796,23 +792,6 @@ Namespace AniGifControl
             End Try
 
             Me._NormalizedFrameDelaysMs = normalizedDelays
-
-        End Sub
-
-        Private Sub OnNextFrame(o As Object, e As EventArgs)
-
-            If Me._IsDisposed OrElse Me.IsDisposed OrElse Not Me.AutoPlay OrElse Me.DesignMode OrElse Me._playbackState <> PlaybackState.Playing Then Return
-            If Me._Gif Is Nothing OrElse Me._MaxFrame <= 0 Then Return
-            If Not Me.IsControlTreeVisible() Then Return
-
-            Dim nextFrame As Int32 = Me._Frame + 1
-            If nextFrame > Me._MaxFrame Then nextFrame = 0
-            If nextFrame = Me._Frame Then Return
-
-            ' Callback von ImageAnimator: Frame berechnen und danach explizit neu zeichnen.
-            Me._Frame = nextFrame
-            ImageAnimator.UpdateFrames(Me._Gif)
-            Me.InvalidateIfVisible()
 
         End Sub
 
@@ -980,7 +959,7 @@ Namespace AniGifControl
 
             If Me._IsDisposed OrElse Me.IsDisposed Then Return
 
-            ' Immer zuerst beide Mechanismen stoppen, danach den benötigten Modus aktivieren
+            ' Den Timer anhalten, bevor der aktuelle Wiedergabezustand neu angewendet wird.
             Me.StopAnimationCore(True)
 
             ' Ereignishandler können während des Stoppens den Zustand erneut ändern oder das Control freigeben.
@@ -1005,9 +984,6 @@ Namespace AniGifControl
             Dim wasAnimating As Boolean = Me._IsAnimating
 
             Me.Timer.Stop()
-            If Me._Gif IsNot Nothing Then
-                ImageAnimator.StopAnimate(Me._Gif, Me._AnimationHandler)
-            End If
             Me._LastFrameTickTimestamp = 0
             Me._IsAnimating = False
 

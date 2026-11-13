@@ -33,7 +33,7 @@ Weitere Infos unter:
 - `Gif`: Gibt die aktuell verwendete interne Bitmap zurück oder legt eine GIF-Grafik fest. Bei der Zuweisung erstellt das Control eine eigene Kopie und gibt vom Aufrufer verwaltete Bilder nicht frei. Die zurückgegebene interne Bitmap gehört dem Control und wird bei einem Bildwechsel oder bei der Ressourcenfreigabe freigegeben. `Nothing` stellt eine Kopie des Standardbilds wieder her. Nach Beginn der Ressourcenfreigabe lösen beide Zuweisungen eine `ObjectDisposedException` aus, ohne das übergebene Bild zu verändern. Nach abgeschlossener Freigabe gibt der Getter `Nothing` zurück. Die Zuweisung muss auf dem UI-Thread des Controls erfolgen.
 - `GifSizeMode`: Legt die Skalierung und Ausrichtung der GIF-Grafik fest. `Zoom` passt das Bild proportional in die Clientfläche ein, `Fill` füllt sie proportional und kann Bildränder abschneiden. `Normal` und `CenterImage` verwenden die Originalgröße.
 - `ScalingQualityPreset`: Legt die Interpolation für `ImageSizeMode.Zoom` und `ImageSizeMode.Fill` fest. Standard ist `Photo`; ein Wechsel fordert eine Neuzeichnung an. Andere Werte als `Photo` und `PixelArt` lösen `System.ComponentModel.InvalidEnumArgumentException` aus.
-- `CustomDisplaySpeed`: Legt fest, ob die benutzerdefinierte Anzeigegeschwindigkeit (Timer/FPS) oder normalisierte GIF-Metadaten-Delays verwendet werden.
+- `CustomDisplaySpeed`: Legt fest, ob die timerbasierte Wiedergabe die benutzerdefinierte Anzeigegeschwindigkeit (FPS) oder normalisierte GIF-Metadaten-Delays verwendet.
 - `FramesPerSecond`: Legt die benutzerdefinierte Anzeigegeschwindigkeit in Bildern pro Sekunde (FPS) fest.
 - `MinimumFrameIntervalMs`: Legt die untere Grenze für normalisierte Frame-Delays in Millisekunden fest.
 - `MaximumFrameIntervalMs`: Legt die obere Grenze für normalisierte Frame-Delays in Millisekunden fest.
@@ -273,28 +273,26 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.14. Ungenutzte ImageAnimator-Pfade entfernen
 
-**Status:** Offen.
+**Status:** Umgesetzt.
 
-**Ausgangslage:** Beide Geschwindigkeitsarten verwenden den Timer. Für den privaten `OnNextFrame`-Handler wird kein `ImageAnimator.Animate()` registriert; `StopAnimationCore()` ruft dennoch `ImageAnimator.StopAnimate()` auf.
+**Ausgangslage:** Beide Geschwindigkeitsarten verwendeten den Timer. Für den privaten `OnNextFrame`-Handler war kein `ImageAnimator.Animate()` registriert; `StopAnimationCore()` rief dennoch `ImageAnimator.StopAnimate()` auf.
 
 **Umsetzung:**
 
-- Den ungenutzten Handler, das zugehörige Delegate und den überflüssigen `StopAnimate()`-Aufruf entfernen. Die ebenfalls ungenutzte Konstante `DefaultFrameDelayMs` prüfen.
+- Der ungenutzte Handler, das zugehörige Delegate, der überflüssige `StopAnimate()`-Aufruf und die ungenutzte Konstante `DefaultFrameDelayMs` wurden entfernt. Die FPS-basierte Fallback-Berechnung bleibt unverändert.
 
-- Veraltete Kommentare und den XML-Kommentar von `StopAnimation()` an die Timer-basierte Wiedergabe anpassen. Start, Stopp, Pause, Sichtbarkeit und Ressourcenfreigabe in beiden Geschwindigkeitsarten testen.
+- Kommentare und XML-Dokumentation beschreiben die Timer-basierte Wiedergabe. Tests sichern Start, Framewechsel, Stopp, Pause, Moduswechsel, Sichtbarkeit, Bildwechsel und Ressourcenfreigabe in beiden Geschwindigkeitsarten ab.
 
 **Nutzen:** Vereinfacht die Wartung und vermeidet eine unnötige Abmeldung eines nicht registrierten Wiedergabemechanismus.
 
 ### 7.15. Empfohlene Reihenfolge
 
-1. Skalierungsgeometrie korrigieren (7.8; umgesetzt).
-2. Ungenutzte ImageAnimator-Pfade entfernen (7.14).
-3. Timer-Neustarts und Ereignisse gezielt steuern (7.9).
-4. Diagnostik und Messungen für die folgenden Optimierungen vorsehen (7.6).
-5. Frame-Delay-Metadaten wiederverwenden (7.10).
-6. Timer-Ticks verschlanken (7.11).
-7. Sichtbarkeitsprüfung vereinfachen (7.12).
-8. Aktualisierungsbereich bei Framewechseln begrenzen (7.13).
+1. Timer-Neustarts und Ereignisse gezielt steuern (7.9).
+2. Diagnostik und Messungen für die folgenden Optimierungen vorsehen (7.6).
+3. Frame-Delay-Metadaten wiederverwenden (7.10).
+4. Timer-Ticks verschlanken (7.11).
+5. Sichtbarkeitsprüfung vereinfachen (7.12).
+6. Aktualisierungsbereich bei Framewechseln begrenzen (7.13).
 
 ## 8. Erweiterungsvorschläge
 

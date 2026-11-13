@@ -567,6 +567,7 @@ Namespace AniGifControl
 
             Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, index)
             Me._Frame = index
+            If Me._diagnosticsEnabled Then Me._diagnosticsCollector.CancelPendingFrame()
 
             If Me._IsAnimating AndAlso Me._playbackState = PlaybackState.Playing Then
                 ' Das neue Intervall beginnt am gewählten Frame, ohne Start-/Stoppereignisse auszulösen.
@@ -627,6 +628,10 @@ Namespace AniGifControl
         Protected Overrides Sub OnParentChanged(e As EventArgs)
             MyBase.OnParentChanged(e)
             Me.UpdateTimerState()
+            If Me._diagnosticsEnabled Then
+                Me.RefreshDiagnosticsAncestors()
+                Me.UpdateDiagnosticsActivity()
+            End If
         End Sub
 
         Protected Overrides Sub OnPaint(e As PaintEventArgs)
@@ -635,6 +640,18 @@ Namespace AniGifControl
 
             ' Null-Schutz
             If Me._Gif Is Nothing Then Return
+
+            Dim diagnostics As AniGifDiagnosticsCollector = Nothing
+            Dim diagnosticsVersion As Int64 = 0
+            Dim frameGeneration As Int64 = 0
+            Dim renderStartTimestamp As Int64 = 0
+            If Me._diagnosticsEnabled Then
+                Me.UpdateDiagnosticsActivity()
+                diagnostics = Me._diagnosticsCollector
+                diagnosticsVersion = diagnostics.SessionVersion
+                frameGeneration = diagnostics.PendingFrameGeneration
+                renderStartTimestamp = Stopwatch.GetTimestamp()
+            End If
 
             ' Variable für Zeichenfläche
             Dim g As Graphics = e.Graphics
@@ -660,7 +677,20 @@ Namespace AniGifControl
             End If
 
             ' Zeichenfläche festlegen und Bild zeichnen
-            g.DrawImage(Me._Gif, New Rectangle(rectstartpoint, rectstartsize))
+            Dim imageRectangle As New Rectangle(rectstartpoint, rectstartsize)
+            g.DrawImage(Me._Gif, imageRectangle)
+
+            If diagnostics IsNot Nothing AndAlso Me._diagnosticsEnabled AndAlso
+                Me._diagnosticsCollector Is diagnostics AndAlso diagnostics.SessionVersion = diagnosticsVersion Then
+                Dim renderTicks As Int64 = Stopwatch.GetTimestamp() - renderStartTimestamp
+                Dim intersectsClip As Boolean = False
+                If frameGeneration <> 0 Then
+                    Dim clippedRectangle As Rectangle = Rectangle.Intersect(imageRectangle, e.ClipRectangle)
+                    clippedRectangle = Rectangle.Intersect(clippedRectangle, Me.ClientRectangle)
+                    intersectsClip = clippedRectangle.Width > 0 AndAlso clippedRectangle.Height > 0 AndAlso g.IsVisible(clippedRectangle)
+                End If
+                diagnostics.RecordDraw(renderTicks, frameGeneration, intersectsClip)
+            End If
 
         End Sub
 
@@ -713,6 +743,7 @@ Namespace AniGifControl
 
             ' Den Timer vor dem Freigeben von Bitmap und Komponenten anhalten.
             Me.StopAnimationCore(False)
+            If Me._diagnosticsEnabled Then Me.DiagnosticsEnabled = False
 
             ' Nur intern erzeugte Bitmaps freigeben (fremde Instanzen nicht ungefragt disposen).
             If Me._OwnsGif AndAlso Me._Gif IsNot Nothing Then
@@ -805,13 +836,15 @@ Namespace AniGifControl
 
         End Sub
 
-        Private Sub InvalidateIfVisible()
+        Private Sub InvalidateIfVisible(Optional isTimerFrame As Boolean = False)
 
             If Me._IsDisposed OrElse Me.IsDisposed Then Return
             If Not Me.IsHandleCreated Then Return
             If Not Me.IsControlTreeVisible() Then Return
             If Me.ClientSize.Width <= 0 OrElse Me.ClientSize.Height <= 0 Then Return
 
+            ' Vor Invalidate markieren, da dessen Ereignishandler erneut in das Control eintreten können.
+            If isTimerFrame AndAlso Me._diagnosticsEnabled Then Me._diagnosticsCollector.QueueTimerFrame()
             Me.Invalidate()
 
         End Sub
@@ -833,6 +866,7 @@ Namespace AniGifControl
         Private Sub Timer_Tick(sender As Object, e As EventArgs) Handles Timer.Tick
 
             If Me._IsDisposed OrElse Me.IsDisposed OrElse Me.DesignMode OrElse Not Me.AutoPlay OrElse Me._playbackState <> PlaybackState.Playing Then Exit Sub
+            If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
             If Me._Gif Is Nothing Then Exit Sub
             If Not Me.IsControlTreeVisible() Then Exit Sub
 
@@ -859,7 +893,7 @@ Namespace AniGifControl
             Me.Timer.Interval = adjustedIntervalMs
 
             ' Nur neu zeichnen wenn das Control sichtbar ist
-            Me.InvalidateIfVisible()
+            Me.InvalidateIfVisible(True)
 
         End Sub
 
@@ -1002,6 +1036,7 @@ Namespace AniGifControl
             Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
             Me.Timer.Start()
             Me._IsAnimating = True
+            If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
             RaiseEvent AnimationStarted(Me, EventArgs.Empty)
 
         End Sub
@@ -1013,6 +1048,7 @@ Namespace AniGifControl
             Me.Timer.Stop()
             Me._LastFrameTickTimestamp = 0
             Me._IsAnimating = False
+            If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
 
             If raiseAnimationStopped AndAlso wasAnimating Then
                 RaiseEvent AnimationStopped(Me, EventArgs.Empty)

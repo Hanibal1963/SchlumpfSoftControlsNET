@@ -38,6 +38,8 @@ Weitere Infos unter:
 - `MinimumFrameIntervalMs`: Legt die untere Grenze für normalisierte Frame-Delays in Millisekunden fest. Werte unter 1 werden auf 1 gesetzt; überschreitet die Grenze das Maximum, wird dieses entsprechend erhöht.
 - `MaximumFrameIntervalMs`: Legt die obere Grenze für normalisierte Frame-Delays in Millisekunden fest. Werte unter 1 werden auf 1 gesetzt; unterschreitet die Grenze das Minimum, wird dieses entsprechend gesenkt.
 - `AdaptiveTiming`: Aktiviert optional eine adaptive Drift-Korrektur bei UI-Thread-Last.
+- `DiagnosticsEnabled`: Aktiviert die optionale Diagnostik; der Standardwert ist `False`. Das Aktivieren beginnt eine neue Messung, das Deaktivieren friert die Werte ein. Eine Aktivierung nach Beginn der Ressourcenfreigabe löst `ObjectDisposedException` aus. Die Eigenschaft wird nicht im Designer serialisiert und muss auf dem UI-Thread verwendet werden.
+- `Diagnostics`: Gibt eine unveränderliche `AniGifDiagnostics`-Momentaufnahme zurück. Vor der ersten Aktivierung sind die Zähler leer; nach dem Deaktivieren und nach `Dispose()` bleiben die eingefrorenen Werte lesbar. Der Abruf muss auf dem UI-Thread erfolgen. Die Beschreibung der einzelnen Werte steht in [AniGifDiagnostics.md](AniGifDiagnostics.md).
 - `ZoomFactor`: Legt den Zoomfaktor für `Zoom` in Prozent der eingepassten Größe fest. Der Standardwert ist 50; Werte außerhalb von 1 bis 100 werden auf diesen Bereich begrenzt. In den übrigen Modi hat der Wert keine Wirkung.
 - `MaximumSize`: Ausgeblendet, da für dieses Control nicht relevant.
 - `MinimumSize`: Ausgeblendet, da für dieses Control nicht relevant.
@@ -62,6 +64,7 @@ Weitere Infos unter:
 - `SeekFrame(index As Int32)`: Wählt den nullbasierten Frame `index` aus, ohne den Wiedergabezustand zu ändern. Gültig sind Werte von `0` bis zum letzten Frame; bei einem statischen Bild ist nur `0` gültig. Ungültige Werte lösen `ArgumentOutOfRangeException` aus, ein fehlendes Bild löst `InvalidOperationException` aus. Bei laufender Wiedergabe beginnt das Intervall des gewählten Frames neu.
 - `StopAnimation()`: Setzt `AutoPlay` auf `False` und stoppt die Wiedergabe. Der aktuelle Frame bleibt erhalten.
 - `GetPlaybackState() As PlaybackState`: Gibt den gewünschten Wiedergabezustand zurück. Der Anfangszustand ist `Stopped`; bei der Ressourcenfreigabe wird der Zustand auf `Stopped` gesetzt. Die Methode benötigt keine Parameter und löst keine eigenen Ausnahmen aus.
+- `ResetDiagnostics()`: Setzt alle Diagnosewerte zurück, ohne den Wiedergabezustand zu ändern. Bei aktivierter Diagnostik beginnt eine neue Messung; nach `Dispose()` bleibt der Aufruf ohne Wirkung.
 
 Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlaybackState()` gibt weiterhin den gespeicherten Zustand zurück. Alle genannten Methoden sollen auf dem UI-Thread des Controls aufgerufen werden.
 
@@ -70,6 +73,7 @@ Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlay
 - `ImageSizeMode`: Definiert die Modi `Normal`, `CenterImage`, `Zoom` und `Fill` zur Größenanpassung und Ausrichtung der GIF-Grafik.
 - `GifScalingQualityPreset`: `Photo` verwendet `HighQualityBicubic` für geglättete Bilder; `PixelArt` verwendet `NearestNeighbor` und `PixelOffsetMode.Half` für harte Pixelkanten.
 - `PlaybackState`: Öffentliche Aufzählung mit `Stopped = 0` (gestoppt), `Playing = 1` (Wiedergabe), und `Paused = 2` (pausiert).
+- `AniGifDiagnostics`: Unveränderliche Momentaufnahme mit Aktivierungszustand, aktiver Messzeit, mittlerer Bildrate, gezeichneten und verworfenen Timer-Frames sowie Anzahl, mittlerer und maximaler Dauer der GIF-Zeichenaufrufe. Einzelheiten stehen in [AniGifDiagnostics.md](AniGifDiagnostics.md).
 
 ## 6. Hinweise
 
@@ -88,6 +92,12 @@ Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlay
 - Der mit `GetPlaybackState()` abgefragte Zustand ist unabhängig von der Sichtbarkeit. `Playing` bedeutet nicht zwangsläufig, dass die Animation tatsächlich läuft, beispielsweise bei einem unsichtbaren Control oder einer nicht animierbaren Grafik.
 - Beim Austausch von `Gif` werden laufende Wiedergabemechanismen gestoppt, intern erzeugte Bilder freigegeben und der Frame auf `0` gesetzt. Eine explizite Pause bleibt erhalten.
 - Jede Instanz besitzt eine eigene Bitmap-Kopie des Standardbilds, damit Frameänderungen andere Instanzen nicht beeinflussen.
+- Die Diagnostik erfasst nur bei laufender Wiedergabe, sichtbarer Elternkette, vorhandenem Handle und nicht leerer Clientfläche aktive Zeit und Timer-Framegenerationen. Pause, Stopp, Unsichtbarkeit, fehlendes Handle und leere Clientfläche unterbrechen diese Zeitmessung.
+- Sichtbarkeitswechsel der Eltern werden auf dem UI-Thread verarbeitet. Zuvor ausgeführte, blockierende Ereignishandler können den erfassten Zeitpunkt des Wechsels verschieben.
+- `ActualFps` ist der Mittelwert der mindestens einmal mit passendem Clip gezeichneten Timer-Framegenerationen über die aktive Messzeit. Ohne messbare aktive Zeit ist der Wert `Nothing`; bei aktiver Zeit ohne gezeichneten Timer-Frame ist er `0`. Wiederholte Repaints und `SeekFrame()` zählen nicht als zusätzliche Frames.
+- `DroppedFrames` zählt Timer-Framegenerationen, die vor einem passenden Zeichenaufruf durch einen späteren Timer-Frame ersetzt wurden. Abgebrochene ausstehende Frames bei Pause, Unsichtbarkeit, Handle-Verlust, leerer Clientfläche, `SeekFrame()`, Bildwechsel, Reset oder Ressourcenfreigabe zählen nicht als Drops. Verspätete Timer-Ticks sind keine übersprungenen GIF-Frames.
+- Die Renderzeiten erfassen erfolgreiche GIF-Zeichenaufrufe einschließlich Geometrieberechnung und `DrawImage`, aber ohne `MyBase.OnPaint` und externe Paint-Handler. Sie umfassen auch Repaints und statische Bilder; ohne erfolgreichen Zeichenaufruf sind Mittelwert und Maximum `Nothing`. Fehler beim Zeichnen werden weiterhin an den Aufrufer weitergegeben.
+- FPS und Drops beschreiben Zeichenaufrufe des Controls, nicht die tatsächliche vollständige Ausgabe auf dem Bildschirm. Bei deaktivierter Diagnostik werden keine Diagnosezeitstempel pro Tick oder Paint erfasst; eine Momentaufnahme wird erst beim Abruf erstellt.
 
 ## 7. Optimierungsvorschläge
 
@@ -151,13 +161,15 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.6. Diagnostik für Betrieb hinzufügen
 
-**Status:** Offen.
+**Status:** Umgesetzt.
 
 **Umsetzung:**
 
-- Interne Metriken (FPS-ist, Dropped Frames, Renderzeit) optional erfassen.
+- `DiagnosticsEnabled` aktiviert die Erfassung optional; `Diagnostics` liefert eine unveränderliche Momentaufnahme und `ResetDiagnostics()` beginnt eine neue Messung.
 
-- Über Debug-Eigenschaft oder Event ausgebbar machen.
+- Timer-Framegenerationen, aktive Wiedergabezeit und GIF-Zeichenaufrufe werden getrennt erfasst. Wiederholte Repaints, nicht zeichnungsfähige Zustände und absichtliche Framewechsel verfälschen die Framezähler nicht.
+
+- Tests prüfen Messwerte, Clips, beide Geschwindigkeitsarten, adaptives Timing, Zustandswechsel, verschachtelte und umgehängte Eltern, wiedereintretende Handler, Ressourcenfreigabe, unveränderte Darstellung und einen echten WinForms-Timerlauf.
 
 **Nutzen:** Erleichtert Fehlersuche bei Performanceproblemen.
 
@@ -289,12 +301,10 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.15. Empfohlene Reihenfolge
 
-1. Timer-Neustarts und Ereignisse gezielt steuern (7.9; umgesetzt).
-2. Diagnostik und Messungen für die folgenden Optimierungen vorsehen (7.6).
-3. Frame-Delay-Metadaten wiederverwenden (7.10).
-4. Timer-Ticks verschlanken (7.11).
-5. Sichtbarkeitsprüfung vereinfachen (7.12).
-6. Aktualisierungsbereich bei Framewechseln begrenzen (7.13).
+1. Frame-Delay-Metadaten wiederverwenden (7.10).
+2. Timer-Ticks verschlanken (7.11).
+3. Sichtbarkeitsprüfung vereinfachen (7.12).
+4. Aktualisierungsbereich bei Framewechseln begrenzen (7.13).
 
 ## 8. Erweiterungsvorschläge
 

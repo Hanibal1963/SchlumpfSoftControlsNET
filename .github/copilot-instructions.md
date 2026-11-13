@@ -2,6 +2,9 @@
 
 ## Regeln für Code-Änderungen durch den Agent
 
+- Die erste Zeile jeder Commitnachricht enthält eine einzeilige Zusammenfassung mit höchstens 50 Zeichen.
+- Die zweite Zeile ist eine Leerzeile.
+- Ab der dritten Zeile folgt eine vollständige Zusammenfassung der Änderungen.
 - Bevorzuge kleine, rückverfolgbare Commits.
 - Erhalte und erweitere vorhandene XML-Kommentare.
 - Füge Inline-Kommentare zum besseren Verständnis der Funktionsweise des Codes hinzu.

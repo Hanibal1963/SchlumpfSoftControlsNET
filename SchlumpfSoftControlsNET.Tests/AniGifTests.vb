@@ -108,6 +108,236 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        Public Sub ScalingGeometry_ZoomFitsTheClientArea()
+            AssertDrawingRectangle(New Size(100, 100), New Size(400, 100), ImageSizeMode.Zoom, 100D, New Rectangle(150, 0, 100, 100))
+            AssertDrawingRectangle(New Size(100, 100), New Size(100, 400), ImageSizeMode.Zoom, 100D, New Rectangle(0, 150, 100, 100))
+            AssertDrawingRectangle(New Size(200, 100), New Size(100, 200), ImageSizeMode.Zoom, 100D, New Rectangle(0, 75, 100, 50))
+            AssertDrawingRectangle(New Size(100, 200), New Size(200, 100), ImageSizeMode.Zoom, 100D, New Rectangle(75, 0, 50, 100))
+            AssertDrawingRectangle(New Size(200, 100), New Size(400, 100), ImageSizeMode.Zoom, 100D, New Rectangle(100, 0, 200, 100))
+            AssertDrawingRectangle(New Size(4, 1), New Size(10, 10), ImageSizeMode.Zoom, 100D, New Rectangle(0, 4, 10, 3))
+            AssertDrawingRectangle(New Size(3, 6), New Size(5, 5), ImageSizeMode.Zoom, 100D, New Rectangle(1, 0, 3, 5))
+        End Sub
+
+        <TestMethod>
+        Public Sub ScalingGeometry_ZoomFactorAndSmallSizesAreRounded()
+            AssertDrawingRectangle(New Size(100, 100), New Size(400, 100), ImageSizeMode.Zoom, 50D, New Rectangle(175, 25, 50, 50))
+            AssertDrawingRectangle(New Size(100, 100), New Size(400, 100), ImageSizeMode.Zoom, 1D, New Rectangle(200, 50, 1, 1))
+            AssertDrawingRectangle(New Size(100, 100), New Size(200, 100), ImageSizeMode.Zoom, 33.3D, New Rectangle(84, 34, 33, 33))
+            AssertDrawingRectangle(New Size(3, 6), New Size(5, 5), ImageSizeMode.Zoom, 60D, New Rectangle(2, 1, 2, 3))
+            AssertDrawingRectangle(New Size(10000, 1), New Size(20, 1), ImageSizeMode.Zoom, 1D, New Rectangle(10, 0, 1, 1))
+        End Sub
+
+        <TestMethod>
+        Public Sub ScalingGeometry_FillCoversTheClientArea()
+            AssertDrawingRectangle(New Size(100, 100), New Size(400, 100), ImageSizeMode.Fill, 100D, New Rectangle(0, -150, 400, 400))
+            AssertDrawingRectangle(New Size(100, 100), New Size(100, 400), ImageSizeMode.Fill, 100D, New Rectangle(-150, 0, 400, 400))
+            AssertDrawingRectangle(New Size(100, 100), New Size(100, 400), ImageSizeMode.Fill, 1D, New Rectangle(-150, 0, 400, 400))
+            AssertDrawingRectangle(New Size(200, 100), New Size(100, 200), ImageSizeMode.Fill, 100D, New Rectangle(-150, 0, 400, 200))
+            AssertDrawingRectangle(New Size(100, 200), New Size(200, 100), ImageSizeMode.Fill, 100D, New Rectangle(0, -150, 200, 400))
+            AssertDrawingRectangle(New Size(100, 100), New Size(100, 100), ImageSizeMode.Fill, 1D, New Rectangle(0, 0, 100, 100))
+            AssertDrawingRectangle(New Size(2, 5), New Size(5, 5), ImageSizeMode.Fill, 100D, New Rectangle(0, -4, 5, 13))
+            AssertDrawingRectangle(New Size(6, 3), New Size(5, 2), ImageSizeMode.Fill, 100D, New Rectangle(0, 0, 5, 3))
+        End Sub
+
+        <TestMethod>
+        Public Sub ScalingGeometry_InternalArgumentsAreValidated()
+            Dim sizeMethod As MethodInfo = GetGeometryMethod("GetRectStartSize")
+            Dim pointMethod As MethodInfo = GetGeometryMethod("GetRectStartPoint")
+
+            Using source As New Bitmap(4, 4)
+                Using control As New AniGif()
+                    Dim sizeException As TargetInvocationException = Assert.ThrowsExactly(Of TargetInvocationException)(
+                        Sub() sizeMethod.Invoke(Nothing, New Object() {ImageSizeMode.Zoom, Nothing, source, 1D}))
+                    Dim nullSizeControl As ArgumentNullException = TryCast(sizeException.InnerException, ArgumentNullException)
+                    Assert.IsNotNull(nullSizeControl)
+                    Assert.AreEqual("Control", nullSizeControl.ParamName)
+
+                    Dim pointException As TargetInvocationException = Assert.ThrowsExactly(Of TargetInvocationException)(
+                        Sub() pointMethod.Invoke(Nothing, New Object() {ImageSizeMode.Zoom, Nothing, source, New Size(4, 4)}))
+                    Dim nullPointControl As ArgumentNullException = TryCast(pointException.InnerException, ArgumentNullException)
+                    Assert.IsNotNull(nullPointControl)
+                    Assert.AreEqual("Control", nullPointControl.ParamName)
+
+                    For Each invalidZoom As Decimal In New Decimal() {0D, -0.1D, 1.01D}
+                        Dim zoomException As TargetInvocationException = Assert.ThrowsExactly(Of TargetInvocationException)(
+                            Sub() sizeMethod.Invoke(Nothing, New Object() {ImageSizeMode.Zoom, control, source, invalidZoom}))
+                        Dim outOfRange As ArgumentOutOfRangeException = TryCast(zoomException.InnerException, ArgumentOutOfRangeException)
+                        Assert.IsNotNull(outOfRange)
+                        Assert.AreEqual("Zoom", outOfRange.ParamName)
+                    Next
+
+                    Assert.AreEqual(Size.Empty, DirectCast(sizeMethod.Invoke(Nothing, New Object() {ImageSizeMode.Zoom, control, Nothing, 1D}), Size))
+                    Assert.AreEqual(Point.Empty, DirectCast(pointMethod.Invoke(Nothing, New Object() {ImageSizeMode.Zoom, control, Nothing, Size.Empty}), Point))
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub ScalingGeometry_TargetDimensionsOutsideInt32ThrowOverflow()
+            Using source As New Bitmap(10000, 1)
+                Using control As New AniGif()
+                    control.ClientSize = New Size(1, 214749)
+                    Assert.AreEqual(New Size(1, 214749), control.ClientSize)
+                    Dim sizeMethod As MethodInfo = GetGeometryMethod("GetRectStartSize")
+                    Dim exception As TargetInvocationException = Assert.ThrowsExactly(Of TargetInvocationException)(
+                        Sub() sizeMethod.Invoke(Nothing, New Object() {ImageSizeMode.Fill, control, source, 1D}))
+                    Assert.IsNotNull(TryCast(exception.InnerException, OverflowException))
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub ScalingGeometry_UsesClientSizeAndPreservesUnscaledModes()
+            Using source As New Bitmap(100, 100)
+                Using control As New AniGif()
+                    control.BorderStyle = BorderStyle.FixedSingle
+                    control.ClientSize = New Size(400, 100)
+                    control.Gif = source
+                    control.ZoomFactor = 100D
+                    Assert.AreNotEqual(control.Width, control.ClientSize.Width)
+
+                    control.GifSizeMode = ImageSizeMode.Zoom
+                    Assert.AreEqual(New Rectangle(150, 0, 100, 100), GetDrawingRectangle(control))
+                    control.GifSizeMode = ImageSizeMode.Fill
+                    Assert.AreEqual(New Rectangle(0, -150, 400, 400), GetDrawingRectangle(control))
+
+                    control.ClientSize = New Size(103, 105)
+                    control.GifSizeMode = ImageSizeMode.CenterImage
+                    Assert.AreEqual(New Rectangle(2, 2, 100, 100), GetDrawingRectangle(control))
+                    control.GifSizeMode = ImageSizeMode.Normal
+                    Assert.AreEqual(New Rectangle(0, 0, 100, 100), GetDrawingRectangle(control))
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub ScalingGeometry_EmptyClientAreaDoesNotDrawAnImage()
+            Using source As New Bitmap(4, 4)
+                Using sourceGraphics As Graphics = Graphics.FromImage(source)
+                    sourceGraphics.Clear(Color.Lime)
+                End Using
+
+                Using control As New PaintProbeAniGif()
+                    control.Gif = source
+                    Dim paintCount As Integer = 0
+                    AddHandler control.Paint, Sub(sender, e) paintCount += 1
+
+                    For Each clientSize As Size In New Size() {Size.Empty, New Size(0, 10), New Size(10, 0)}
+                        control.ClientSize = clientSize
+                        Assert.AreEqual(clientSize, control.ClientSize)
+                        For Each sizeMode As ImageSizeMode In New ImageSizeMode() {ImageSizeMode.Normal, ImageSizeMode.CenterImage, ImageSizeMode.Zoom, ImageSizeMode.Fill}
+                            control.GifSizeMode = sizeMode
+                            Assert.AreEqual(Rectangle.Empty, GetDrawingRectangle(control), $"{clientSize}, {sizeMode}")
+
+                            Using surface As New Bitmap(8, 8)
+                                Using graphics As Graphics = Graphics.FromImage(surface)
+                                    graphics.Clear(Color.Magenta)
+                                    paintCount = 0
+                                    control.PaintTo(graphics, New Rectangle(Point.Empty, surface.Size))
+                                End Using
+                                Assert.AreEqual(1, paintCount, $"{clientSize}, {sizeMode}: Paint-Ereignis")
+                                Assert.AreEqual(Color.Magenta.ToArgb(), surface.GetPixel(0, 0).ToArgb(), $"{clientSize}, {sizeMode}: kein Bild")
+                            End Using
+                        Next
+                    Next
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub ScalingGeometry_RendersZoomAndFillWithBothQualityPresetsAfterResize()
+            Using source As New Bitmap(40, 40)
+                Using graphics As Graphics = Graphics.FromImage(source)
+                    graphics.Clear(Color.Lime)
+                End Using
+
+                For Each quality As GifScalingQualityPreset In New GifScalingQualityPreset() {GifScalingQualityPreset.Photo, GifScalingQualityPreset.PixelArt}
+                    Using control As New AniGif()
+                        control.BackColor = Color.Magenta
+                        control.Gif = source
+                        control.ZoomFactor = 100D
+                        control.ScalingQualityPreset = quality
+
+                        For Each clientSize As Size In New Size() {New Size(160, 40), New Size(40, 160)}
+                            control.ClientSize = clientSize
+                            control.GifSizeMode = ImageSizeMode.Zoom
+                            Using rendered As Bitmap = RenderControl(control)
+                                AssertScaledPixels(rendered, clientSize, Color.Magenta, Color.Lime, Color.Magenta, $"Zoom, {quality}")
+                            End Using
+
+                            control.GifSizeMode = ImageSizeMode.Fill
+                            Using rendered As Bitmap = RenderControl(control)
+                                AssertScaledPixels(rendered, clientSize, Color.Lime, Color.Lime, Color.Lime, $"Fill, {quality}")
+                                For y As Integer = 0 To rendered.Height - 1
+                                    For x As Integer = 0 To rendered.Width - 1
+                                        Assert.AreNotEqual(Color.Magenta.ToArgb(), rendered.GetPixel(x, y).ToArgb(), $"Fill, {quality}, {clientSize}, Pixel ({x}, {y})")
+                                    Next
+                                Next
+                            End Using
+                        Next
+                    End Using
+                Next
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub ScalingGeometry_PreservesTransparentPixelsInBothQualityPresets()
+            Using source As New Bitmap(40, 40)
+                Using graphics As Graphics = Graphics.FromImage(source)
+                    graphics.Clear(Color.Transparent)
+                    Using brush As New SolidBrush(Color.Lime)
+                        graphics.FillRectangle(brush, New Rectangle(10, 0, 20, 40))
+                    End Using
+                End Using
+
+                Using control As New AniGif()
+                    control.ClientSize = New Size(160, 40)
+                    control.BackColor = Color.Magenta
+                    control.Gif = source
+                    control.ZoomFactor = 100D
+
+                    For Each quality As GifScalingQualityPreset In New GifScalingQualityPreset() {GifScalingQualityPreset.Photo, GifScalingQualityPreset.PixelArt}
+                        control.ScalingQualityPreset = quality
+                        For Each mode As ImageSizeMode In New ImageSizeMode() {ImageSizeMode.Zoom, ImageSizeMode.Fill}
+                            control.GifSizeMode = mode
+                            Using rendered As Bitmap = RenderControl(control)
+                                Dim left As Integer = If(mode = ImageSizeMode.Zoom, 65, 20)
+                                Dim right As Integer = If(mode = ImageSizeMode.Zoom, 95, 140)
+                                Assert.AreEqual(Color.Magenta.ToArgb(), rendered.GetPixel(left, 20).ToArgb(), $"{mode}, {quality}: transparente linke Seite")
+                                Assert.AreEqual(Color.Lime.ToArgb(), rendered.GetPixel(80, 20).ToArgb(), $"{mode}, {quality}: Bildmitte")
+                                Assert.AreEqual(Color.Magenta.ToArgb(), rendered.GetPixel(right, 20).ToArgb(), $"{mode}, {quality}: transparente rechte Seite")
+                            End Using
+                        Next
+                    Next
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub ScalingGeometry_ResizeInvalidatesTheEntireClientArea()
+            Using control As New AniGif()
+                control.ClientSize = New Size(160, 40)
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                Dim invalidatedClient As Boolean = False
+                AddHandler control.Invalidated, Sub(sender, e)
+                                                    If e.InvalidRect.Contains(control.ClientRectangle) Then invalidatedClient = True
+                                                End Sub
+
+                For Each mode As ImageSizeMode In New ImageSizeMode() {ImageSizeMode.Zoom, ImageSizeMode.Fill}
+                    control.GifSizeMode = mode
+                    invalidatedClient = False
+                    control.ClientSize = New Size(40, 160)
+                    Assert.IsTrue(invalidatedClient, $"{mode}: Clientfläche nach Größenänderung")
+
+                    invalidatedClient = False
+                    control.ClientSize = New Size(160, 40)
+                    Assert.IsTrue(invalidatedClient, $"{mode}: Clientfläche nach erneuter Größenänderung")
+                Next
+            End Using
+        End Sub
+
+        <TestMethod>
         Public Sub ScalingQualityPreset_DefaultAndDesignerMetadataArePhoto()
             Using control As New AniGif()
                 Assert.AreEqual(GifScalingQualityPreset.Photo, control.ScalingQualityPreset)
@@ -757,6 +987,54 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 Assert.AreEqual(1, stoppedCount)
             End Using
         End Sub
+
+        Private Shared Sub AssertDrawingRectangle(imageSize As Size, clientSize As Size, sizeMode As ImageSizeMode, zoom As Decimal, expected As Rectangle)
+            Using source As New Bitmap(imageSize.Width, imageSize.Height)
+                Using control As New AniGif()
+                    control.ClientSize = clientSize
+                    control.Gif = source
+                    control.GifSizeMode = sizeMode
+                    control.ZoomFactor = zoom
+                    Assert.AreEqual(expected, GetDrawingRectangle(control), $"Bild {imageSize}, Client {clientSize}, {sizeMode}, Zoom {zoom}")
+                End Using
+            End Using
+        End Sub
+
+        Private Shared Function GetDrawingRectangle(control As AniGif) As Rectangle
+            Dim sizeMethod As MethodInfo = GetGeometryMethod("GetRectStartSize")
+            Dim pointMethod As MethodInfo = GetGeometryMethod("GetRectStartPoint")
+            Dim size As Size = DirectCast(sizeMethod.Invoke(Nothing, New Object() {control.GifSizeMode, control, control.Gif, control.ZoomFactor / 100D}), Size)
+            Dim point As Point = DirectCast(pointMethod.Invoke(Nothing, New Object() {control.GifSizeMode, control, control.Gif, size}), Point)
+            Return New Rectangle(point, size)
+        End Function
+
+        Private Shared Function GetGeometryMethod(name As String) As MethodInfo
+            Dim helperType As Type = GetType(AniGif).Assembly.GetType(GetType(AniGif).Namespace & ".FunctionDefinitions")
+            Assert.IsNotNull(helperType)
+            Dim method As MethodInfo = helperType.GetMethod(name, BindingFlags.Static Or BindingFlags.NonPublic)
+            Assert.IsNotNull(method)
+            Return method
+        End Function
+
+        Private Shared Sub AssertScaledPixels(image As Bitmap, clientSize As Size, first As Color, middle As Color, last As Color, message As String)
+            Dim points As Point() = If(clientSize.Width > clientSize.Height,
+                New Point() {New Point(20, 20), New Point(80, 20), New Point(140, 20)},
+                New Point() {New Point(20, 20), New Point(20, 80), New Point(20, 140)})
+            Dim expected As Color() = {first, middle, last}
+            For index As Integer = 0 To points.Length - 1
+                Assert.AreEqual(expected(index).ToArgb(), image.GetPixel(points(index).X, points(index).Y).ToArgb(), $"{message}, {clientSize}, Pixel {points(index)}")
+            Next
+        End Sub
+
+        Private NotInheritable Class PaintProbeAniGif
+            Inherits AniGif
+
+            Public Sub PaintTo(graphics As Graphics, bounds As Rectangle)
+                Using e As New PaintEventArgs(graphics, bounds)
+                    Me.OnPaint(e)
+                End Using
+            End Sub
+        End Class
 
         Private Shared Sub AssertSamePixels(expected As Bitmap, actual As Bitmap)
             Assert.AreEqual(expected.Size, actual.Size)

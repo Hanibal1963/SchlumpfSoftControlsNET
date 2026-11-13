@@ -150,6 +150,11 @@ Namespace AniGifControl
         ''' <summary>
         ''' Gibt den Anzeigemodus (Skalierung/Ausrichtung) der GIF‑Grafik zurück oder legt ihn fest.
         ''' </summary>
+        ''' <remarks>
+        ''' Zoom passt die Grafik anhand von <see cref="ZoomFactor"/> in die Clientfläche ein.
+        ''' Fill füllt die Clientfläche und kann die Grafik an den Rändern beschneiden.
+        ''' Beide Modi erhalten das Seitenverhältnis bis auf die Rundung auf ganze Pixel.
+        ''' </remarks>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Gibt die Art wie die Grafik angezeigt wird zurück oder legt diese fest.")>
@@ -265,7 +270,8 @@ Namespace AniGifControl
         End Property
 
         ''' <summary>
-        ''' Legt den Zoomfaktor in Prozent fest, mit dem das GIF skaliert wird.
+        ''' Legt den Zoomfaktor in Prozent für den Modus <see cref="ImageSizeMode.Zoom"/> fest.
+        ''' Werte außerhalb von 1 bis 100 werden auf diesen Bereich begrenzt; der Standardwert ist 50.
         ''' </summary>
         <Browsable(True)>
         <Category("Behavior")>
@@ -487,7 +493,7 @@ Namespace AniGifControl
 
         Public Sub New()
             Me.InitializeComponent() 'Designer-Initialisierung
-            Me.SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.OptimizedDoubleBuffer Or ControlStyles.UserPaint, True)
+            Me.SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.OptimizedDoubleBuffer Or ControlStyles.UserPaint Or ControlStyles.ResizeRedraw, True)
             Me.UpdateStyles()
             Me.InitializeDefaults()
         End Sub
@@ -629,6 +635,7 @@ Namespace AniGifControl
 
             ' Größe der Zeichenfläche berechnen
             Dim rectstartsize As Size = FunctionDefinitions.GetRectStartSize(Me._GifSizeMode, Me, Me._Gif, Me._ZoomFactor / 100)
+            If rectstartsize.Width <= 0 OrElse rectstartsize.Height <= 0 Then Return
 
             ' Startpunkt der Zeichenfläche berechnen
             Dim rectstartpoint As Point = FunctionDefinitions.GetRectStartPoint(Me._GifSizeMode, Me, Me._Gif, rectstartsize)

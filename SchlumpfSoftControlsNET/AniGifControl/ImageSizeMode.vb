@@ -22,13 +22,14 @@ Namespace AniGifControl
         CenterImage = 1
 
         ''' <summary>
-        ''' Die Größe der Grafik wird einheitlich skaliert, sodass sie in den verfügbaren Bereich des Controls passt;
-        ''' zentrierte Ausrichtung (1–100%).
+        ''' Die Grafik wird unter Berücksichtigung von <see cref="AniGif.ZoomFactor"/> proportional in die Clientfläche
+        ''' eingepasst und zentriert. Bei 100 % ist sie innerhalb dieser Fläche maximal groß.
         ''' </summary>
         Zoom = 2
 
         ''' <summary>
-        ''' Die Grafik wird so skaliert, dass der verfügbare Bereich vollständig gefüllt wird; zentrierte Ausrichtung.
+        ''' Die Grafik wird proportional skaliert und zentriert, sodass die Clientfläche vollständig gefüllt ist.
+        ''' Dabei können Bildbereiche an den Rändern abgeschnitten werden.
         ''' </summary>
         Fill = 3
 

@@ -31,14 +31,14 @@ Weitere Infos unter:
 
 - `AutoPlay`: Steuert, ob die GIF-Animation automatisch gestartet wird, sobald ein animierbares Bild vorhanden und das Control sichtbar ist. Eine explizite Pause verändert den Wert nicht.
 - `Gif`: Gibt die aktuell verwendete interne Bitmap zurück oder legt eine GIF-Grafik fest. Bei der Zuweisung erstellt das Control eine eigene Kopie und gibt vom Aufrufer verwaltete Bilder nicht frei. Die zurückgegebene interne Bitmap gehört dem Control und wird bei einem Bildwechsel oder bei der Ressourcenfreigabe freigegeben. `Nothing` stellt eine Kopie des Standardbilds wieder her. Nach Beginn der Ressourcenfreigabe lösen beide Zuweisungen eine `ObjectDisposedException` aus, ohne das übergebene Bild zu verändern. Nach abgeschlossener Freigabe gibt der Getter `Nothing` zurück. Die Zuweisung muss auf dem UI-Thread des Controls erfolgen.
-- `GifSizeMode`: Gibt den Anzeigemodus (Skalierung/Ausrichtung) der GIF-Grafik zurück oder legt ihn fest.
+- `GifSizeMode`: Legt die Skalierung und Ausrichtung der GIF-Grafik fest. `Zoom` passt das Bild proportional in die Clientfläche ein, `Fill` füllt sie proportional und kann Bildränder abschneiden. `Normal` und `CenterImage` verwenden die Originalgröße.
 - `ScalingQualityPreset`: Legt die Interpolation für `ImageSizeMode.Zoom` und `ImageSizeMode.Fill` fest. Standard ist `Photo`; ein Wechsel fordert eine Neuzeichnung an. Andere Werte als `Photo` und `PixelArt` lösen `System.ComponentModel.InvalidEnumArgumentException` aus.
 - `CustomDisplaySpeed`: Legt fest, ob die benutzerdefinierte Anzeigegeschwindigkeit (Timer/FPS) oder normalisierte GIF-Metadaten-Delays verwendet werden.
 - `FramesPerSecond`: Legt die benutzerdefinierte Anzeigegeschwindigkeit in Bildern pro Sekunde (FPS) fest.
 - `MinimumFrameIntervalMs`: Legt die untere Grenze für normalisierte Frame-Delays in Millisekunden fest.
 - `MaximumFrameIntervalMs`: Legt die obere Grenze für normalisierte Frame-Delays in Millisekunden fest.
 - `AdaptiveTiming`: Aktiviert optional eine adaptive Drift-Korrektur bei UI-Thread-Last.
-- `ZoomFactor`: Legt den Zoomfaktor in Prozent fest, mit dem das GIF skaliert wird.
+- `ZoomFactor`: Legt den Zoomfaktor für `Zoom` in Prozent der eingepassten Größe fest. Der Standardwert ist 50; Werte außerhalb von 1 bis 100 werden auf diesen Bereich begrenzt. In den übrigen Modi hat der Wert keine Wirkung.
 - `MaximumSize`: Ausgeblendet, da für dieses Control nicht relevant.
 - `MinimumSize`: Ausgeblendet, da für dieses Control nicht relevant.
 - `Padding`: Ausgeblendet, da für dieses Control nicht relevant.
@@ -67,13 +67,17 @@ Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlay
 
 ## 5. Hilfstypen/Strukturen
 
-- `ImageSizeMode`: Definiert die verfügbaren Modi zur Größenanpassung und Ausrichtung der GIF-Grafik.
+- `ImageSizeMode`: Definiert die Modi `Normal`, `CenterImage`, `Zoom` und `Fill` zur Größenanpassung und Ausrichtung der GIF-Grafik.
 - `GifScalingQualityPreset`: `Photo` verwendet `HighQualityBicubic` für geglättete Bilder; `PixelArt` verwendet `NearestNeighbor` und `PixelOffsetMode.Half` für harte Pixelkanten.
 - `PlaybackState`: Öffentliche Aufzählung mit `Stopped = 0` (gestoppt), `Playing = 1` (Wiedergabe), und `Paused = 2` (pausiert).
 
 ## 6. Hinweise
 
-- `ScalingQualityPreset` wirkt nur bei `Zoom` und `Fill`; `Normal` und `CenterImage` bleiben unverändert. `Photo` entspricht der bisherigen Standarddarstellung.
+- Gegenüber der früheren Darstellung berücksichtigen `Zoom` und `Fill` das Seitenverhältnis der Clientfläche. Die Zentrierung erfolgt auch bei `CenterImage` anhand der Clientfläche und nicht anhand der äußeren Control-Größe.
+- Skalierte Zielabmessungen werden auf ganze Pixel gerundet; Halbwerte werden aufgerundet und jede Dimension beträgt bei nicht leerer Clientfläche mindestens ein Pixel. Dadurch kann das Seitenverhältnis bei sehr kleinen Darstellungen geringfügig abweichen.
+- Bei leerer Clientfläche wird kein Bild gezeichnet. Größenänderungen veranlassen eine vollständige Neuzeichnung, auch wenn keine Animation läuft.
+- Die Zielabmessungen verwenden `Int32`. Übersteigt eine skalierte Abmessung dessen darstellbaren Bereich, wird eine `OverflowException` ausgelöst.
+- `ScalingQualityPreset` wirkt nur bei `Zoom` und `Fill`; auf `Normal` und `CenterImage` hat es keinen Einfluss. `Photo` entspricht dem bisherigen Standard-Interpolationsverfahren.
 - Repaints werden bei laufender Animation nur noch angefordert, wenn das Control sichtbar ist.
 - Frame-Delays werden aus den GIF-Metadaten (`0x5100`) gelesen, mit Fallbacks versehen und auf `MinimumFrameIntervalMs`/`MaximumFrameIntervalMs` begrenzt.
 - Beide Geschwindigkeitsarten verwenden den Timer; neu gezeichnet wird nur bei einem tatsächlichen Framewechsel.
@@ -173,17 +177,17 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.8. Skalierungsgeometrie an die Clientfläche anpassen
 
-**Status:** Offen.
+**Status:** Umgesetzt.
 
-**Ausgangslage:** `GetRectStartSize()` in [FunctionDefinitions.vb](FunctionDefinitions.vb) berücksichtigt für `Zoom` und `Fill` nur die Orientierung des Bildes, nicht das Seitenverhältnis der Clientfläche. Beispielsweise wird ein quadratisches Bild bei einem Control von 400 × 100 und `ZoomFactor = 100` auf 400 × 400 skaliert und dadurch abgeschnitten. Bei 100 × 400 und `Fill` bleibt es dagegen 100 × 100 groß und füllt die Fläche nicht aus.
+**Ausgangslage:** `GetRectStartSize()` in [FunctionDefinitions.vb](FunctionDefinitions.vb) berücksichtigte für `Zoom` und `Fill` nur die Orientierung des Bildes, nicht das Seitenverhältnis der Clientfläche. Beispielsweise wurde ein quadratisches Bild bei einem Control von 400 × 100 und `ZoomFactor = 100` auf 400 × 400 skaliert und dadurch abgeschnitten. Bei 100 × 400 und `Fill` blieb es dagegen 100 × 100 groß und füllte die Fläche nicht aus.
 
 **Umsetzung:**
 
-- Die Skalierungsfaktoren aus Clientbreite geteilt durch Bildbreite und Clienthöhe geteilt durch Bildhöhe berechnen. Für `Zoom` den kleineren Faktor mit `ZoomFactor / 100` multiplizieren; für `Fill` den größeren Faktor verwenden.
+- Für `Zoom` wird der kleinere Faktor aus Clientbreite geteilt durch Bildbreite und Clienthöhe geteilt durch Bildhöhe mit `ZoomFactor / 100` multipliziert; `Fill` verwendet den größeren Faktor. Die Berechnung berücksichtigt Rundungen auch bei periodischen Faktoren.
 
-- Leere Zeichenflächen und Rundungen berücksichtigen und die Position anhand der Clientfläche bestimmen. Tests für Hoch-, Quer- und quadratische Formate, unterschiedliche Zoomfaktoren und beide Qualitätsoptionen ergänzen.
+- Die Bildposition wird anhand der Clientfläche bestimmt. Leere Clientflächen werden nicht gezeichnet; bei Größenänderungen wird die gesamte Clientfläche neu gezeichnet.
 
-- Die Änderung der bisherigen Darstellung und die zugehörigen XML-Kommentare dokumentieren.
+- Tests decken Hoch-, Quer- und quadratische Formate, unterschiedliche Zoomfaktoren, Rundungen, Rahmen, Transparenz, leere Flächen, Größenänderungen und beide Qualitätsoptionen ab. Die XML-Kommentare beschreiben die geänderte Darstellung.
 
 **Nutzen:** `Zoom` passt das Bild zuverlässig in die verfügbare Fläche ein; `Fill` deckt sie vollständig ab.
 
@@ -283,7 +287,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.15. Empfohlene Reihenfolge
 
-1. Skalierungsgeometrie korrigieren (7.8).
+1. Skalierungsgeometrie korrigieren (7.8; umgesetzt).
 2. Ungenutzte ImageAnimator-Pfade entfernen (7.14).
 3. Timer-Neustarts und Ereignisse gezielt steuern (7.9).
 4. Diagnostik und Messungen für die folgenden Optimierungen vorsehen (7.6).

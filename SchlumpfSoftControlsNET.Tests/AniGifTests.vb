@@ -1,4 +1,5 @@
 ﻿Imports System.ComponentModel
+Imports System.Diagnostics
 Imports System.Drawing
 Imports System.Drawing.Imaging
 Imports System.IO
@@ -1692,6 +1693,792 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        <STATestMethod>
+        Public Sub Diagnostics_DefaultsAndFrozenSnapshotsAreIndependent()
+            Using control As New PaintProbeAniGif()
+                Dim initial As AniGifDiagnostics = control.Diagnostics
+                Assert.IsFalse(control.DiagnosticsEnabled)
+                Assert.IsFalse(initial.IsEnabled)
+                Assert.AreEqual(TimeSpan.Zero, initial.ActiveDuration)
+                Assert.AreEqual(0L, initial.RenderedFrames)
+                Assert.AreEqual(0L, initial.DroppedFrames)
+                Assert.AreEqual(0L, initial.RenderOperations)
+                Assert.IsFalse(initial.ActualFps.HasValue)
+                Assert.IsFalse(initial.AverageRenderTimeMs.HasValue)
+                Assert.IsFalse(initial.MaxRenderTimeMs.HasValue)
+
+                Using surface As New Bitmap(160, 160)
+                    Using graphics As Graphics = Graphics.FromImage(surface)
+                        Dim bounds As New Rectangle(Point.Empty, control.ClientSize)
+                        control.PaintTo(graphics, bounds)
+                        Assert.AreEqual(0L, control.Diagnostics.RenderOperations)
+
+                        control.DiagnosticsEnabled = True
+                        control.PaintTo(graphics, bounds)
+                        Dim measured As AniGifDiagnostics = control.Diagnostics
+                        Assert.IsTrue(measured.IsEnabled)
+                        Assert.AreEqual(1L, measured.RenderOperations)
+                        Assert.AreEqual(0L, measured.RenderedFrames)
+                        Assert.IsFalse(measured.ActualFps.HasValue)
+                        Assert.IsTrue(measured.AverageRenderTimeMs.HasValue)
+                        Assert.IsTrue(measured.MaxRenderTimeMs.HasValue)
+
+                        control.DiagnosticsEnabled = False
+                        control.PaintTo(graphics, bounds)
+                        Assert.IsFalse(control.Diagnostics.IsEnabled)
+                        Assert.AreEqual(1L, control.Diagnostics.RenderOperations)
+                        Assert.AreEqual(0L, initial.RenderOperations)
+
+                        control.ResetDiagnostics()
+                        Assert.AreEqual(0L, control.Diagnostics.RenderOperations)
+                        Assert.IsFalse(control.Diagnostics.AverageRenderTimeMs.HasValue)
+                        Assert.AreEqual(1L, measured.RenderOperations)
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub DiagnosticsCollector_CalculatesRatesDropsAndRenderTimesFromActiveIntervals()
+            Dim collectorType As Type = GetType(AniGif).Assembly.GetType(GetType(AniGif).Namespace & ".AniGifDiagnosticsCollector")
+            Assert.IsNotNull(collectorType)
+            Dim collector As Object = Activator.CreateInstance(collectorType, True)
+            Assert.IsNotNull(collector)
+            Dim frequency As Long = Stopwatch.Frequency
+
+            InvokeDiagnosticsCollector(collector, "Reset")
+            InvokeDiagnosticsCollector(collector, "SetActive", True, 0L)
+            InvokeDiagnosticsCollector(collector, "QueueTimerFrame")
+            InvokeDiagnosticsCollector(collector, "QueueTimerFrame")
+            Dim secondGeneration As Long = GetPendingDiagnosticsGeneration(collector)
+            InvokeDiagnosticsCollector(collector, "RecordDraw", frequency \ 10, secondGeneration, True)
+            InvokeDiagnosticsCollector(collector, "QueueTimerFrame")
+            Dim thirdGeneration As Long = GetPendingDiagnosticsGeneration(collector)
+            InvokeDiagnosticsCollector(collector, "RecordDraw", frequency \ 5, thirdGeneration, True)
+            InvokeDiagnosticsCollector(collector, "SetActive", False, frequency)
+
+            Dim snapshot As AniGifDiagnostics = GetDiagnosticsCollectorSnapshot(collector, True, frequency)
+            Assert.AreEqual(TimeSpan.FromSeconds(1), snapshot.ActiveDuration)
+            Assert.AreEqual(2L, snapshot.RenderedFrames)
+            Assert.AreEqual(1L, snapshot.DroppedFrames)
+            Assert.AreEqual(2L, snapshot.RenderOperations)
+            Assert.IsTrue(snapshot.ActualFps.HasValue)
+            Assert.AreEqual(2.0R, snapshot.ActualFps.Value, 0.000001R)
+            Assert.IsTrue(snapshot.AverageRenderTimeMs.HasValue)
+            Assert.AreEqual(150.0R, snapshot.AverageRenderTimeMs.Value, 0.1R)
+            Assert.IsTrue(snapshot.MaxRenderTimeMs.HasValue)
+            Assert.AreEqual(200.0R, snapshot.MaxRenderTimeMs.Value, 0.1R)
+
+            InvokeDiagnosticsCollector(collector, "SetActive", True, 3L * frequency)
+            InvokeDiagnosticsCollector(collector, "SetActive", False, 4L * frequency)
+            Dim resumed As AniGifDiagnostics = GetDiagnosticsCollectorSnapshot(collector, False, 5L * frequency)
+            Assert.AreEqual(TimeSpan.FromSeconds(2), resumed.ActiveDuration)
+            Assert.IsTrue(resumed.ActualFps.HasValue)
+            Assert.AreEqual(1.0R, resumed.ActualFps.Value, 0.000001R)
+            Assert.AreEqual(TimeSpan.FromSeconds(1), snapshot.ActiveDuration)
+        End Sub
+
+        <TestMethod>
+        Public Sub DiagnosticsCollector_DoesNotCountStaleClippedOrCancelledFrames()
+            Dim collectorType As Type = GetType(AniGif).Assembly.GetType(GetType(AniGif).Namespace & ".AniGifDiagnosticsCollector")
+            Assert.IsNotNull(collectorType)
+            Dim collector As Object = Activator.CreateInstance(collectorType, True)
+            Assert.IsNotNull(collector)
+            Dim frequency As Long = Stopwatch.Frequency
+
+            InvokeDiagnosticsCollector(collector, "Reset")
+            InvokeDiagnosticsCollector(collector, "SetActive", True, 0L)
+            InvokeDiagnosticsCollector(collector, "QueueTimerFrame")
+            Dim firstGeneration As Long = GetPendingDiagnosticsGeneration(collector)
+            InvokeDiagnosticsCollector(collector, "RecordDraw", 1L, firstGeneration, False)
+            InvokeDiagnosticsCollector(collector, "QueueTimerFrame")
+            Dim secondGeneration As Long = GetPendingDiagnosticsGeneration(collector)
+            InvokeDiagnosticsCollector(collector, "RecordDraw", 1L, firstGeneration, True)
+            InvokeDiagnosticsCollector(collector, "RecordDraw", 1L, secondGeneration, True)
+            InvokeDiagnosticsCollector(collector, "RecordDraw", 1L, secondGeneration, True)
+            InvokeDiagnosticsCollector(collector, "QueueTimerFrame")
+            InvokeDiagnosticsCollector(collector, "SetActive", False, frequency)
+            InvokeDiagnosticsCollector(collector, "SetActive", True, 2L * frequency)
+            InvokeDiagnosticsCollector(collector, "QueueTimerFrame")
+            InvokeDiagnosticsCollector(collector, "CancelPendingFrame")
+            InvokeDiagnosticsCollector(collector, "QueueTimerFrame")
+            InvokeDiagnosticsCollector(collector, "SetActive", False, 3L * frequency)
+
+            Dim snapshot As AniGifDiagnostics = GetDiagnosticsCollectorSnapshot(collector, False, 3L * frequency)
+            Assert.AreEqual(1L, snapshot.RenderedFrames)
+            Assert.AreEqual(1L, snapshot.DroppedFrames)
+            Assert.AreEqual(4L, snapshot.RenderOperations)
+            Assert.AreEqual(TimeSpan.FromSeconds(2), snapshot.ActiveDuration)
+
+            InvokeDiagnosticsCollector(collector, "Reset")
+            Dim reset As AniGifDiagnostics = GetDiagnosticsCollectorSnapshot(collector, False, 0L)
+            Assert.AreEqual(0L, reset.RenderedFrames)
+            Assert.AreEqual(0L, reset.DroppedFrames)
+            Assert.AreEqual(0L, reset.RenderOperations)
+            Assert.IsFalse(reset.ActualFps.HasValue)
+            Assert.IsFalse(reset.MaxRenderTimeMs.HasValue)
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_CountsTimerFramesInBothSpeedAndAdaptiveModes()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                For Each adaptive As Boolean In New Boolean() {False, True}
+                    Using control As New PaintProbeAniGif()
+                        control.ClientSize = New Size(32, 32)
+                        control.CustomDisplaySpeed = customSpeed
+                        control.AdaptiveTiming = adaptive
+                        control.DiagnosticsEnabled = True
+                        Dim handle As IntPtr = control.Handle
+                        Assert.AreNotEqual(IntPtr.Zero, handle)
+                        Dim events As New List(Of String)()
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                        control.StartAnimation()
+
+                        Using surface As New Bitmap(32, 32)
+                            Using graphics As Graphics = Graphics.FromImage(surface)
+                                Dim bounds As New Rectangle(Point.Empty, surface.Size)
+                                InvokeTimerTick(control)
+                                InvokeTimerTick(control)
+                                control.PaintTo(graphics, bounds)
+                                control.PaintTo(graphics, bounds)
+                                InvokeTimerTick(control)
+                                control.PaintTo(graphics, bounds)
+                            End Using
+                        End Using
+
+                        Dim snapshot As AniGifDiagnostics = control.Diagnostics
+                        Assert.AreEqual(2L, snapshot.RenderedFrames, $"custom={customSpeed}, adaptive={adaptive}")
+                        Assert.AreEqual(1L, snapshot.DroppedFrames, $"custom={customSpeed}, adaptive={adaptive}")
+                        Assert.AreEqual(3L, snapshot.RenderOperations)
+                        Assert.IsTrue(snapshot.ActualFps.HasValue)
+                        Assert.IsTrue(snapshot.AverageRenderTimeMs.HasValue)
+                        Assert.IsTrue(snapshot.MaxRenderTimeMs.HasValue)
+                        Assert.AreEqual(3, GetCurrentFrame(control))
+                        Assert.IsTrue(GetTimer(control).Enabled)
+                        control.StopAnimation()
+                        CollectionAssert.AreEqual(New String() {"started", "stopped"}, events.ToArray())
+                    End Using
+                Next
+            Next
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_RequiresAnIntersectingClipAndTracksFrameGenerationsAcrossWrap()
+            Using control As New PaintProbeAniGif()
+                control.ClientSize = New Size(32, 32)
+                control.DiagnosticsEnabled = True
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                control.StartAnimation()
+
+                Using surface As New Bitmap(32, 32)
+                    Using graphics As Graphics = Graphics.FromImage(surface)
+                        Dim bounds As New Rectangle(Point.Empty, surface.Size)
+                        InvokeTimerTick(control)
+                        control.PaintTo(graphics, Rectangle.Empty)
+                        graphics.SetClip(Rectangle.Empty)
+                        control.PaintTo(graphics, bounds)
+                        graphics.ResetClip()
+                        Assert.AreEqual(0L, control.Diagnostics.RenderedFrames)
+                        Assert.AreEqual(2L, control.Diagnostics.RenderOperations)
+
+                        control.PaintTo(graphics, bounds)
+                        Assert.AreEqual(1L, control.Diagnostics.RenderedFrames)
+                        Dim firstFrame As Integer = GetCurrentFrame(control)
+                        Dim dimension As New FrameDimension(control.Gif.FrameDimensionsList(0))
+                        Dim frameCount As Integer = control.Gif.GetFrameCount(dimension)
+                        For index As Integer = 1 To frameCount
+                            InvokeTimerTick(control)
+                        Next
+                        Assert.AreEqual(firstFrame, GetCurrentFrame(control))
+                        Assert.AreEqual(CLng(frameCount - 1), control.Diagnostics.DroppedFrames)
+                        control.PaintTo(graphics, bounds)
+                        control.PaintTo(graphics, bounds)
+                        Assert.AreEqual(2L, control.Diagnostics.RenderedFrames)
+                        Assert.AreEqual(CLng(frameCount - 1), control.Diagnostics.DroppedFrames)
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_ExcludesPausedHiddenAndEmptyClientIntervals()
+            Using parent As New Panel()
+                Using nested As New Panel()
+                    Using control As New PaintProbeAniGif()
+                        parent.Controls.Add(nested)
+                        nested.Controls.Add(control)
+                        control.ClientSize = New Size(32, 32)
+                        control.DiagnosticsEnabled = True
+                        Dim handle As IntPtr = control.Handle
+                        Assert.AreNotEqual(IntPtr.Zero, handle)
+                        control.StartAnimation()
+                        InvokeTimerTick(control)
+                        control.PauseAnimation()
+                        Dim paused As AniGifDiagnostics = control.Diagnostics
+                        InvokeTimerTick(control)
+                        Assert.AreEqual(paused.ActiveDuration, control.Diagnostics.ActiveDuration)
+
+                        control.ResumeAnimation()
+                        InvokeTimerTick(control)
+                        parent.Visible = False
+                        Dim hidden As AniGifDiagnostics = control.Diagnostics
+                        InvokeTimerTick(control)
+                        Assert.AreEqual(hidden.ActiveDuration, control.Diagnostics.ActiveDuration)
+
+                        parent.Visible = True
+                        Assert.IsTrue(GetTimer(control).Enabled)
+                        Using surface As New Bitmap(32, 32)
+                            Using graphics As Graphics = Graphics.FromImage(surface)
+                                Dim bounds As New Rectangle(Point.Empty, surface.Size)
+                                InvokeTimerTick(control)
+                                control.PaintTo(graphics, bounds)
+                                Assert.AreEqual(1L, control.Diagnostics.RenderedFrames)
+
+                                control.ClientSize = Size.Empty
+                                Dim empty As AniGifDiagnostics = control.Diagnostics
+                                InvokeTimerTick(control)
+                                InvokeTimerTick(control)
+                                Assert.AreEqual(empty.ActiveDuration, control.Diagnostics.ActiveDuration)
+                                Assert.AreEqual(0L, control.Diagnostics.DroppedFrames)
+
+                                control.ClientSize = surface.Size
+                                InvokeTimerTick(control)
+                                control.PaintTo(graphics, bounds)
+                                Assert.AreEqual(2L, control.Diagnostics.RenderedFrames)
+                                Assert.AreEqual(0L, control.Diagnostics.DroppedFrames)
+                            End Using
+                        End Using
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_ExcludesTimeWithoutAHandleAndResumesAfterRecreation()
+            Using control As New PaintProbeAniGif()
+                control.ClientSize = New Size(32, 32)
+                control.DiagnosticsEnabled = True
+                Dim firstHandle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, firstHandle)
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                control.DestroyHandleForTest()
+                Assert.IsFalse(control.IsHandleCreated)
+                Dim withoutHandle As AniGifDiagnostics = control.Diagnostics
+                InvokeTimerTick(control)
+                InvokeTimerTick(control)
+                Assert.AreEqual(withoutHandle.ActiveDuration, control.Diagnostics.ActiveDuration)
+                Assert.AreEqual(0L, control.Diagnostics.DroppedFrames)
+
+                Dim recreatedHandle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, recreatedHandle)
+                Using surface As New Bitmap(32, 32)
+                    Using graphics As Graphics = Graphics.FromImage(surface)
+                        InvokeTimerTick(control)
+                        control.PaintTo(graphics, New Rectangle(Point.Empty, surface.Size))
+                    End Using
+                End Using
+                Assert.AreEqual(1L, control.Diagnostics.RenderedFrames)
+                Assert.AreEqual(0L, control.Diagnostics.DroppedFrames)
+            End Using
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_FollowsReparentedAncestorsAndDetachesOnDisable()
+            Using firstParent As New Panel()
+                Using secondParent As New Panel()
+                    Using branch As New Panel()
+                        Using control As New PaintProbeAniGif()
+                            firstParent.Controls.Add(branch)
+                            branch.Controls.Add(control)
+                            control.ClientSize = New Size(32, 32)
+                            control.DiagnosticsEnabled = True
+                            Dim handle As IntPtr = control.Handle
+                            Assert.AreNotEqual(IntPtr.Zero, handle)
+                            control.StartAnimation()
+                            InvokeTimerTick(control)
+
+                            firstParent.Visible = False
+                            Dim hidden As AniGifDiagnostics = control.Diagnostics
+                            InvokeTimerTick(control)
+                            Assert.AreEqual(hidden.ActiveDuration, control.Diagnostics.ActiveDuration)
+
+                            secondParent.Controls.Add(branch)
+                            Assert.IsTrue(control.Visible)
+                            Using surface As New Bitmap(32, 32)
+                                Using graphics As Graphics = Graphics.FromImage(surface)
+                                    InvokeTimerTick(control)
+                                    control.PaintTo(graphics, New Rectangle(Point.Empty, surface.Size))
+                                End Using
+                            End Using
+                            Assert.AreEqual(1L, control.Diagnostics.RenderedFrames)
+                            Assert.AreEqual(0L, control.Diagnostics.DroppedFrames)
+
+                            secondParent.Visible = False
+                            Dim reparentedHidden As AniGifDiagnostics = control.Diagnostics
+                            InvokeTimerTick(control)
+                            Assert.AreEqual(reparentedHidden.ActiveDuration, control.Diagnostics.ActiveDuration)
+
+                            control.DiagnosticsEnabled = False
+                            Dim ancestorsField As FieldInfo = GetType(AniGif).GetField("_diagnosticsAncestors", BindingFlags.Instance Or BindingFlags.NonPublic)
+                            Assert.IsNotNull(ancestorsField)
+                            Dim ancestors As List(Of Control) = DirectCast(ancestorsField.GetValue(control), List(Of Control))
+                            Assert.IsNotNull(ancestors)
+                            Assert.IsEmpty(ancestors)
+                            secondParent.Visible = True
+                            Assert.AreEqual(reparentedHidden.ActiveDuration, control.Diagnostics.ActiveDuration)
+                        End Using
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_ResetWhilePlayingAndTimingChangesPreservePlayback()
+            Using control As New PaintProbeAniGif()
+                control.ClientSize = New Size(32, 32)
+                control.DiagnosticsEnabled = True
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                Dim events As New List(Of String)()
+                AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                control.StartAnimation()
+
+                Using surface As New Bitmap(32, 32)
+                    Using graphics As Graphics = Graphics.FromImage(surface)
+                        Dim bounds As New Rectangle(Point.Empty, surface.Size)
+                        InvokeTimerTick(control)
+                        control.PaintTo(graphics, bounds)
+                        InvokeTimerTick(control)
+                        control.ResetDiagnostics()
+                        Assert.AreEqual(0L, control.Diagnostics.RenderedFrames)
+                        Assert.AreEqual(0L, control.Diagnostics.DroppedFrames)
+                        Assert.AreEqual(0L, control.Diagnostics.RenderOperations)
+                        Assert.IsTrue(GetTimer(control).Enabled)
+                        Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
+
+                        InvokeTimerTick(control)
+                        control.FramesPerSecond = 15D
+                        control.CustomDisplaySpeed = True
+                        control.MinimumFrameIntervalMs = 15
+                        control.MaximumFrameIntervalMs = 600
+                        control.AdaptiveTiming = True
+                        control.PaintTo(graphics, bounds)
+                        Assert.AreEqual(1L, control.Diagnostics.RenderedFrames)
+                        Assert.AreEqual(0L, control.Diagnostics.DroppedFrames)
+                        Assert.AreEqual(1L, control.Diagnostics.RenderOperations)
+                        CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+                    End Using
+                End Using
+                control.StopAnimation()
+                CollectionAssert.AreEqual(New String() {"started", "stopped"}, events.ToArray())
+            End Using
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_StaticImageHasRenderTimesButNoPlaybackRate()
+            Using control As New PaintProbeAniGif()
+                Using stillImage As New Bitmap(8, 8)
+                    control.Gif = stillImage
+                    control.ClientSize = New Size(32, 32)
+                    control.DiagnosticsEnabled = True
+                    Dim handle As IntPtr = control.Handle
+                    Assert.AreNotEqual(IntPtr.Zero, handle)
+                    Dim notifications As Integer = 0
+                    AddHandler control.NoAnimation, Sub(sender, e) notifications += 1
+                    control.StartAnimation()
+                    InvokeTimerTick(control)
+                    Using surface As New Bitmap(32, 32)
+                        Using graphics As Graphics = Graphics.FromImage(surface)
+                            control.PaintTo(graphics, New Rectangle(Point.Empty, surface.Size))
+                        End Using
+                    End Using
+
+                    Dim snapshot As AniGifDiagnostics = control.Diagnostics
+                    Assert.AreEqual(1, notifications)
+                    Assert.IsFalse(GetTimer(control).Enabled)
+                    Assert.AreEqual(TimeSpan.Zero, snapshot.ActiveDuration)
+                    Assert.IsFalse(snapshot.ActualFps.HasValue)
+                    Assert.AreEqual(0L, snapshot.RenderedFrames)
+                    Assert.AreEqual(0L, snapshot.DroppedFrames)
+                    Assert.AreEqual(1L, snapshot.RenderOperations)
+                    Assert.IsTrue(snapshot.AverageRenderTimeMs.HasValue)
+                    Assert.IsTrue(snapshot.MaxRenderTimeMs.HasValue)
+                End Using
+            End Using
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_SeekImageChangesResetAndDisposePreserveTheirContracts()
+            Using control As New PaintProbeAniGif()
+                control.ClientSize = New Size(32, 32)
+                control.DiagnosticsEnabled = True
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                control.StartAnimation()
+
+                Using surface As New Bitmap(32, 32)
+                    Using graphics As Graphics = Graphics.FromImage(surface)
+                        Dim bounds As New Rectangle(Point.Empty, surface.Size)
+                        InvokeTimerTick(control)
+                        control.SeekFrame(3)
+                        InvokeTimerTick(control)
+                        control.PaintTo(graphics, bounds)
+                        Assert.AreEqual(1L, control.Diagnostics.RenderedFrames)
+                        Assert.AreEqual(0L, control.Diagnostics.DroppedFrames)
+
+                        InvokeTimerTick(control)
+                        Using source As Bitmap = LoadAnimatedGif()
+                            control.Gif = source
+                        End Using
+                        InvokeTimerTick(control)
+                        control.PaintTo(graphics, bounds)
+                        Assert.AreEqual(2L, control.Diagnostics.RenderedFrames)
+                        Assert.AreEqual(0L, control.Diagnostics.DroppedFrames)
+
+                        control.DiagnosticsEnabled = False
+                        Dim frozen As AniGifDiagnostics = control.Diagnostics
+                        InvokeTimerTick(control)
+                        control.PaintTo(graphics, bounds)
+                        Assert.AreEqual(frozen.ActiveDuration, control.Diagnostics.ActiveDuration)
+                        Assert.AreEqual(frozen.RenderOperations, control.Diagnostics.RenderOperations)
+                        Assert.AreEqual(frozen.RenderedFrames, control.Diagnostics.RenderedFrames)
+
+                        control.DiagnosticsEnabled = True
+                        Assert.AreEqual(0L, control.Diagnostics.RenderedFrames)
+                        Assert.AreEqual(0L, control.Diagnostics.DroppedFrames)
+                        Assert.AreEqual(0L, control.Diagnostics.RenderOperations)
+                        InvokeTimerTick(control)
+                        control.PaintTo(graphics, bounds)
+                        InvokeTimerTick(control)
+                        control.Dispose()
+
+                        Dim disposed As AniGifDiagnostics = control.Diagnostics
+                        Assert.IsFalse(disposed.IsEnabled)
+                        Assert.AreEqual(1L, disposed.RenderedFrames)
+                        Assert.AreEqual(0L, disposed.DroppedFrames)
+                        Assert.AreEqual(disposed.ActiveDuration, control.Diagnostics.ActiveDuration)
+                        Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.DiagnosticsEnabled = True)
+                        control.ResetDiagnostics()
+                        Assert.AreEqual(1L, control.Diagnostics.RenderedFrames)
+                        Assert.AreEqual(2L, frozen.RenderedFrames)
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_ReentrantPaintAndInvalidatedHandlersDoNotMisattributeFrames()
+            Using control As New PaintProbeAniGif()
+                control.ClientSize = New Size(32, 32)
+                control.DiagnosticsEnabled = True
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                control.StartAnimation()
+                Dim advancedDuringPaint As Boolean = False
+                Dim paintHandler As PaintEventHandler = Sub(sender, e)
+                                                            If Not advancedDuringPaint Then
+                                                                advancedDuringPaint = True
+                                                                InvokeTimerTick(control)
+                                                            End If
+                                                        End Sub
+                AddHandler control.Paint, paintHandler
+
+                Using surface As New Bitmap(32, 32)
+                    Using graphics As Graphics = Graphics.FromImage(surface)
+                        Dim bounds As New Rectangle(Point.Empty, surface.Size)
+                        InvokeTimerTick(control)
+                        control.PaintTo(graphics, bounds)
+                        RemoveHandler control.Paint, paintHandler
+                        Assert.IsTrue(advancedDuringPaint)
+                        Assert.AreEqual(1L, control.Diagnostics.RenderedFrames)
+                        Assert.AreEqual(1L, control.Diagnostics.DroppedFrames)
+
+                        Dim soughtDuringInvalidation As Boolean = False
+                        Dim invalidatedHandler As InvalidateEventHandler = Sub(sender, e)
+                                                                               If Not soughtDuringInvalidation Then
+                                                                                   soughtDuringInvalidation = True
+                                                                                   control.SeekFrame(4)
+                                                                               End If
+                                                                           End Sub
+                        AddHandler control.Invalidated, invalidatedHandler
+                        InvokeTimerTick(control)
+                        RemoveHandler control.Invalidated, invalidatedHandler
+                        Assert.IsTrue(soughtDuringInvalidation)
+                        InvokeTimerTick(control)
+                        control.PaintTo(graphics, bounds)
+                        Assert.AreEqual(2L, control.Diagnostics.RenderedFrames)
+                        Assert.AreEqual(1L, control.Diagnostics.DroppedFrames)
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_AncestorVisibilityHandlersObserveCurrentStateBeforeDiagnosticsHandler()
+            Using parent As New Panel()
+                Using nested As New Panel()
+                    Using control As New PaintProbeAniGif()
+                        parent.Controls.Add(nested)
+                        nested.Controls.Add(control)
+                        control.ClientSize = New Size(32, 32)
+                        Dim handle As IntPtr = control.Handle
+                        Assert.AreNotEqual(IntPtr.Zero, handle)
+                        Dim hiddenBeforePaint As AniGifDiagnostics = Nothing
+                        Dim hiddenAfterPaint As AniGifDiagnostics = Nothing
+                        Dim shown As AniGifDiagnostics = Nothing
+
+                        Using surface As New Bitmap(32, 32)
+                            Using graphics As Graphics = Graphics.FromImage(surface)
+                                Dim bounds As New Rectangle(Point.Empty, surface.Size)
+                                Dim visibilityHandler As EventHandler = Sub(sender, e)
+                                                                            If parent.Visible Then
+                                                                                InvokeTimerTick(control)
+                                                                                control.PaintTo(graphics, bounds)
+                                                                                shown = control.Diagnostics
+                                                                            Else
+                                                                                hiddenBeforePaint = control.Diagnostics
+                                                                                control.PaintTo(graphics, bounds)
+                                                                                hiddenAfterPaint = control.Diagnostics
+                                                                            End If
+                                                                        End Sub
+                                AddHandler parent.VisibleChanged, visibilityHandler
+                                control.DiagnosticsEnabled = True
+                                control.StartAnimation()
+                                InvokeTimerTick(control)
+                                parent.Visible = False
+                                Assert.IsNotNull(hiddenBeforePaint)
+                                Assert.IsNotNull(hiddenAfterPaint)
+                                Assert.AreEqual(hiddenBeforePaint.ActiveDuration, hiddenAfterPaint.ActiveDuration)
+                                Assert.AreEqual(0L, hiddenAfterPaint.RenderedFrames)
+                                Assert.AreEqual(1L, hiddenAfterPaint.RenderOperations)
+
+                                parent.Visible = True
+                                Assert.IsNotNull(shown)
+                                Assert.AreEqual(1L, shown.RenderedFrames)
+                                Assert.AreEqual(0L, shown.DroppedFrames)
+                                RemoveHandler parent.VisibleChanged, visibilityHandler
+                            End Using
+                        End Using
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_HandleDestroyedHandlerCannotReactivateMeasurement()
+            Using control As New PaintProbeAniGif()
+                control.ClientSize = New Size(32, 32)
+                control.DiagnosticsEnabled = True
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                Dim beforePaint As AniGifDiagnostics = Nothing
+                Dim afterPaint As AniGifDiagnostics = Nothing
+
+                Using surface As New Bitmap(32, 32)
+                    Using graphics As Graphics = Graphics.FromImage(surface)
+                        Dim handleDestroyedHandler As EventHandler = Sub(sender, e)
+                                                                         beforePaint = control.Diagnostics
+                                                                         control.PaintTo(graphics, New Rectangle(Point.Empty, surface.Size))
+                                                                         afterPaint = control.Diagnostics
+                                                                     End Sub
+                        AddHandler control.HandleDestroyed, handleDestroyedHandler
+                        control.DestroyHandleForTest()
+                        RemoveHandler control.HandleDestroyed, handleDestroyedHandler
+                    End Using
+                End Using
+                Assert.IsNotNull(beforePaint)
+                Assert.IsNotNull(afterPaint)
+                Assert.AreEqual(beforePaint.ActiveDuration, afterPaint.ActiveDuration)
+                Assert.AreEqual(0L, afterPaint.RenderedFrames)
+                Assert.AreEqual(1L, afterPaint.RenderOperations)
+            End Using
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_AutoPlayChangedHandlerObservesStoppedMeasurementImmediately()
+            Using control As New PaintProbeAniGif()
+                control.ClientSize = New Size(32, 32)
+                control.DiagnosticsEnabled = True
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                Dim beforePaint As AniGifDiagnostics = Nothing
+                Dim afterPaint As AniGifDiagnostics = Nothing
+
+                Using surface As New Bitmap(32, 32)
+                    Using graphics As Graphics = Graphics.FromImage(surface)
+                        Dim autoPlayHandler As AniGif.AutoPlayChangedEventHandler = Sub(sender, e)
+                                                                                        If Not control.AutoPlay Then
+                                                                                            beforePaint = control.Diagnostics
+                                                                                            control.PaintTo(graphics, New Rectangle(Point.Empty, surface.Size))
+                                                                                            afterPaint = control.Diagnostics
+                                                                                        End If
+                                                                                    End Sub
+                        AddHandler control.AutoPlayChanged, autoPlayHandler
+                        control.StopAnimation()
+                        RemoveHandler control.AutoPlayChanged, autoPlayHandler
+                    End Using
+                End Using
+                Assert.IsNotNull(beforePaint)
+                Assert.IsNotNull(afterPaint)
+                Assert.AreEqual(beforePaint.ActiveDuration, afterPaint.ActiveDuration)
+                Assert.AreEqual(0L, afterPaint.RenderedFrames)
+                Assert.AreEqual(0L, afterPaint.DroppedFrames)
+                Assert.AreEqual(1L, afterPaint.RenderOperations)
+            End Using
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_PaintHandlerCanDisposeTheControl()
+            Using control As New PaintProbeAniGif()
+                control.ClientSize = New Size(32, 32)
+                control.DiagnosticsEnabled = True
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                AddHandler control.Paint, Sub(sender, e) control.Dispose()
+                Using surface As New Bitmap(32, 32)
+                    Using graphics As Graphics = Graphics.FromImage(surface)
+                        control.PaintTo(graphics, New Rectangle(Point.Empty, surface.Size))
+                    End Using
+                End Using
+                Assert.IsTrue(control.IsDisposed)
+                Assert.IsFalse(control.Diagnostics.IsEnabled)
+                Assert.AreEqual(0L, control.Diagnostics.RenderedFrames)
+                Assert.AreEqual(0L, control.Diagnostics.DroppedFrames)
+                Assert.AreEqual(0L, control.Diagnostics.RenderOperations)
+            End Using
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_DoesNotChangePixelsTimerOrPlaybackEvents()
+            For Each mode As ImageSizeMode In New ImageSizeMode() {ImageSizeMode.Normal, ImageSizeMode.CenterImage, ImageSizeMode.Zoom, ImageSizeMode.Fill}
+                For Each preset As GifScalingQualityPreset In New GifScalingQualityPreset() {GifScalingQualityPreset.Photo, GifScalingQualityPreset.PixelArt}
+                    Using baseline As New PaintProbeAniGif()
+                        Using measured As New PaintProbeAniGif()
+                            baseline.ClientSize = New Size(32, 24)
+                            measured.ClientSize = baseline.ClientSize
+                            baseline.GifSizeMode = mode
+                            measured.GifSizeMode = mode
+                            baseline.ZoomFactor = 100D
+                            measured.ZoomFactor = 100D
+                            baseline.ScalingQualityPreset = preset
+                            measured.ScalingQualityPreset = preset
+                            measured.DiagnosticsEnabled = True
+                            Dim baselineHandle As IntPtr = baseline.Handle
+                            Dim measuredHandle As IntPtr = measured.Handle
+                            Assert.AreNotEqual(IntPtr.Zero, baselineHandle)
+                            Assert.AreNotEqual(IntPtr.Zero, measuredHandle)
+                            Dim baselineEvents As New List(Of String)()
+                            Dim measuredEvents As New List(Of String)()
+                            AddHandler baseline.AnimationStarted, Sub(sender, e) baselineEvents.Add("started")
+                            AddHandler baseline.AnimationStopped, Sub(sender, e) baselineEvents.Add("stopped")
+                            AddHandler measured.AnimationStarted, Sub(sender, e) measuredEvents.Add("started")
+                            AddHandler measured.AnimationStopped, Sub(sender, e) measuredEvents.Add("stopped")
+                            baseline.StartAnimation()
+                            measured.StartAnimation()
+                            InvokeTimerTick(baseline)
+                            InvokeTimerTick(measured)
+                            Assert.AreEqual(GetCurrentFrame(baseline), GetCurrentFrame(measured))
+                            Assert.AreEqual(GetTimer(baseline).Interval, GetTimer(measured).Interval)
+
+                            Using baselineImage As New Bitmap(32, 24)
+                                Using measuredImage As New Bitmap(32, 24)
+                                    Using baselineGraphics As Graphics = Graphics.FromImage(baselineImage)
+                                        Using measuredGraphics As Graphics = Graphics.FromImage(measuredImage)
+                                            baselineGraphics.Clear(Color.Magenta)
+                                            measuredGraphics.Clear(Color.Magenta)
+                                            Dim bounds As New Rectangle(Point.Empty, baselineImage.Size)
+                                            baseline.PaintTo(baselineGraphics, bounds)
+                                            measured.PaintTo(measuredGraphics, bounds)
+                                        End Using
+                                    End Using
+                                    AssertSamePixels(baselineImage, measuredImage)
+                                End Using
+                            End Using
+
+                            baseline.StopAnimation()
+                            measured.StopAnimation()
+                            CollectionAssert.AreEqual(baselineEvents.ToArray(), measuredEvents.ToArray())
+                            CollectionAssert.AreEqual(New String() {"started", "stopped"}, measuredEvents.ToArray())
+                            Assert.AreEqual(0L, baseline.Diagnostics.RenderOperations)
+                            Assert.AreEqual(1L, measured.Diagnostics.RenderOperations)
+                        End Using
+                    End Using
+                Next
+            Next
+        End Sub
+
+        <STATestMethod>
+        Public Sub Diagnostics_RecordsRealTimerTicksInAWinFormsMessageLoop()
+            Using control As New PaintProbeAniGif()
+                control.ClientSize = New Size(32, 32)
+                control.CustomDisplaySpeed = True
+                control.FramesPerSecond = 20D
+                control.DiagnosticsEnabled = True
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                Using surface As New Bitmap(32, 32)
+                    Using graphics As Graphics = Graphics.FromImage(surface)
+                        Using watchdog As New System.Windows.Forms.Timer()
+                            Dim ticks As Integer = 0
+                            Dim timedOut As Boolean = False
+                            AddHandler GetTimer(control).Tick, Sub(sender, e)
+                                                                   ticks += 1
+                                                                   control.PaintTo(graphics, New Rectangle(Point.Empty, surface.Size))
+                                                                   If ticks = 2 Then Application.ExitThread()
+                                                               End Sub
+                            watchdog.Interval = 5000
+                            AddHandler watchdog.Tick, Sub(sender, e)
+                                                          timedOut = True
+                                                          Application.ExitThread()
+                                                      End Sub
+                            control.StartAnimation()
+                            watchdog.Start()
+                            Try
+                                Application.Run()
+                            Finally
+                                watchdog.Stop()
+                                control.StopAnimation()
+                            End Try
+
+                            Assert.IsFalse(timedOut, "Die Diagnostik hat nicht zwei Timer-Ticks verarbeitet.")
+                            Assert.AreEqual(2, ticks)
+                            Assert.AreEqual(2L, control.Diagnostics.RenderedFrames)
+                            Assert.AreEqual(0L, control.Diagnostics.DroppedFrames)
+                            Assert.IsGreaterThan(1L, control.Diagnostics.RenderOperations)
+                        End Using
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        Private Shared Sub InvokeDiagnosticsCollector(collector As Object, name As String, ParamArray arguments As Object())
+            Dim method As MethodInfo = collector.GetType().GetMethod(name, BindingFlags.Instance Or BindingFlags.NonPublic)
+            Assert.IsNotNull(method)
+            Dim unused = method.Invoke(collector, arguments)
+        End Sub
+
+        Private Shared Function GetPendingDiagnosticsGeneration(collector As Object) As Long
+            Dim propertyInfo As PropertyInfo = collector.GetType().GetProperty("PendingFrameGeneration", BindingFlags.Instance Or BindingFlags.NonPublic)
+            Assert.IsNotNull(propertyInfo)
+            Return CLng(propertyInfo.GetValue(collector))
+        End Function
+
+        Private Shared Function GetDiagnosticsCollectorSnapshot(collector As Object, isEnabled As Boolean, timestamp As Long) As AniGifDiagnostics
+            Dim method As MethodInfo = collector.GetType().GetMethod("CreateSnapshot", BindingFlags.Instance Or BindingFlags.NonPublic)
+            Assert.IsNotNull(method)
+            Return DirectCast(method.Invoke(collector, New Object() {isEnabled, timestamp}), AniGifDiagnostics)
+        End Function
+
         Private Shared Sub AssertDrawingRectangle(imageSize As Size, clientSize As Size, sizeMode As ImageSizeMode, zoom As Decimal, expected As Rectangle)
             Using source As New Bitmap(imageSize.Width, imageSize.Height)
                 Using control As New AniGif()
@@ -1737,6 +2524,10 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 Using e As New PaintEventArgs(graphics, bounds)
                     Me.OnPaint(e)
                 End Using
+            End Sub
+
+            Public Sub DestroyHandleForTest()
+                Me.DestroyHandle()
             End Sub
         End Class
 

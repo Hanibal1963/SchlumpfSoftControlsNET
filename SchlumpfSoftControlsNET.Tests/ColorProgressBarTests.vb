@@ -1,4 +1,4 @@
-Imports System.Drawing
+﻿Imports System.Drawing
 Imports System.Windows.Forms
 Imports Microsoft.VisualStudio.TestTools.UnitTesting
 Imports SchlumpfSoft.ControlsNET.ColorProgressBarControl
@@ -219,7 +219,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 For Each change As Action In changes
                     invalidationCount = 0
                     change()
-                    Assert.IsTrue(invalidationCount > 0)
+                    Assert.IsGreaterThan(0, invalidationCount)
                 Next
             End Using
         End Sub
@@ -235,7 +235,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                                           End Sub
 
                 Using image As Bitmap = RenderControl(control)
-                    Assert.IsTrue(paintCount > 0)
+                    Assert.IsGreaterThan(0, paintCount)
                     AssertPixel(Color.Yellow, image, 10, 10)
                 End Using
             End Using

@@ -1,4 +1,4 @@
-Imports System.ComponentModel
+﻿Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Drawing.Imaging
 Imports System.IO
@@ -409,7 +409,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                         control.ScalingQualityPreset = GifScalingQualityPreset.Photo
                         Using photo As Bitmap = RenderControl(control)
                             Dim color As Color = photo.GetPixel(18, 10)
-                            Assert.IsTrue(color.R > 0 AndAlso color.R < 255, $"{sizeMode}: geglättete Pixelkante")
+                            Assert.IsInRange(1, 254, color.R, $"{sizeMode}: geglättete Pixelkante")
                         End Using
                     Next
                 End Using
@@ -429,13 +429,13 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                         control.ScalingQualityPreset = GifScalingQualityPreset.PixelArt
                         Using pixelArt As Bitmap = RenderControl(control)
                             Dim color As Color = pixelArt.GetPixel(5, 5)
-                            Assert.IsTrue(color.ToArgb() = Color.Black.ToArgb() OrElse color.ToArgb() = Color.White.ToArgb(), $"{sizeMode}: ungefilterter Pixel")
+                            Assert.Contains(color.ToArgb(), New Integer() {Color.Black.ToArgb(), Color.White.ToArgb()}, $"{sizeMode}: ungefilterter Pixel")
                         End Using
 
                         control.ScalingQualityPreset = GifScalingQualityPreset.Photo
                         Using photo As Bitmap = RenderControl(control)
                             Dim color As Color = photo.GetPixel(5, 5)
-                            Assert.IsTrue(color.R > 0 AndAlso color.R < 255, $"{sizeMode}: gefilterter Pixel")
+                            Assert.IsInRange(1, 254, color.R, $"{sizeMode}: gefilterter Pixel")
                         End Using
                     Next
                 End Using
@@ -683,7 +683,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                         Dim eventCountWhileHidden As Integer = events.Count
                         InvokeTimerTick(control)
                         Assert.AreEqual(2, GetCurrentFrame(control))
-                        Assert.AreEqual(eventCountWhileHidden, events.Count)
+                        Assert.HasCount(eventCountWhileHidden, events)
 
                         parent.Visible = True
                         Assert.IsTrue(timer.Enabled)
@@ -700,7 +700,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Using control As New AniGif()
                 Dim dimension As New FrameDimension(control.Gif.FrameDimensionsList(0))
                 Dim lastFrame As Integer = control.Gif.GetFrameCount(dimension) - 1
-                Assert.IsTrue(lastFrame > 0)
+                Assert.IsGreaterThan(0, lastFrame)
 
                 control.SeekFrame(lastFrame)
                 Assert.AreEqual(lastFrame, GetCurrentFrame(control))
@@ -763,7 +763,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     control.ResumeAnimation()
                     Assert.IsTrue(GetTimer(control).Enabled)
                     Assert.AreEqual(If(customSpeed, 100, 160), GetTimer(control).Interval)
-                    Assert.IsTrue(GetLastFrameTimestamp(control) > 0)
+                    Assert.IsGreaterThan(0L, GetLastFrameTimestamp(control))
                     Assert.AreEqual(2, startedCount)
                     Assert.AreEqual(1, stoppedCount)
                     Assert.AreEqual(1, autoPlayCount)
@@ -917,7 +917,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     Assert.AreEqual(2, GetCurrentFrame(control))
                     Assert.IsTrue(GetTimer(control).Enabled)
                     Assert.AreEqual(If(customSpeed, 100, 320), GetTimer(control).Interval)
-                    Assert.IsTrue(GetLastFrameTimestamp(control) > 1L)
+                    Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
                     Assert.AreEqual(1, startedCount)
                     Assert.AreEqual(0, stoppedCount)
                     InvokeTimerTick(control)

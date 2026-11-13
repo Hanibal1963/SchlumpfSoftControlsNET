@@ -1,4 +1,4 @@
-Imports System.Reflection
+﻿Imports System.Reflection
 Imports System.Windows.Forms
 Imports Microsoft.VisualStudio.TestTools.UnitTesting
 Imports SchlumpfSoft.ControlsNET.PasswordControl
@@ -60,7 +60,7 @@ Namespace SchlumpfSoftControlsNET.Tests.PasswordControl
                 RaiseKeyDownEnter(tb)
 
                 Assert.AreEqual(1, raised)
-                Assert.IsFalse(String.IsNullOrWhiteSpace(passwordCode))
+                Assert.MatchesRegex("\S", If(passwordCode, String.Empty))
                 Assert.IsTrue(control.VerifyPasswordCode(passwordCode))
 
                 tb.Text = "falsch"

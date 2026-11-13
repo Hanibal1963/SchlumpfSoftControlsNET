@@ -124,7 +124,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ImageComboBoxControl
                 Dim unused1 = collection.Add(first)
                 Dim unused = collection.Add(second)
 
-                Assert.IsTrue(collection.Contains(first))
+                Assert.Contains(first, collection)
                 Assert.AreEqual(0, collection.IndexOf(first))
                 Assert.AreEqual(1, collection.IndexOf(second))
                 Assert.IsFalse(collection.IsReadOnly)

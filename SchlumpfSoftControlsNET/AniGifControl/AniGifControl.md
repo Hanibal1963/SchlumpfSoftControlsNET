@@ -30,7 +30,7 @@ Weitere Infos unter:
 ## 3. Eigenschaften
 
 - `AutoPlay`: Steuert, ob die GIF-Animation automatisch gestartet wird, sobald ein animierbares Bild vorhanden und das Control sichtbar ist. Eine explizite Pause verändert den Wert nicht.
-- `Gif`: Gibt die aktuell verwendete Bitmap zurück oder legt eine GIF-Grafik fest. Bei der Zuweisung wird eine eigene Kopie erstellt; `Nothing` stellt eine Kopie des Standardbilds wieder her.
+- `Gif`: Gibt die aktuell verwendete interne Bitmap zurück oder legt eine GIF-Grafik fest. Bei der Zuweisung erstellt das Control eine eigene Kopie und gibt vom Aufrufer verwaltete Bilder nicht frei. Die zurückgegebene interne Bitmap gehört dem Control und wird bei einem Bildwechsel oder bei der Ressourcenfreigabe freigegeben. `Nothing` stellt eine Kopie des Standardbilds wieder her. Nach Beginn der Ressourcenfreigabe lösen beide Zuweisungen eine `ObjectDisposedException` aus, ohne das übergebene Bild zu verändern. Nach abgeschlossener Freigabe gibt der Getter `Nothing` zurück. Die Zuweisung muss auf dem UI-Thread des Controls erfolgen.
 - `GifSizeMode`: Gibt den Anzeigemodus (Skalierung/Ausrichtung) der GIF-Grafik zurück oder legt ihn fest.
 - `ScalingQualityPreset`: Legt die Interpolation für `ImageSizeMode.Zoom` und `ImageSizeMode.Fill` fest. Standard ist `Photo`; ein Wechsel fordert eine Neuzeichnung an. Andere Werte als `Photo` und `PixelArt` lösen `System.ComponentModel.InvalidEnumArgumentException` aus.
 - `CustomDisplaySpeed`: Legt fest, ob die benutzerdefinierte Anzeigegeschwindigkeit (Timer/FPS) oder normalisierte GIF-Metadaten-Delays verwendet werden.
@@ -157,15 +157,17 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.7. GIF-Zuweisungen nach der Ressourcenfreigabe absichern
 
-**Status:** Offen.
+**Status:** Umgesetzt.
 
-**Ausgangslage:** `SetGifImage()` erstellt und speichert auch nach `Dispose()` eine Bitmap-Kopie. `DisposeAnimationResources()` gibt wegen des gesetzten Dispose-Zustands anschließend keine weitere Bitmap frei.
+**Ausgangslage:** `SetGifImage()` erstellte und speicherte auch nach `Dispose()` eine Bitmap-Kopie. `DisposeAnimationResources()` gab wegen des gesetzten Dispose-Zustands anschließend keine weitere Bitmap frei.
 
 **Umsetzung:**
 
-- Den Dispose-Zustand vor dem Klonen prüfen und für `Gif = Nothing` sowie für Bildzuweisungen ein einheitliches Verhalten festlegen, beispielsweise einen wirkungslosen Aufruf oder eine `ObjectDisposedException`.
+- `SetGifImage()` prüft den Dispose-Zustand vor der Auswahl der Bildquelle und dem Klonen. Nach Beginn der Ressourcenfreigabe lösen sowohl `Gif = Nothing` als auch Bildzuweisungen eine `ObjectDisposedException` aus.
 
-- Das gewählte Verhalten in den XML-Kommentaren und der API-Dokumentation beschreiben und mit Tests absichern. Das übergebene Bild darf dabei nicht freigegeben werden.
+- Abgelehnte Zuweisungen ändern weder das Bild noch den Timer und lösen keine Ereignisse aus. Das übergebene Bild wird dabei nicht freigegeben oder anderweitig verwendet.
+
+- Tests sichern Zuweisungen während und nach der Ressourcenfreigabe, die Wiederholung solcher Zuweisungen sowie den unveränderten Umgang mit gültigen Bildern ab.
 
 **Nutzen:** Verhindert, dass ein bereits freigegebenes Control erneut eine eigene Bitmap ohne explizite spätere Freigabe hält.
 
@@ -281,15 +283,14 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.15. Empfohlene Reihenfolge
 
-1. GIF-Zuweisungen nach Ressourcenfreigabe absichern (7.7).
-2. Skalierungsgeometrie korrigieren (7.8).
-3. Ungenutzte ImageAnimator-Pfade entfernen (7.14).
-4. Timer-Neustarts und Ereignisse gezielt steuern (7.9).
-5. Diagnostik und Messungen für die folgenden Optimierungen vorsehen (7.6).
-6. Frame-Delay-Metadaten wiederverwenden (7.10).
-7. Timer-Ticks verschlanken (7.11).
-8. Sichtbarkeitsprüfung vereinfachen (7.12).
-9. Aktualisierungsbereich bei Framewechseln begrenzen (7.13).
+1. Skalierungsgeometrie korrigieren (7.8).
+2. Ungenutzte ImageAnimator-Pfade entfernen (7.14).
+3. Timer-Neustarts und Ereignisse gezielt steuern (7.9).
+4. Diagnostik und Messungen für die folgenden Optimierungen vorsehen (7.6).
+5. Frame-Delay-Metadaten wiederverwenden (7.10).
+6. Timer-Ticks verschlanken (7.11).
+7. Sichtbarkeitsprüfung vereinfachen (7.12).
+8. Aktualisierungsbereich bei Framewechseln begrenzen (7.13).
 
 ## 8. Erweiterungsvorschläge
 

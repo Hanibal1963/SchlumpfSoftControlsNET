@@ -126,6 +126,14 @@ Namespace AniGifControl
         ''' <summary>
         ''' Gibt die animierte GIF‑Grafik zurück oder legt diese fest.
         ''' </summary>
+        ''' <remarks>
+        ''' Bei der Zuweisung erstellt das Control eine eigene Bitmap-Kopie und gibt vom Aufrufer verwaltete Bilder nicht frei.
+        ''' Der Getter liefert die interne Bitmap, die beim Bildwechsel oder bei der Ressourcenfreigabe freigegeben wird.
+        ''' Nothing stellt eine Kopie des Standardbilds wieder her. Nach der Ressourcenfreigabe gibt der Getter Nothing zurück.
+        ''' </remarks>
+        ''' <exception cref="ObjectDisposedException">
+        ''' Die Eigenschaft wird nach Beginn der Ressourcenfreigabe festgelegt.
+        ''' </exception>
         <Browsable(True)>
         <Category("Appearance")>
         <Description("Gibt die animierte Gif-Grafik zurück oder legt diese fest.")>
@@ -860,6 +868,10 @@ Namespace AniGifControl
         End Sub
 
         Private Sub SetGifImage(value As Bitmap)
+
+#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
+            If Me._IsDisposed OrElse Me.IsDisposed Then Throw New ObjectDisposedException(NameOf(AniGif))
+#Enable Warning CA1513
 
             ' Auch die Standardressource gehört jeder Instanz als eigene Bitmap-Kopie.
             Dim source As Bitmap = If(value, My.Resources.AniGifControl_Standard)

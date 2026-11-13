@@ -615,6 +615,108 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        Public Sub Gif_AfterDisposalRejectsAssignmentsWithoutTakingOwnership()
+            Using source As New Bitmap(8, 8)
+                source.SetPixel(0, 0, Color.Red)
+
+                Using control As New AniGif()
+                    control.Gif = source
+                    Assert.AreNotSame(source, control.Gif)
+                    source.SetPixel(0, 0, Color.Blue)
+                    Assert.AreEqual(Color.Red.ToArgb(), control.Gif.GetPixel(0, 0).ToArgb())
+
+                    Dim timer As System.Windows.Forms.Timer = GetTimer(control)
+                    Dim eventCount As Integer = 0
+                    AddHandler control.AnimationStarted, Sub(sender, e) eventCount += 1
+                    AddHandler control.AnimationStopped, Sub(sender, e) eventCount += 1
+                    AddHandler control.NoAnimation, Sub(sender, e) eventCount += 1
+                    AddHandler control.AutoPlayChanged, Sub(sender, e) eventCount += 1
+                    AddHandler control.Invalidated, Sub(sender, e) eventCount += 1
+
+                    control.Dispose()
+                    Assert.IsTrue(control.IsDisposed)
+                    Assert.IsNull(control.Gif)
+                    Dim eventCountAfterDispose As Integer = eventCount
+
+                    For attempt As Integer = 1 To 2
+                        Dim exception As ObjectDisposedException = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.Gif = source)
+                        Assert.AreEqual(NameOf(AniGif), exception.ObjectName)
+                        Assert.IsNull(control.Gif)
+                        Dim defaultException As ObjectDisposedException = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.Gif = Nothing)
+                        Assert.AreEqual(NameOf(AniGif), defaultException.ObjectName)
+                        Assert.IsNull(control.Gif)
+                    Next
+
+                    Assert.AreEqual(Color.Blue.ToArgb(), source.GetPixel(0, 0).ToArgb())
+                    Assert.AreEqual(eventCountAfterDispose, eventCount)
+                    Assert.IsFalse(timer.Enabled)
+                    control.Dispose()
+                    Assert.IsNull(control.Gif)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Gif_AfterDisposalRejectsNothingWithoutRecreatingTheDefaultImage()
+            Using control As New AniGif()
+                control.Dispose()
+                Assert.IsNull(control.Gif)
+
+                For attempt As Integer = 1 To 2
+                    Dim exception As ObjectDisposedException = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.Gif = Nothing)
+                    Assert.AreEqual(NameOf(AniGif), exception.ObjectName)
+                    Assert.IsNull(control.Gif)
+                Next
+
+                control.Dispose()
+                Assert.IsNull(control.Gif)
+                Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Gif_AfterDisposalRejectsDisposedBitmapBeforeCloning()
+            Using source As New Bitmap(8, 8)
+                Using control As New AniGif()
+                    source.Dispose()
+                    control.Dispose()
+
+                    Dim exception As ObjectDisposedException = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.Gif = source)
+                    Assert.AreEqual(NameOf(AniGif), exception.ObjectName)
+                    Assert.IsNull(control.Gif)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Gif_WhileDisposingRejectsAssignmentsBeforeTheBaseControlIsDisposed()
+            Using source As New Bitmap(8, 8)
+                Using control As New AniGif()
+                    Dim timer As System.Windows.Forms.Timer = GetTimer(control)
+                    Dim timerDisposedCount As Integer = 0
+
+                    AddHandler timer.Disposed, Sub(sender, e)
+                                                   timerDisposedCount += 1
+                                                   Assert.IsFalse(control.IsDisposed)
+                                                   Assert.IsNull(control.Gif)
+
+                                                   Dim bitmapException As ObjectDisposedException = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.Gif = source)
+                                                   Assert.AreEqual(NameOf(AniGif), bitmapException.ObjectName)
+                                                   Dim defaultException As ObjectDisposedException = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.Gif = Nothing)
+                                                   Assert.AreEqual(NameOf(AniGif), defaultException.ObjectName)
+                                                   Assert.IsNull(control.Gif)
+                                               End Sub
+
+                    control.Dispose()
+                    Assert.AreEqual(1, timerDisposedCount)
+                    Assert.IsTrue(control.IsDisposed)
+                    Assert.IsNull(control.Gif)
+                    Assert.AreEqual(8, source.Width)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
         Public Sub SeekFrame_HandlesStillImagesAndDisposedControls()
             Dim control As New AniGif()
             Using stillImage As New Bitmap(8, 8)

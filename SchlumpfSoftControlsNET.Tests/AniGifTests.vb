@@ -603,9 +603,386 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
                     Assert.AreEqual(1, GetCurrentFrame(control))
                     Assert.AreEqual(If(customSpeed, 100, 240), timer.Interval)
-                    CollectionAssert.AreEqual(New String() {"started", "stopped", "started", "stopped", "started"}, events.ToArray())
+                    CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+                    control.StopAnimation()
+                    CollectionAssert.AreEqual(New String() {"started", "stopped"}, events.ToArray())
                 End Using
             Next
+        End Sub
+
+        <TestMethod>
+        Public Sub FramesPerSecond_EquivalentValuesDoNotRefreshOrRestart()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                Using timer As New TrackingTimer()
+                    Using control As New AniGif()
+                        InstallTrackingTimer(control, timer)
+                        control.CustomDisplaySpeed = customSpeed
+                        control.FramesPerSecond = 50D
+                        Dim events As New List(Of String)()
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                        control.StartAnimation()
+
+                        For Each boundary As Decimal In New Decimal() {50D, 1D}
+                            control.FramesPerSecond = boundary
+                            Dim delays As Integer() = GetFrameDelays(control)
+                            Dim interval As Integer = timer.Interval
+                            Dim frame As Integer = GetCurrentFrame(control)
+                            SetLastFrameTimestamp(control, 123L)
+                            timer.ResetCounts()
+
+                            control.FramesPerSecond = boundary
+                            control.FramesPerSecond = If(boundary = 50D, 80D, 0D)
+                            control.FramesPerSecond = If(boundary = 50D, 100D, -10D)
+
+                            Assert.AreEqual(boundary, control.FramesPerSecond)
+                            Assert.AreSame(delays, GetFrameDelays(control))
+                            Assert.AreEqual(interval, timer.Interval)
+                            Assert.AreEqual(frame, GetCurrentFrame(control))
+                            Assert.AreEqual(123L, GetLastFrameTimestamp(control))
+                            Assert.IsTrue(timer.Enabled)
+                            Assert.AreEqual(0, timer.StartCalls)
+                            Assert.AreEqual(0, timer.StopCalls)
+                            CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+                        Next
+                    End Using
+                End Using
+            Next
+        End Sub
+
+        <TestMethod>
+        Public Sub TimingChanges_UpdateRunningIntervalWithoutRestartingPlayback()
+            For Each adaptive As Boolean In New Boolean() {False, True}
+                Using timer As New TrackingTimer()
+                    Using control As New AniGif()
+                        InstallTrackingTimer(control, timer)
+                        control.CustomDisplaySpeed = True
+                        control.FramesPerSecond = 10D
+                        control.AdaptiveTiming = adaptive
+                        Dim events As New List(Of String)()
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                        control.StartAnimation()
+                        Assert.AreEqual(100, timer.Interval)
+                        timer.ResetCounts()
+
+                        SetLastFrameTimestamp(control, 1L)
+                        control.FramesPerSecond = 20D
+                        Assert.AreEqual(50, timer.Interval)
+                        Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+
+                        SetLastFrameTimestamp(control, 1L)
+                        control.MinimumFrameIntervalMs = 70
+                        Assert.AreEqual(70, timer.Interval)
+                        Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+
+                        SetLastFrameTimestamp(control, 1L)
+                        control.MaximumFrameIntervalMs = 60
+                        Assert.AreEqual(60, control.MinimumFrameIntervalMs)
+                        Assert.AreEqual(60, control.MaximumFrameIntervalMs)
+                        Assert.AreEqual(60, timer.Interval)
+                        Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                        Assert.AreEqual(0, GetCurrentFrame(control))
+                        Assert.IsTrue(timer.Enabled)
+                        Assert.AreEqual(0, timer.StartCalls)
+                        Assert.AreEqual(0, timer.StopCalls)
+                        CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+
+                        control.StopAnimation()
+                        Assert.AreEqual(1, timer.StopCalls)
+                        CollectionAssert.AreEqual(New String() {"started", "stopped"}, events.ToArray())
+                    End Using
+                End Using
+            Next
+        End Sub
+
+        <TestMethod>
+        Public Sub TimingChanges_MetadataModeAppliesBoundsWithoutRestartingPlayback()
+            For Each adaptive As Boolean In New Boolean() {False, True}
+                Using timer As New TrackingTimer()
+                    Using control As New AniGif()
+                        InstallTrackingTimer(control, timer)
+                        control.AdaptiveTiming = adaptive
+                        Dim events As New List(Of String)()
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                        control.StartAnimation()
+                        Assert.AreEqual(100, timer.Interval)
+                        timer.ResetCounts()
+
+                        SetLastFrameTimestamp(control, 1L)
+                        control.MinimumFrameIntervalMs = 130
+                        Assert.AreEqual(130, timer.Interval)
+                        Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                        control.MaximumFrameIntervalMs = 300
+                        If adaptive Then timer.Interval = 160
+                        SetLastFrameTimestamp(control, 123L)
+
+                        control.FramesPerSecond = 15D
+                        Assert.AreEqual(If(adaptive, 160, 130), timer.Interval)
+                        Assert.AreEqual(130, GetFrameDelays(control)(0))
+                        Assert.AreEqual(123L, GetLastFrameTimestamp(control))
+
+                        SetLastFrameTimestamp(control, 1L)
+                        control.MaximumFrameIntervalMs = 60
+                        Assert.AreEqual(60, control.MinimumFrameIntervalMs)
+                        Assert.AreEqual(60, control.MaximumFrameIntervalMs)
+                        Assert.AreEqual(60, timer.Interval)
+                        Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                        Assert.AreEqual(0, GetCurrentFrame(control))
+                        Assert.IsTrue(timer.Enabled)
+                        Assert.AreEqual(0, timer.StartCalls)
+                        Assert.AreEqual(0, timer.StopCalls)
+                        CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+                    End Using
+                End Using
+            Next
+        End Sub
+
+        <TestMethod>
+        Public Sub TimingChanges_DifferentFpsWithSameRoundedIntervalPreservesAdaptiveTiming()
+            Using timer As New TrackingTimer()
+                Using control As New AniGif()
+                    InstallTrackingTimer(control, timer)
+                    control.CustomDisplaySpeed = True
+                    control.AdaptiveTiming = True
+                    Dim events As New List(Of String)()
+                    AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                    AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                    control.StartAnimation()
+                    Assert.AreEqual(33, timer.Interval)
+                    timer.Interval = 25
+                    SetLastFrameTimestamp(control, 123L)
+                    Dim delays As Integer() = GetFrameDelays(control)
+                    timer.ResetCounts()
+
+                    control.FramesPerSecond = 30.1D
+
+                    Assert.AreEqual(30.1D, control.FramesPerSecond)
+                    Assert.AreNotSame(delays, GetFrameDelays(control))
+                    Assert.AreEqual(25, timer.Interval)
+                    Assert.AreEqual(123L, GetLastFrameTimestamp(control))
+                    Assert.AreEqual(0, timer.StartCalls)
+                    Assert.AreEqual(0, timer.StopCalls)
+                    CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub TimingChanges_UnchangedTargetPreservesAdaptiveIntervalAndTimestamp()
+            Using timer As New TrackingTimer()
+                Using control As New AniGif()
+                    InstallTrackingTimer(control, timer)
+                    control.CustomDisplaySpeed = True
+                    control.FramesPerSecond = 10D
+                    control.AdaptiveTiming = True
+                    GetFrameDelays(control)(0) = 100
+                    control.StartAnimation()
+                    timer.Interval = 80
+                    SetLastFrameTimestamp(control, 123L)
+                    timer.ResetCounts()
+
+                    control.MaximumFrameIntervalMs = 400
+                    control.MinimumFrameIntervalMs = 30
+                    ' Beide Geschwindigkeitsarten haben für diesen Frame dasselbe Sollintervall.
+                    GetFrameDelays(control)(0) = 100
+                    control.CustomDisplaySpeed = False
+                    control.CustomDisplaySpeed = True
+
+                    Assert.AreEqual(80, timer.Interval)
+                    Assert.AreEqual(123L, GetLastFrameTimestamp(control))
+                    Assert.AreEqual(0, GetCurrentFrame(control))
+                    Assert.AreEqual(0, timer.StartCalls)
+                    Assert.AreEqual(0, timer.StopCalls)
+                    Assert.IsTrue(timer.Enabled)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub TimingChanges_TargetAlreadyScheduledDoesNotResetTimestamp()
+            Using timer As New TrackingTimer()
+                Using control As New AniGif()
+                    InstallTrackingTimer(control, timer)
+                    control.CustomDisplaySpeed = True
+                    control.FramesPerSecond = 10D
+                    control.AdaptiveTiming = True
+                    control.StartAnimation()
+                    timer.Interval = 50
+                    SetLastFrameTimestamp(control, 123L)
+                    timer.ResetCounts()
+
+                    control.FramesPerSecond = 20D
+
+                    Assert.AreEqual(50, timer.Interval)
+                    Assert.AreEqual(123L, GetLastFrameTimestamp(control))
+                    Assert.AreEqual(0, timer.StartCalls)
+                    Assert.AreEqual(0, timer.StopCalls)
+                    Assert.IsTrue(timer.Enabled)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub TimingChanges_MetadataModeUpdatesMissingOrInvalidDelayFallback()
+            For Each missingDelay As Boolean In New Boolean() {False, True}
+                Using timer As New TrackingTimer()
+                    Using control As New AniGif()
+                        InstallTrackingTimer(control, timer)
+                        If missingDelay Then
+                            control.Gif.RemovePropertyItem(&H5100)
+                        Else
+                            Dim delayProperty As PropertyItem = control.Gif.GetPropertyItem(&H5100)
+                            Array.Clear(delayProperty.Value, 0, 4)
+                            control.Gif.SetPropertyItem(delayProperty)
+                        End If
+                        control.FramesPerSecond = 10D
+                        Dim events As New List(Of String)()
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                        control.StartAnimation()
+                        Assert.AreEqual(100, timer.Interval)
+                        timer.ResetCounts()
+
+                        control.FramesPerSecond = 20D
+
+                        Assert.AreEqual(50, timer.Interval)
+                        Assert.AreEqual(50, GetFrameDelays(control)(0))
+                        Assert.AreEqual(0, GetCurrentFrame(control))
+                        Assert.AreEqual(0, timer.StartCalls)
+                        Assert.AreEqual(0, timer.StopCalls)
+                        CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+                    End Using
+                End Using
+            Next
+        End Sub
+
+        <TestMethod>
+        Public Sub TimingChanges_WhileHiddenOrPausedDoNotStartTheTimer()
+            Using parent As New Panel()
+                Using timer As New TrackingTimer()
+                    Using control As New AniGif()
+                        InstallTrackingTimer(control, timer)
+                        parent.Controls.Add(control)
+                        control.CustomDisplaySpeed = True
+                        control.FramesPerSecond = 10D
+                        Dim events As New List(Of String)()
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                        control.StartAnimation()
+                        control.SeekFrame(1)
+                        parent.Visible = False
+                        control.FramesPerSecond = 20D
+                        Assert.IsFalse(timer.Enabled)
+                        CollectionAssert.AreEqual(New String() {"started", "stopped"}, events.ToArray())
+                        timer.ResetCounts()
+
+                        Dim hiddenDelays As Integer() = GetFrameDelays(control)
+                        control.FramesPerSecond = 20D
+                        Assert.AreSame(hiddenDelays, GetFrameDelays(control))
+                        control.MinimumFrameIntervalMs = 30
+                        Assert.IsFalse(timer.Enabled)
+                        Assert.AreEqual(0, timer.StartCalls)
+                        Assert.AreEqual(0, timer.StopCalls)
+                        Assert.AreEqual(1, GetCurrentFrame(control))
+                        CollectionAssert.AreEqual(New String() {"started", "stopped"}, events.ToArray())
+
+                        control.PauseAnimation()
+                        timer.ResetCounts()
+                        parent.Visible = True
+                        control.FramesPerSecond = 20D
+                        control.MaximumFrameIntervalMs = 300
+                        Assert.IsFalse(timer.Enabled)
+                        Assert.AreEqual(0, timer.StartCalls)
+                        Assert.AreEqual(0, timer.StopCalls)
+                        Assert.AreEqual(PlaybackState.Paused, control.GetPlaybackState())
+
+                        control.ResumeAnimation()
+                        Assert.IsTrue(timer.Enabled)
+                        Assert.AreEqual(50, timer.Interval)
+                        Assert.AreEqual(1, GetCurrentFrame(control))
+                        CollectionAssert.AreEqual(New String() {"started", "stopped", "started"}, events.ToArray())
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub NoAnimation_EquivalentFpsDoesNotNotifyButRealChangesDo()
+            Using control As New AniGif()
+                Using stillImage As New Bitmap(8, 8)
+                    control.Gif = stillImage
+                    Dim notifications As Integer = 0
+                    AddHandler control.NoAnimation, Sub(sender, e) notifications += 1
+                    control.StartAnimation()
+                    Assert.AreEqual(1, notifications)
+
+                    control.FramesPerSecond = 30D
+                    Assert.AreEqual(1, notifications)
+                    control.FramesPerSecond = 31D
+                    Assert.AreEqual(2, notifications)
+                    control.Visible = False
+                    control.FramesPerSecond = 32D
+                    Assert.AreEqual(2, notifications)
+                    control.Visible = True
+                    Assert.AreEqual(3, notifications)
+                    control.PauseAnimation()
+                    control.FramesPerSecond = 33D
+                    Assert.AreEqual(3, notifications)
+                    control.ResumeAnimation()
+                    Assert.AreEqual(4, notifications)
+                    Assert.IsFalse(GetTimer(control).Enabled)
+                End Using
+            End Using
+        End Sub
+
+        <STATestMethod>
+        Public Sub TimerPlayback_EquivalentFpsAssignmentsAllowRealTicks()
+            Using control As New AniGif()
+                Using assignmentTimer As New System.Windows.Forms.Timer()
+                    Using watchdog As New System.Windows.Forms.Timer()
+                        control.CustomDisplaySpeed = True
+                        control.FramesPerSecond = 2D
+                        Dim tickCount As Integer = 0
+                        Dim assignmentCount As Integer = 0
+                        Dim timedOut As Boolean = False
+                        Dim events As New List(Of String)()
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                        AddHandler GetTimer(control).Tick, Sub(sender, e)
+                                                               tickCount += 1
+                                                               If tickCount = 2 Then Application.ExitThread()
+                                                           End Sub
+                        assignmentTimer.Interval = 25
+                        AddHandler assignmentTimer.Tick, Sub(sender, e)
+                                                             control.FramesPerSecond = 2D
+                                                             assignmentCount += 1
+                                                         End Sub
+                        watchdog.Interval = 5000
+                        AddHandler watchdog.Tick, Sub(sender, e)
+                                                      timedOut = True
+                                                      Application.ExitThread()
+                                                  End Sub
+                        control.StartAnimation()
+                        assignmentTimer.Start()
+                        watchdog.Start()
+                        Try
+                            Application.Run()
+                        Finally
+                            assignmentTimer.Stop()
+                            watchdog.Stop()
+                            control.StopAnimation()
+                        End Try
+
+                        Assert.IsFalse(timedOut, "Die Animation hat trotz wiederholter gleichwertiger FPS-Zuweisungen nicht fortgesetzt.")
+                        Assert.AreEqual(2, tickCount)
+                        Assert.IsGreaterThan(0, assignmentCount)
+                        Assert.AreEqual(2, GetCurrentFrame(control))
+                        CollectionAssert.AreEqual(New String() {"started", "stopped"}, events.ToArray())
+                    End Using
+                End Using
+            End Using
         End Sub
 
         <TestMethod>
@@ -1191,6 +1568,130 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        <TestMethod>
+        Public Sub AnimationStarted_HandlerCanChangeTimingAndPause()
+            Using timer As New TrackingTimer()
+                Using control As New AniGif()
+                    InstallTrackingTimer(control, timer)
+                    control.CustomDisplaySpeed = True
+                    control.FramesPerSecond = 10D
+                    Dim events As New List(Of String)()
+                    AddHandler control.AnimationStarted, Sub(sender, e)
+                                                             events.Add("started")
+                                                             If events.Count = 1 Then
+                                                                 control.FramesPerSecond = 20D
+                                                                 control.PauseAnimation()
+                                                             End If
+                                                         End Sub
+                    AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                    timer.ResetCounts()
+
+                    control.StartAnimation()
+
+                    Assert.AreEqual(20D, control.FramesPerSecond)
+                    Assert.AreEqual(PlaybackState.Paused, control.GetPlaybackState())
+                    Assert.IsTrue(control.AutoPlay)
+                    Assert.IsFalse(timer.Enabled)
+                    Assert.AreEqual(1, timer.StartCalls)
+                    Assert.AreEqual(1, timer.StopCalls)
+                    CollectionAssert.AreEqual(New String() {"started", "stopped"}, events.ToArray())
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub AutoPlayChanged_HandlerCanChangeTimingWithoutDuplicateStart()
+            Using timer As New TrackingTimer()
+                Using control As New AniGif()
+                    InstallTrackingTimer(control, timer)
+                    control.CustomDisplaySpeed = True
+                    control.FramesPerSecond = 10D
+                    Dim events As New List(Of String)()
+                    AddHandler control.AutoPlayChanged, Sub(sender, e)
+                                                            events.Add("autoplay")
+                                                            If control.AutoPlay Then control.FramesPerSecond = 20D
+                                                        End Sub
+                    AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                    AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                    timer.ResetCounts()
+
+                    control.StartAnimation()
+
+                    Assert.IsTrue(timer.Enabled)
+                    Assert.AreEqual(50, timer.Interval)
+                    Assert.AreEqual(1, timer.StartCalls)
+                    Assert.AreEqual(0, timer.StopCalls)
+                    CollectionAssert.AreEqual(New String() {"autoplay", "started"}, events.ToArray())
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub NoAnimation_HandlerCanReplaceImageAndStartPlayback()
+            Using source As Bitmap = LoadAnimatedGif()
+                Using stillImage As New Bitmap(8, 8)
+                    Using control As New AniGif()
+                        control.Gif = stillImage
+                        Dim events As New List(Of String)()
+                        AddHandler control.NoAnimation, Sub(sender, e)
+                                                            events.Add("no-animation")
+                                                            control.Gif = source
+                                                        End Sub
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+
+                        control.StartAnimation()
+
+                        Assert.IsTrue(GetTimer(control).Enabled)
+                        Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
+                        Assert.AreEqual(0, GetCurrentFrame(control))
+                        CollectionAssert.AreEqual(New String() {"no-animation", "started"}, events.ToArray())
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub NoAnimation_HandlerCanAssignFpsReentrantly()
+            Using control As New AniGif()
+                Using stillImage As New Bitmap(8, 8)
+                    control.Gif = stillImage
+                    Dim notifications As Integer = 0
+                    AddHandler control.NoAnimation, Sub(sender, e)
+                                                        notifications += 1
+                                                        control.FramesPerSecond = 12D
+                                                    End Sub
+
+                    control.StartAnimation()
+
+                    Assert.AreEqual(2, notifications)
+                    Assert.AreEqual(12D, control.FramesPerSecond)
+                    Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
+                    Assert.IsFalse(GetTimer(control).Enabled)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub AnimationStopped_HandlerCanDisposeDuringVisibilityChange()
+            Using control As New AniGif()
+                Dim timer As System.Windows.Forms.Timer = GetTimer(control)
+                Dim stoppedCount As Integer = 0
+                control.StartAnimation()
+                AddHandler control.AnimationStopped, Sub(sender, e)
+                                                         stoppedCount += 1
+                                                         control.Dispose()
+                                                     End Sub
+
+                control.Visible = False
+
+                Assert.IsTrue(control.IsDisposed)
+                Assert.IsFalse(timer.Enabled)
+                Assert.AreEqual(1, stoppedCount)
+                Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
+            End Using
+        End Sub
+
         Private Shared Sub AssertDrawingRectangle(imageSize As Size, clientSize As Size, sizeMode As ImageSizeMode, zoom As Decimal, expected As Rectangle)
             Using source As New Bitmap(imageSize.Width, imageSize.Height)
                 Using control As New AniGif()
@@ -1246,6 +1747,51 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     Assert.AreEqual(expected.GetPixel(x, y).ToArgb(), actual.GetPixel(x, y).ToArgb(), $"Pixel ({x}, {y})")
                 Next
             Next
+        End Sub
+
+        Private NotInheritable Class TrackingTimer
+            Inherits System.Windows.Forms.Timer
+
+            Private _startCalls As Integer
+            Private _stopCalls As Integer
+
+            Public ReadOnly Property StartCalls As Integer
+                Get
+                    Return Me._startCalls
+                End Get
+            End Property
+
+            Public ReadOnly Property StopCalls As Integer
+                Get
+                    Return Me._stopCalls
+                End Get
+            End Property
+
+            Public Overrides Property Enabled As Boolean
+                Get
+                    Return MyBase.Enabled
+                End Get
+                Set(value As Boolean)
+                    If value Then
+                        Me._startCalls += 1
+                    Else
+                        Me._stopCalls += 1
+                    End If
+                    MyBase.Enabled = value
+                End Set
+            End Property
+
+            Public Sub ResetCounts()
+                Me._startCalls = 0
+                Me._stopCalls = 0
+            End Sub
+        End Class
+
+        Private Shared Sub InstallTrackingTimer(control As AniGif, timer As TrackingTimer)
+            Dim timerProperty As PropertyInfo = GetType(AniGif).GetProperty("Timer", BindingFlags.Instance Or BindingFlags.NonPublic)
+            Assert.IsNotNull(timerProperty)
+            timer.Interval = GetTimer(control).Interval
+            timerProperty.SetValue(control, timer)
         End Sub
 
         Private Shared Function GetTimer(control As AniGif) As System.Windows.Forms.Timer

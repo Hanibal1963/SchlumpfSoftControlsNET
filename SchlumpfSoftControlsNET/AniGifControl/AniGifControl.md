@@ -22,10 +22,10 @@ Weitere Infos unter:
 
 ## 2. Ereignisse
 
-- `NoAnimation`: Wird ausgelöst, wenn die Grafik nicht animiert werden kann.
+- `NoAnimation`: Wird ausgelöst, wenn bei gewünschter Wiedergabe und sichtbarem Control die Grafik nicht animiert werden kann. Eine gleichwertige FPS-Zuweisung löst keine erneute Prüfung aus.
 - `AutoPlayChanged`: Wird ausgelöst, wenn sich die Eigenschaft `AutoPlay` geändert hat.
-- `AnimationStarted`: Wird ausgelöst, wenn die Animation startet oder nach einer Unterbrechung fortgesetzt wird.
-- `AnimationStopped`: Wird ausgelöst, wenn eine laufende Animation angehalten oder gestoppt wird, beispielsweise durch Pause oder Unsichtbarkeit.
+- `AnimationStarted`: Wird ausgelöst, wenn die Animation startet oder nach einer Unterbrechung fortgesetzt wird. Reine Timingänderungen bei weiterlaufender Wiedergabe lösen das Ereignis nicht aus.
+- `AnimationStopped`: Wird ausgelöst, wenn eine laufende Animation angehalten oder gestoppt wird, beispielsweise durch Pause oder Unsichtbarkeit. Reine Timingänderungen bei weiterlaufender Wiedergabe lösen das Ereignis nicht aus.
 
 ## 3. Eigenschaften
 
@@ -33,10 +33,10 @@ Weitere Infos unter:
 - `Gif`: Gibt die aktuell verwendete interne Bitmap zurück oder legt eine GIF-Grafik fest. Bei der Zuweisung erstellt das Control eine eigene Kopie und gibt vom Aufrufer verwaltete Bilder nicht frei. Die zurückgegebene interne Bitmap gehört dem Control und wird bei einem Bildwechsel oder bei der Ressourcenfreigabe freigegeben. `Nothing` stellt eine Kopie des Standardbilds wieder her. Nach Beginn der Ressourcenfreigabe lösen beide Zuweisungen eine `ObjectDisposedException` aus, ohne das übergebene Bild zu verändern. Nach abgeschlossener Freigabe gibt der Getter `Nothing` zurück. Die Zuweisung muss auf dem UI-Thread des Controls erfolgen.
 - `GifSizeMode`: Legt die Skalierung und Ausrichtung der GIF-Grafik fest. `Zoom` passt das Bild proportional in die Clientfläche ein, `Fill` füllt sie proportional und kann Bildränder abschneiden. `Normal` und `CenterImage` verwenden die Originalgröße.
 - `ScalingQualityPreset`: Legt die Interpolation für `ImageSizeMode.Zoom` und `ImageSizeMode.Fill` fest. Standard ist `Photo`; ein Wechsel fordert eine Neuzeichnung an. Andere Werte als `Photo` und `PixelArt` lösen `System.ComponentModel.InvalidEnumArgumentException` aus.
-- `CustomDisplaySpeed`: Legt fest, ob die timerbasierte Wiedergabe die benutzerdefinierte Anzeigegeschwindigkeit (FPS) oder normalisierte GIF-Metadaten-Delays verwendet.
-- `FramesPerSecond`: Legt die benutzerdefinierte Anzeigegeschwindigkeit in Bildern pro Sekunde (FPS) fest.
-- `MinimumFrameIntervalMs`: Legt die untere Grenze für normalisierte Frame-Delays in Millisekunden fest.
-- `MaximumFrameIntervalMs`: Legt die obere Grenze für normalisierte Frame-Delays in Millisekunden fest.
+- `CustomDisplaySpeed`: Legt fest, ob die timerbasierte Wiedergabe die benutzerdefinierte Anzeigegeschwindigkeit (FPS) oder normalisierte GIF-Metadaten-Delays verwendet. Ein Moduswechsel unterbricht eine laufende Wiedergabe nicht.
+- `FramesPerSecond`: Legt die benutzerdefinierte Anzeigegeschwindigkeit in Bildern pro Sekunde (FPS) fest und dient auch als Fallback für fehlende oder ungültige GIF-Delays. Werte werden auf 1 bis 50 begrenzt; eine nach der Begrenzung gleichwertige Zuweisung bleibt ohne Wirkung.
+- `MinimumFrameIntervalMs`: Legt die untere Grenze für normalisierte Frame-Delays in Millisekunden fest. Werte unter 1 werden auf 1 gesetzt; überschreitet die Grenze das Maximum, wird dieses entsprechend erhöht.
+- `MaximumFrameIntervalMs`: Legt die obere Grenze für normalisierte Frame-Delays in Millisekunden fest. Werte unter 1 werden auf 1 gesetzt; unterschreitet die Grenze das Minimum, wird dieses entsprechend gesenkt.
 - `AdaptiveTiming`: Aktiviert optional eine adaptive Drift-Korrektur bei UI-Thread-Last.
 - `ZoomFactor`: Legt den Zoomfaktor für `Zoom` in Prozent der eingepassten Größe fest. Der Standardwert ist 50; Werte außerhalb von 1 bis 100 werden auf diesen Bereich begrenzt. In den übrigen Modi hat der Wert keine Wirkung.
 - `MaximumSize`: Ausgeblendet, da für dieses Control nicht relevant.
@@ -82,6 +82,8 @@ Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlay
 - Frame-Delays werden aus den GIF-Metadaten (`0x5100`) gelesen, mit Fallbacks versehen und auf `MinimumFrameIntervalMs`/`MaximumFrameIntervalMs` begrenzt.
 - Beide Geschwindigkeitsarten verwenden den Timer; neu gezeichnet wird nur bei einem tatsächlichen Framewechsel.
 - Mit `AdaptiveTiming = True` wird das nächste Intervall über eine Drift-Korrektur an die tatsächliche UI-Thread-Laufzeit angepasst.
+- Änderungen von Geschwindigkeit und Intervallgrenzen übernehmen ein geändertes Sollintervall des aktuellen Frames, ohne die laufende Wiedergabe zu stoppen. Wird dafür ein anderer Timerwert gesetzt, beginnt die Zeitmessung für dieses Intervall neu. Bei unverändertem Sollintervall bleibt eine adaptive Korrektur erhalten; entspricht das neue Sollintervall bereits dem Timerwert, bleibt auch die laufende Zeitmessung unverändert.
+- Bei animierten Bildern werden Änderungen an den Metadaten der über `Gif` zurückgegebenen Bitmap beim nächsten tatsächlichen Wechsel von FPS oder Intervallgrenzen beziehungsweise bei einer Bildzuweisung eingelesen. Eine gleichwertige FPS-Zuweisung erneuert den Delay-Cache nicht.
 - Pause und Fortsetzen verändern `AutoPlay` nicht. `AnimationStopped` beziehungsweise `AnimationStarted` werden nur beim tatsächlichen Anhalten beziehungsweise Wiederanlaufen ausgelöst; eine Frameauswahl löst diese Ereignisse nicht aus.
 - Der mit `GetPlaybackState()` abgefragte Zustand ist unabhängig von der Sichtbarkeit. `Playing` bedeutet nicht zwangsläufig, dass die Animation tatsächlich läuft, beispielsweise bei einem unsichtbaren Control oder einer nicht animierbaren Grafik.
 - Beim Austausch von `Gif` werden laufende Wiedergabemechanismen gestoppt, intern erzeugte Bilder freigegeben und der Frame auf `0` gesetzt. Eine explizite Pause bleibt erhalten.
@@ -193,17 +195,17 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.9. Unnötige Timer-Neustarts vermeiden
 
-**Status:** Offen.
+**Status:** Umgesetzt.
 
-**Ausgangslage:** `UpdateTimerState()` stoppt die Wiedergabe zunächst immer, auch wenn sie nach einer Einstellungsänderung weiterlaufen soll. Zudem löst `FramesPerSecond` selbst bei unverändertem Wert die Aktualisierung aus. Bei laufender Animation entstehen dadurch zusätzliche Stopp- und Startereignisse.
+**Ausgangslage:** `UpdateTimerState()` stoppte die Wiedergabe zunächst immer, auch wenn sie nach einer Einstellungsänderung weiterlaufen sollte. Zudem löste `FramesPerSecond` selbst bei unverändertem Wert die Aktualisierung aus. Bei laufender Animation entstanden dadurch zusätzliche Stopp- und Startereignisse.
 
 **Umsetzung:**
 
-- Den begrenzten FPS-Wert mit dem bisherigen Wert vergleichen und gleichwertige Zuweisungen vor dem Auslösen von `FramesPerSecondChanged` beenden.
+- Der begrenzte FPS-Wert wird mit dem bisherigen Wert verglichen; gleichwertige Zuweisungen beenden die Aktualisierung vor `FramesPerSecondChanged`.
 
-- In `UpdateTimerState()` zwischen tatsächlichen Zustandswechseln und reinen Konfigurationsänderungen unterscheiden. Geänderte Intervalle gezielt übernehmen, ohne die Wiedergabe unnötig zu stoppen oder Start-/Stoppereignisse auszulösen.
+- `UpdateTimerState()` unterscheidet Zustandswechsel von Konfigurationsänderungen. Ein geändertes Sollintervall wird bei Bedarf ohne explizites Stoppen der Wiedergabe übernommen; eine bestehende adaptive Korrektur bleibt bei unverändertem Sollintervall erhalten.
 
-- Sichtbarkeit, Pause, `NoAnimation` und wiedereintretende Ereignishandler mit Tests absichern. Das veränderte Ereignisverhalten bei Einstellungsänderungen dokumentieren.
+- Tests sichern FPS- und Intervallgrenzen, Metadaten-Fallbacks, beide Geschwindigkeitsarten, adaptives Timing, Sichtbarkeit, Pause, `NoAnimation`, wiedereintretende Ereignishandler und reale Timer-Ticks ab. Gleichwertige FPS-Zuweisungen lösen auch keine erneute `NoAnimation`-Prüfung aus.
 
 **Nutzen:** Weniger Timer-Neustarts, Ereignisse und Unterbrechungen bei unverändertem Wiedergabezustand.
 
@@ -287,7 +289,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.15. Empfohlene Reihenfolge
 
-1. Timer-Neustarts und Ereignisse gezielt steuern (7.9).
+1. Timer-Neustarts und Ereignisse gezielt steuern (7.9; umgesetzt).
 2. Diagnostik und Messungen für die folgenden Optimierungen vorsehen (7.6).
 3. Frame-Delay-Metadaten wiederverwenden (7.10).
 4. Timer-Ticks verschlanken (7.11).

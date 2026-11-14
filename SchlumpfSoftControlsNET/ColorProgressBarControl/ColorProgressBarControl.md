@@ -27,22 +27,35 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 ## 2. Ereignisse
 
 - `Click`: Klicks auf das Steuerelement lösen direkt das Click-Ereignis aus.
+
 - `Paint`: Registrierte Ereignishandler werden nach der Darstellung des Steuerelements aufgerufen und können diese ergänzen.
 
 ## 3. Eigenschaften
 
 - `Value`: Gibt den aktuellen Fortschrittswert zurück oder legt diesen fest (Bereich: `0` bis `ProgressMaximumValue`).
+
 - `ProgressMaximumValue`: Gibt den Maximalwert des Fortschrittsbalkens zurück oder legt diesen fest.
+
 - `BarColor`: Gibt die Farbe des gefüllten Fortschrittsbereichs zurück oder legt diese fest.
+
 - `EmptyColor`: Gibt die Farbe des leeren Fortschrittsbereichs zurück oder legt diese fest.
+
 - `BorderColor`: Gibt die Farbe des Rahmens zurück oder legt diese fest.
+
 - `ShowBorder`: Legt fest, ob ein Rahmen um die Fortschrittsanzeige angezeigt wird.
+
 - `IsGlossy`: Legt fest, ob ein Glanzeffekt über dem gefüllten und dem leeren Fortschrittsbereich angezeigt wird.
+
 - `BackColor` (überschrieben, ausgeblendet): Hintergrundfarbe ist intern als Rahmenfarbe vorgesehen.
+
 - `BackgroundImage` (überschrieben, ausgeblendet): Hintergrundgrafik wird vom Steuerelement nicht unterstützt.
+
 - `BackgroundImageLayout` (überschrieben, ausgeblendet): Hintergrundgrafik-Layout wird vom Steuerelement nicht unterstützt.
+
 - `BorderStyle` (ausgeblendet): Rahmen wird über `ShowBorder` und `BorderColor` gesteuert.
+
 - `ForeColor` (überschrieben, ausgeblendet): Vordergrundfarbe wird vom Steuerelement nicht verwendet.
+
 - `Padding` (überladen, ausgeblendet): Inneres Padding wird intern zur Rahmendarstellung verwaltet.
 
 ## 4. Funktionen
@@ -56,6 +69,7 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 ## 6. Hinweise
 
 - Werte außerhalb des gültigen Bereichs von `0` bis `ProgressMaximumValue` werden über die Guard-Logik der `Value`-Eigenschaft abgefangen.
+
 - Die Darstellung erfolgt ohne interne Panels. Anwendungen, die über `Controls` auf diese Panels zugegriffen haben, müssen entsprechend angepasst werden.
 
 ## [7. Optimierungsvorschläge](ColorProgressBarOptimierungsvorschläge.md)

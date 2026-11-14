@@ -6,7 +6,7 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ## 2. Vollständig owner-drawn rendern
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
@@ -18,6 +18,8 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ## 3. Layout-Neuberechnung minimieren
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Wertänderungen clampen und nur bei echter Änderung rendern.
@@ -27,6 +29,8 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 **Nutzen:** Geringere CPU-Last bei häufigen Fortschrittsupdates.
 
 ## 4. Farbübergänge effizient gestalten
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -38,6 +42,8 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ## 5. API-Konsistenz verbessern
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - `ProgressMaximumValue`/`Value` Validierung zentralisieren.
@@ -47,6 +53,8 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 **Nutzen:** Vorhersagbares Verhalten für Integratoren.
 
 ## 6. Accessibility-Basis ergänzen
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -58,8 +66,7 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ## 7. Empfohlene Reihenfolge
 
-1. Owner-Draw-Rendering (umgesetzt)
-2. Layout-Caching
-3. GDI-Objektmanagement
-4. API-Konsistenz
-5. Accessibility
+1. Layout-Caching (3.)
+2. GDI-Objektmanagement (4.)
+3. API-Konsistenz (5.)
+4. Accessibility (6.)

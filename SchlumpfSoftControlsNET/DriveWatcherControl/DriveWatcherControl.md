@@ -50,4 +50,3 @@ DriveWatcher Control wurde mit folgenden Geräten getestet:
 ## [7. Optimierungsvorschläge](DriveWatcherOptimierungsvorschläge.md)
 
 ## [8. Erweiterungsvorschläge](DriveWatcherErweiterungsvorschläge.md)
-

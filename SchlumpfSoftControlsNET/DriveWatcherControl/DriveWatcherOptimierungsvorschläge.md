@@ -6,6 +6,8 @@ Robustes und fehlertolerantes Laufwerks-Monitoring mit stabilen Events.
 
 ## 2. Event-Deduplizierung einführen
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Kurzzeit-Cache für zuletzt gemeldete Device-Events einbauen.
@@ -15,6 +17,8 @@ Robustes und fehlertolerantes Laufwerks-Monitoring mit stabilen Events.
 **Nutzen:** Verhindert Event-Stürme bei USB-/Volume-Flapping.
 
 ## 3. Threading klarstellen
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -26,6 +30,8 @@ Robustes und fehlertolerantes Laufwerks-Monitoring mit stabilen Events.
 
 ## 4. WMI/Win32-Fehlerpfade absichern
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Try/Catch an allen Systemabfragen ergänzen.
@@ -36,6 +42,8 @@ Robustes und fehlertolerantes Laufwerks-Monitoring mit stabilen Events.
 
 ## 5. Lifecycle und Cleanup schärfen
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Fensterhandle/Message-Hook sauber erstellen und in `Dispose` freigeben.
@@ -45,6 +53,8 @@ Robustes und fehlertolerantes Laufwerks-Monitoring mit stabilen Events.
 **Nutzen:** Keine Handle-Leaks bei dynamischem Laden/Entladen.
 
 ## 6. Diagnoselogs optional bereitstellen
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 

@@ -6,6 +6,8 @@ Sicheres Passwort-Control mit klarer API und minimierter Angriffsfläche.
 
 ## 2. Kryptoparameter zentral versionieren
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - PBKDF2-Parameter (Iterationen, Salt-Länge, Hash-Länge, Algorithmus) als versioniertes Format speichern.
@@ -15,6 +17,8 @@ Sicheres Passwort-Control mit klarer API und minimierter Angriffsfläche.
 **Nutzen:** Zukunftssichere Passwortprüfung.
 
 ## 3. Sensitive Daten im Speicher minimieren
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -26,6 +30,8 @@ Sicheres Passwort-Control mit klarer API und minimierter Angriffsfläche.
 
 ## 4. Fehlerbehandlung bei DPAPI härten
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - `ProtectSecret`/`UnprotectSecret` differenziert behandeln (Format, Kontextwechsel, Benutzerprofil).
@@ -36,6 +42,8 @@ Sicheres Passwort-Control mit klarer API und minimierter Angriffsfläche.
 
 ## 5. Eventfluss präzisieren
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - `PasswortChanged` nur bei validem State auslösen.
@@ -45,6 +53,8 @@ Sicheres Passwort-Control mit klarer API und minimierter Angriffsfläche.
 **Nutzen:** Eindeutigeres Verhalten für Konsumenten.
 
 ## 6. UI-Interaktion verbessern
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 

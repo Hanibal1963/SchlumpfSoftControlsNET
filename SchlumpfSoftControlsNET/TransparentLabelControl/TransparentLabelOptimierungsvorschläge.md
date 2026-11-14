@@ -6,6 +6,8 @@ Stabiles transparentes Label ohne Flackern und mit guter Lesbarkeit.
 
 ## 2. Repaint-Reihenfolge kontrollieren
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Parent-Invalidation gezielt nur bei Bedarf triggern.
@@ -15,6 +17,8 @@ Stabiles transparentes Label ohne Flackern und mit guter Lesbarkeit.
 **Nutzen:** Weniger Flackern bei bewegten Hintergründen.
 
 ## 3. Text-Rendering modernisieren
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -26,6 +30,8 @@ Stabiles transparentes Label ohne Flackern und mit guter Lesbarkeit.
 
 ## 4. Layoutkosten reduzieren
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Größe nur bei Text-/Font-Änderung neu berechnen.
@@ -36,6 +42,8 @@ Stabiles transparentes Label ohne Flackern und mit guter Lesbarkeit.
 
 ## 5. Kontrastunterstützung ergänzen
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Optionalen Schatten/Outline für Text anbieten.
@@ -45,6 +53,8 @@ Stabiles transparentes Label ohne Flackern und mit guter Lesbarkeit.
 **Nutzen:** Höhere Lesbarkeit über Bildern.
 
 ## 6. Parent-Wechsel robust machen
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 

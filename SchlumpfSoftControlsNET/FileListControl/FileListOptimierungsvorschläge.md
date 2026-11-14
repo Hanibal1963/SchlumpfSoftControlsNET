@@ -6,6 +6,8 @@ Große Verzeichnisse performant laden und bedienen.
 
 ## 2. Virtuellen ListView-Modus prüfen
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Optional `VirtualMode` einführen.
@@ -15,6 +17,8 @@ Große Verzeichnisse performant laden und bedienen.
 **Nutzen:** Deutlich bessere Performance bei vielen Dateien.
 
 ## 3. Ordnergrößenberechnung entkoppeln
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -26,6 +30,8 @@ Große Verzeichnisse performant laden und bedienen.
 
 ## 4. Sortierung stabilisieren
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Typisierte Sortierung pro Spalte (Datum/Größe/Text).
@@ -36,6 +42,8 @@ Große Verzeichnisse performant laden und bedienen.
 
 ## 5. Persistenz robuster machen
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - `ColumnOrderState` versionieren.
@@ -45,6 +53,8 @@ Große Verzeichnisse performant laden und bedienen.
 **Nutzen:** Weniger Fehler nach Updates.
 
 ## 6. Dateisystemfehler abfangen
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 

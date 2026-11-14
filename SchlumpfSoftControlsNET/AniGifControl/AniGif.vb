@@ -914,24 +914,22 @@ Namespace AniGifControl
 
         Private Function IsControlTreeVisible() As Boolean
 
-            If Not Me.Visible Then Return False
-
-            Dim currentParent As Control = Me.Parent
-            While currentParent IsNot Nothing
-                If Not currentParent.Visible Then Return False
-                currentParent = currentParent.Parent
-            End While
-
-            Return True
+            ' Der WinForms-Getter berücksichtigt bereits die Sichtbarkeit der Elternkette.
+            Return Me.Visible
 
         End Function
 
         Private Sub Timer_Tick(sender As Object, e As EventArgs) Handles Timer.Tick
 
             If Me._IsDisposed OrElse Me.IsDisposed OrElse Me.DesignMode OrElse Not Me.AutoPlay OrElse Me._playbackState <> PlaybackState.Playing Then Exit Sub
-            If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
+            Dim isVisible As Boolean? = Nothing
+            If Me._diagnosticsEnabled Then
+                If Me._Gif IsNot Nothing Then isVisible = Me.IsControlTreeVisible()
+                ' Die Diagnoseprüfung löst vor der Timerprüfung keine Ereignishandler aus.
+                Me.UpdateDiagnosticsActivity(isVisible)
+            End If
             If Me._Gif Is Nothing Then Exit Sub
-            If Not Me.IsControlTreeVisible() Then Exit Sub
+            If Not If(isVisible, Me.IsControlTreeVisible()) Then Exit Sub
 
             ' wenn Frames = 0 ist das Bild nicht animiert -> Ende
             If Me._MaxFrame = 0 Then Exit Sub

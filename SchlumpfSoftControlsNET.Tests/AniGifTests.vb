@@ -1648,6 +1648,346 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Next
         End Sub
 
+        <STATestMethod>
+        Public Sub VisibilityHierarchy_PreservesPlaybackAcrossNestedChanges()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                For Each adaptive As Boolean In New Boolean() {False, True}
+                    For Each diagnosticsEnabled As Boolean In New Boolean() {False, True}
+                        Using outer As New Panel()
+                            Using inner As New Panel()
+                                Using control As New AniGif()
+                                    outer.Controls.Add(inner)
+                                    inner.Controls.Add(control)
+                                    control.ClientSize = New Size(32, 32)
+                                    control.CustomDisplaySpeed = customSpeed
+                                    control.AdaptiveTiming = adaptive
+                                    control.DiagnosticsEnabled = diagnosticsEnabled
+                                    Dim handle As IntPtr = control.Handle
+                                    Assert.AreNotEqual(IntPtr.Zero, handle)
+                                    Dim timer As System.Windows.Forms.Timer = GetTimer(control)
+                                    Dim events As New List(Of String)()
+                                    Dim invalidations As Integer = 0
+                                    AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                                    AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                                    AddHandler control.Invalidated, Sub(sender, e) invalidations += 1
+
+                                    control.StartAnimation()
+                                    Dim beforeTick As Integer = invalidations
+                                    InvokeTimerTick(control)
+                                    Assert.AreEqual(1, GetCurrentFrame(control))
+                                    Assert.AreEqual(beforeTick + 1, invalidations)
+
+                                    outer.Visible = False
+                                    ' Ein Elternwechsel hält den Timer nicht in jeder WinForms-Hierarchie an.
+                                    Assert.IsTrue(timer.Enabled)
+                                    Assert.IsTrue(control.AutoPlay)
+                                    Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
+                                    Dim hiddenDuration As TimeSpan = control.Diagnostics.ActiveDuration
+                                    beforeTick = invalidations
+                                    InvokeTimerTick(control)
+                                    Assert.AreEqual(1, GetCurrentFrame(control))
+                                    Assert.AreEqual(beforeTick, invalidations)
+                                    Assert.AreEqual(hiddenDuration, control.Diagnostics.ActiveDuration)
+
+                                    inner.Visible = False
+                                    outer.Visible = True
+                                    Assert.IsFalse(control.Visible)
+                                    Assert.IsTrue(timer.Enabled)
+                                    inner.Visible = True
+                                    Assert.IsTrue(timer.Enabled)
+                                    beforeTick = invalidations
+                                    InvokeTimerTick(control)
+                                    Assert.AreEqual(2, GetCurrentFrame(control))
+                                    Assert.AreEqual(beforeTick + 1, invalidations)
+
+                                    control.Visible = False
+                                    inner.Visible = False
+                                    inner.Visible = True
+                                    Assert.IsFalse(control.Visible)
+                                    Assert.IsFalse(timer.Enabled)
+                                    InvokeTimerTick(control)
+                                    Assert.AreEqual(2, GetCurrentFrame(control))
+                                    control.Visible = True
+                                    Assert.IsTrue(timer.Enabled)
+                                    control.PauseAnimation()
+                                    outer.Visible = False
+                                    outer.Visible = True
+                                    Assert.AreEqual(PlaybackState.Paused, control.GetPlaybackState())
+                                    Assert.IsFalse(timer.Enabled)
+                                    control.ResumeAnimation()
+                                    Assert.IsTrue(timer.Enabled)
+                                    InvokeTimerTick(control)
+                                    Assert.AreEqual(3, GetCurrentFrame(control))
+                                    CollectionAssert.AreEqual(New String() {"started", "stopped", "started", "stopped", "started", "stopped", "started"}, events.ToArray())
+                                End Using
+                            End Using
+                        End Using
+                    Next
+                Next
+            Next
+        End Sub
+
+        <STATestMethod>
+        Public Sub VisibilityHierarchy_ReparentingFollowsTheCurrentAncestors()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                For Each diagnosticsEnabled As Boolean In New Boolean() {False, True}
+                    Using firstParent As New Panel()
+                        Using secondParent As New Panel()
+                            Using branch As New Panel()
+                                Using control As New AniGif()
+                                    firstParent.Controls.Add(branch)
+                                    branch.Controls.Add(control)
+                                    control.ClientSize = New Size(32, 32)
+                                    control.CustomDisplaySpeed = customSpeed
+                                    control.DiagnosticsEnabled = diagnosticsEnabled
+                                    Dim handle As IntPtr = control.Handle
+                                    Assert.AreNotEqual(IntPtr.Zero, handle)
+                                    Dim timer As System.Windows.Forms.Timer = GetTimer(control)
+                                    Dim events As New List(Of String)()
+                                    AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                                    AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                                    control.StartAnimation()
+                                    InvokeTimerTick(control)
+
+                                    firstParent.Visible = False
+                                    Assert.IsTrue(timer.Enabled)
+                                    secondParent.Controls.Add(branch)
+                                    Assert.IsTrue(control.Visible)
+                                    Assert.IsTrue(timer.Enabled)
+                                    InvokeTimerTick(control)
+                                    Assert.AreEqual(2, GetCurrentFrame(control))
+                                    Dim eventCount As Integer = events.Count
+                                    firstParent.Visible = True
+                                    firstParent.Visible = False
+                                    Assert.HasCount(eventCount, events)
+                                    Assert.IsTrue(timer.Enabled)
+
+                                    secondParent.Visible = False
+                                    firstParent.Controls.Add(branch)
+                                    Assert.IsFalse(control.Visible)
+                                    Assert.IsTrue(timer.Enabled)
+                                    Dim hiddenDuration As TimeSpan = control.Diagnostics.ActiveDuration
+                                    InvokeTimerTick(control)
+                                    Assert.AreEqual(2, GetCurrentFrame(control))
+                                    Assert.AreEqual(hiddenDuration, control.Diagnostics.ActiveDuration)
+                                    firstParent.Visible = True
+                                    Assert.IsTrue(timer.Enabled)
+                                    InvokeTimerTick(control)
+                                    Assert.AreEqual(3, GetCurrentFrame(control))
+                                    CollectionAssert.AreEqual(New String() {"started", "stopped", "started"}, events.ToArray())
+                                End Using
+                            End Using
+                        End Using
+                    End Using
+                Next
+            Next
+        End Sub
+
+        <STATestMethod>
+        Public Sub TimerTick_DrawabilityGuardsDoNotPreventFrameProgress()
+            For Each diagnosticsEnabled As Boolean In New Boolean() {False, True}
+                Using control As New AniGif()
+                    control.ClientSize = New Size(32, 32)
+                    control.DiagnosticsEnabled = diagnosticsEnabled
+                    Dim invalidations As Integer = 0
+                    AddHandler control.Invalidated, Sub(sender, e) invalidations += 1
+                    control.StartAnimation()
+                    Assert.IsFalse(control.IsHandleCreated)
+                    InvokeTimerTick(control)
+                    Assert.AreEqual(1, GetCurrentFrame(control))
+                    Assert.AreEqual(0, invalidations)
+                    Assert.AreEqual(TimeSpan.Zero, control.Diagnostics.ActiveDuration)
+
+                    Dim handle As IntPtr = control.Handle
+                    Assert.AreNotEqual(IntPtr.Zero, handle)
+                    control.ClientSize = Size.Empty
+                    Dim beforeTick As Integer = invalidations
+                    Dim emptyDuration As TimeSpan = control.Diagnostics.ActiveDuration
+                    InvokeTimerTick(control)
+                    Assert.AreEqual(2, GetCurrentFrame(control))
+                    Assert.AreEqual(beforeTick, invalidations)
+                    Assert.AreEqual(emptyDuration, control.Diagnostics.ActiveDuration)
+
+                    control.ClientSize = New Size(32, 32)
+                    beforeTick = invalidations
+                    InvokeTimerTick(control)
+                    Assert.AreEqual(3, GetCurrentFrame(control))
+                    Assert.AreEqual(beforeTick + 1, invalidations)
+                    control.Dispose()
+                    beforeTick = invalidations
+                    InvokeTimerTick(control)
+                    Assert.AreEqual(3, GetCurrentFrame(control))
+                    Assert.AreEqual(beforeTick, invalidations)
+                End Using
+            Next
+        End Sub
+
+        <STATestMethod>
+        Public Sub TimerTick_RechecksVisibilityAfterTimerIntervalReentrancy()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                For Each diagnosticsEnabled As Boolean In New Boolean() {False, True}
+                    For Each reparent As Boolean In New Boolean() {False, True}
+                        Using firstParent As New Panel()
+                            Using hiddenParent As New Panel()
+                                Using timer As New ReentrantTimer()
+                                    Using control As New AniGif()
+                                        firstParent.Controls.Add(control)
+                                        hiddenParent.Visible = False
+                                        InstallTrackingTimer(control, timer)
+                                        control.ClientSize = New Size(32, 32)
+                                        control.CustomDisplaySpeed = customSpeed
+                                        control.FramesPerSecond = 10D
+                                        control.DiagnosticsEnabled = diagnosticsEnabled
+                                        Dim delays As Integer() = GetFrameDelays(control)
+                                        delays(0) = 100
+                                        delays(1) = 200
+                                        Dim handle As IntPtr = control.Handle
+                                        Assert.AreNotEqual(IntPtr.Zero, handle)
+                                        Dim events As New List(Of String)()
+                                        Dim invalidations As Integer = 0
+                                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                                        AddHandler control.Invalidated, Sub(sender, e) invalidations += 1
+                                        control.StartAnimation()
+                                        If customSpeed Then timer.Interval = 200
+
+                                        Dim invalidationsAfterTransition As Integer = -1
+                                        timer.RunOnNextEnabledRead(Sub()
+                                                                       If reparent Then
+                                                                           hiddenParent.Controls.Add(control)
+                                                                       Else
+                                                                           firstParent.Visible = False
+                                                                       End If
+                                                                       invalidationsAfterTransition = invalidations
+                                                                   End Sub)
+                                        InvokeTimerTick(control)
+                                        Assert.AreNotEqual(-1, invalidationsAfterTransition)
+                                        Assert.AreEqual(invalidationsAfterTransition, invalidations)
+                                        Assert.AreEqual(1, GetCurrentFrame(control))
+                                        Assert.IsFalse(control.Visible)
+                                        If reparent Then
+                                            Assert.IsFalse(timer.Enabled)
+                                        Else
+                                            Assert.IsTrue(timer.Enabled)
+                                        End If
+                                        Dim hiddenDuration As TimeSpan = control.Diagnostics.ActiveDuration
+                                        InvokeTimerTick(control)
+                                        Assert.AreEqual(1, GetCurrentFrame(control))
+                                        Assert.AreEqual(hiddenDuration, control.Diagnostics.ActiveDuration)
+
+                                        If reparent Then
+                                            hiddenParent.Visible = True
+                                        Else
+                                            firstParent.Visible = True
+                                        End If
+                                        Assert.IsTrue(timer.Enabled)
+                                        InvokeTimerTick(control)
+                                        Assert.AreEqual(2, GetCurrentFrame(control))
+                                        If reparent Then
+                                            CollectionAssert.AreEqual(New String() {"started", "stopped", "started", "stopped", "started"}, events.ToArray())
+                                        Else
+                                            CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+                                        End If
+                                    End Using
+                                End Using
+                            End Using
+                        End Using
+                    Next
+                Next
+            Next
+        End Sub
+
+        <STATestMethod>
+        Public Sub VisibilityHierarchy_RealTimerSuppressesHiddenFramesAndResumes()
+            Using outer As New Panel()
+                Using inner As New Panel()
+                    Using control As New AniGif()
+                        Using showTimer As New System.Windows.Forms.Timer()
+                            Using watchdog As New System.Windows.Forms.Timer()
+                                outer.Controls.Add(inner)
+                                inner.Controls.Add(control)
+                                control.ClientSize = New Size(32, 32)
+                                control.CustomDisplaySpeed = True
+                                control.FramesPerSecond = 20D
+                                control.DiagnosticsEnabled = True
+                                Dim handle As IntPtr = control.Handle
+                                Assert.AreNotEqual(IntPtr.Zero, handle)
+                                Dim timer As System.Windows.Forms.Timer = GetTimer(control)
+                                Dim events As New List(Of String)()
+                                Dim phase As Integer = 0
+                                Dim firstFrame As Integer = -1
+                                Dim hiddenFrame As Integer = -1
+                                Dim resumedFrame As Integer = -1
+                                Dim invalidations As Integer = 0
+                                Dim invalidationsAfterHide As Integer = -1
+                                Dim invalidationsBeforeShow As Integer = -1
+                                Dim hiddenTimerEnabled As Boolean = False
+                                Dim resumedTimerEnabled As Boolean = False
+                                Dim hiddenStart As TimeSpan = TimeSpan.Zero
+                                Dim hiddenEnd As TimeSpan = TimeSpan.Zero
+                                Dim timedOut As Boolean = False
+                                AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                                AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                                AddHandler control.Invalidated, Sub(sender, e) invalidations += 1
+                                AddHandler timer.Tick, Sub(sender, e)
+                                                           Select Case phase
+                                                               Case 0
+                                                                   firstFrame = GetCurrentFrame(control)
+                                                                   phase = 1
+                                                                   outer.Visible = False
+                                                                   hiddenTimerEnabled = timer.Enabled
+                                                                     invalidationsAfterHide = invalidations
+                                                                   hiddenStart = control.Diagnostics.ActiveDuration
+                                                                   showTimer.Start()
+                                                               Case 2
+                                                                   resumedFrame = GetCurrentFrame(control)
+                                                                   phase = 3
+                                                                   Application.ExitThread()
+                                                           End Select
+                                                       End Sub
+                                showTimer.Interval = 100
+                                AddHandler showTimer.Tick, Sub(sender, e)
+                                                               showTimer.Stop()
+                                                               hiddenFrame = GetCurrentFrame(control)
+                                                                 invalidationsBeforeShow = invalidations
+                                                               hiddenEnd = control.Diagnostics.ActiveDuration
+                                                               phase = 2
+                                                               outer.Visible = True
+                                                               resumedTimerEnabled = timer.Enabled
+                                                           End Sub
+                                watchdog.Interval = 5000
+                                AddHandler watchdog.Tick, Sub(sender, e)
+                                                              timedOut = True
+                                                              Application.ExitThread()
+                                                          End Sub
+                                control.StartAnimation()
+                                watchdog.Start()
+                                Try
+                                    Application.Run()
+                                Finally
+                                    showTimer.Stop()
+                                    watchdog.Stop()
+                                    control.StopAnimation()
+                                End Try
+
+                                Assert.IsFalse(timedOut, "Die Wiedergabe wurde nach dem Einblenden nicht fortgesetzt.")
+                                Assert.AreEqual(3, phase)
+                                Assert.AreEqual(1, firstFrame)
+                                Assert.AreEqual(firstFrame, hiddenFrame)
+                                Assert.AreEqual(2, resumedFrame)
+                                Assert.AreNotEqual(-1, invalidationsAfterHide)
+                                Assert.AreEqual(invalidationsAfterHide, invalidationsBeforeShow)
+                                Assert.IsTrue(hiddenTimerEnabled)
+                                Assert.IsTrue(resumedTimerEnabled)
+                                Assert.AreEqual(hiddenStart, hiddenEnd)
+                                CollectionAssert.AreEqual(New String() {"started", "stopped", "started", "stopped"}, events.ToArray(), String.Join(", ", events))
+                            End Using
+                        End Using
+                    End Using
+                End Using
+            End Using
+        End Sub
+
         <TestMethod>
         Public Sub DefaultGif_IsInitializedAndWrapsFromTheLastFrame()
             Using control As New AniGif()
@@ -3165,7 +3505,29 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Sub
         End Class
 
-        Private Shared Sub InstallTrackingTimer(control As AniGif, timer As TrackingTimer)
+        Private NotInheritable Class ReentrantTimer
+            Inherits System.Windows.Forms.Timer
+
+            Private _onEnabledRead As Action
+
+            Public Sub RunOnNextEnabledRead(callback As Action)
+                Me._onEnabledRead = callback
+            End Sub
+
+            Public Overrides Property Enabled As Boolean
+                Get
+                    Dim callback As Action = Me._onEnabledRead
+                    Me._onEnabledRead = Nothing
+                    If callback IsNot Nothing Then callback.Invoke()
+                    Return MyBase.Enabled
+                End Get
+                Set(value As Boolean)
+                    MyBase.Enabled = value
+                End Set
+            End Property
+        End Class
+
+        Private Shared Sub InstallTrackingTimer(control As AniGif, timer As System.Windows.Forms.Timer)
             Dim timerProperty As PropertyInfo = GetType(AniGif).GetProperty("Timer", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(timerProperty)
             timer.Interval = GetTimer(control).Interval

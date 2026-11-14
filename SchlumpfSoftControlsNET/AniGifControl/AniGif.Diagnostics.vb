@@ -105,14 +105,14 @@ Namespace AniGifControl
 			If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
 		End Sub
 
-		Private Sub UpdateDiagnosticsActivity()
+		Private Sub UpdateDiagnosticsActivity(Optional isVisible As Boolean? = Nothing)
 			If Not Me._diagnosticsEnabled Then Return
 
 			Dim isActive As Boolean = Not Me._IsDisposed AndAlso Not Me.IsDisposed AndAlso Me._IsAnimating AndAlso
 				Me._Autoplay AndAlso Me._playbackState = PlaybackState.Playing AndAlso
 				Me._diagnosticsHandleAvailable AndAlso Me.IsHandleCreated AndAlso
 				Me.ClientSize.Width > 0 AndAlso Me.ClientSize.Height > 0 AndAlso
-				Me.IsControlTreeVisible()
+				If(isVisible, Me.IsControlTreeVisible())
 			If isActive <> Me._diagnosticsCollector.IsActive Then
 				Me._diagnosticsCollector.SetActive(isActive, Stopwatch.GetTimestamp())
 			End If

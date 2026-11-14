@@ -8,6 +8,7 @@
 - Füge Inline-Kommentare zum besseren Verständnis der Funktionsweise des Codes hinzu.
 - Verwende Tabs und die standardmäßigen Datei-Header-Optionen.
 - Keine neuen NuGet-Abhängigkeiten ohne Rücksprache.
+- Nach einem vom Agenten gestarteten Build darf die Versionsnummer nicht auf den vorherigen Stand zurückgesetzt werden. Automatische Versionsänderungen durch den Build sind auch bei der Bereinigung des Arbeitsverzeichnisses zu erhalten; eine Rücksetzung ist nur auf ausdrückliche Anweisung des Nutzers zulässig.
 - Vermeide MSTEST0037: Verwende `Assert.IsTrue` und `Assert.IsFalse` nur für echte boolesche Bedingungen. Nutze für Vergleiche `Assert.IsGreaterThan`, `Assert.IsLessThan` oder `Assert.IsInRange`, für Null-/String-Prüfungen die spezifischen `Assert`-Methoden und für Sammlungen `Assert.Contains`, `Assert.DoesNotContain`, `Assert.IsEmpty` oder `Assert.IsNotEmpty`, sofern sie die gleiche Bedingung ausdrücken.
 - Arbeite bei größeren Änderungen schrittweise und gib nach jedem Schritt explizit frei, bevor der nächste Schritt ausgeführt wird. **Im Guided-Modus vor jedem größeren Schritt Rückfrage/Freigabe einholen.**
 - Führe zusätzliche Detailprüfungen nur auf Nachfrage und fundweise mit vorheriger Rückfrage/Freigabe durch.

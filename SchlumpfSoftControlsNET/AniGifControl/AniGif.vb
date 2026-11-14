@@ -43,6 +43,11 @@ Namespace AniGifControl
         Private _MinimumFrameIntervalMs As Int32 ' Untere Grenze für normalisierte Frame-Intervalle
         Private _MaximumFrameIntervalMs As Int32 ' Obere Grenze für normalisierte Frame-Intervalle
         Private _NormalizedFrameDelaysMs() As Int32 ' Normalisierte Delay-Werte je Frame
+        Private _rawFrameDelaysMs() As Int32 ' Unnormalisierte Delay-Werte der aktuellen Bitmap
+        Private _rawFrameDelayCount As Int32
+        Private _rawFrameDelayCacheValid As Boolean
+        Private _lastFrameDelayFallbackMs As Int32
+        Private _gifWasExposed As Boolean
         Private _LastFrameTickTimestamp As Int64 ' Zeitstempel des letzten Timer-Ticks
         Private _AdaptiveTiming As Boolean ' Aktiviert Drift-Korrektur auf Basis der UI-Thread-Last
 
@@ -127,6 +132,7 @@ Namespace AniGifControl
         ''' <remarks>
         ''' Bei der Zuweisung erstellt das Control eine eigene Bitmap-Kopie und gibt vom Aufrufer verwaltete Bilder nicht frei.
         ''' Der Getter liefert die interne Bitmap, die beim Bildwechsel oder bei der Ressourcenfreigabe freigegeben wird.
+        ''' Bei animierten Bildern werden Änderungen ihrer Frame-Delay-Metadaten beim nächsten tatsächlichen Wechsel von FPS oder Intervallgrenzen eingelesen.
         ''' Nothing stellt eine Kopie des Standardbilds wieder her. Nach der Ressourcenfreigabe gibt der Getter Nothing zurück.
         ''' </remarks>
         ''' <exception cref="ObjectDisposedException">
@@ -138,7 +144,9 @@ Namespace AniGifControl
         <DefaultValue(GetType(Bitmap), "AniGifControl_Standard")>
         Public Property Gif() As Bitmap
             Get
-                Return Me._Gif
+                Dim image As Bitmap = Me._Gif
+                If image IsNot Nothing Then Me._gifWasExposed = True
+                Return image
             End Get
             Set(value As Bitmap)
                 Me.SetGifImage(value)
@@ -609,6 +617,11 @@ Namespace AniGifControl
             Me._MinimumFrameIntervalMs = 20
             Me._MaximumFrameIntervalMs = 500
             Me._NormalizedFrameDelaysMs = Array.Empty(Of Int32)()
+            Me._rawFrameDelaysMs = Array.Empty(Of Int32)()
+            Me._rawFrameDelayCount = 0
+            Me._rawFrameDelayCacheValid = False
+            Me._lastFrameDelayFallbackMs = 0
+            Me._gifWasExposed = False
             Me._LastFrameTickTimestamp = 0
             Me._AdaptiveTiming = False
             Me.InitializeGifFrames()
@@ -698,9 +711,10 @@ Namespace AniGifControl
             Me._Dimension = Nothing
             Me._MaxFrame = 0
             Me._Frame = 0
+            Me._rawFrameDelayCacheValid = False
 
             If Me._Gif Is Nothing Then
-                Me._NormalizedFrameDelaysMs = Array.Empty(Of Int32)()
+                Me.ClearFrameDelayCache()
                 Return
             End If
 
@@ -751,6 +765,8 @@ Namespace AniGifControl
                 Me._Gif = Nothing
                 Me._OwnsGif = False
             End If
+            Me.ClearFrameDelayCache()
+            Me._gifWasExposed = False
 
         End Sub
 
@@ -759,7 +775,7 @@ Namespace AniGifControl
             ' Sicherheitsprüfung
             If Me._FramesPerSecond < 1D Then Me._FramesPerSecond = 1D
 
-            Me.RefreshFrameDelayCache()
+            Me.RefreshFrameDelayCache(True)
             Me.UpdateTimerState(previousIntervalMs)
 
         End Sub
@@ -802,38 +818,77 @@ Namespace AniGifControl
 
         End Function
 
-        Private Sub RefreshFrameDelayCache()
+        Private Sub ClearFrameDelayCache()
+            Me._rawFrameDelaysMs = Array.Empty(Of Int32)()
+            Me._rawFrameDelayCount = 0
+            Me._rawFrameDelayCacheValid = False
+            Me._lastFrameDelayFallbackMs = 0
+            Me._NormalizedFrameDelaysMs = Array.Empty(Of Int32)()
+        End Sub
 
+        Private Function ReadFrameDelayMetadata(frameCount As Int32) As Boolean
+            Dim metadataChanged As Boolean = Not Me._rawFrameDelayCacheValid
+            Dim previousCount As Int32 = Me._rawFrameDelayCount
+            Me._rawFrameDelayCacheValid = False
+            Dim delayBytes As Byte() = Nothing
+
+            Try
+                Dim delayProperty As PropertyItem = Me._Gif.GetPropertyItem(FrameDelayPropertyTag)
+                If delayProperty IsNot Nothing Then delayBytes = delayProperty.Value
+            Catch ex As ArgumentException
+                ' Ohne Delay-Metadaten werden für alle Frames Fallbacks verwendet.
+            End Try
+
+            Dim availableCount As Int32 = If(delayBytes Is Nothing, 0, Math.Min(frameCount, delayBytes.Length \ 4))
+            If Me._rawFrameDelaysMs.Length <> frameCount Then
+                Me._rawFrameDelaysMs = New Int32(frameCount - 1) {}
+                metadataChanged = True
+            End If
+            If availableCount <> previousCount Then metadataChanged = True
+
+            For i As Int32 = 0 To availableCount - 1
+                Dim delayInCentiseconds As Int32 = BitConverter.ToInt32(delayBytes, i * 4)
+                Dim delayInMs As Int32 = delayInCentiseconds * 10
+                If Me._rawFrameDelaysMs(i) <> delayInMs Then metadataChanged = True
+                Me._rawFrameDelaysMs(i) = delayInMs
+            Next
+
+            Me._rawFrameDelayCount = availableCount
+            Me._rawFrameDelayCacheValid = True
+            Return metadataChanged
+        End Function
+
+        Private Sub RefreshFrameDelayCache(Optional fallbackOnly As Boolean = False)
             If Me._Gif Is Nothing OrElse Me._MaxFrame <= 0 Then
-                Me._NormalizedFrameDelaysMs = Array.Empty(Of Int32)()
+                Me.ClearFrameDelayCache()
                 Return
             End If
 
             Dim frameCount As Int32 = Me._MaxFrame + 1
-            Dim normalizedDelays(frameCount - 1) As Int32
+            Dim metadataChanged As Boolean = False
+            ' Nach der Herausgabe kann die Bitmap auch später noch extern verändert werden.
+            If Not Me._rawFrameDelayCacheValid OrElse Me._gifWasExposed Then
+                metadataChanged = Me.ReadFrameDelayMetadata(frameCount)
+            End If
+
+            If Me._NormalizedFrameDelaysMs.Length <> frameCount Then
+                Me._NormalizedFrameDelaysMs = New Int32(frameCount - 1) {}
+                metadataChanged = True
+            End If
+
             Dim fallbackDelay As Int32 = Me.GetDefaultFrameIntervalMs()
+            If fallbackOnly AndAlso Not metadataChanged AndAlso Me._lastFrameDelayFallbackMs = fallbackDelay Then Return
 
-            For i As Int32 = 0 To normalizedDelays.Length - 1
-                normalizedDelays(i) = fallbackDelay
-            Next
-
-            Try
-                Dim delayProperty As PropertyItem = Me._Gif.GetPropertyItem(FrameDelayPropertyTag)
-                If delayProperty IsNot Nothing AndAlso delayProperty.Value IsNot Nothing AndAlso delayProperty.Value.Length >= 4 Then
-                    Dim availableCount As Int32 = Math.Min(frameCount, delayProperty.Value.Length \ 4)
-                    For i As Int32 = 0 To availableCount - 1
-                        Dim delayInCentiseconds As Int32 = BitConverter.ToInt32(delayProperty.Value, i * 4)
-                        Dim delayInMs As Int32 = delayInCentiseconds * 10
-                        If delayInMs <= 0 Then delayInMs = fallbackDelay
-                        normalizedDelays(i) = Me.NormalizeFrameIntervalMs(delayInMs)
-                    Next
+            For i As Int32 = 0 To frameCount - 1
+                If i < Me._rawFrameDelayCount AndAlso Me._rawFrameDelaysMs(i) > 0 Then
+                    If Not fallbackOnly OrElse metadataChanged Then
+                        Me._NormalizedFrameDelaysMs(i) = Me.NormalizeFrameIntervalMs(Me._rawFrameDelaysMs(i))
+                    End If
+                Else
+                    Me._NormalizedFrameDelaysMs(i) = fallbackDelay
                 End If
-            Catch ex As ArgumentException
-                ' Kein Delay-Metadatenblock vorhanden -> Fallback-Delays bleiben aktiv.
-            End Try
-
-            Me._NormalizedFrameDelaysMs = normalizedDelays
-
+            Next
+            Me._lastFrameDelayFallbackMs = fallbackDelay
         End Sub
 
         Private Sub InvalidateIfVisible(Optional isTimerFrame As Boolean = False)
@@ -915,6 +970,8 @@ Namespace AniGifControl
                 Me._Gif.Dispose()
             End If
 
+            Me._gifWasExposed = False
+            Me._rawFrameDelayCacheValid = False
             Me._Gif = imageCopy
             Me._OwnsGif = True
 

@@ -768,7 +768,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     control.FramesPerSecond = 30.1D
 
                     Assert.AreEqual(30.1D, control.FramesPerSecond)
-                    Assert.AreNotSame(delays, GetFrameDelays(control))
+                    Assert.AreSame(delays, GetFrameDelays(control))
                     Assert.AreEqual(25, timer.Interval)
                     Assert.AreEqual(123L, GetLastFrameTimestamp(control))
                     Assert.AreEqual(0, timer.StartCalls)
@@ -866,6 +866,260 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     End Using
                 End Using
             Next
+        End Sub
+
+        <TestMethod>
+        Public Sub FrameDelayMetadata_NormalizesRawValuesAndRestoresWidenedBounds()
+            Using control As New AniGif()
+                Dim image As Bitmap = control.Gif
+                Dim delayProperty As PropertyItem = image.GetPropertyItem(&H5100)
+                Dim delayBytes As Byte() = CreateDelayBytes(10, 0, 50)
+                Array.Resize(delayBytes, delayBytes.Length + 2)
+                delayBytes(delayBytes.Length - 2) = 1
+                delayBytes(delayBytes.Length - 1) = 2
+                SetDelayBytes(image, delayProperty, delayBytes)
+
+                control.FramesPerSecond = 25D
+                Dim delays As Integer() = GetFrameDelays(control)
+                Assert.IsGreaterThan(3, delays.Length)
+                Assert.AreEqual(100, delays(0))
+                Assert.AreEqual(40, delays(1))
+                Assert.AreEqual(500, delays(2))
+                For i As Integer = 3 To delays.Length - 1
+                    Assert.AreEqual(40, delays(i))
+                Next
+
+                control.MinimumFrameIntervalMs = 50
+                control.MaximumFrameIntervalMs = 300
+                delays = GetFrameDelays(control)
+                Assert.AreEqual(100, delays(0))
+                Assert.AreEqual(50, delays(1))
+                Assert.AreEqual(300, delays(2))
+
+                control.MaximumFrameIntervalMs = 500
+                control.MinimumFrameIntervalMs = 20
+                delays = GetFrameDelays(control)
+                Assert.AreEqual(100, delays(0))
+                Assert.AreEqual(40, delays(1))
+                Assert.AreEqual(500, delays(2))
+
+                Buffer.BlockCopy(BitConverter.GetBytes(-1), 0, delayBytes, 4, 4)
+                SetDelayBytes(image, delayProperty, delayBytes)
+                control.FramesPerSecond = 16D
+                Assert.AreEqual(63, GetFrameDelays(control)(1))
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub FrameDelayMetadata_ShortBlocksUseFallbackAndExtraValuesAreIgnored()
+            Using control As New AniGif()
+                Dim image As Bitmap = control.Gif
+                Dim delayProperty As PropertyItem = image.GetPropertyItem(&H5100)
+                For length As Integer = 1 To 3
+                    SetDelayBytes(image, delayProperty, New Byte(length - 1) {})
+                    control.FramesPerSecond = If(length = 2, 25D, 20D)
+                    Dim expected As Integer = If(length = 2, 40, 50)
+                    For Each delay As Integer In GetFrameDelays(control)
+                        Assert.AreEqual(expected, delay)
+                    Next
+                Next
+
+                Dim frameCount As Integer = GetFrameDelays(control).Length
+                Dim values(frameCount) As Integer
+                For i As Integer = 0 To frameCount - 1
+                    values(i) = 10
+                Next
+                values(frameCount) = Integer.MaxValue
+                SetDelayBytes(image, delayProperty, CreateDelayBytes(values))
+                control.FramesPerSecond = 30D
+                For Each delay As Integer In GetFrameDelays(control)
+                    Assert.AreEqual(100, delay)
+                Next
+            End Using
+        End Sub
+
+        <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
+        Public Sub FrameDelayMetadata_ExternalMutationsUseExistingRefreshPoints()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                Using timer As New TrackingTimer()
+                    Using control As New AniGif()
+                        InstallTrackingTimer(control, timer)
+                        control.CustomDisplaySpeed = customSpeed
+                        control.FramesPerSecond = 10D
+                        Dim events As New List(Of String)()
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                        control.StartAnimation()
+                        timer.ResetCounts()
+
+                        Dim image As Bitmap = control.Gif
+                        Dim delayProperty As PropertyItem = image.GetPropertyItem(&H5100)
+                        SetFirstFrameDelay(image, delayProperty, 20)
+                        control.FramesPerSecond = 10D
+                        control.MinimumFrameIntervalMs = 20
+                        control.MaximumFrameIntervalMs = 500
+                        control.CustomDisplaySpeed = Not customSpeed
+                        control.CustomDisplaySpeed = customSpeed
+                        Assert.AreEqual(100, GetFrameDelays(control)(0))
+
+                        control.MinimumFrameIntervalMs = 21
+                        Assert.AreEqual(200, GetFrameDelays(control)(0))
+                        Assert.AreEqual(If(customSpeed, 100, 200), timer.Interval)
+
+                        SetFirstFrameDelay(image, delayProperty, 30)
+                        control.FramesPerSecond = 25D
+                        Assert.AreEqual(300, GetFrameDelays(control)(0))
+                        Assert.AreEqual(If(customSpeed, 40, 300), timer.Interval)
+
+                        SetFirstFrameDelay(image, delayProperty, 0)
+                        control.MaximumFrameIntervalMs = 400
+                        Assert.AreEqual(40, GetFrameDelays(control)(0))
+                        Assert.AreEqual(40, timer.Interval)
+
+                        image.RemovePropertyItem(&H5100)
+                        control.FramesPerSecond = 20D
+                        Assert.AreEqual(50, GetFrameDelays(control)(0))
+                        Assert.AreEqual(50, timer.Interval)
+
+                        SetFirstFrameDelay(image, delayProperty, 40)
+                        control.MinimumFrameIntervalMs = 22
+                        Assert.AreEqual(400, GetFrameDelays(control)(0))
+                        Assert.AreEqual(If(customSpeed, 50, 400), timer.Interval)
+                        control.CustomDisplaySpeed = Not customSpeed
+                        Assert.AreEqual(If(customSpeed, 400, 50), timer.Interval)
+                        Assert.IsTrue(timer.Enabled)
+                        Assert.AreEqual(0, timer.StartCalls)
+                        Assert.AreEqual(0, timer.StopCalls)
+                        CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+                    End Using
+                End Using
+            Next
+        End Sub
+
+        <TestMethod>
+        Public Sub FrameDelayMetadata_OverflowDoesNotPublishPartialValues()
+            Using control As New AniGif()
+                Dim image As Bitmap = control.Gif
+                Dim delayProperty As PropertyItem = image.GetPropertyItem(&H5100)
+                Dim oldDelays As Integer() = GetFrameDelays(control)
+                Dim oldValues As Integer() = DirectCast(oldDelays.Clone(), Integer())
+                Buffer.BlockCopy(BitConverter.GetBytes(20), 0, delayProperty.Value, 0, 4)
+                Buffer.BlockCopy(BitConverter.GetBytes(Integer.MaxValue), 0, delayProperty.Value, 4, 4)
+                image.SetPropertyItem(delayProperty)
+
+                Assert.ThrowsExactly(Of OverflowException)(Sub() control.FramesPerSecond = 20D)
+                Assert.AreEqual(20D, control.FramesPerSecond)
+                Assert.AreSame(oldDelays, GetFrameDelays(control))
+                CollectionAssert.AreEqual(oldValues, GetFrameDelays(control))
+                Assert.ThrowsExactly(Of OverflowException)(Sub() control.MaximumFrameIntervalMs = 400)
+                Assert.AreSame(oldDelays, GetFrameDelays(control))
+                CollectionAssert.AreEqual(oldValues, GetFrameDelays(control))
+
+                Buffer.BlockCopy(BitConverter.GetBytes(30), 0, delayProperty.Value, 4, 4)
+                image.SetPropertyItem(delayProperty)
+                control.FramesPerSecond = 25D
+                Assert.AreEqual(200, GetFrameDelays(control)(0))
+                Assert.AreEqual(300, GetFrameDelays(control)(1))
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub FrameDelayCache_UnexposedAndExposedImagesReuseStorage()
+            Using control As New AniGif()
+                Dim normalizedDelays As Integer() = GetFrameDelays(control)
+                Dim rawDelays As Integer() = GetRawFrameDelays(control)
+                Dim internalImage As Bitmap = GetGifWithoutExposure(control)
+                ' Der private Zugriff simuliert eine Änderung, ohne den öffentlichen Getter auszulösen.
+                internalImage.RemovePropertyItem(&H5100)
+
+                control.FramesPerSecond = 25D
+                Assert.AreEqual(100, GetFrameDelays(control)(0))
+                control.MinimumFrameIntervalMs = 120
+                Assert.AreEqual(120, GetFrameDelays(control)(0))
+                control.MaximumFrameIntervalMs = 300
+                control.MinimumFrameIntervalMs = 20
+                Assert.AreEqual(100, GetFrameDelays(control)(0))
+                Assert.AreSame(normalizedDelays, GetFrameDelays(control))
+                Assert.AreSame(rawDelays, GetRawFrameDelays(control))
+
+                Assert.AreSame(internalImage, control.Gif)
+                control.FramesPerSecond = 20D
+                Assert.AreEqual(50, GetFrameDelays(control)(0))
+                control.MaximumFrameIntervalMs = 400
+                Assert.AreEqual(50, GetFrameDelays(control)(0))
+                Assert.AreSame(normalizedDelays, GetFrameDelays(control))
+                Assert.AreSame(rawDelays, GetRawFrameDelays(control))
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub FrameDelayCache_ImageReplacementAndDisposalResetCachedData()
+            Using source As Bitmap = LoadAnimatedGif()
+                Using stillImage As New Bitmap(2, 2)
+                    Using control As New AniGif()
+                        Dim exposedImage As Bitmap = control.Gif
+                        exposedImage.RemovePropertyItem(&H5100)
+                        control.FramesPerSecond = 20D
+                        Assert.AreEqual(50, GetFrameDelays(control)(0))
+
+                        control.Gif = source
+                        Assert.AreEqual(100, GetFrameDelays(control)(0))
+                        Dim sourceProperty As PropertyItem = source.GetPropertyItem(&H5100)
+                        SetFirstFrameDelay(source, sourceProperty, 30)
+                        Dim internalImage As Bitmap = GetGifWithoutExposure(control)
+                        Assert.AreEqual(10, BitConverter.ToInt32(internalImage.GetPropertyItem(&H5100).Value, 0))
+                        internalImage.RemovePropertyItem(&H5100)
+                        control.FramesPerSecond = 25D
+                        Assert.AreEqual(100, GetFrameDelays(control)(0))
+
+                        control.Gif = stillImage
+                        CollectionAssert.AreEqual(Array.Empty(Of Integer)(), GetFrameDelays(control))
+                        CollectionAssert.AreEqual(Array.Empty(Of Integer)(), GetRawFrameDelays(control))
+                        control.Gif = Nothing
+                        Assert.AreEqual(100, GetFrameDelays(control)(0))
+                        Assert.IsGreaterThan(0, GetRawFrameDelays(control).Length)
+
+                        control.Dispose()
+                        Assert.IsNull(control.Gif)
+                        CollectionAssert.AreEqual(Array.Empty(Of Integer)(), GetFrameDelays(control))
+                        CollectionAssert.AreEqual(Array.Empty(Of Integer)(), GetRawFrameDelays(control))
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub FrameDelayCache_ReentrantGetterAfterImageReplacementTracksExposure()
+            Using source As Bitmap = LoadAnimatedGif()
+                Using control As New AniGif()
+                    Dim handle As IntPtr = control.Handle
+                    Dim invalidationCount As Integer = 0
+                    AddHandler control.Invalidated, Sub(sender, e)
+                                                        invalidationCount += 1
+                                                        Dim image As Bitmap = control.Gif
+                                                        Dim delayProperty As PropertyItem = image.GetPropertyItem(&H5100)
+                                                        SetFirstFrameDelay(image, delayProperty, 20)
+                                                    End Sub
+
+                    control.Gif = source
+                    Assert.IsGreaterThan(0, invalidationCount)
+                    Assert.AreEqual(100, GetFrameDelays(control)(0))
+                    control.FramesPerSecond = 25D
+                    Assert.AreEqual(200, GetFrameDelays(control)(0))
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub FrameDelayCache_MetadataChangeIsDetectedWhenRoundedFallbackIsUnchanged()
+            Using control As New AniGif()
+                Dim image As Bitmap = control.Gif
+                Dim delayProperty As PropertyItem = image.GetPropertyItem(&H5100)
+                SetFirstFrameDelay(image, delayProperty, 20)
+                control.FramesPerSecond = 30.1D
+                Assert.AreEqual(200, GetFrameDelays(control)(0))
+            End Using
         End Sub
 
         <TestMethod>
@@ -2620,6 +2874,37 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Assert.IsNotNull(delayField)
             Return DirectCast(delayField.GetValue(control), Integer())
         End Function
+
+        Private Shared Function GetRawFrameDelays(control As AniGif) As Integer()
+            Dim delayField As FieldInfo = GetType(AniGif).GetField("_rawFrameDelaysMs", BindingFlags.Instance Or BindingFlags.NonPublic)
+            Assert.IsNotNull(delayField)
+            Return DirectCast(delayField.GetValue(control), Integer())
+        End Function
+
+        Private Shared Function GetGifWithoutExposure(control As AniGif) As Bitmap
+            Dim imageField As FieldInfo = GetType(AniGif).GetField("_Gif", BindingFlags.Instance Or BindingFlags.NonPublic)
+            Assert.IsNotNull(imageField)
+            Return DirectCast(imageField.GetValue(control), Bitmap)
+        End Function
+
+        Private Shared Function CreateDelayBytes(ParamArray delays As Integer()) As Byte()
+            Dim bytes(delays.Length * 4 - 1) As Byte
+            For i As Integer = 0 To delays.Length - 1
+                Buffer.BlockCopy(BitConverter.GetBytes(delays(i)), 0, bytes, i * 4, 4)
+            Next
+            Return bytes
+        End Function
+
+        Private Shared Sub SetDelayBytes(image As Bitmap, delayProperty As PropertyItem, bytes As Byte())
+            delayProperty.Value = bytes
+            delayProperty.Len = bytes.Length
+            image.SetPropertyItem(delayProperty)
+        End Sub
+
+        Private Shared Sub SetFirstFrameDelay(image As Bitmap, delayProperty As PropertyItem, centiseconds As Integer)
+            Buffer.BlockCopy(BitConverter.GetBytes(centiseconds), 0, delayProperty.Value, 0, 4)
+            image.SetPropertyItem(delayProperty)
+        End Sub
 
         Private Shared Function GetLastFrameTimestamp(control As AniGif) As Long
             Dim timestampField As FieldInfo = GetType(AniGif).GetField("_LastFrameTickTimestamp", BindingFlags.Instance Or BindingFlags.NonPublic)

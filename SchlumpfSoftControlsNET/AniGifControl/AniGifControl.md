@@ -87,7 +87,8 @@ Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlay
 - Beide Geschwindigkeitsarten verwenden den Timer; neu gezeichnet wird nur bei einem tatsächlichen Framewechsel.
 - Mit `AdaptiveTiming = True` wird das nächste Intervall über eine Drift-Korrektur an die tatsächliche UI-Thread-Laufzeit angepasst.
 - Änderungen von Geschwindigkeit und Intervallgrenzen übernehmen ein geändertes Sollintervall des aktuellen Frames, ohne die laufende Wiedergabe zu stoppen. Wird dafür ein anderer Timerwert gesetzt, beginnt die Zeitmessung für dieses Intervall neu. Bei unverändertem Sollintervall bleibt eine adaptive Korrektur erhalten; entspricht das neue Sollintervall bereits dem Timerwert, bleibt auch die laufende Zeitmessung unverändert.
-- Bei animierten Bildern werden Änderungen an den Metadaten der über `Gif` zurückgegebenen Bitmap beim nächsten tatsächlichen Wechsel von FPS oder Intervallgrenzen beziehungsweise bei einer Bildzuweisung eingelesen. Eine gleichwertige FPS-Zuweisung erneuert den Delay-Cache nicht.
+- Bei animierten Bildern werden die unnormalisierten Frame-Delays der internen Bitmap zwischengespeichert. Solange diese Bitmap nicht über `Gif` zurückgegeben wurde, werden ihre Metadaten bei Einstellungsänderungen nicht erneut gelesen.
+- Nach einer Rückgabe über `Gif` werden mögliche externe Metadatenänderungen bis zum nächsten Bildwechsel bei jedem tatsächlichen Wechsel von FPS oder Intervallgrenzen erneut eingelesen. Eine Bildzuweisung liest die Metadaten der neuen Bitmap-Kopie ein. Gleichwertige Einstellungen und ein bloßer Geschwindigkeitsmoduswechsel erneuern den Delay-Cache nicht.
 - Pause und Fortsetzen verändern `AutoPlay` nicht. `AnimationStopped` beziehungsweise `AnimationStarted` werden nur beim tatsächlichen Anhalten beziehungsweise Wiederanlaufen ausgelöst; eine Frameauswahl löst diese Ereignisse nicht aus.
 - Der mit `GetPlaybackState()` abgefragte Zustand ist unabhängig von der Sichtbarkeit. `Playing` bedeutet nicht zwangsläufig, dass die Animation tatsächlich läuft, beispielsweise bei einem unsichtbaren Control oder einer nicht animierbaren Grafik.
 - Beim Austausch von `Gif` werden laufende Wiedergabemechanismen gestoppt, intern erzeugte Bilder freigegeben und der Frame auf `0` gesetzt. Eine explizite Pause bleibt erhalten.
@@ -223,19 +224,21 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.10. Frame-Delay-Metadaten wiederverwenden
 
-**Status:** Offen.
+**Status:** Umgesetzt.
 
-**Ausgangslage:** `RefreshFrameDelayCache()` liest bei animierten Bildern die GIF-Metadaten erneut und erstellt ein neues Array, wenn `FramesPerSecond`, `MinimumFrameIntervalMs` oder `MaximumFrameIntervalMs` geändert wird.
+**Ausgangslage:** `RefreshFrameDelayCache()` las bei animierten Bildern die GIF-Metadaten erneut und erstellte ein neues Array, wenn `FramesPerSecond`, `MinimumFrameIntervalMs` oder `MaximumFrameIntervalMs` geändert wurde.
 
 **Umsetzung:**
 
-- Die unveränderten Delay-Rohwerte beim Bildwechsel zwischenspeichern und bei Änderungen von FPS oder Intervallgrenzen daraus nur die erforderlichen normalisierten Werte und Fallbacks neu berechnen.
+- Unnormalisierte, in Millisekunden umgerechnete Delay-Rohwerte werden pro Bitmap gespeichert. Bei FPS-Änderungen werden bei unveränderten Metadaten nur benötigte Fallbacks angepasst; geänderte Intervallgrenzen werden erneut auf die Rohwerte angewendet. Die normalisierten und unnormalisierten Arrays werden bei unveränderter Frameanzahl wiederverwendet.
 
-- Fehlende, unvollständige und ungültige Metadaten, Bildwechsel und den Wechsel zwischen beiden Geschwindigkeitsarten testen. Den zusätzlichen Speicherbedarf berücksichtigen.
+- Nach der Rückgabe der internen Bitmap über `Gif` werden die Metadaten bei jeder tatsächlichen FPS- oder Grenzänderung erneut geprüft, damit auch spätere Änderungen über eine gehaltene Referenz erkannt werden. Die Markierung wird beim Bildwechsel zurückgesetzt; bei statischen Bildern und `Dispose()` werden die Caches geleert.
 
-- Da `Gif` die interne Bitmap zurückgibt, eine Cache-Invalidierung für mögliche externe Metadatenänderungen festlegen und das bestehende Verhalten dabei berücksichtigen.
+- Tests sichern fehlende, unvollständige und ungültige Metadaten, Überläufe, Fallbacks, Bildwechsel, externe Änderungen und beide Geschwindigkeitsarten ab. Der Rohdaten-Cache benötigt zusätzlich ungefähr 4 Byte pro Frame zuzüglich Array-Overhead; nach Herausgabe der Bitmap entstehen weiterhin temporäre Allokationen für Metadatenzugriffe.
 
-**Nutzen:** Kann wiederholte Metadatenzugriffe und Array-Neuanlagen bei Einstellungsänderungen reduzieren.
+**Nutzen:** Weniger Metadatenzugriffe und Array-Neuanlagen bei Einstellungsänderungen, ohne die dokumentierte Behandlung extern veränderter Metadaten zu ändern.
+
+**Messung:** Bei einem lokalen Debug-Lauf unter .NET Framework 4.8.1 mit je 9.000 FPS- und Grenzänderungen nach dem Aufwärmen sanken die verwalteten Thread-Allokationen ohne vorherigen `Gif`-Getter bei 3 Frames von 1.728.000 auf 0 Byte und bei 169 Frames von 13.680.000 auf 0 Byte. Nach Herausgabe der Bitmap sanken sie auf 1.368.000 beziehungsweise 7.344.000 Byte. Die Wiedergabe war gestoppt; die Werte sind keine Messung der Timerleistung.
 
 ### 7.11. Wiederholte Berechnungen pro Timer-Tick reduzieren
 
@@ -301,10 +304,9 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ### 7.15. Empfohlene Reihenfolge
 
-1. Frame-Delay-Metadaten wiederverwenden (7.10).
-2. Timer-Ticks verschlanken (7.11).
-3. Sichtbarkeitsprüfung vereinfachen (7.12).
-4. Aktualisierungsbereich bei Framewechseln begrenzen (7.13).
+1. Timer-Ticks verschlanken (7.11).
+2. Sichtbarkeitsprüfung vereinfachen (7.12).
+3. Aktualisierungsbereich bei Framewechseln begrenzen (7.13).
 
 ## 8. Erweiterungsvorschläge
 

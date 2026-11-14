@@ -24,8 +24,26 @@ Namespace AniGifControl
         Inherits UserControl
         Implements IDisposable
 
+#Region "Konstanten"
+
+        Private Const FrameDelayPropertyTag As Int32 = &H5100
+        Private Const FrameInvalidationMargin As Int64 = 2L
+
+#End Region
+
 #Region "Variablen"
 
+        Private _usePartialFrameInvalidation As Boolean
+        Private _frameInvalidationBounds As Rectangle
+        Private _frameInvalidationBoundsValid As Boolean
+        Private _fullFrameInvalidationPending As Boolean
+        Private _frameInvalidationToken As Object
+        Private _partialFrameInvalidationIssued As Boolean
+        Private _frameInvalidationAncestors As List(Of Control)
+        Private _diagnosticsEnabled As Boolean
+        Private _diagnosticsCollector As DiagnosticsCollector
+        Private _diagnosticsAncestors As List(Of Control)
+        Private _diagnosticsHandleAvailable As Boolean
         Private _FramesPerSecond As Decimal ' Benutzerdefinierte Wiedergabegeschwindigkeit (nur aktiv bei CustomDisplaySpeed = True)
         Private _defaultFrameIntervalMs As Int32 ' Begrenztes FPS-Intervall und Fallback für GIF-Delays
         Private _Dimension As FrameDimension ' GIF-Frame-Dimension (bei GIFs i. d. R. Time)
@@ -52,7 +70,6 @@ Namespace AniGifControl
         Private _LastFrameTickTimestamp As Int64 ' Zeitstempel des letzten Timer-Ticks
         Private _AdaptiveTiming As Boolean ' Aktiviert Drift-Korrektur auf Basis der UI-Thread-Last
 
-        Private Const FrameDelayPropertyTag As Int32 = &H5100
 
 #End Region
 
@@ -126,13 +143,13 @@ Namespace AniGifControl
                 Me.UpdateTimerState()
             End Set
         End Property
-
         ''' <summary>
         ''' Gibt die animierte GIF‑Grafik zurück oder legt diese fest.
         ''' </summary>
         ''' <remarks>
         ''' Bei der Zuweisung erstellt das Control eine eigene Bitmap-Kopie und gibt vom Aufrufer verwaltete Bilder nicht frei.
         ''' Der Getter liefert die interne Bitmap, die beim Bildwechsel oder bei der Ressourcenfreigabe freigegeben wird.
+        ''' Bei aktivierter Teilinvalidierung kann der erste Zugriff nach einer Teilneuzeichnung eine vollständige Invalidierung auslösen.
         ''' Bei animierten Bildern werden Änderungen ihrer Frame-Delay-Metadaten beim nächsten tatsächlichen Wechsel von FPS oder Intervallgrenzen eingelesen.
         ''' Nothing stellt eine Kopie des Standardbilds wieder her. Nach der Ressourcenfreigabe gibt der Getter Nothing zurück.
         ''' </remarks>
@@ -145,15 +162,18 @@ Namespace AniGifControl
         <DefaultValue(GetType(Bitmap), "AniGifControl_Standard")>
         Public Property Gif() As Bitmap
             Get
-                Dim image As Bitmap = Me._Gif
-                If image IsNot Nothing Then Me._gifWasExposed = True
-                Return image
+                Do
+                    Dim image As Bitmap = Me._Gif
+                    If image Is Nothing OrElse Me._gifWasExposed Then Return image
+                    Me._gifWasExposed = True
+                    Me.OnGifExposedForFrameInvalidation()
+                    If Object.ReferenceEquals(image, Me._Gif) Then Return image
+                Loop
             End Get
             Set(value As Bitmap)
                 Me.SetGifImage(value)
             End Set
         End Property
-
         ''' <summary>
         ''' Gibt den Anzeigemodus (Skalierung/Ausrichtung) der GIF‑Grafik zurück oder legt ihn fest.
         ''' </summary>
@@ -174,7 +194,6 @@ Namespace AniGifControl
                 Me.SetGifSizeMode(value)
             End Set
         End Property
-
         ''' <summary>
         ''' Legt das Qualitäts-Preset für die GIF-Skalierung in den Modi Zoom und Fill fest. Der Standardwert ist Photo.
         ''' </summary>
@@ -193,7 +212,6 @@ Namespace AniGifControl
                 Me.SetScalingQualityPreset(value)
             End Set
         End Property
-
         ''' <summary>
         ''' Legt fest, ob die timerbasierte Wiedergabe die benutzerdefinierte Anzeigegeschwindigkeit (FPS)
         ''' oder die im GIF hinterlegten normalisierten Frame-Verzögerungen verwendet.
@@ -210,7 +228,6 @@ Namespace AniGifControl
                 Me.SetCustomDisplaySpeed(value)
             End Set
         End Property
-
         ''' <summary>
         ''' Legt die benutzerdefinierte Anzeigegeschwindigkeit in Bildern pro Sekunde (FPS) fest.
         ''' </summary>
@@ -235,7 +252,6 @@ Namespace AniGifControl
                 RaiseEvent FramesPerSecondChanged(previousIntervalMs)
             End Set
         End Property
-
         ''' <summary>
         ''' Legt das minimale Frame-Intervall in Millisekunden fest, das nach der Delay-Normalisierung verwendet wird.
         ''' </summary>
@@ -251,7 +267,6 @@ Namespace AniGifControl
                 Me.SetMinimumFrameIntervalMs(value)
             End Set
         End Property
-
         ''' <summary>
         ''' Legt das maximale Frame-Intervall in Millisekunden fest, das nach der Delay-Normalisierung verwendet wird.
         ''' </summary>
@@ -286,7 +301,6 @@ Namespace AniGifControl
                 Me.SetAdaptiveTiming(value)
             End Set
         End Property
-
         ''' <summary>
         ''' Legt den Zoomfaktor in Prozent für den Modus <see cref="ImageSizeMode.Zoom"/> fest.
         ''' Werte außerhalb von 1 bis 100 werden auf diesen Bereich begrenzt; der Standardwert ist 50.
@@ -303,7 +317,39 @@ Namespace AniGifControl
                 Me.SetZoomFactor(value)
             End Set
         End Property
-
+        ''' <summary>
+        ''' Begrenzt die Neuzeichnung bei Framewechseln optional auf den Bildbereich. Der Standardwert ist <see langword="False"/>.
+        ''' </summary>
+        ''' <remarks>
+        ''' Bei unbekannter Geometrie oder nach der Herausgabe der internen Bitmap über <see cref="Gif"/> wird weiterhin die gesamte Clientfläche invalidiert.
+        ''' Nach einer Teilinvalidierung veranlasst der erste Zugriff auf <see cref="Gif"/> eine vollständige Neuzeichnung; 
+        ''' ein Bildwechsel ermöglicht die Optimierung erneut.
+        ''' Bei aktivierter Option dürfen eigene Paint- oder Hintergrundroutinen nicht von einer Aktualisierung außerhalb des Bildbereichs bei jedem Frame abhängen.
+        ''' Sie müssen Transformation und Clip des Graphics-Objekts vor der GIF-Zeichnung unverändert lassen. Paint- und Invalidated-Bereiche können kleiner sein.
+        ''' Die Elternkette wird auf relevante Änderungen beobachtet; die Ereignisabonnements werden beim Deaktivieren und bei der Ressourcenfreigabe entfernt.
+        ''' Die Eigenschaft muss auf dem UI-Thread des Controls verwendet werden.
+        ''' </remarks>
+        <Browsable(True)>
+        <Category("Behavior")>
+        <Description("Begrenzt die Neuzeichnung bei Framewechseln optional auf den Bildbereich.")>
+        <DefaultValue(False)>
+        Public Property UsePartialFrameInvalidation As Boolean
+            Get
+                Return Me._usePartialFrameInvalidation
+            End Get
+            Set(value As Boolean)
+                If Me._usePartialFrameInvalidation = value Then Return
+                Me._usePartialFrameInvalidation = value
+                Me._partialFrameInvalidationIssued = False
+                Me.ResetFrameInvalidationBounds()
+                If value Then
+                    Me.RefreshFrameInvalidationAncestors()
+                Else
+                    Me.DetachFrameInvalidationAncestors()
+                End If
+                Me.InvalidateFullFrameArea()
+            End Set
+        End Property
 #End Region
 
 #Region "ausgeblendete Eigenschaften"
@@ -505,6 +551,63 @@ Namespace AniGifControl
             End Set
         End Property
 
+        ''' <summary>
+        ''' Aktiviert oder deaktiviert die optionale Erfassung der Wiedergabe- und Zeichenmetriken.
+        ''' Der Standardwert ist <see langword="False"/>.
+        ''' </summary>
+        ''' <remarks>
+        ''' Das Aktivieren beginnt eine neue Messung; das Deaktivieren friert die bisherigen Werte ein.
+        ''' Die Eigenschaft muss auf dem UI-Thread des Controls verwendet werden.
+        ''' </remarks>
+        ''' <exception cref="ObjectDisposedException">
+        ''' Die Diagnostik wird nach Beginn der Ressourcenfreigabe aktiviert.
+        ''' </exception>
+        <Browsable(False)>
+        <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+        <DefaultValue(False)>
+        Public Property DiagnosticsEnabled As Boolean
+            Get
+                Return Me._diagnosticsEnabled
+            End Get
+            Set(value As Boolean)
+#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
+                If value AndAlso (Me._IsDisposed OrElse Me.IsDisposed) Then Throw New ObjectDisposedException(NameOf(AniGif))
+#Enable Warning CA1513
+                If Me._diagnosticsEnabled = value Then Return
+
+                If value Then
+                    If Me._diagnosticsCollector Is Nothing Then Me._diagnosticsCollector = New DiagnosticsCollector()
+                    Me._diagnosticsCollector.Reset()
+                    Me._diagnosticsEnabled = True
+                    Me.RefreshDiagnosticsAncestors()
+                    Me.UpdateDiagnosticsActivity()
+                Else
+                    Me.SuspendDiagnosticsActivity()
+                    Me.DetachDiagnosticsAncestors()
+                    Me._diagnosticsEnabled = False
+                End If
+            End Set
+        End Property
+        ''' <summary>
+        ''' Gibt eine unveränderliche Momentaufnahme der Diagnostik zurück.
+        ''' </summary>
+        ''' <remarks>
+        ''' Eingefrorene Werte bleiben nach dem Deaktivieren und nach der Ressourcenfreigabe lesbar.
+        ''' Die Eigenschaft muss auf dem UI-Thread des Controls gelesen werden.
+        ''' </remarks>
+        <Browsable(False)>
+        <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+        Public ReadOnly Property Diagnostics As AniGifDiagnostics
+            Get
+                If Me._diagnosticsCollector Is Nothing Then Return New AniGifDiagnostics(False, 0, 0, 0, 0, 0, 0)
+                If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
+                Dim timestamp As Int64 = If(Me._diagnosticsCollector.IsActive, Stopwatch.GetTimestamp(), 0L)
+                Return Me._diagnosticsCollector.CreateSnapshot(Me._diagnosticsEnabled, timestamp)
+            End Get
+        End Property
+
+
+
 #End Region
 
 #Region "Öffentliche Methoden"
@@ -602,6 +705,19 @@ Namespace AniGifControl
             Return Me._playbackState
         End Function
 
+        ''' <summary>
+        ''' Setzt die Diagnosewerte zurück, ohne den Wiedergabezustand zu ändern.
+        ''' </summary>
+        ''' <remarks>
+        ''' Bei aktivierter Diagnostik beginnt eine neue Messung. Nach der Ressourcenfreigabe bleibt der Aufruf ohne Wirkung.
+        ''' Die Methode muss auf dem UI-Thread des Controls aufgerufen werden.
+        ''' </remarks>
+        Public Sub ResetDiagnostics()
+            If Me._IsDisposed OrElse Me.IsDisposed OrElse Me._diagnosticsCollector Is Nothing Then Return
+            Me._diagnosticsCollector.Reset()
+            If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
+        End Sub
+
 #End Region
 
 #Region "Interne Methoden"
@@ -632,86 +748,6 @@ Namespace AniGifControl
             Me.InitializeGifFrames()
         End Sub
 
-        Protected Overloads Overrides Sub InitLayout()
-            MyBase.InitLayout()
-            ' Nach Layout-Initialisierung den korrekten Animationsmodus setzen
-            Me.UpdateTimerState()
-        End Sub
-
-        Protected Overrides Sub OnVisibleChanged(e As EventArgs)
-            MyBase.OnVisibleChanged(e)
-            Me.UpdateTimerState()
-        End Sub
-
-        Protected Overrides Sub OnParentChanged(e As EventArgs)
-            MyBase.OnParentChanged(e)
-            Me.UpdateTimerState()
-            If Me._diagnosticsEnabled Then
-                Me.RefreshDiagnosticsAncestors()
-                Me.UpdateDiagnosticsActivity()
-            End If
-        End Sub
-
-        Protected Overrides Sub OnPaint(e As PaintEventArgs)
-
-            MyBase.OnPaint(e)
-
-            ' Null-Schutz
-            If Me._Gif Is Nothing Then Return
-
-            Dim diagnostics As AniGifDiagnosticsCollector = Nothing
-            Dim diagnosticsVersion As Int64 = 0
-            Dim frameGeneration As Int64 = 0
-            Dim renderStartTimestamp As Int64 = 0
-            If Me._diagnosticsEnabled Then
-                Me.UpdateDiagnosticsActivity()
-                diagnostics = Me._diagnosticsCollector
-                diagnosticsVersion = diagnostics.SessionVersion
-                frameGeneration = diagnostics.PendingFrameGeneration
-                renderStartTimestamp = Stopwatch.GetTimestamp()
-            End If
-
-            ' Variable für Zeichenfläche
-            Dim g As Graphics = e.Graphics
-
-            ' Größe der Zeichenfläche berechnen
-            Dim rectstartsize As Size = FunctionDefinitions.GetRectStartSize(Me._GifSizeMode, Me, Me._Gif, Me._ZoomFactor / 100)
-            If rectstartsize.Width <= 0 OrElse rectstartsize.Height <= 0 Then Return
-
-            ' Startpunkt der Zeichenfläche berechnen
-            Dim rectstartpoint As Point = FunctionDefinitions.GetRectStartPoint(Me._GifSizeMode, Me, Me._Gif, rectstartsize)
-
-            ' Qualitätsverbesserung nur bei Skalierung
-            If Me._GifSizeMode = ImageSizeMode.Zoom OrElse Me._GifSizeMode = ImageSizeMode.Fill Then
-                If Me._scalingQualityPreset = GifScalingQualityPreset.PixelArt Then
-                    g.InterpolationMode = Drawing2D.InterpolationMode.NearestNeighbor
-                    g.PixelOffsetMode = Drawing2D.PixelOffsetMode.Half
-                    g.SmoothingMode = Drawing2D.SmoothingMode.None
-                Else
-                    g.InterpolationMode = Drawing2D.InterpolationMode.HighQualityBicubic
-                    g.PixelOffsetMode = Drawing2D.PixelOffsetMode.HighQuality
-                    g.SmoothingMode = Drawing2D.SmoothingMode.HighQuality
-                End If
-            End If
-
-            ' Zeichenfläche festlegen und Bild zeichnen
-            Dim imageRectangle As New Rectangle(rectstartpoint, rectstartsize)
-            g.DrawImage(Me._Gif, imageRectangle)
-
-            If diagnostics IsNot Nothing AndAlso Me._diagnosticsEnabled AndAlso
-                Me._diagnosticsCollector Is diagnostics AndAlso diagnostics.SessionVersion = diagnosticsVersion Then
-                Dim renderTicks As Int64 = Stopwatch.GetTimestamp() - renderStartTimestamp
-                Dim intersectsClip As Boolean = False
-                If frameGeneration <> 0 Then
-                    Dim clippedRectangle As Rectangle = Rectangle.Intersect(imageRectangle, e.ClipRectangle)
-                    clippedRectangle = Rectangle.Intersect(clippedRectangle, Me.ClientRectangle)
-                    intersectsClip = clippedRectangle.Width > 0 AndAlso clippedRectangle.Height > 0 AndAlso g.IsVisible(clippedRectangle)
-                End If
-                diagnostics.RecordDraw(renderTicks, frameGeneration, intersectsClip)
-            End If
-
-        End Sub
-
         Private Sub InitializeGifFrames()
             Me._Dimension = Nothing
             Me._MaxFrame = 0
@@ -737,7 +773,7 @@ Namespace AniGifControl
             If Me._IsDisposed OrElse Me.IsDisposed Then Return
 
             Me.InitializeGifFrames()
-            Me.Invalidate()
+            Me.InvalidateFullFrameArea()
             Me.UpdateTimerState()
         End Sub
 
@@ -759,6 +795,9 @@ Namespace AniGifControl
             If Me._IsDisposed Then Return
             Me._IsDisposed = True
             Me._playbackState = PlaybackState.Stopped
+            Me.DetachFrameInvalidationAncestors()
+            Me.ResetFrameInvalidationBounds()
+            Me._partialFrameInvalidationIssued = False
 
             ' Den Timer vor dem Freigeben von Bitmap und Komponenten anhalten.
             Me.StopAnimationCore(False)
@@ -786,45 +825,10 @@ Namespace AniGifControl
 
         End Sub
 
-        Private Function NormalizeFrameIntervalMs(value As Int32) As Int32
-
-            Dim minInterval As Int32 = Math.Max(1, Me._MinimumFrameIntervalMs)
-            Dim maxInterval As Int32 = Math.Max(minInterval, Me._MaximumFrameIntervalMs)
-            Return Math.Min(maxInterval, Math.Max(minInterval, value))
-
-        End Function
-
-        Private Function GetDefaultFrameIntervalMs() As Int32
-            Return Me._defaultFrameIntervalMs
-        End Function
-
         Private Sub UpdateDefaultFrameIntervalMs()
             Dim fpsInterval As Int32 = CInt(Math.Round(1000D / Math.Max(Me._FramesPerSecond, 1D), MidpointRounding.AwayFromZero))
             Me._defaultFrameIntervalMs = Me.NormalizeFrameIntervalMs(Math.Max(1, fpsInterval))
         End Sub
-
-        Private Function GetFrameIntervalForIndex(frameIndex As Int32) As Int32
-
-            If Me._CustomDisplaySpeed OrElse Me._NormalizedFrameDelaysMs Is Nothing OrElse Me._NormalizedFrameDelaysMs.Length = 0 Then
-                Return Me.GetDefaultFrameIntervalMs()
-            End If
-
-            Dim safeIndex As Int32 = Math.Min(Math.Max(frameIndex, 0), Me._NormalizedFrameDelaysMs.Length - 1)
-            Return Me._NormalizedFrameDelaysMs(safeIndex)
-
-        End Function
-
-        Private Function ApplyAdaptiveTiming(targetIntervalMs As Int32, elapsedMs As Int32, lastScheduledIntervalMs As Int32) As Int32
-
-            If Not Me._AdaptiveTiming OrElse elapsedMs <= 0 Then
-                Return Me.NormalizeFrameIntervalMs(targetIntervalMs)
-            End If
-
-            Dim driftMs As Int32 = elapsedMs - Math.Max(1, lastScheduledIntervalMs)
-            Dim adjustedInterval As Int32 = targetIntervalMs - driftMs
-            Return Me.NormalizeFrameIntervalMs(adjustedInterval)
-
-        End Function
 
         Private Sub ClearFrameDelayCache()
             Me._rawFrameDelaysMs = Array.Empty(Of Int32)()
@@ -833,38 +837,6 @@ Namespace AniGifControl
             Me._lastFrameDelayFallbackMs = 0
             Me._NormalizedFrameDelaysMs = Array.Empty(Of Int32)()
         End Sub
-
-        Private Function ReadFrameDelayMetadata(frameCount As Int32) As Boolean
-            Dim metadataChanged As Boolean = Not Me._rawFrameDelayCacheValid
-            Dim previousCount As Int32 = Me._rawFrameDelayCount
-            Me._rawFrameDelayCacheValid = False
-            Dim delayBytes As Byte() = Nothing
-
-            Try
-                Dim delayProperty As PropertyItem = Me._Gif.GetPropertyItem(FrameDelayPropertyTag)
-                If delayProperty IsNot Nothing Then delayBytes = delayProperty.Value
-            Catch ex As ArgumentException
-                ' Ohne Delay-Metadaten werden für alle Frames Fallbacks verwendet.
-            End Try
-
-            Dim availableCount As Int32 = If(delayBytes Is Nothing, 0, Math.Min(frameCount, delayBytes.Length \ 4))
-            If Me._rawFrameDelaysMs.Length <> frameCount Then
-                Me._rawFrameDelaysMs = New Int32(frameCount - 1) {}
-                metadataChanged = True
-            End If
-            If availableCount <> previousCount Then metadataChanged = True
-
-            For i As Int32 = 0 To availableCount - 1
-                Dim delayInCentiseconds As Int32 = BitConverter.ToInt32(delayBytes, i * 4)
-                Dim delayInMs As Int32 = delayInCentiseconds * 10
-                If Me._rawFrameDelaysMs(i) <> delayInMs Then metadataChanged = True
-                Me._rawFrameDelaysMs(i) = delayInMs
-            Next
-
-            Me._rawFrameDelayCount = availableCount
-            Me._rawFrameDelayCacheValid = True
-            Return metadataChanged
-        End Function
 
         Private Sub RefreshFrameDelayCache(Optional fallbackOnly As Boolean = False)
             If Me._Gif Is Nothing OrElse Me._MaxFrame <= 0 Then
@@ -906,18 +878,9 @@ Namespace AniGifControl
             If Not Me.IsControlTreeVisible() Then Return
             If Me.ClientSize.Width <= 0 OrElse Me.ClientSize.Height <= 0 Then Return
 
-            ' Vor Invalidate markieren, da dessen Ereignishandler erneut in das Control eintreten können.
-            If isTimerFrame AndAlso Me._diagnosticsEnabled Then Me._diagnosticsCollector.QueueTimerFrame()
-            Me.Invalidate()
+            Me.InvalidateFrameArea(isTimerFrame)
 
         End Sub
-
-        Private Function IsControlTreeVisible() As Boolean
-
-            ' Der WinForms-Getter berücksichtigt bereits die Sichtbarkeit der Elternkette.
-            Return Me.Visible
-
-        End Function
 
         Private Sub Timer_Tick(sender As Object, e As EventArgs) Handles Timer.Tick
 
@@ -970,6 +933,7 @@ Namespace AniGifControl
             Dim source As Bitmap = If(value, My.Resources.AniGifControl_Standard)
             Dim imageCopy As Bitmap = DirectCast(source.Clone(), Bitmap)
 
+            Me.ResetFrameInvalidationBounds()
             ' Vorherige Animation stoppen bevor neues Bild gesetzt wird
             Me.StopAnimationCore(False)
 
@@ -979,6 +943,7 @@ Namespace AniGifControl
             End If
 
             Me._gifWasExposed = False
+            Me._partialFrameInvalidationIssued = False
             Me._rawFrameDelayCacheValid = False
             Me._Gif = imageCopy
             Me._OwnsGif = True
@@ -991,7 +956,8 @@ Namespace AniGifControl
 
             If Me._GifSizeMode = value Then Return
             Me._GifSizeMode = value
-            Me.Invalidate()
+            Me.ResetFrameInvalidationBounds()
+            Me.InvalidateFullFrameArea()
 
         End Sub
 
@@ -1003,7 +969,8 @@ Namespace AniGifControl
 
             If Me._scalingQualityPreset = value Then Return
             Me._scalingQualityPreset = value
-            Me.Invalidate()
+            Me.ResetFrameInvalidationBounds()
+            Me.InvalidateFullFrameArea()
 
         End Sub
 
@@ -1064,8 +1031,9 @@ Namespace AniGifControl
             If Me._ZoomFactor = validatedZoomFactor Then Return
 
             Me._ZoomFactor = validatedZoomFactor
+            Me.ResetFrameInvalidationBounds()
             ' neu zeichnen
-            Me.Invalidate()
+            Me.InvalidateFullFrameArea()
 
         End Sub
 
@@ -1121,6 +1089,408 @@ Namespace AniGifControl
                 RaiseEvent AnimationStopped(Me, EventArgs.Empty)
             End If
 
+        End Sub
+
+        Private Sub UpdateDiagnosticsActivity(Optional isVisible As Boolean? = Nothing)
+            If Not Me._diagnosticsEnabled Then Return
+
+            Dim isActive As Boolean = Not Me._IsDisposed AndAlso Not Me.IsDisposed AndAlso Me._IsAnimating AndAlso
+                Me._Autoplay AndAlso Me._playbackState = PlaybackState.Playing AndAlso
+                Me._diagnosticsHandleAvailable AndAlso Me.IsHandleCreated AndAlso
+                Me.ClientSize.Width > 0 AndAlso Me.ClientSize.Height > 0 AndAlso
+                If(isVisible, Me.IsControlTreeVisible())
+            If isActive <> Me._diagnosticsCollector.IsActive Then
+                Me._diagnosticsCollector.SetActive(isActive, Stopwatch.GetTimestamp())
+            End If
+        End Sub
+
+        Private Sub SuspendDiagnosticsActivity()
+            If Not Me._diagnosticsEnabled Then Return
+            If Me._diagnosticsCollector.IsActive Then
+                Me._diagnosticsCollector.SetActive(False, Stopwatch.GetTimestamp())
+            Else
+                Me._diagnosticsCollector.CancelPendingFrame()
+            End If
+        End Sub
+
+        Private Sub RefreshDiagnosticsAncestors()
+            Me.DetachDiagnosticsAncestors()
+            Dim ancestor As Control = Me.Parent
+            If ancestor Is Nothing Then Return
+            If Me._diagnosticsAncestors Is Nothing Then Me._diagnosticsAncestors = New List(Of Control)()
+
+            While ancestor IsNot Nothing
+                Me._diagnosticsAncestors.Add(ancestor)
+                AddHandler ancestor.VisibleChanged, AddressOf Me.DiagnosticsAncestorVisibleChanged
+                AddHandler ancestor.ParentChanged, AddressOf Me.DiagnosticsAncestorParentChanged
+                ancestor = ancestor.Parent
+            End While
+        End Sub
+
+        Private Sub DetachDiagnosticsAncestors()
+            If Me._diagnosticsAncestors Is Nothing Then Return
+            For Each ancestor As Control In Me._diagnosticsAncestors
+                RemoveHandler ancestor.VisibleChanged, AddressOf Me.DiagnosticsAncestorVisibleChanged
+                RemoveHandler ancestor.ParentChanged, AddressOf Me.DiagnosticsAncestorParentChanged
+            Next
+            Me._diagnosticsAncestors.Clear()
+        End Sub
+
+        Private Sub DiagnosticsAncestorVisibleChanged(sender As Object, e As EventArgs)
+            If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
+        End Sub
+
+        Private Sub DiagnosticsAncestorParentChanged(sender As Object, e As EventArgs)
+            If Not Me._diagnosticsEnabled Then Return
+            Me.RefreshDiagnosticsAncestors()
+            Me.UpdateDiagnosticsActivity()
+        End Sub
+
+        Private Sub ResetFrameInvalidationBounds()
+            Me._frameInvalidationBounds = Rectangle.Empty
+            Me._frameInvalidationBoundsValid = False
+            Me._fullFrameInvalidationPending = False
+            Me._frameInvalidationToken = If(Me._usePartialFrameInvalidation, New Object(), Nothing)
+        End Sub
+
+        Private Sub InvalidateFullFrameArea()
+            If Me._usePartialFrameInvalidation AndAlso Not Me._gifWasExposed AndAlso
+                Not Me._frameInvalidationBoundsValid AndAlso Me.IsHandleCreated Then
+                Me._fullFrameInvalidationPending = True
+            End If
+            Me.Invalidate()
+        End Sub
+
+        Private Sub OnGifExposedForFrameInvalidation()
+            If Not Me._usePartialFrameInvalidation Then Return
+            Me.ResetFrameInvalidationBounds()
+            If Me._partialFrameInvalidationIssued Then Me.InvalidateFullFrameArea()
+        End Sub
+
+        Private Sub RefreshFrameInvalidationAncestors()
+            Me.DetachFrameInvalidationAncestors()
+            If Not Me._usePartialFrameInvalidation OrElse Me._IsDisposed OrElse Me.IsDisposed Then Return
+            Dim ancestor As Control = Me.Parent
+            If ancestor Is Nothing Then Return
+            If Me._frameInvalidationAncestors Is Nothing Then Me._frameInvalidationAncestors = New List(Of Control)()
+
+            While ancestor IsNot Nothing
+                Me._frameInvalidationAncestors.Add(ancestor)
+                AddHandler ancestor.BackColorChanged, AddressOf Me.FrameInvalidationAncestorChanged
+                AddHandler ancestor.BackgroundImageChanged, AddressOf Me.FrameInvalidationAncestorChanged
+                AddHandler ancestor.BackgroundImageLayoutChanged, AddressOf Me.FrameInvalidationAncestorChanged
+                AddHandler ancestor.SizeChanged, AddressOf Me.FrameInvalidationAncestorChanged
+                AddHandler ancestor.LocationChanged, AddressOf Me.FrameInvalidationAncestorChanged
+                AddHandler ancestor.VisibleChanged, AddressOf Me.FrameInvalidationAncestorChanged
+                AddHandler ancestor.Layout, AddressOf Me.FrameInvalidationAncestorLayout
+                AddHandler ancestor.ParentChanged, AddressOf Me.FrameInvalidationAncestorParentChanged
+                Dim scrollable As ScrollableControl = TryCast(ancestor, ScrollableControl)
+                If scrollable IsNot Nothing Then AddHandler scrollable.Scroll, AddressOf Me.FrameInvalidationAncestorScroll
+                ancestor = ancestor.Parent
+            End While
+        End Sub
+
+        Private Sub DetachFrameInvalidationAncestors()
+            If Me._frameInvalidationAncestors Is Nothing Then Return
+            For Each ancestor As Control In Me._frameInvalidationAncestors
+                RemoveHandler ancestor.BackColorChanged, AddressOf Me.FrameInvalidationAncestorChanged
+                RemoveHandler ancestor.BackgroundImageChanged, AddressOf Me.FrameInvalidationAncestorChanged
+                RemoveHandler ancestor.BackgroundImageLayoutChanged, AddressOf Me.FrameInvalidationAncestorChanged
+                RemoveHandler ancestor.SizeChanged, AddressOf Me.FrameInvalidationAncestorChanged
+                RemoveHandler ancestor.LocationChanged, AddressOf Me.FrameInvalidationAncestorChanged
+                RemoveHandler ancestor.VisibleChanged, AddressOf Me.FrameInvalidationAncestorChanged
+                RemoveHandler ancestor.Layout, AddressOf Me.FrameInvalidationAncestorLayout
+                RemoveHandler ancestor.ParentChanged, AddressOf Me.FrameInvalidationAncestorParentChanged
+                Dim scrollable As ScrollableControl = TryCast(ancestor, ScrollableControl)
+                If scrollable IsNot Nothing Then RemoveHandler scrollable.Scroll, AddressOf Me.FrameInvalidationAncestorScroll
+            Next
+            Me._frameInvalidationAncestors.Clear()
+        End Sub
+
+        Private Sub FrameInvalidationAncestorLayout(sender As Object, e As LayoutEventArgs)
+            Me.FrameInvalidationAncestorChanged(sender, e)
+        End Sub
+
+        Private Sub FrameInvalidationAncestorScroll(sender As Object, e As ScrollEventArgs)
+            Me.FrameInvalidationAncestorChanged(sender, e)
+        End Sub
+
+        Private Sub FrameInvalidationAncestorChanged(sender As Object, e As EventArgs)
+            If Not Me._usePartialFrameInvalidation OrElse Me._IsDisposed OrElse Me.IsDisposed Then Return
+            Me.ResetFrameInvalidationBounds()
+            Me.InvalidateIfVisible()
+        End Sub
+
+        Private Sub FrameInvalidationAncestorParentChanged(sender As Object, e As EventArgs)
+            If Not Me._usePartialFrameInvalidation OrElse Me._IsDisposed OrElse Me.IsDisposed Then Return
+            Me.RefreshFrameInvalidationAncestors()
+            Me.FrameInvalidationAncestorChanged(sender, e)
+        End Sub
+
+        Private Sub CompleteFrameInvalidationPaint(token As Object, imageRectangle As Rectangle, e As PaintEventArgs)
+            If token Is Nothing OrElse Not Object.ReferenceEquals(token, Me._frameInvalidationToken) OrElse
+                Not Me._usePartialFrameInvalidation OrElse Me._gifWasExposed OrElse Me._IsDisposed OrElse Me.IsDisposed OrElse
+                Not Me.IsHandleCreated OrElse Not Me.IsControlTreeVisible() Then Return
+
+            Dim client As Rectangle = Me.ClientRectangle
+            If client.Width <= 0 OrElse client.Height <= 0 OrElse Not e.ClipRectangle.Contains(client) Then Return
+
+            Dim bounds As Rectangle = GetFrameInvalidationBounds(imageRectangle, client)
+            If bounds.Width <= 0 OrElse bounds.Height <= 0 Then Return
+            Me._frameInvalidationBounds = bounds
+            Me._frameInvalidationBoundsValid = True
+        End Sub
+
+        Private Sub InvalidateFrameArea(isTimerFrame As Boolean)
+            Dim bounds As Rectangle = Me._frameInvalidationBounds
+            Dim usePartial As Boolean = Me._usePartialFrameInvalidation AndAlso Me._frameInvalidationBoundsValid AndAlso
+                Not Me._gifWasExposed AndAlso bounds.Width > 0 AndAlso bounds.Height > 0 AndAlso bounds <> Me.ClientRectangle
+
+            ' Vor Invalidate markieren, da dessen Ereignishandler erneut in das Control eintreten können.
+            If isTimerFrame AndAlso Me._diagnosticsEnabled Then Me._diagnosticsCollector.QueueTimerFrame()
+            If Not usePartial Then
+                Me.InvalidateFullFrameArea()
+                Return
+            End If
+
+            Dim token As Object = Me._frameInvalidationToken
+            Me._partialFrameInvalidationIssued = True
+            Me.Invalidate(bounds)
+
+            ' Ein Invalidated-Handler kann Bild oder Geometrie ändern und bereits synchron neu zeichnen.
+            If Object.ReferenceEquals(token, Me._frameInvalidationToken) AndAlso Me._usePartialFrameInvalidation AndAlso Not Me._gifWasExposed Then Return
+            If Me._IsDisposed OrElse Me.IsDisposed OrElse Not Me.IsHandleCreated OrElse Not Me.IsControlTreeVisible() Then Return
+            If Me.ClientSize.Width <= 0 OrElse Me.ClientSize.Height <= 0 Then Return
+            Me.InvalidateFullFrameArea()
+        End Sub
+
+        Private Function NormalizeFrameIntervalMs(value As Int32) As Int32
+
+            Dim minInterval As Int32 = Math.Max(1, Me._MinimumFrameIntervalMs)
+            Dim maxInterval As Int32 = Math.Max(minInterval, Me._MaximumFrameIntervalMs)
+            Return Math.Min(maxInterval, Math.Max(minInterval, value))
+
+        End Function
+
+        Private Function GetDefaultFrameIntervalMs() As Int32
+            Return Me._defaultFrameIntervalMs
+        End Function
+
+        Private Function GetFrameIntervalForIndex(frameIndex As Int32) As Int32
+
+            If Me._CustomDisplaySpeed OrElse Me._NormalizedFrameDelaysMs Is Nothing OrElse Me._NormalizedFrameDelaysMs.Length = 0 Then
+                Return Me.GetDefaultFrameIntervalMs()
+            End If
+
+            Dim safeIndex As Int32 = Math.Min(Math.Max(frameIndex, 0), Me._NormalizedFrameDelaysMs.Length - 1)
+            Return Me._NormalizedFrameDelaysMs(safeIndex)
+
+        End Function
+
+        Private Function ApplyAdaptiveTiming(targetIntervalMs As Int32, elapsedMs As Int32, lastScheduledIntervalMs As Int32) As Int32
+
+            If Not Me._AdaptiveTiming OrElse elapsedMs <= 0 Then
+                Return Me.NormalizeFrameIntervalMs(targetIntervalMs)
+            End If
+
+            Dim driftMs As Int32 = elapsedMs - Math.Max(1, lastScheduledIntervalMs)
+            Dim adjustedInterval As Int32 = targetIntervalMs - driftMs
+            Return Me.NormalizeFrameIntervalMs(adjustedInterval)
+
+        End Function
+
+        Private Function ReadFrameDelayMetadata(frameCount As Int32) As Boolean
+            Dim metadataChanged As Boolean = Not Me._rawFrameDelayCacheValid
+            Dim previousCount As Int32 = Me._rawFrameDelayCount
+            Me._rawFrameDelayCacheValid = False
+            Dim delayBytes As Byte() = Nothing
+
+            Try
+                Dim delayProperty As PropertyItem = Me._Gif.GetPropertyItem(FrameDelayPropertyTag)
+                If delayProperty IsNot Nothing Then delayBytes = delayProperty.Value
+            Catch ex As ArgumentException
+                ' Ohne Delay-Metadaten werden für alle Frames Fallbacks verwendet.
+            End Try
+
+            Dim availableCount As Int32 = If(delayBytes Is Nothing, 0, Math.Min(frameCount, delayBytes.Length \ 4))
+            If Me._rawFrameDelaysMs.Length <> frameCount Then
+                Me._rawFrameDelaysMs = New Int32(frameCount - 1) {}
+                metadataChanged = True
+            End If
+            If availableCount <> previousCount Then metadataChanged = True
+
+            For i As Int32 = 0 To availableCount - 1
+                Dim delayInCentiseconds As Int32 = BitConverter.ToInt32(delayBytes, i * 4)
+                Dim delayInMs As Int32 = delayInCentiseconds * 10
+                If Me._rawFrameDelaysMs(i) <> delayInMs Then metadataChanged = True
+                Me._rawFrameDelaysMs(i) = delayInMs
+            Next
+
+            Me._rawFrameDelayCount = availableCount
+            Me._rawFrameDelayCacheValid = True
+            Return metadataChanged
+        End Function
+
+        Private Function IsControlTreeVisible() As Boolean
+
+            ' Der WinForms-Getter berücksichtigt bereits die Sichtbarkeit der Elternkette.
+            Return Me.Visible
+
+        End Function
+
+        Private Function BeginFrameInvalidationPaint() As Object
+            If Not Me._usePartialFrameInvalidation OrElse Not Me._fullFrameInvalidationPending Then Return Nothing
+            Me._fullFrameInvalidationPending = False
+            Return Me._frameInvalidationToken
+        End Function
+
+        Private Shared Function GetFrameInvalidationBounds(imageRectangle As Rectangle, client As Rectangle) As Rectangle
+            If imageRectangle.Width <= 0 OrElse imageRectangle.Height <= 0 OrElse client.Width <= 0 OrElse client.Height <= 0 Then Return Rectangle.Empty
+            ' Den Sicherheitsrand vor dem Schnitt mit Int64 berechnen, damit große Zielrechtecke nicht überlaufen.
+            Dim left As Int64 = Math.Max(CLng(client.X), CLng(imageRectangle.X) - FrameInvalidationMargin)
+            Dim top As Int64 = Math.Max(CLng(client.Y), CLng(imageRectangle.Y) - FrameInvalidationMargin)
+            Dim right As Int64 = Math.Min(CLng(client.X) + client.Width, CLng(imageRectangle.X) + imageRectangle.Width + FrameInvalidationMargin)
+            Dim bottom As Int64 = Math.Min(CLng(client.Y) + client.Height, CLng(imageRectangle.Y) + imageRectangle.Height + FrameInvalidationMargin)
+            If right <= left OrElse bottom <= top Then Return Rectangle.Empty
+            Return New Rectangle(CInt(left), CInt(top), CInt(right - left), CInt(bottom - top))
+        End Function
+
+        Protected Overrides Sub OnVisibleChanged(e As EventArgs)
+            Me.ResetFrameInvalidationBounds()
+            MyBase.OnVisibleChanged(e)
+            Me.UpdateTimerState()
+        End Sub
+
+        Protected Overrides Sub OnParentChanged(e As EventArgs)
+            Me.ResetFrameInvalidationBounds()
+            MyBase.OnParentChanged(e)
+            Me.RefreshFrameInvalidationAncestors()
+            Me.UpdateTimerState()
+            If Me._diagnosticsEnabled Then
+                Me.RefreshDiagnosticsAncestors()
+                Me.UpdateDiagnosticsActivity()
+            End If
+        End Sub
+
+        Protected Overrides Sub OnPaint(e As PaintEventArgs)
+
+            Dim frameInvalidationToken As Object = Me.BeginFrameInvalidationPaint()
+            MyBase.OnPaint(e)
+
+            ' Null-Schutz
+            If Me._Gif Is Nothing Then Return
+
+            Dim diagnostics As DiagnosticsCollector = Nothing
+            Dim diagnosticsVersion As Int64 = 0
+            Dim frameGeneration As Int64 = 0
+            Dim renderStartTimestamp As Int64 = 0
+            If Me._diagnosticsEnabled Then
+                Me.UpdateDiagnosticsActivity()
+                diagnostics = Me._diagnosticsCollector
+                diagnosticsVersion = diagnostics.SessionVersion
+                frameGeneration = diagnostics.PendingFrameGeneration
+                renderStartTimestamp = Stopwatch.GetTimestamp()
+            End If
+
+            ' Variable für Zeichenfläche
+            Dim g As Graphics = e.Graphics
+
+            ' Größe der Zeichenfläche berechnen
+            Dim rectstartsize As Size = FunctionDefinitions.GetRectStartSize(Me._GifSizeMode, Me, Me._Gif, Me._ZoomFactor / 100)
+            If rectstartsize.Width <= 0 OrElse rectstartsize.Height <= 0 Then Return
+
+            ' Startpunkt der Zeichenfläche berechnen
+            Dim rectstartpoint As Point = FunctionDefinitions.GetRectStartPoint(Me._GifSizeMode, Me, Me._Gif, rectstartsize)
+
+            ' Qualitätsverbesserung nur bei Skalierung
+            If Me._GifSizeMode = ImageSizeMode.Zoom OrElse Me._GifSizeMode = ImageSizeMode.Fill Then
+                If Me._scalingQualityPreset = GifScalingQualityPreset.PixelArt Then
+                    g.InterpolationMode = Drawing2D.InterpolationMode.NearestNeighbor
+                    g.PixelOffsetMode = Drawing2D.PixelOffsetMode.Half
+                    g.SmoothingMode = Drawing2D.SmoothingMode.None
+                Else
+                    g.InterpolationMode = Drawing2D.InterpolationMode.HighQualityBicubic
+                    g.PixelOffsetMode = Drawing2D.PixelOffsetMode.HighQuality
+                    g.SmoothingMode = Drawing2D.SmoothingMode.HighQuality
+                End If
+            End If
+
+            ' Zeichenfläche festlegen und Bild zeichnen
+            Dim imageRectangle As New Rectangle(rectstartpoint, rectstartsize)
+            g.DrawImage(Me._Gif, imageRectangle)
+
+            If diagnostics IsNot Nothing AndAlso Me._diagnosticsEnabled AndAlso
+                Me._diagnosticsCollector Is diagnostics AndAlso diagnostics.SessionVersion = diagnosticsVersion Then
+                Dim renderTicks As Int64 = Stopwatch.GetTimestamp() - renderStartTimestamp
+                Dim intersectsClip As Boolean = False
+                If frameGeneration <> 0 Then
+                    Dim clippedRectangle As Rectangle = Rectangle.Intersect(imageRectangle, e.ClipRectangle)
+                    clippedRectangle = Rectangle.Intersect(clippedRectangle, Me.ClientRectangle)
+                    intersectsClip = clippedRectangle.Width > 0 AndAlso clippedRectangle.Height > 0 AndAlso g.IsVisible(clippedRectangle)
+                End If
+                diagnostics.RecordDraw(renderTicks, frameGeneration, intersectsClip)
+            End If
+
+            Me.CompleteFrameInvalidationPaint(frameInvalidationToken, imageRectangle, e)
+
+        End Sub
+
+        Protected Overrides Sub OnHandleCreated(e As EventArgs)
+            Me.ResetFrameInvalidationBounds()
+            Me._diagnosticsHandleAvailable = True
+            If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
+            MyBase.OnHandleCreated(e)
+            If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
+        End Sub
+
+        Protected Overrides Sub OnHandleDestroyed(e As EventArgs)
+            Me.ResetFrameInvalidationBounds()
+            Me._diagnosticsHandleAvailable = False
+            Me.SuspendDiagnosticsActivity()
+            MyBase.OnHandleDestroyed(e)
+        End Sub
+
+        Protected Overrides Sub OnClientSizeChanged(e As EventArgs)
+            Me.ResetFrameInvalidationBounds()
+            If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
+            MyBase.OnClientSizeChanged(e)
+            If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
+        End Sub
+
+        Protected Overrides Sub OnLocationChanged(e As EventArgs)
+            Me.ResetFrameInvalidationBounds()
+            MyBase.OnLocationChanged(e)
+        End Sub
+
+        Protected Overrides Sub OnLayout(e As LayoutEventArgs)
+            Me.ResetFrameInvalidationBounds()
+            MyBase.OnLayout(e)
+        End Sub
+
+        Protected Overrides Sub OnBackColorChanged(e As EventArgs)
+            Me.ResetFrameInvalidationBounds()
+            MyBase.OnBackColorChanged(e)
+        End Sub
+
+        Protected Overrides Sub OnBackgroundImageChanged(e As EventArgs)
+            Me.ResetFrameInvalidationBounds()
+            MyBase.OnBackgroundImageChanged(e)
+        End Sub
+
+        Protected Overrides Sub OnBackgroundImageLayoutChanged(e As EventArgs)
+            Me.ResetFrameInvalidationBounds()
+            MyBase.OnBackgroundImageLayoutChanged(e)
+        End Sub
+
+        Protected Overrides Sub OnPaddingChanged(e As EventArgs)
+            Me.ResetFrameInvalidationBounds()
+            MyBase.OnPaddingChanged(e)
+        End Sub
+
+        Protected Overloads Overrides Sub InitLayout()
+            MyBase.InitLayout()
+            ' Nach Layout-Initialisierung den korrekten Animationsmodus setzen
+            Me.UpdateTimerState()
         End Sub
 
 #End Region

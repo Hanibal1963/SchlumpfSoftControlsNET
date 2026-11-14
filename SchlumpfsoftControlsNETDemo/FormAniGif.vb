@@ -19,6 +19,7 @@ Public Class FormAniGif
         Me.CheckBox_AutoPlay.Checked = Me.AniGif.AutoPlay
         Me.CheckBox_CustomDisplaySpeed.Checked = Me.AniGif.CustomDisplaySpeed
         Me.CheckBox_Diagnostics.Checked = Me.AniGif.DiagnosticsEnabled
+        Me.CheckBox_PartialFrameInvalidation.Checked = Me.AniGif.UsePartialFrameInvalidation
         Me.Button_Diagnostics.Enabled = Me.AniGif.DiagnosticsEnabled
         Me.ComboBox_ScalingQualityPreset.SelectedIndex = 0
         Me.ComboBox_SizeMode.SelectedIndex = 0
@@ -91,7 +92,8 @@ Public Class FormAniGif
             CheckBox_AdaptiveTiming.CheckedChanged,
             CheckBox_CustomDisplaySpeed.CheckedChanged,
             CheckBox_AutoPlay.CheckedChanged,
-            CheckBox_Diagnostics.CheckedChanged
+            CheckBox_Diagnostics.CheckedChanged,
+            CheckBox_PartialFrameInvalidation.CheckedChanged
 
         Select Case True
 
@@ -109,6 +111,9 @@ Public Class FormAniGif
             Case sender Is Me.CheckBox_Diagnostics
                 Me.AniGif.DiagnosticsEnabled = CType(sender, CheckBox).Checked
                 Me.Button_Diagnostics.Enabled = CType(sender, CheckBox).Checked
+
+            Case sender Is Me.CheckBox_PartialFrameInvalidation
+                Me.AniGif.UsePartialFrameInvalidation = CType(sender, CheckBox).Checked
 
         End Select
 
@@ -246,7 +251,7 @@ Public Class FormAniGif
 
         End With
 
-        Dim unused = MessageBox.Show(msg, "Diagnostics", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        Me.Label_EventMessage.Text = msg
 
     End Sub
 

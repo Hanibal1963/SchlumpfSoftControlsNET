@@ -172,4 +172,6 @@ Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlay
 
 ## [7. Optimierungsvorschläge](AniGifOptimierungsvorschläge.md)
 
+z.Zt. alle umgesetzt
+
 ## [8. Erweiterungsvorschläge](AniGifErweiterungsvorschläge.md)

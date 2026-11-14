@@ -1,4 +1,6 @@
-﻿Imports System.Drawing
+﻿Imports System.Collections.Generic
+Imports System.ComponentModel
+Imports System.Drawing
 Imports System.Reflection
 Imports System.Windows.Forms
 
@@ -31,6 +33,135 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
 
                 Assert.AreEqual(1, control.ProgressMaximumValue)
                 Assert.AreEqual(1, control.Value)
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Progress_DefaultValuesMatchDesignerAttributes()
+            Using control As New ColorProgressBar()
+                Dim properties As PropertyDescriptorCollection = TypeDescriptor.GetProperties(control)
+                Dim valueProperty As PropertyDescriptor = properties(NameOf(ColorProgressBar.Value))
+                Dim maximumProperty As PropertyDescriptor = properties(NameOf(ColorProgressBar.ProgressMaximumValue))
+                Assert.IsNotNull(valueProperty)
+                Assert.IsNotNull(maximumProperty)
+
+                Dim valueDefault As DefaultValueAttribute = DirectCast(valueProperty.Attributes(GetType(DefaultValueAttribute)), DefaultValueAttribute)
+                Dim maximumDefault As DefaultValueAttribute = DirectCast(maximumProperty.Attributes(GetType(DefaultValueAttribute)), DefaultValueAttribute)
+                Assert.IsNotNull(valueDefault)
+                Assert.IsNotNull(maximumDefault)
+                Assert.AreEqual(1, control.Value)
+                Assert.AreEqual(10, control.ProgressMaximumValue)
+                Assert.AreEqual(control.Value, DirectCast(valueDefault.Value, Integer))
+                Assert.AreEqual(control.ProgressMaximumValue, DirectCast(maximumDefault.Value, Integer))
+            End Using
+        End Sub
+
+        <TestMethod>
+        <DataRow(Integer.MinValue, Integer.MinValue, 1, 0)>
+        <DataRow(0, 0, 1, 0)>
+        <DataRow(1, 1, 1, 1)>
+        <DataRow(-5, Integer.MaxValue, 1, 1)>
+        <DataRow(10, -1, 10, 0)>
+        <DataRow(10, 5, 10, 5)>
+        <DataRow(10, 11, 10, 10)>
+        <DataRow(Integer.MaxValue, Integer.MinValue, Integer.MaxValue, 0)>
+        <DataRow(Integer.MaxValue, Integer.MaxValue - 1, Integer.MaxValue, Integer.MaxValue - 1)>
+        <DataRow(Integer.MaxValue, Integer.MaxValue, Integer.MaxValue, Integer.MaxValue)>
+        Public Sub Progress_BoundsInt32Inputs(maximum As Integer, value As Integer, expectedMaximum As Integer, expectedValue As Integer)
+            Using control As New ColorProgressBar()
+                control.ProgressMaximumValue = maximum
+                control.Value = value
+
+                Assert.AreEqual(expectedMaximum, control.ProgressMaximumValue)
+                Assert.AreEqual(expectedValue, control.Value)
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Progress_Int32LimitsRenderCorrectly()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.IsGlossy = False
+                control.ProgressMaximumValue = Integer.MaxValue
+                control.Value = Integer.MinValue
+
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Silver, image, 1, 10)
+                    AssertPixel(Color.Silver, image, 98, 10)
+                End Using
+
+                control.Value = Integer.MaxValue \ 2
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 50, 10)
+                    AssertPixel(Color.Silver, image, 51, 10)
+                End Using
+
+                control.Value = Integer.MaxValue
+                control.ProgressMaximumValue = Integer.MinValue
+                Assert.AreEqual(1, control.ProgressMaximumValue)
+                Assert.AreEqual(1, control.Value)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 1, 10)
+                    AssertPixel(Color.Blue, image, 98, 10)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Progress_IncreasingMaximumDoesNotRestorePreviouslyClampedValue()
+            Using control As New ColorProgressBar()
+                control.Value = 20
+                Assert.AreEqual(10, control.Value)
+
+                control.ProgressMaximumValue = 20
+                Assert.AreEqual(20, control.ProgressMaximumValue)
+                Assert.AreEqual(10, control.Value)
+
+                control.Value = 20
+                Assert.AreEqual(20, control.Value)
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub ProgressMaximumValue_ClampsBeforeReentrantInvalidation()
+            Using control As New TestableColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.IsGlossy = False
+                control.Value = 8
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                Dim observedValues As New List(Of Integer)()
+                Dim observedMaximums As New List(Of Integer)()
+
+                Using image As New Bitmap(100, 20)
+                    Using graphics As Graphics = Graphics.FromImage(image)
+                        Using args As New PaintEventArgs(graphics, New Rectangle(Point.Empty, image.Size))
+                            control.PaintForTest(args)
+                            Dim onInvalidated As InvalidateEventHandler = Sub(sender, e)
+                                                                              observedValues.Add(control.Value)
+                                                                              observedMaximums.Add(control.ProgressMaximumValue)
+                                                                              If observedValues.Count = 1 Then
+                                                                                  graphics.Clear(Color.Magenta)
+                                                                                  control.PaintForTest(args)
+                                                                                  AssertPixel(Color.Blue, image, 98, 10)
+                                                                                  control.ProgressMaximumValue = 20
+                                                                                  control.Value = 7
+                                                                              End If
+                                                                          End Sub
+                            AddHandler control.Invalidated, onInvalidated
+                            Try
+                                control.ProgressMaximumValue = 4
+                            Finally
+                                RemoveHandler control.Invalidated, onInvalidated
+                            End Try
+
+                            CollectionAssert.AreEqual(New Integer() {4, 4, 7}, observedValues.ToArray())
+                            CollectionAssert.AreEqual(New Integer() {4, 20, 20}, observedMaximums.ToArray())
+                            Assert.AreEqual(7, control.Value)
+                            Assert.AreEqual(20, control.ProgressMaximumValue)
+                        End Using
+                    End Using
+                End Using
             End Using
         End Sub
 

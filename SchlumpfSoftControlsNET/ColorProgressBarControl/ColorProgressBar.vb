@@ -52,7 +52,7 @@ Namespace ColorProgressBarControl
 
         ''' <summary>
         ''' Gibt den aktuellen Fortschrittswert zurück oder legt diesen fest (Bereich: 0 bis
-        ''' <see cref="ProgressMaximumValue"/>). Werte außerhalb des Bereichs werden begrenzt.
+        ''' <see cref="ProgressMaximumValue"/>; Standardwert: 1). Werte außerhalb des Bereichs werden begrenzt.
         ''' Bei unverändertem begrenztem Wert wird keine erneute Invalidierung ausgelöst.
         ''' </summary>
         <Browsable(True)>
@@ -64,18 +64,13 @@ Namespace ColorProgressBarControl
                 Return Me._ProgressValue
             End Get
             Set(value As Int32)
-                ' Wert auf den gültigen Bereich begrenzen, damit keine ungültigen Zustände entstehen.
-                Dim boundedValue As Int32 = Math.Max(0, Math.Min(value, Me._MaxValue))
-                If boundedValue <> Me._ProgressValue Then
-                    Me._ProgressValue = boundedValue
-                    Me.Invalidate()
-                End If
+                Me.UpdateProgress(value, Me._MaxValue)
             End Set
         End Property
 
         ''' <summary>
-        ''' Gibt den Maximalwert des Fortschrittsbalkens zurück oder legt diesen fest. Werte kleiner als 1
-        ''' werden auf 1 begrenzt und ein darüber liegender Fortschrittswert wird angepasst.
+        ''' Gibt den Maximalwert des Fortschrittsbalkens zurück oder legt diesen fest (Standardwert: 10).
+        ''' Werte kleiner als 1 werden auf 1 begrenzt und ein darüber liegender Fortschrittswert wird angepasst.
         ''' Bei unverändertem begrenztem Maximum wird keine erneute Invalidierung ausgelöst.
         ''' </summary>
         <Browsable(True)>
@@ -87,17 +82,7 @@ Namespace ColorProgressBarControl
                 Return Me._MaxValue
             End Get
             Set(value As Int32)
-                ' Der Maximalwert darf nie kleiner als 1 sein (Vermeidung Division durch 0).
-                Dim minValue As Int32 = 1
-                Dim boundedValue As Int32 = Math.Max(minValue, value)
-
-                If boundedValue <> Me._MaxValue Then
-                    Me._MaxValue = boundedValue
-
-                    ' Falls der aktuelle Wert über dem neuen Maximum liegt, wird er automatisch reduziert.
-                    Me._ProgressValue = Math.Min(Me._ProgressValue, Me._MaxValue)
-                    Me.Invalidate()
-                End If
+                Me.UpdateProgress(Me._ProgressValue, value)
             End Set
         End Property
 
@@ -313,6 +298,25 @@ Namespace ColorProgressBarControl
 #End Region
 
 #Region "interne Methoden"
+
+        ''' <summary>
+        ''' Begrenzt Maximum und Fortschrittswert und aktualisiert sie gemeinsam.
+        ''' </summary>
+        ''' <param name="value">Der gewünschte Fortschrittswert.</param>
+        ''' <param name="maximum">Der gewünschte Maximalwert.</param>
+        Private Sub UpdateProgress(value As Int32, maximum As Int32)
+
+            ' Das Maximum zuerst begrenzen, damit der Wert stets innerhalb des gültigen Bereichs liegt.
+            Dim boundedMaximum As Int32 = Math.Max(1, maximum)
+            Dim boundedValue As Int32 = Math.Max(0, Math.Min(value, boundedMaximum))
+
+            If boundedMaximum <> Me._MaxValue OrElse boundedValue <> Me._ProgressValue Then
+                Me._MaxValue = boundedMaximum
+                Me._ProgressValue = boundedValue
+                Me.Invalidate()
+            End If
+
+        End Sub
 
         ''' <summary>
         ''' Aktualisiert die Zeichenrechtecke nur bei geänderter Geometrie oder geändertem Fortschritt.

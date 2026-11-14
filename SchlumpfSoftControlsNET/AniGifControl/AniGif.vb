@@ -27,6 +27,7 @@ Namespace AniGifControl
 #Region "Variablen"
 
         Private _FramesPerSecond As Decimal ' Benutzerdefinierte Wiedergabegeschwindigkeit (nur aktiv bei CustomDisplaySpeed = True)
+        Private _defaultFrameIntervalMs As Int32 ' Begrenztes FPS-Intervall und Fallback für GIF-Delays
         Private _Dimension As FrameDimension ' GIF-Frame-Dimension (bei GIFs i. d. R. Time)
         Private _Frame As Int32 ' Aktueller Frame-Index für die Timer-basierte Wiedergabe
         Private _MaxFrame As Int32 ' Letzter gültiger Frame-Index des geladenen GIFs
@@ -270,6 +271,9 @@ Namespace AniGifControl
         ''' <summary>
         ''' Legt fest, ob das Timer-Intervall adaptiv an erkannte UI-Thread-Last angepasst wird.
         ''' </summary>
+        ''' <remarks>
+        ''' Beim Aktivieren beginnt die Zeitmessung neu; beim Deaktivieren bleibt das aktuelle Timer-Intervall zunächst unverändert.
+        ''' </remarks>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Aktiviert adaptive Drift-Korrektur für die Frame-Wiedergabe.")>
@@ -581,7 +585,7 @@ Namespace AniGifControl
                 ' Das neue Intervall beginnt am gewählten Frame, ohne Start-/Stoppereignisse auszulösen.
                 Me.Timer.Stop()
                 Me.Timer.Interval = Me.GetFrameIntervalForIndex(index)
-                Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
+                If Me._AdaptiveTiming Then Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
                 Me.Timer.Start()
             End If
 
@@ -616,6 +620,7 @@ Namespace AniGifControl
             Me._IsDisposed = False
             Me._MinimumFrameIntervalMs = 20
             Me._MaximumFrameIntervalMs = 500
+            Me.UpdateDefaultFrameIntervalMs()
             Me._NormalizedFrameDelaysMs = Array.Empty(Of Int32)()
             Me._rawFrameDelaysMs = Array.Empty(Of Int32)()
             Me._rawFrameDelayCount = 0
@@ -775,6 +780,7 @@ Namespace AniGifControl
             ' Sicherheitsprüfung
             If Me._FramesPerSecond < 1D Then Me._FramesPerSecond = 1D
 
+            Me.UpdateDefaultFrameIntervalMs()
             Me.RefreshFrameDelayCache(True)
             Me.UpdateTimerState(previousIntervalMs)
 
@@ -789,11 +795,13 @@ Namespace AniGifControl
         End Function
 
         Private Function GetDefaultFrameIntervalMs() As Int32
-
-            Dim fpsInterval As Int32 = CInt(Math.Round(1000D / Math.Max(Me._FramesPerSecond, 1D), MidpointRounding.AwayFromZero))
-            Return Me.NormalizeFrameIntervalMs(Math.Max(1, fpsInterval))
-
+            Return Me._defaultFrameIntervalMs
         End Function
+
+        Private Sub UpdateDefaultFrameIntervalMs()
+            Dim fpsInterval As Int32 = CInt(Math.Round(1000D / Math.Max(Me._FramesPerSecond, 1D), MidpointRounding.AwayFromZero))
+            Me._defaultFrameIntervalMs = Me.NormalizeFrameIntervalMs(Math.Max(1, fpsInterval))
+        End Sub
 
         Private Function GetFrameIntervalForIndex(frameIndex As Int32) As Int32
 
@@ -928,12 +936,14 @@ Namespace AniGifControl
             ' wenn Frames = 0 ist das Bild nicht animiert -> Ende
             If Me._MaxFrame = 0 Then Exit Sub
 
-            Dim currentTimestamp As Int64 = Stopwatch.GetTimestamp()
             Dim elapsedMs As Int32 = 0
-            If Me._LastFrameTickTimestamp > 0 Then
-                elapsedMs = CInt(Math.Max(0, (currentTimestamp - Me._LastFrameTickTimestamp) * 1000L \ Stopwatch.Frequency))
+            If Me._AdaptiveTiming Then
+                Dim currentTimestamp As Int64 = Stopwatch.GetTimestamp()
+                If Me._LastFrameTickTimestamp > 0 Then
+                    elapsedMs = CInt(Math.Max(0, (currentTimestamp - Me._LastFrameTickTimestamp) * 1000L \ Stopwatch.Frequency))
+                End If
+                Me._LastFrameTickTimestamp = currentTimestamp
             End If
-            Me._LastFrameTickTimestamp = currentTimestamp
 
             ' Nur bei echtem Framewechsel umschalten/zeichnen
             Dim nextFrame As Int32 = Me._Frame + 1
@@ -1019,6 +1029,7 @@ Namespace AniGifControl
                 Me._MaximumFrameIntervalMs = Me._MinimumFrameIntervalMs
             End If
 
+            Me.UpdateDefaultFrameIntervalMs()
             Me.RefreshFrameDelayCache()
             Me.UpdateTimerState(previousIntervalMs)
 
@@ -1035,6 +1046,7 @@ Namespace AniGifControl
                 Me._MinimumFrameIntervalMs = Me._MaximumFrameIntervalMs
             End If
 
+            Me.UpdateDefaultFrameIntervalMs()
             Me.RefreshFrameDelayCache()
             Me.UpdateTimerState(previousIntervalMs)
 
@@ -1044,7 +1056,7 @@ Namespace AniGifControl
 
             If Me._AdaptiveTiming = value Then Return
             Me._AdaptiveTiming = value
-            Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
+            Me._LastFrameTickTimestamp = If(value, Stopwatch.GetTimestamp(), 0L)
 
         End Sub
 
@@ -1084,13 +1096,13 @@ Namespace AniGifControl
                 ' Das Sollintervall kann vom adaptiv korrigierten Timerintervall abweichen.
                 If previousIntervalMs.HasValue AndAlso previousIntervalMs.Value <> targetIntervalMs AndAlso Me.Timer.Interval <> targetIntervalMs Then
                     Me.Timer.Interval = targetIntervalMs
-                    Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
+                    If Me._AdaptiveTiming Then Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
                 End If
                 Return
             End If
 
             Me.Timer.Interval = targetIntervalMs
-            Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
+            If Me._AdaptiveTiming Then Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
             Me.Timer.Start()
             Me._IsAnimating = True
             If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()

@@ -673,22 +673,34 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                         Assert.AreEqual(100, timer.Interval)
                         timer.ResetCounts()
 
-                        SetLastFrameTimestamp(control, 1L)
+                        If adaptive Then SetLastFrameTimestamp(control, 1L)
                         control.FramesPerSecond = 20D
                         Assert.AreEqual(50, timer.Interval)
-                        Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                        If adaptive Then
+                            Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                        Else
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                        End If
 
-                        SetLastFrameTimestamp(control, 1L)
+                        If adaptive Then SetLastFrameTimestamp(control, 1L)
                         control.MinimumFrameIntervalMs = 70
                         Assert.AreEqual(70, timer.Interval)
-                        Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                        If adaptive Then
+                            Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                        Else
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                        End If
 
-                        SetLastFrameTimestamp(control, 1L)
+                        If adaptive Then SetLastFrameTimestamp(control, 1L)
                         control.MaximumFrameIntervalMs = 60
                         Assert.AreEqual(60, control.MinimumFrameIntervalMs)
                         Assert.AreEqual(60, control.MaximumFrameIntervalMs)
                         Assert.AreEqual(60, timer.Interval)
-                        Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                        If adaptive Then
+                            Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                        Else
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                        End If
                         Assert.AreEqual(0, GetCurrentFrame(control))
                         Assert.IsTrue(timer.Enabled)
                         Assert.AreEqual(0, timer.StartCalls)
@@ -718,25 +730,35 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                         Assert.AreEqual(100, timer.Interval)
                         timer.ResetCounts()
 
-                        SetLastFrameTimestamp(control, 1L)
+                        If adaptive Then SetLastFrameTimestamp(control, 1L)
                         control.MinimumFrameIntervalMs = 130
                         Assert.AreEqual(130, timer.Interval)
-                        Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                        If adaptive Then
+                            Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                        Else
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                        End If
                         control.MaximumFrameIntervalMs = 300
-                        If adaptive Then timer.Interval = 160
-                        SetLastFrameTimestamp(control, 123L)
+                        If adaptive Then
+                            timer.Interval = 160
+                            SetLastFrameTimestamp(control, 123L)
+                        End If
 
                         control.FramesPerSecond = 15D
                         Assert.AreEqual(If(adaptive, 160, 130), timer.Interval)
                         Assert.AreEqual(130, GetFrameDelays(control)(0))
-                        Assert.AreEqual(123L, GetLastFrameTimestamp(control))
+                        Assert.AreEqual(If(adaptive, 123L, 0L), GetLastFrameTimestamp(control))
 
-                        SetLastFrameTimestamp(control, 1L)
+                        If adaptive Then SetLastFrameTimestamp(control, 1L)
                         control.MaximumFrameIntervalMs = 60
                         Assert.AreEqual(60, control.MinimumFrameIntervalMs)
                         Assert.AreEqual(60, control.MaximumFrameIntervalMs)
                         Assert.AreEqual(60, timer.Interval)
-                        Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                        If adaptive Then
+                            Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                        Else
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                        End If
                         Assert.AreEqual(0, GetCurrentFrame(control))
                         Assert.IsTrue(timer.Enabled)
                         Assert.AreEqual(0, timer.StartCalls)
@@ -774,6 +796,115 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     Assert.AreEqual(0, timer.StartCalls)
                     Assert.AreEqual(0, timer.StopCalls)
                     CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
+        Public Sub AdaptiveTiming_TimestampsFollowPlaybackAndDiagnosticsState()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                For Each diagnostics As Boolean In New Boolean() {False, True}
+                    Using timer As New TrackingTimer()
+                        Using control As New AniGif()
+                            InstallTrackingTimer(control, timer)
+                            Dim handle As IntPtr = control.Handle
+                            control.DiagnosticsEnabled = diagnostics
+                            control.CustomDisplaySpeed = customSpeed
+                            control.FramesPerSecond = 10D
+                            Dim events As New List(Of String)()
+                            AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                            AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+
+                            control.StartAnimation()
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                            InvokeTimerTick(control)
+                            Assert.AreEqual(1, GetCurrentFrame(control))
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                            control.SeekFrame(2)
+                            control.MinimumFrameIntervalMs = 30
+                            control.MaximumFrameIntervalMs = 400
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                            control.PauseAnimation()
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                            control.ResumeAnimation()
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+
+                            control.AdaptiveTiming = True
+                            Assert.IsGreaterThan(0L, GetLastFrameTimestamp(control))
+                            SetLastFrameTimestamp(control, 1L)
+                            control.SeekFrame(3)
+                            Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                            SetLastFrameTimestamp(control, 1L)
+                            control.MinimumFrameIntervalMs = 130
+                            Assert.AreEqual(130, timer.Interval)
+                            Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+                            control.PauseAnimation()
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                            control.ResumeAnimation()
+                            Assert.IsGreaterThan(0L, GetLastFrameTimestamp(control))
+
+                            control.MinimumFrameIntervalMs = 20
+                            Assert.AreEqual(100, timer.Interval)
+                            SetLastFrameTimestamp(control, Math.Max(1L, Stopwatch.GetTimestamp() - Stopwatch.Frequency))
+                            InvokeTimerTick(control)
+                            Assert.AreEqual(20, timer.Interval)
+                            Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
+
+                            timer.Interval = 37
+                            control.AdaptiveTiming = False
+                            Assert.AreEqual(37, timer.Interval)
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                            InvokeTimerTick(control)
+                            Assert.AreEqual(100, timer.Interval)
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                            control.StopAnimation()
+                            Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                            CollectionAssert.AreEqual(New String() {"started", "stopped", "started", "stopped", "started", "stopped"}, events.ToArray())
+                        End Using
+                    End Using
+                Next
+            Next
+        End Sub
+
+        <TestMethod>
+        Public Sub AdaptiveTiming_VisibilityAndPausedTransitionsRestoreTheCorrectClockState()
+            Using parent As New Panel()
+                Using control As New AniGif()
+                    parent.Controls.Add(control)
+                    control.CustomDisplaySpeed = True
+                    control.AdaptiveTiming = True
+                    control.StartAnimation()
+                    Assert.IsGreaterThan(0L, GetLastFrameTimestamp(control))
+
+                    control.Visible = False
+                    Assert.IsFalse(GetTimer(control).Enabled)
+                    Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                    control.SeekFrame(1)
+                    Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                    control.Visible = True
+                    Assert.IsTrue(GetTimer(control).Enabled)
+                    Assert.IsGreaterThan(0L, GetLastFrameTimestamp(control))
+
+                    control.PauseAnimation()
+                    Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                    control.AdaptiveTiming = False
+                    control.Visible = False
+                    control.ResumeAnimation()
+                    Assert.IsFalse(GetTimer(control).Enabled)
+                    Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                    control.Visible = True
+                    Assert.IsTrue(GetTimer(control).Enabled)
+                    Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                    InvokeTimerTick(control)
+                    Assert.AreEqual(0L, GetLastFrameTimestamp(control))
+                    control.PauseAnimation()
+                    control.AdaptiveTiming = True
+                    Assert.IsGreaterThan(0L, GetLastFrameTimestamp(control))
+                    SetLastFrameTimestamp(control, 1L)
+                    control.ResumeAnimation()
+                    Assert.IsTrue(GetTimer(control).Enabled)
+                    Assert.IsGreaterThan(1L, GetLastFrameTimestamp(control))
                 End Using
             End Using
         End Sub
@@ -830,6 +961,184 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     Assert.AreEqual(0, timer.StopCalls)
                     Assert.IsTrue(timer.Enabled)
                 End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
+        Public Sub TimingChanges_FpsFallbackUsesRoundingAndCoupledBounds()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                Using timer As New TrackingTimer()
+                    Using control As New AniGif()
+                        InstallTrackingTimer(control, timer)
+                        control.Gif.RemovePropertyItem(&H5100)
+                        control.CustomDisplaySpeed = customSpeed
+                        control.FramesPerSecond = 16D
+                        Dim events As New List(Of String)()
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                        control.StartAnimation()
+                        Assert.AreEqual(63, timer.Interval)
+                        Assert.AreEqual(63, GetFrameDelays(control)(0))
+                        timer.ResetCounts()
+
+                        Dim fpsValues As Decimal() = New Decimal() {30D, 30.1D, 1D, 50D, 0D, 80D}
+                        Dim expectedFps As Decimal() = New Decimal() {30D, 30.1D, 1D, 50D, 1D, 50D}
+                        Dim expectedIntervals As Integer() = New Integer() {33, 33, 500, 20, 500, 20}
+                        For i As Integer = 0 To fpsValues.Length - 1
+                            control.FramesPerSecond = fpsValues(i)
+                            Assert.AreEqual(expectedFps(i), control.FramesPerSecond)
+                            Assert.AreEqual(expectedIntervals(i), timer.Interval)
+                            Assert.AreEqual(expectedIntervals(i), GetFrameDelays(control)(0))
+                        Next
+
+                        control.MinimumFrameIntervalMs = 70
+                        Assert.AreEqual(70, timer.Interval)
+                        Assert.AreEqual(70, GetFrameDelays(control)(0))
+                        control.MaximumFrameIntervalMs = 60
+                        Assert.AreEqual(60, control.MinimumFrameIntervalMs)
+                        Assert.AreEqual(60, control.MaximumFrameIntervalMs)
+                        Assert.AreEqual(60, timer.Interval)
+                        Assert.AreEqual(60, GetFrameDelays(control)(0))
+                        control.MaximumFrameIntervalMs = 500
+                        Assert.AreEqual(60, timer.Interval)
+                        control.MinimumFrameIntervalMs = 20
+                        Assert.AreEqual(20, timer.Interval)
+                        Assert.AreEqual(20, GetFrameDelays(control)(0))
+                        Assert.AreEqual(0, timer.StartCalls)
+                        Assert.AreEqual(0, timer.StopCalls)
+                        CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+                    End Using
+                End Using
+            Next
+        End Sub
+
+        <TestMethod>
+        Public Sub TimingChanges_FailedMetadataRefreshKeepsFpsAndBoundsEffective()
+            Using timer As New TrackingTimer()
+                Using control As New AniGif()
+                    InstallTrackingTimer(control, timer)
+                    control.CustomDisplaySpeed = True
+                    control.FramesPerSecond = 10D
+                    Dim events As New List(Of String)()
+                    AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                    AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                    control.StartAnimation()
+                    Assert.AreEqual(100, timer.Interval)
+
+                    Dim image As Bitmap = control.Gif
+                    Dim delayProperty As PropertyItem = image.GetPropertyItem(&H5100)
+                    Buffer.BlockCopy(BitConverter.GetBytes(Integer.MaxValue), 0, delayProperty.Value, 4, 4)
+                    image.SetPropertyItem(delayProperty)
+                    Assert.ThrowsExactly(Of OverflowException)(Sub() control.FramesPerSecond = 20D)
+                    Assert.AreEqual(20D, control.FramesPerSecond)
+                    Assert.AreEqual(100, timer.Interval)
+                    control.SeekFrame(1)
+                    Assert.AreEqual(50, timer.Interval)
+
+                    ' GDI+ kann Metadaten bei der Frameauswahl zurücksetzen.
+                    image.SetPropertyItem(delayProperty)
+                    Assert.ThrowsExactly(Of OverflowException)(Sub() control.MinimumFrameIntervalMs = 70)
+                    Assert.AreEqual(70, control.MinimumFrameIntervalMs)
+                    Assert.AreEqual(50, timer.Interval)
+                    control.SeekFrame(2)
+                    Assert.AreEqual(70, timer.Interval)
+
+                    image.SetPropertyItem(delayProperty)
+                    Assert.ThrowsExactly(Of OverflowException)(Sub() control.MaximumFrameIntervalMs = 60)
+                    Assert.AreEqual(60, control.MinimumFrameIntervalMs)
+                    Assert.AreEqual(60, control.MaximumFrameIntervalMs)
+                    Assert.AreEqual(70, timer.Interval)
+                    control.SeekFrame(3)
+                    Assert.AreEqual(60, timer.Interval)
+                    CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub TimingChanges_FailedMetadataRefreshUsesUpdatedFpsAfterModeChanges()
+            Using timer As New TrackingTimer()
+                Using control As New AniGif()
+                    InstallTrackingTimer(control, timer)
+                    control.FramesPerSecond = 10D
+                    control.StartAnimation()
+                    Assert.AreEqual(100, timer.Interval)
+                    timer.ResetCounts()
+
+                    Dim image As Bitmap = control.Gif
+                    Dim delayProperty As PropertyItem = image.GetPropertyItem(&H5100)
+                    Buffer.BlockCopy(BitConverter.GetBytes(Integer.MaxValue), 0, delayProperty.Value, 4, 4)
+                    image.SetPropertyItem(delayProperty)
+                    Assert.ThrowsExactly(Of OverflowException)(Sub() control.FramesPerSecond = 20D)
+                    Assert.AreEqual(100, timer.Interval)
+                    control.CustomDisplaySpeed = True
+                    Assert.AreEqual(50, timer.Interval)
+
+                    Assert.ThrowsExactly(Of OverflowException)(Sub() control.MinimumFrameIntervalMs = 70)
+                    Assert.AreEqual(50, timer.Interval)
+                    control.CustomDisplaySpeed = False
+                    Assert.AreEqual(100, timer.Interval)
+                    control.CustomDisplaySpeed = True
+                    Assert.AreEqual(70, timer.Interval)
+
+                    Assert.ThrowsExactly(Of OverflowException)(Sub() control.MaximumFrameIntervalMs = 60)
+                    Assert.AreEqual(70, timer.Interval)
+                    control.CustomDisplaySpeed = False
+                    Assert.AreEqual(100, timer.Interval)
+                    control.CustomDisplaySpeed = True
+                    Assert.AreEqual(60, timer.Interval)
+                    Assert.AreEqual(0, timer.StartCalls)
+                    Assert.AreEqual(0, timer.StopCalls)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
+        Public Sub AdaptiveTiming_TogglePreservesTheScheduledIntervalUntilTheNextTick()
+            For Each customSpeed As Boolean In New Boolean() {False, True}
+                Using timer As New TrackingTimer()
+                    Using control As New AniGif()
+                        InstallTrackingTimer(control, timer)
+                        control.CustomDisplaySpeed = customSpeed
+                        control.FramesPerSecond = 10D
+                        control.AdaptiveTiming = True
+                        Dim events As New List(Of String)()
+                        AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
+                        AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                        control.StartAnimation()
+                        timer.Interval = 80
+                        timer.ResetCounts()
+
+                        control.AdaptiveTiming = False
+                        Assert.AreEqual(80, timer.Interval)
+                        InvokeTimerTick(control)
+                        Assert.AreEqual(100, timer.Interval)
+                        control.AdaptiveTiming = True
+                        Assert.AreEqual(100, timer.Interval)
+                        Assert.IsGreaterThan(0L, GetLastFrameTimestamp(control))
+                        Assert.AreEqual(0, timer.StartCalls)
+                        Assert.AreEqual(0, timer.StopCalls)
+                        CollectionAssert.AreEqual(New String() {"started"}, events.ToArray())
+                    End Using
+                End Using
+            Next
+        End Sub
+
+        <TestMethod>
+        Public Sub AdaptiveTiming_DriftCorrectionUsesExistingBounds()
+            Using control As New AniGif()
+                control.AdaptiveTiming = True
+                Assert.AreEqual(70, InvokeAdaptiveTiming(control, 100, 130, 100))
+                Assert.AreEqual(160, InvokeAdaptiveTiming(control, 100, 40, 100))
+                Assert.AreEqual(20, InvokeAdaptiveTiming(control, 100, 500, 100))
+                Assert.AreEqual(500, InvokeAdaptiveTiming(control, 100, 1, 500))
+                Assert.AreEqual(100, InvokeAdaptiveTiming(control, 100, 0, 100))
+                Assert.AreEqual(91, InvokeAdaptiveTiming(control, 100, 10, 0))
+                control.AdaptiveTiming = False
+                Assert.AreEqual(100, InvokeAdaptiveTiming(control, 100, 130, 100))
+                Assert.AreEqual(500, InvokeAdaptiveTiming(control, 700, 130, 100))
             End Using
         End Sub
 
@@ -2918,17 +3227,23 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             timestampField.SetValue(control, value)
         End Sub
 
+        Private Shared Function InvokeAdaptiveTiming(control As AniGif, target As Integer, elapsed As Integer, scheduled As Integer) As Integer
+            Dim method As MethodInfo = GetType(AniGif).GetMethod("ApplyAdaptiveTiming", BindingFlags.Instance Or BindingFlags.NonPublic)
+            Assert.IsNotNull(method)
+            Return CInt(method.Invoke(control, New Object() {target, elapsed, scheduled}))
+        End Function
+
         Private Shared Function CreateCheckerboard(size As Integer) As Bitmap
             Dim image As New Bitmap(size, size)
             For y As Integer = 0 To size - 1
-				For x As Integer = 0 To size - 1
-					image.SetPixel(x, y, If((x + y) Mod 2 = 0, Color.Black, Color.White))
-				Next
-			Next
-			Return image
-		End Function
+                For x As Integer = 0 To size - 1
+                    image.SetPixel(x, y, If((x + y) Mod 2 = 0, Color.Black, Color.White))
+                Next
+            Next
+            Return image
+        End Function
 
-		Private Shared Function RenderControl(control As AniGif) As Bitmap
+        Private Shared Function RenderControl(control As AniGif) As Bitmap
 			Dim image As New Bitmap(control.Width, control.Height)
 			control.DrawToBitmap(image, New Rectangle(Point.Empty, image.Size))
 			Return image

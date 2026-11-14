@@ -1,4 +1,4 @@
-Imports System
+﻿Imports System
 Imports System.IO
 Imports System.Windows.Forms
 
@@ -274,7 +274,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
                 ini.RenameEntry("Allgemein", "AppName", "ApplicationName")
 
                 Assert.AreEqual("MeineApp", ini.GetEntryValue("Allgemein", "ApplicationName"))
-                Assert.IsFalse(Array.Exists(ini.GetEntryNames("Allgemein"), Function(name) name = "AppName"))
+                Assert.DoesNotContain("AppName", ini.GetEntryNames("Allgemein"))
             End Using
         End Sub
 
@@ -285,9 +285,9 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
 
                 ini.DeleteSection("Allgemein")
 
-                Assert.IsFalse(Array.Exists(ini.GetSectionNames(), Function(name) name = "Allgemein"))
+                Assert.DoesNotContain("Allgemein", ini.GetSectionNames())
                 Assert.IsNull(ini.GetSectionComment("Allgemein"))
-                Assert.IsFalse(Array.Exists(ini.GetFileContent(), Function(line) line = "[Allgemein]"))
+                Assert.DoesNotContain("[Allgemein]", ini.GetFileContent())
             End Using
         End Sub
 
@@ -298,8 +298,8 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
 
                 ini.DeleteEntry("Allgemein", "AppName")
 
-                Assert.IsFalse(Array.Exists(ini.GetEntryNames("Allgemein"), Function(name) name = "AppName"))
-                Assert.IsFalse(Array.Exists(ini.GetFileContent(), Function(line) line.StartsWith("AppName =", StringComparison.Ordinal)))
+                Assert.DoesNotContain("AppName", ini.GetEntryNames("Allgemein"))
+                Assert.IsEmpty(ini.GetFileContent().Where(Function(line) line.StartsWith("AppName =", StringComparison.Ordinal)))
             End Using
         End Sub
 

@@ -9,19 +9,6 @@ Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "SchlumpfSoftControlsNET.Tes
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "SchlumpfsoftControlsNETDemo", "SchlumpfsoftControlsNETDemo\SchlumpfsoftControlsNETDemo.vbproj", "{24A877F2-F545-4167-AE5B-11D54950EB23}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projektmappenelemente", "Projektmappenelemente", "{EBF1C5C9-4BFC-448E-A0F1-21E5E4BF09F3}"
-	ProjectSection(SolutionItems) = preProject
-		.gitattributes = .gitattributes
-		.gitignore = .gitignore
-		Control-Vorschlaege.md = Control-Vorschlaege.md
-		LICENSE.md = LICENSE.md
-		Links.md = Links.md
-		README.md = README.md
-		Symole für Markdown.md = Symole für Markdown.md
-		TODO Liste.md = TODO Liste.md
-		VS-Marketplace-Vorlage.md = VS-Marketplace-Vorlage.md
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

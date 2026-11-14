@@ -283,6 +283,16 @@ Namespace My.Resources
         '''<summary>
         '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
         '''</summary>
+        Friend ReadOnly Property AniGif_Diagnostics() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("AniGif_Diagnostics", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        '''</summary>
         Friend ReadOnly Property AniGif_Forward() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("AniGif_Forward", resourceCulture)

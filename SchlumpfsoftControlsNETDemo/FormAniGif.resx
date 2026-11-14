@@ -121,7 +121,7 @@
   <data name="Button_Back.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
-        wAAADsABataJCQAAABl0RVh0U29mdHdhcmUAUGFpbnQuTkVUIDUuMS4xMhMBR3QAAACXSURBVDhP1ZBB
+        vAAADrwBlbxySQAAABl0RVh0U29mdHdhcmUAUGFpbnQuTkVUIDUuMS4xMhMBR3QAAACXSURBVDhP1ZBB
         CsMgEEUV0ZqQSDc9QbfSG+UcXkOv4SFjxraKNpFJKFnkwYNR/4wouQQMDJ/yODcwNh8eIMEeTM27B8Qb
         H5zzsjEIIap1YUaBI/g+YIz9Bltm8qZSqgxsKqVMdaYKYFJKw/eZK1ZhxCYpMBf1lm201vFjq7D3vnPO
         DcaYp7V2insYLxC/DeEO/jXgTAhZABVkXKjisxI2AAAAAElFTkSuQmCC
@@ -130,7 +130,7 @@
   <data name="Button_Forward.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
-        wAAADsABataJCQAAABl0RVh0U29mdHdhcmUAUGFpbnQuTkVUIDUuMS4xMhMBR3QAAABhSURBVDhPzY7b
+        vAAADrwBlbxySQAAABl0RVh0U29mdHdhcmUAUGFpbnQuTkVUIDUuMS4xMhMBR3QAAABhSURBVDhPzY7b
         CsAgDENbenny/3+3wzFFayebwtiBIKRJEH6NXe8yeWBrpAw8GmnDM90ShWfqIaIoNIiZvVcxVfXHQSkl
         71Wi9U7ulwPt8ZSIGCJ6/xXLxcJWObNV/gqAA33bVB+OB8D5AAAAAElFTkSuQmCC
 </value>
@@ -138,7 +138,7 @@
   <data name="Button_StartAnimation.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
-        wAAADsABataJCQAAABl0RVh0U29mdHdhcmUAUGFpbnQuTkVUIDUuMS4xMhMBR3QAAACfSURBVDhPY2Bb
+        vAAADrwBlbxySQAAABl0RVh0U29mdHdhcmUAUGFpbnQuTkVUIDUuMS4xMhMBR3QAAACfSURBVDhPY2Bb
         rf0fhBnIBTADyDYI3QAYhkoTBtg0c63Rg7OhynADZI0EMAdUCyrAohAvBgJ5qFYIwKaIGBx0JEcLSHOR
         bQAMU2LATxBNlgEi683/ux1IYgeGBwvJBoQezeOGBh8EYFOEDXseTJGDakEF2BQjY+Odgag2ogNsmkA4
         4lgBJ1QJfoCusfbyBAGoFHEApjH/XCtxNqIABgYAykwgG4i+vKUAAAAASUVORK5CYII=
@@ -147,7 +147,7 @@
   <data name="Button_StopAnimation.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
-        wAAADsABataJCQAAABl0RVh0U29mdHdhcmUAUGFpbnQuTkVUIDUuMS4xMhMBR3QAAABSSURBVDhPzYux
+        vAAADrwBlbxySQAAABl0RVh0U29mdHdhcmUAUGFpbnQuTkVUIDUuMS4xMhMBR3QAAABSSURBVDhPzYux
         CcBADMS8RjbI/gs6jeAacfDVR6BOmv+w77MnsgWLmmzBoiZbsKjJFixqsgWLmmzBoiZbsKjJFixqsgWL
         mmzBoiZbsKjJdp2ZDypHQ4B0mi9tAAAAAElFTkSuQmCC
 </value>

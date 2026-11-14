@@ -1,4 +1,4 @@
-Imports System
+﻿Imports System
 Imports System.Drawing
 Imports System.Windows.Forms
 Imports Microsoft.VisualStudio.TestTools.UnitTesting
@@ -23,7 +23,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
                 Assert.IsNotNull(tv)
                 Assert.AreEqual(1, tv.Nodes.Count)
                 Assert.StartsWith("Dieser Computer", tv.Nodes(0).Text)
-                Assert.IsTrue(String.IsNullOrEmpty(control.SelectedPath))
+                Assert.IsNull(control.SelectedPath)
             End Using
         End Sub
 

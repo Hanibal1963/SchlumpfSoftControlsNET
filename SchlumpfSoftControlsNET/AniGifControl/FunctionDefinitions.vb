@@ -16,8 +16,8 @@ Namespace AniGifControl
     Friend NotInheritable Class FunctionDefinitions
 
         ''' <summary>
-        ''' Berechnet den Startpunkt (linke obere Ecke des Zeichenrechtecks) auf dem Control<br/> in Abhängigkeit vom
-        ''' gewählten <see cref="ImageSizeMode"/>.
+        ''' Berechnet den Startpunkt (linke obere Ecke des Zeichenrechtecks) innerhalb der Clientfläche<br/>
+        ''' in Abhängigkeit vom gewählten <see cref="ImageSizeMode"/>.
         ''' </summary>
         ''' <param name="Mode">
         ''' Der Anzeigemodus, der bestimmt wie das Bild positioniert wird.
@@ -32,51 +32,39 @@ Namespace AniGifControl
         ''' Die bereits berechnete Zielgröße des Zeichenrechtecks (relevant bei Zoom und Fill).
         ''' </param>
         ''' <returns>
-        ''' Der Punkt, an dem das Zeichnen beginnt (linke obere Ecke).
+        ''' Der Punkt, an dem das Zeichnen beginnt (linke obere Ecke); bei fehlendem Bild oder leerer Clientfläche
+        ''' <see cref="Point.Empty"/>.
         ''' </returns>
+        ''' <exception cref="ArgumentNullException">Das Control ist <see langword="Nothing"/>.</exception>
         Friend Shared Function GetRectStartPoint(Mode As ImageSizeMode, Control As AniGif, Gif As Bitmap, RectStartSize As Size) As Point
 
-            ' Bestimmt den Startpunkt (linke obere Ecke) des Zeichenrechtecks auf dem Control
+            Dim clientSize As Size = GetClientSize(Control)
+            If Gif Is Nothing Then Return Point.Empty
+
+            If clientSize.Width <= 0 OrElse clientSize.Height <= 0 Then Return Point.Empty
+
             Select Case Mode
 
                 Case ImageSizeMode.Normal
-                    ' Bild beginnt ungeskalt an der linken oberen Ecke des Controls (Koordinatenursprung)
-                    Return New Point(0, 0)
+                    Return Point.Empty
 
                 Case ImageSizeMode.CenterImage
-                    ' Bild wird in Originalgröße mittig im Control platziert.
-                    ' Ein negativer Wert ist möglich, wenn das Bild größer als das Control ist
-                    ' (dann wird das Bild außerhalb des sichtbaren Bereichs begonnen und erscheint abgeschnitten).
-                    ' X = (Control-Breite  - Bild-Breite)  / 2
-                    ' Y = (Control-Höhe - Bild-Höhe) / 2
-                    Return New Point(CInt((Control.Width - Gif.Size.Width) / 2), CInt((Control.Height - Gif.Size.Height) / 2))
+                    Return New Point(CInt((clientSize.Width - Gif.Width) / 2D), CInt((clientSize.Height - Gif.Height) / 2D))
 
-                Case ImageSizeMode.Zoom
-                    ' Das skalierte Bild wird mittig im Control ausgerichtet.
-                    ' RectStartSize enthält die bereits berechnete Größe des skalierten Bildes.
-                    ' X = (Control-Breite  - skalierte Bild-Breite)  / 2
-                    ' Y = (Control-Höhe - skalierte Bild-Höhe) / 2
-                    Return New Point(CInt((Control.Width - RectStartSize.Width) / 2), CInt((Control.Height - RectStartSize.Height) / 2))
-
-                Case ImageSizeMode.Fill
-                    ' Das auf Control-Größe gestrekte Bild wird mittig ausgerichtet.
-                    ' Da beim Fill-Modus das Bild mindestens eine Dimension vollständig füllt,
-                    ' kann ein Wert 0 oder negativ sein (kein sichtbarer Versatz bzw. Überlappung).
-                    ' X = (Control-Breite  - gestreckte Bild-Breite)  / 2
-                    ' Y = (Control-Höhe - gestreckte Bild-Höhe) / 2
-                    Return New Point(CInt((Control.Width - RectStartSize.Width) / 2), CInt((Control.Height - RectStartSize.Height) / 2))
+                Case ImageSizeMode.Zoom, ImageSizeMode.Fill
+                    ' Bei Fill können negative Koordinaten durch den mittigen Beschnitt entstehen.
+                    Return New Point(CInt((clientSize.Width - RectStartSize.Width) / 2D), CInt((clientSize.Height - RectStartSize.Height) / 2D))
 
                 Case Else
-                    ' Fallback: Zeichnen ab der linken oberen Ecke
-                    Return New Point(0, 0)
+                    Return Point.Empty
 
             End Select
 
         End Function
 
         ''' <summary>
-        ''' Berechnet die Zielgröße des Zeichenrechtecks in Abhängigkeit vom gewählten <see cref="ImageSizeMode"/>
-        ''' .<br/> Das Ergebnis wird als Parameter an <see cref="GetRectStartPoint"/> weitergegeben.
+        ''' Berechnet die Zielgröße des Zeichenrechtecks anhand der Clientfläche und des gewählten
+        ''' <see cref="ImageSizeMode"/>.<br/> Das Ergebnis wird an <see cref="GetRectStartPoint"/> weitergegeben.
         ''' </summary>
         ''' <param name="Mode">
         ''' Der Anzeigemodus, der bestimmt wie das Bild skaliert wird.
@@ -88,64 +76,58 @@ Namespace AniGifControl
         ''' Das anzuzeigende Bitmap mit der Originalgröße als Berechnungsgrundlage.
         ''' </param>
         ''' <param name="Zoom">
-        ''' Der Zoomfaktor (nur im Modus <see cref="ImageSizeMode.Zoom"/> wirksam).
+        ''' Der relative Zoomfaktor von 0 bis 1 (nur im Modus <see cref="ImageSizeMode.Zoom"/> wirksam;
+        ''' 0 ist nicht zulässig).
         ''' </param>
         ''' <returns>
-        ''' Die berechnete Größe des Zeichenrechtecks.
+        ''' Die berechnete Größe des Zeichenrechtecks oder <see cref="Size.Empty"/> bei fehlendem Bild
+        ''' oder leerer Clientfläche. Positive skalierte Größen betragen mindestens ein Pixel je Dimension.
         ''' </returns>
+        ''' <exception cref="ArgumentNullException">Das Control ist <see langword="Nothing"/>.</exception>
+        ''' <exception cref="ArgumentOutOfRangeException">Der relative Zoomfaktor liegt im Zoom-Modus nicht im gültigen Bereich.</exception>
         Friend Shared Function GetRectStartSize(Mode As ImageSizeMode, Control As AniGif, Gif As Bitmap, Zoom As Decimal) As Size
 
-            ' Null-Schutz: Wenn kein Bild vorhanden ist, leere Größe zurückgeben
+            Dim clientSize As Size = GetClientSize(Control)
+            If Mode = ImageSizeMode.Zoom AndAlso (Zoom <= 0D OrElse Zoom > 1D) Then Throw New ArgumentOutOfRangeException(NameOf(Zoom))
             If Gif Is Nothing Then Return Size.Empty
+
+            If clientSize.Width <= 0 OrElse clientSize.Height <= 0 Then Return Size.Empty
+            Dim imageSize As Size = Gif.Size
 
             Select Case Mode
 
-                Case ImageSizeMode.Normal
-                    ' Bild wird ungeskalt in Originalgröße dargestellt
-                    Return New Size(Gif.Size.Width, Gif.Size.Height)
+                Case ImageSizeMode.Normal, ImageSizeMode.CenterImage
+                    Return imageSize
 
-                Case ImageSizeMode.CenterImage
-                    ' Bild wird ebenfalls in Originalgröße dargestellt, nur die Position ist zentriert
-                    Return New Size(Gif.Size.Width, Gif.Size.Height)
+                Case ImageSizeMode.Zoom, ImageSizeMode.Fill
+                    Dim widthRatio As Long = CLng(clientSize.Width) * imageSize.Height
+                    Dim heightRatio As Long = CLng(clientSize.Height) * imageSize.Width
+                    Dim useWidth As Boolean = If(Mode = ImageSizeMode.Zoom, widthRatio <= heightRatio, widthRatio >= heightRatio)
+                    Dim clientBasis As Integer = If(useWidth, clientSize.Width, clientSize.Height)
+                    Dim imageBasis As Integer = If(useWidth, imageSize.Width, imageSize.Height)
+                    Dim zoomScale As Decimal = If(Mode = ImageSizeMode.Zoom, Zoom, 1D)
 
-                Case ImageSizeMode.Zoom
-                    ' Bild wird unter Beibehaltung des Seitenverhältnisses mit dem Zoomfaktor skaliert.
-                    ' Je nach Ausrichtung (Hochformat/Querformat) wird eine andere Control-Dimension als Basis verwendet.
-                    If Gif.Size.Width < Gif.Size.Height Then
-                        ' Hochformat: Bild ist höher als breit → Höhe des Controls als Skalierungsbasis.
-                        ' Breite  = Control-Höhe / Seitenverhältnis (Höhe/Breite) * Zoom
-                        '         = Control-Höhe * (Bild-Breite / Bild-Höhe) * Zoom
-                        ' Höhe = Control-Höhe * Zoom
-                        Return New Size(CInt(Control.Height / CDec(Gif.Size.Height / Gif.Size.Width) * Zoom), CInt(Control.Height * Zoom))
-                    Else
-                        ' Querformat: Bild ist breiter als hoch (oder quadratisch) → Breite des Controls als Skalierungsbasis.
-                        ' Breite = Control-Breite * Zoom
-                        ' Höhe  = Control-Breite * Seitenverhältnis (Höhe/Breite) * Zoom
-                        Return New Size(CInt(Control.Width * Zoom), CInt(Control.Width * CDec(Gif.Size.Height / Gif.Size.Width) * Zoom))
-                    End If
-
-                Case ImageSizeMode.Fill
-                    ' Bild wird so skaliert, dass es das Control in einer Dimension vollständig ausfüllt.
-                    ' Das Seitenverhältnis bleibt erhalten; die andere Dimension kann das Control überschreiten.
-                    If Gif.Size.Width < Gif.Size.Height Then
-                        ' Hochformat: Höhe des Controls als Basis, Breite wird proportional berechnet.
-                        ' Breite = Control-Höhe / Seitenverhältnis (Höhe/Breite)
-                        '        = Control-Höhe * (Bild-Breite / Bild-Höhe)
-                        ' Höhe  = Control-Höhe (füllt das Control vollständig in der Höhe)
-                        Return New Size(CInt(Control.Height / CDec(Gif.Size.Height / Gif.Size.Width)), Control.Height)
-                    Else
-                        ' Querformat: Breite des Controls als Basis, Höhe wird proportional berechnet.
-                        ' Breite = Control-Breite (füllt das Control vollständig in der Breite)
-                        ' Höhe  = Control-Breite * Seitenverhältnis (Höhe/Breite)
-                        Return New Size(Control.Width, CInt(Control.Width * CDec(Gif.Size.Height / Gif.Size.Width)))
-                    End If
+                    ' Erst multiplizieren, damit ein periodischer Faktor Halbwerte nicht vorzeitig abrundet.
+                    Dim scaledWidth As Decimal = CDec(imageSize.Width) * clientBasis * zoomScale / imageBasis
+                    Dim scaledHeight As Decimal = CDec(imageSize.Height) * clientBasis * zoomScale / imageBasis
+                    Dim width As Integer = Math.Max(1, CInt(Math.Round(scaledWidth, MidpointRounding.AwayFromZero)))
+                    Dim height As Integer = Math.Max(1, CInt(Math.Round(scaledHeight, MidpointRounding.AwayFromZero)))
+                    Return New Size(width, height)
 
                 Case Else
-                    ' Fallback: Originalgröße zurückgeben
-                    Return New Size(Gif.Size.Width, Gif.Size.Height)
+                    Return imageSize
 
             End Select
 
+        End Function
+
+        Private Shared Function GetClientSize(Control As AniGif) As Size
+#If NET6_0_OR_GREATER Then
+            ArgumentNullException.ThrowIfNull(Control, NameOf(Control))
+#Else
+            If Control Is Nothing Then Throw New ArgumentNullException(NameOf(Control))
+#End If
+            Return Control.ClientSize
         End Function
 
         ''' <summary>

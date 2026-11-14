@@ -1,12 +1,14 @@
-# Copilot Instructions
+﻿# Copilot Instructions
 
 ## Regeln für Code-Änderungen durch den Agent
 
+- Die erste Zeile jeder Commitnachricht enthält eine einzeilige Zusammenfassung mit höchstens 50 Zeichen. Die zweite Zeile ist eine Leerzeile. Ab der dritten Zeile folgt eine vollständige Zusammenfassung der Änderungen.
 - Bevorzuge kleine, rückverfolgbare Commits.
 - Erhalte und erweitere vorhandene XML-Kommentare.
 - Füge Inline-Kommentare zum besseren Verständnis der Funktionsweise des Codes hinzu.
 - Verwende Tabs und die standardmäßigen Datei-Header-Optionen.
 - Keine neuen NuGet-Abhängigkeiten ohne Rücksprache.
+- Vermeide MSTEST0037: Verwende `Assert.IsTrue` und `Assert.IsFalse` nur für echte boolesche Bedingungen. Nutze für Vergleiche `Assert.IsGreaterThan`, `Assert.IsLessThan` oder `Assert.IsInRange`, für Null-/String-Prüfungen die spezifischen `Assert`-Methoden und für Sammlungen `Assert.Contains`, `Assert.DoesNotContain`, `Assert.IsEmpty` oder `Assert.IsNotEmpty`, sofern sie die gleiche Bedingung ausdrücken.
 - Arbeite bei größeren Änderungen schrittweise und gib nach jedem Schritt explizit frei, bevor der nächste Schritt ausgeführt wird. **Im Guided-Modus vor jedem größeren Schritt Rückfrage/Freigabe einholen.**
 - Führe zusätzliche Detailprüfungen nur auf Nachfrage und fundweise mit vorheriger Rückfrage/Freigabe durch.
 - Bei Entscheidungen im laufenden Szenario, wie der Installation eines Konvertierungstools, Task 01 erneut starten statt manueller Ausnahme.

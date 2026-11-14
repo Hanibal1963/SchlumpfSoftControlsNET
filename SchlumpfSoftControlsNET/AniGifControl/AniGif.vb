@@ -26,16 +26,13 @@ Namespace AniGifControl
 
 #Region "Variablen"
 
-        ' Gemeinsamer Handler für ImageAnimator zum Stoppen/Neu-Registrieren
-        Private ReadOnly _AnimationHandler As EventHandler = AddressOf Me.OnNextFrame
-
         Private _FramesPerSecond As Decimal ' Benutzerdefinierte Wiedergabegeschwindigkeit (nur aktiv bei CustomDisplaySpeed = True)
         Private _Dimension As FrameDimension ' GIF-Frame-Dimension (bei GIFs i. d. R. Time)
         Private _Frame As Int32 ' Aktueller Frame-Index für die Timer-basierte Wiedergabe
         Private _MaxFrame As Int32 ' Letzter gültiger Frame-Index des geladenen GIFs
         Private _Autoplay As Boolean ' Steuert, ob die Animation automatisch starten soll
         Private _ZoomFactor As Decimal ' Zoomfaktor in Prozent für den Zoom-Modus
-        Private _CustomDisplaySpeed As Boolean ' True = Timer/FPS verwenden, False = GIF-Metadaten-Verzögerung verwenden
+        Private _CustomDisplaySpeed As Boolean ' True = FPS-Intervall, False = GIF-Metadaten-Verzögerung verwenden
         Private _GifSizeMode As ImageSizeMode ' Art der Darstellung (Normal, Stretch, Zoom, ...)
         Private _scalingQualityPreset As GifScalingQualityPreset
         Private _Gif As Bitmap ' Aktuell angezeigtes Bild (intern immer als Bitmap gehalten)
@@ -49,7 +46,6 @@ Namespace AniGifControl
         Private _LastFrameTickTimestamp As Int64 ' Zeitstempel des letzten Timer-Ticks
         Private _AdaptiveTiming As Boolean ' Aktiviert Drift-Korrektur auf Basis der UI-Thread-Last
 
-        Private Const DefaultFrameDelayMs As Int32 = 100
         Private Const FrameDelayPropertyTag As Int32 = &H5100
 
 #End Region
@@ -75,6 +71,7 @@ Namespace AniGifControl
         ''' <summary>
         ''' Wird ausgelöst, wenn die Animation gestartet oder nach einer Unterbrechung fortgesetzt wurde.
         ''' </summary>
+        ''' <remarks>Änderungen der Geschwindigkeit oder Intervallgrenzen lösen das Ereignis nicht aus, solange die Wiedergabe weiterläuft.</remarks>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Wird ausgelöst wenn die Animation gestartet oder nach einer Unterbrechung fortgesetzt wurde.")>
@@ -83,6 +80,7 @@ Namespace AniGifControl
         ''' <summary>
         ''' Wird ausgelöst, wenn die laufende Animation angehalten oder gestoppt wurde.
         ''' </summary>
+        ''' <remarks>Änderungen der Geschwindigkeit oder Intervallgrenzen lösen das Ereignis nicht aus, solange die Wiedergabe weiterläuft.</remarks>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Wird ausgelöst wenn die laufende Animation angehalten oder gestoppt wurde.")>
@@ -93,8 +91,8 @@ Namespace AniGifControl
 #Region "Interne Ereignisse"
 
         Private Event GifChanged()
-        Private Event CustomDisplaySpeedChanged()
-        Private Event FramesPerSecondChanged()
+        Private Event CustomDisplaySpeedChanged(previousIntervalMs As Int32)
+        Private Event FramesPerSecondChanged(previousIntervalMs As Int32)
 
 #End Region
 
@@ -126,6 +124,14 @@ Namespace AniGifControl
         ''' <summary>
         ''' Gibt die animierte GIF‑Grafik zurück oder legt diese fest.
         ''' </summary>
+        ''' <remarks>
+        ''' Bei der Zuweisung erstellt das Control eine eigene Bitmap-Kopie und gibt vom Aufrufer verwaltete Bilder nicht frei.
+        ''' Der Getter liefert die interne Bitmap, die beim Bildwechsel oder bei der Ressourcenfreigabe freigegeben wird.
+        ''' Nothing stellt eine Kopie des Standardbilds wieder her. Nach der Ressourcenfreigabe gibt der Getter Nothing zurück.
+        ''' </remarks>
+        ''' <exception cref="ObjectDisposedException">
+        ''' Die Eigenschaft wird nach Beginn der Ressourcenfreigabe festgelegt.
+        ''' </exception>
         <Browsable(True)>
         <Category("Appearance")>
         <Description("Gibt die animierte Gif-Grafik zurück oder legt diese fest.")>
@@ -142,6 +148,11 @@ Namespace AniGifControl
         ''' <summary>
         ''' Gibt den Anzeigemodus (Skalierung/Ausrichtung) der GIF‑Grafik zurück oder legt ihn fest.
         ''' </summary>
+        ''' <remarks>
+        ''' Zoom passt die Grafik anhand von <see cref="ZoomFactor"/> in die Clientfläche ein.
+        ''' Fill füllt die Clientfläche und kann die Grafik an den Rändern beschneiden.
+        ''' Beide Modi erhalten das Seitenverhältnis bis auf die Rundung auf ganze Pixel.
+        ''' </remarks>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Gibt die Art wie die Grafik angezeigt wird zurück oder legt diese fest.")>
@@ -175,8 +186,8 @@ Namespace AniGifControl
         End Property
 
         ''' <summary>
-        ''' Legt fest, ob die benutzerdefinierte Anzeigegeschwindigkeit (Timer/FPS) oder die im GIF hinterlegte
-        ''' Bildfolge mit normalisierten Frame-Verzögerungen verwendet wird.
+        ''' Legt fest, ob die timerbasierte Wiedergabe die benutzerdefinierte Anzeigegeschwindigkeit (FPS)
+        ''' oder die im GIF hinterlegten normalisierten Frame-Verzögerungen verwendet.
         ''' </summary>
         <Browsable(True)>
         <Category("Behavior")>
@@ -194,6 +205,10 @@ Namespace AniGifControl
         ''' <summary>
         ''' Legt die benutzerdefinierte Anzeigegeschwindigkeit in Bildern pro Sekunde (FPS) fest.
         ''' </summary>
+        ''' <remarks>
+        ''' Werte außerhalb von 1 bis 50 werden begrenzt; gleichwertige Zuweisungen bleiben ohne Wirkung.
+        ''' Die Bildrate dient auch als Fallback für fehlende oder ungültige GIF-Frame-Verzögerungen.
+        ''' </remarks>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Legt die benutzerdefinierte Anzeigegeschwindigkeit in Bildern/Sekunde fest wenn CustomDisplaySpeed auf True festgelegt ist.")>
@@ -203,8 +218,12 @@ Namespace AniGifControl
                 Return Me._FramesPerSecond
             End Get
             Set(value As Decimal)
-                Me._FramesPerSecond = FunctionDefinitions.CheckFramesPerSecondValue(value)
-                RaiseEvent FramesPerSecondChanged()
+                Dim validatedValue As Decimal = FunctionDefinitions.CheckFramesPerSecondValue(value)
+                If Me._FramesPerSecond = validatedValue Then Return
+
+                Dim previousIntervalMs As Int32 = Me.GetFrameIntervalForIndex(Me._Frame)
+                Me._FramesPerSecond = validatedValue
+                RaiseEvent FramesPerSecondChanged(previousIntervalMs)
             End Set
         End Property
 
@@ -257,7 +276,8 @@ Namespace AniGifControl
         End Property
 
         ''' <summary>
-        ''' Legt den Zoomfaktor in Prozent fest, mit dem das GIF skaliert wird.
+        ''' Legt den Zoomfaktor in Prozent für den Modus <see cref="ImageSizeMode.Zoom"/> fest.
+        ''' Werte außerhalb von 1 bis 100 werden auf diesen Bereich begrenzt; der Standardwert ist 50.
         ''' </summary>
         <Browsable(True)>
         <Category("Behavior")>
@@ -479,7 +499,7 @@ Namespace AniGifControl
 
         Public Sub New()
             Me.InitializeComponent() 'Designer-Initialisierung
-            Me.SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.OptimizedDoubleBuffer Or ControlStyles.UserPaint, True)
+            Me.SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.OptimizedDoubleBuffer Or ControlStyles.UserPaint Or ControlStyles.ResizeRedraw, True)
             Me.UpdateStyles()
             Me.InitializeDefaults()
         End Sub
@@ -498,7 +518,7 @@ Namespace AniGifControl
         End Sub
 
         ''' <summary>
-        ''' Stoppt die Animation und beendet Timer sowie ImageAnimator. Der aktuelle Frame bleibt erhalten.
+        ''' Stoppt die Animation und hält den Timer an. Der aktuelle Frame bleibt erhalten.
         ''' </summary>
         Public Sub StopAnimation()
             If Me._IsDisposed OrElse Me.IsDisposed Then Return
@@ -547,6 +567,7 @@ Namespace AniGifControl
 
             Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, index)
             Me._Frame = index
+            If Me._diagnosticsEnabled Then Me._diagnosticsCollector.CancelPendingFrame()
 
             If Me._IsAnimating AndAlso Me._playbackState = PlaybackState.Playing Then
                 ' Das neue Intervall beginnt am gewählten Frame, ohne Start-/Stoppereignisse auszulösen.
@@ -607,6 +628,10 @@ Namespace AniGifControl
         Protected Overrides Sub OnParentChanged(e As EventArgs)
             MyBase.OnParentChanged(e)
             Me.UpdateTimerState()
+            If Me._diagnosticsEnabled Then
+                Me.RefreshDiagnosticsAncestors()
+                Me.UpdateDiagnosticsActivity()
+            End If
         End Sub
 
         Protected Overrides Sub OnPaint(e As PaintEventArgs)
@@ -616,11 +641,24 @@ Namespace AniGifControl
             ' Null-Schutz
             If Me._Gif Is Nothing Then Return
 
+            Dim diagnostics As AniGifDiagnosticsCollector = Nothing
+            Dim diagnosticsVersion As Int64 = 0
+            Dim frameGeneration As Int64 = 0
+            Dim renderStartTimestamp As Int64 = 0
+            If Me._diagnosticsEnabled Then
+                Me.UpdateDiagnosticsActivity()
+                diagnostics = Me._diagnosticsCollector
+                diagnosticsVersion = diagnostics.SessionVersion
+                frameGeneration = diagnostics.PendingFrameGeneration
+                renderStartTimestamp = Stopwatch.GetTimestamp()
+            End If
+
             ' Variable für Zeichenfläche
             Dim g As Graphics = e.Graphics
 
             ' Größe der Zeichenfläche berechnen
             Dim rectstartsize As Size = FunctionDefinitions.GetRectStartSize(Me._GifSizeMode, Me, Me._Gif, Me._ZoomFactor / 100)
+            If rectstartsize.Width <= 0 OrElse rectstartsize.Height <= 0 Then Return
 
             ' Startpunkt der Zeichenfläche berechnen
             Dim rectstartpoint As Point = FunctionDefinitions.GetRectStartPoint(Me._GifSizeMode, Me, Me._Gif, rectstartsize)
@@ -639,7 +677,20 @@ Namespace AniGifControl
             End If
 
             ' Zeichenfläche festlegen und Bild zeichnen
-            g.DrawImage(Me._Gif, New Rectangle(rectstartpoint, rectstartsize))
+            Dim imageRectangle As New Rectangle(rectstartpoint, rectstartsize)
+            g.DrawImage(Me._Gif, imageRectangle)
+
+            If diagnostics IsNot Nothing AndAlso Me._diagnosticsEnabled AndAlso
+                Me._diagnosticsCollector Is diagnostics AndAlso diagnostics.SessionVersion = diagnosticsVersion Then
+                Dim renderTicks As Int64 = Stopwatch.GetTimestamp() - renderStartTimestamp
+                Dim intersectsClip As Boolean = False
+                If frameGeneration <> 0 Then
+                    Dim clippedRectangle As Rectangle = Rectangle.Intersect(imageRectangle, e.ClipRectangle)
+                    clippedRectangle = Rectangle.Intersect(clippedRectangle, Me.ClientRectangle)
+                    intersectsClip = clippedRectangle.Width > 0 AndAlso clippedRectangle.Height > 0 AndAlso g.IsVisible(clippedRectangle)
+                End If
+                diagnostics.RecordDraw(renderTicks, frameGeneration, intersectsClip)
+            End If
 
         End Sub
 
@@ -671,10 +722,10 @@ Namespace AniGifControl
             Me.UpdateTimerState()
         End Sub
 
-        Private Sub AniGif_CustomDisplaySpeedChanged() Handles Me.CustomDisplaySpeedChanged
+        Private Sub AniGif_CustomDisplaySpeedChanged(previousIntervalMs As Int32) Handles Me.CustomDisplaySpeedChanged
 
-            ' Bei Moduswechsel zwischen Timer/ImageAnimator sofort neu konfigurieren
-            Me.UpdateTimerState()
+            ' Nach einem Wechsel zwischen FPS und GIF-Verzögerungen den Timer neu konfigurieren.
+            Me.UpdateTimerState(previousIntervalMs)
 
         End Sub
 
@@ -690,8 +741,9 @@ Namespace AniGifControl
             Me._IsDisposed = True
             Me._playbackState = PlaybackState.Stopped
 
-            ' Animation vor dem Freigeben von Timer und Bitmap vollständig abmelden.
+            ' Den Timer vor dem Freigeben von Bitmap und Komponenten anhalten.
             Me.StopAnimationCore(False)
+            If Me._diagnosticsEnabled Then Me.DiagnosticsEnabled = False
 
             ' Nur intern erzeugte Bitmaps freigeben (fremde Instanzen nicht ungefragt disposen).
             If Me._OwnsGif AndAlso Me._Gif IsNot Nothing Then
@@ -702,13 +754,13 @@ Namespace AniGifControl
 
         End Sub
 
-        Private Sub AniGif_FramesPerSecondChanged() Handles Me.FramesPerSecondChanged
+        Private Sub AniGif_FramesPerSecondChanged(previousIntervalMs As Int32) Handles Me.FramesPerSecondChanged
 
             ' Sicherheitsprüfung
             If Me._FramesPerSecond < 1D Then Me._FramesPerSecond = 1D
 
             Me.RefreshFrameDelayCache()
-            Me.UpdateTimerState()
+            Me.UpdateTimerState(previousIntervalMs)
 
         End Sub
 
@@ -784,30 +836,15 @@ Namespace AniGifControl
 
         End Sub
 
-        Private Sub OnNextFrame(o As Object, e As EventArgs)
-
-            If Me._IsDisposed OrElse Me.IsDisposed OrElse Not Me.AutoPlay OrElse Me.DesignMode OrElse Me._playbackState <> PlaybackState.Playing Then Return
-            If Me._Gif Is Nothing OrElse Me._MaxFrame <= 0 Then Return
-            If Not Me.IsControlTreeVisible() Then Return
-
-            Dim nextFrame As Int32 = Me._Frame + 1
-            If nextFrame > Me._MaxFrame Then nextFrame = 0
-            If nextFrame = Me._Frame Then Return
-
-            ' Callback von ImageAnimator: Frame berechnen und danach explizit neu zeichnen.
-            Me._Frame = nextFrame
-            ImageAnimator.UpdateFrames(Me._Gif)
-            Me.InvalidateIfVisible()
-
-        End Sub
-
-        Private Sub InvalidateIfVisible()
+        Private Sub InvalidateIfVisible(Optional isTimerFrame As Boolean = False)
 
             If Me._IsDisposed OrElse Me.IsDisposed Then Return
             If Not Me.IsHandleCreated Then Return
             If Not Me.IsControlTreeVisible() Then Return
             If Me.ClientSize.Width <= 0 OrElse Me.ClientSize.Height <= 0 Then Return
 
+            ' Vor Invalidate markieren, da dessen Ereignishandler erneut in das Control eintreten können.
+            If isTimerFrame AndAlso Me._diagnosticsEnabled Then Me._diagnosticsCollector.QueueTimerFrame()
             Me.Invalidate()
 
         End Sub
@@ -829,6 +866,7 @@ Namespace AniGifControl
         Private Sub Timer_Tick(sender As Object, e As EventArgs) Handles Timer.Tick
 
             If Me._IsDisposed OrElse Me.IsDisposed OrElse Me.DesignMode OrElse Not Me.AutoPlay OrElse Me._playbackState <> PlaybackState.Playing Then Exit Sub
+            If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
             If Me._Gif Is Nothing Then Exit Sub
             If Not Me.IsControlTreeVisible() Then Exit Sub
 
@@ -855,11 +893,15 @@ Namespace AniGifControl
             Me.Timer.Interval = adjustedIntervalMs
 
             ' Nur neu zeichnen wenn das Control sichtbar ist
-            Me.InvalidateIfVisible()
+            Me.InvalidateIfVisible(True)
 
         End Sub
 
         Private Sub SetGifImage(value As Bitmap)
+
+#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
+            If Me._IsDisposed OrElse Me.IsDisposed Then Throw New ObjectDisposedException(NameOf(AniGif))
+#Enable Warning CA1513
 
             ' Auch die Standardressource gehört jeder Instanz als eigene Bitmap-Kopie.
             Dim source As Bitmap = If(value, My.Resources.AniGifControl_Standard)
@@ -903,8 +945,9 @@ Namespace AniGifControl
         Private Sub SetCustomDisplaySpeed(value As Boolean)
 
             If Me._CustomDisplaySpeed = value Then Return
+            Dim previousIntervalMs As Int32 = Me.GetFrameIntervalForIndex(Me._Frame)
             Me._CustomDisplaySpeed = value
-            RaiseEvent CustomDisplaySpeedChanged()
+            RaiseEvent CustomDisplaySpeedChanged(previousIntervalMs)
 
         End Sub
 
@@ -913,13 +956,14 @@ Namespace AniGifControl
             Dim validatedValue As Int32 = Math.Max(1, value)
             If Me._MinimumFrameIntervalMs = validatedValue Then Return
 
+            Dim previousIntervalMs As Int32 = Me.GetFrameIntervalForIndex(Me._Frame)
             Me._MinimumFrameIntervalMs = validatedValue
             If Me._MaximumFrameIntervalMs < Me._MinimumFrameIntervalMs Then
                 Me._MaximumFrameIntervalMs = Me._MinimumFrameIntervalMs
             End If
 
             Me.RefreshFrameDelayCache()
-            Me.UpdateTimerState()
+            Me.UpdateTimerState(previousIntervalMs)
 
         End Sub
 
@@ -928,13 +972,14 @@ Namespace AniGifControl
             Dim validatedValue As Int32 = Math.Max(1, value)
             If Me._MaximumFrameIntervalMs = validatedValue Then Return
 
+            Dim previousIntervalMs As Int32 = Me.GetFrameIntervalForIndex(Me._Frame)
             Me._MaximumFrameIntervalMs = validatedValue
             If Me._MaximumFrameIntervalMs < Me._MinimumFrameIntervalMs Then
                 Me._MinimumFrameIntervalMs = Me._MaximumFrameIntervalMs
             End If
 
             Me.RefreshFrameDelayCache()
-            Me.UpdateTimerState()
+            Me.UpdateTimerState(previousIntervalMs)
 
         End Sub
 
@@ -957,27 +1002,42 @@ Namespace AniGifControl
 
         End Sub
 
-        Private Sub UpdateTimerState()
+        Private Sub UpdateTimerState(Optional previousIntervalMs As Int32? = Nothing)
 
             If Me._IsDisposed OrElse Me.IsDisposed Then Return
 
-            ' Immer zuerst beide Mechanismen stoppen, danach den benötigten Modus aktivieren
-            Me.StopAnimationCore(True)
+            Dim playbackRequested As Boolean = Not Me.DesignMode AndAlso Me._Autoplay AndAlso
+                Me._playbackState = PlaybackState.Playing AndAlso Me._Gif IsNot Nothing AndAlso
+                Me.IsControlTreeVisible()
 
-            ' Ereignishandler können während des Stoppens den Zustand erneut ändern oder das Control freigeben.
-            If Me._IsDisposed OrElse Me.IsDisposed OrElse Me._IsAnimating Then Return
-            If Me.DesignMode OrElse Not Me._Autoplay OrElse Me._playbackState <> PlaybackState.Playing OrElse Me._Gif Is Nothing Then Return
-            If Not Me.IsControlTreeVisible() Then Return
-
-            If Me._MaxFrame > 0 Then
-                Me.Timer.Interval = Me.GetFrameIntervalForIndex(Me._Frame)
-                Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
-                Me.Timer.Start()
-                Me._IsAnimating = True
-                RaiseEvent AnimationStarted(Me, EventArgs.Empty)
-            Else
-                RaiseEvent NoAnimation(Me, EventArgs.Empty)
+            If Me._IsAnimating AndAlso (Not playbackRequested OrElse Me._MaxFrame <= 0) Then
+                Me.StopAnimationCore(True)
+                ' Ein Ereignishandler kann den Zustand bereits erneut geändert haben.
+                Return
             End If
+
+            If Not playbackRequested Then Return
+            If Me._MaxFrame <= 0 Then
+                RaiseEvent NoAnimation(Me, EventArgs.Empty)
+                Return
+            End If
+
+            Dim targetIntervalMs As Int32 = Me.GetFrameIntervalForIndex(Me._Frame)
+            If Me._IsAnimating Then
+                ' Das Sollintervall kann vom adaptiv korrigierten Timerintervall abweichen.
+                If previousIntervalMs.HasValue AndAlso previousIntervalMs.Value <> targetIntervalMs AndAlso Me.Timer.Interval <> targetIntervalMs Then
+                    Me.Timer.Interval = targetIntervalMs
+                    Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
+                End If
+                Return
+            End If
+
+            Me.Timer.Interval = targetIntervalMs
+            Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
+            Me.Timer.Start()
+            Me._IsAnimating = True
+            If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
+            RaiseEvent AnimationStarted(Me, EventArgs.Empty)
 
         End Sub
 
@@ -986,11 +1046,9 @@ Namespace AniGifControl
             Dim wasAnimating As Boolean = Me._IsAnimating
 
             Me.Timer.Stop()
-            If Me._Gif IsNot Nothing Then
-                ImageAnimator.StopAnimate(Me._Gif, Me._AnimationHandler)
-            End If
             Me._LastFrameTickTimestamp = 0
             Me._IsAnimating = False
+            If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
 
             If raiseAnimationStopped AndAlso wasAnimating Then
                 RaiseEvent AnimationStopped(Me, EventArgs.Empty)

@@ -1,4 +1,4 @@
-Imports System
+﻿Imports System
 Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Reflection
@@ -46,10 +46,7 @@ Namespace SchlumpfSoftControlsNET.Tests.WizardControl
                 Assert.AreEqual(DockStyle.Fill, wizard.Dock)
                 Assert.IsTrue(wizard.VisibleHelp)
                 Assert.IsNotNull(wizard.Pages)
-
-#Disable Warning MSTEST0037 ' Die Verwendung von Assert Methoden auf eine bestimmte Art und Weise, wenn es eine bessere Alternative gibt.
-                Assert.AreEqual(0, wizard.Pages.Count)
-#Enable Warning MSTEST0037 ' Die Verwendung von Assert Methoden auf eine bestimmte Art und Weise, wenn es eine bessere Alternative gibt.
+                Assert.HasCount(0, wizard.Pages)
 
                 Assert.IsNull(wizard.SelectedPage)
                 Assert.AreEqual(-1, GetSelectedIndex(wizard))
@@ -59,10 +56,10 @@ Namespace SchlumpfSoftControlsNET.Tests.WizardControl
                 Assert.IsNotNull(wizard.ButtonNext)
                 Assert.IsNotNull(wizard.ButtonCancel)
 
-                Assert.IsTrue(wizard.Controls.Contains(wizard.ButtonHelp))
-                Assert.IsTrue(wizard.Controls.Contains(wizard.ButtonBack))
-                Assert.IsTrue(wizard.Controls.Contains(wizard.ButtonNext))
-                Assert.IsTrue(wizard.Controls.Contains(wizard.ButtonCancel))
+                CollectionAssert.Contains(wizard.Controls, wizard.ButtonHelp)
+                CollectionAssert.Contains(wizard.Controls, wizard.ButtonBack)
+                CollectionAssert.Contains(wizard.Controls, wizard.ButtonNext)
+                CollectionAssert.Contains(wizard.Controls, wizard.ButtonCancel)
             End Using
         End Sub
 
@@ -70,15 +67,15 @@ Namespace SchlumpfSoftControlsNET.Tests.WizardControl
         Public Sub VisibleHelp_TogglesControlInControlsCollection()
             Using wizard As New Wizard()
                 Assert.IsTrue(wizard.VisibleHelp)
-                Assert.IsTrue(wizard.Controls.Contains(wizard.ButtonHelp))
+                CollectionAssert.Contains(wizard.Controls, wizard.ButtonHelp)
 
                 wizard.VisibleHelp = False
                 Assert.IsFalse(wizard.VisibleHelp)
-                Assert.IsFalse(wizard.Controls.Contains(wizard.ButtonHelp))
+                CollectionAssert.DoesNotContain(wizard.Controls, wizard.ButtonHelp)
 
                 wizard.VisibleHelp = True
                 Assert.IsTrue(wizard.VisibleHelp)
-                Assert.IsTrue(wizard.Controls.Contains(wizard.ButtonHelp))
+                CollectionAssert.Contains(wizard.Controls, wizard.ButtonHelp)
             End Using
         End Sub
 
@@ -108,10 +105,7 @@ Namespace SchlumpfSoftControlsNET.Tests.WizardControl
                 Dim page2 As New PageStandard()
 
                 Dim unused = wizard.Pages.Add(page1)
-
-#Disable Warning MSTEST0037 ' Die Verwendung von Assert Methoden auf eine bestimmte Art und Weise, wenn es eine bessere Alternative gibt.
-                Assert.AreEqual(1, wizard.Pages.Count)
-#Enable Warning MSTEST0037 ' Die Verwendung von Assert Methoden auf eine bestimmte Art und Weise, wenn es eine bessere Alternative gibt.
+                Assert.HasCount(1, wizard.Pages)
 
                 Assert.AreSame(page1, wizard.SelectedPage)
                 Assert.AreEqual(0, GetSelectedIndex(wizard))
@@ -119,10 +113,7 @@ Namespace SchlumpfSoftControlsNET.Tests.WizardControl
                 Assert.IsFalse(wizard.ButtonNext.Enabled)
 
                 Dim unused2 = wizard.Pages.Add(page2)
-
-#Disable Warning MSTEST0037 ' Die Verwendung von Assert Methoden auf eine bestimmte Art und Weise, wenn es eine bessere Alternative gibt.
-                Assert.AreEqual(2, wizard.Pages.Count)
-#Enable Warning MSTEST0037 ' Die Verwendung von Assert Methoden auf eine bestimmte Art und Weise, wenn es eine bessere Alternative gibt.
+                Assert.HasCount(2, wizard.Pages)
 
                 Assert.AreSame(page2, wizard.SelectedPage)
                 Assert.AreEqual(1, GetSelectedIndex(wizard))
@@ -130,18 +121,12 @@ Namespace SchlumpfSoftControlsNET.Tests.WizardControl
                 Assert.IsFalse(wizard.ButtonNext.Enabled)
 
                 wizard.Pages.Remove(page2)
-
-#Disable Warning MSTEST0037 ' Die Verwendung von Assert Methoden auf eine bestimmte Art und Weise, wenn es eine bessere Alternative gibt.
-                Assert.AreEqual(1, wizard.Pages.Count)
-#Enable Warning MSTEST0037 ' Die Verwendung von Assert Methoden auf eine bestimmte Art und Weise, wenn es eine bessere Alternative gibt.
+                Assert.HasCount(1, wizard.Pages)
 
                 Assert.AreSame(page1, wizard.SelectedPage)
                 Assert.AreEqual(0, GetSelectedIndex(wizard))
                 wizard.Pages.Remove(page1)
-
-#Disable Warning MSTEST0037 ' Die Verwendung von Assert Methoden auf eine bestimmte Art und Weise, wenn es eine bessere Alternative gibt.
-                Assert.AreEqual(0, wizard.Pages.Count)
-#Enable Warning MSTEST0037 ' Die Verwendung von Assert Methoden auf eine bestimmte Art und Weise, wenn es eine bessere Alternative gibt.
+                Assert.HasCount(0, wizard.Pages)
 
                 Assert.IsNull(wizard.SelectedPage)
                 Assert.AreEqual(-1, GetSelectedIndex(wizard))

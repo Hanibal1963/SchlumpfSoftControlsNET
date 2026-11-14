@@ -141,6 +141,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Style", "IDE0058:Der Ausdruckswert wird niemals verwendet.", Justification:="<Ausstehend>")>
         Public Sub ScalingGeometry_InternalArgumentsAreValidated()
             Dim sizeMethod As MethodInfo = GetGeometryMethod("GetRectStartSize")
             Dim pointMethod As MethodInfo = GetGeometryMethod("GetRectStartPoint")
@@ -174,6 +175,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Style", "IDE0058:Der Ausdruckswert wird niemals verwendet.", Justification:="<Ausstehend>")>
         Public Sub ScalingGeometry_TargetDimensionsOutsideInt32ThrowOverflow()
             Using source As New Bitmap(10000, 1)
                 Using control As New AniGif()
@@ -535,6 +537,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub TimerPlayback_AdvancesAndStopsInBothSpeedModes()
             For Each customSpeed As Boolean In New Boolean() {False, True}
                 Using source As Bitmap = LoadAnimatedGif()
@@ -577,6 +580,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub TimerPlayback_SpeedModeChangesPreserveFrameAndEventOrder()
             For Each customSpeed As Boolean In New Boolean() {False, True}
                 Using control As New AniGif()
@@ -612,6 +616,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub FramesPerSecond_EquivalentValuesDoNotRefreshOrRestart()
             For Each customSpeed As Boolean In New Boolean() {False, True}
                 Using timer As New TrackingTimer()
@@ -652,6 +657,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub TimingChanges_UpdateRunningIntervalWithoutRestartingPlayback()
             For Each adaptive As Boolean In New Boolean() {False, True}
                 Using timer As New TrackingTimer()
@@ -698,6 +704,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub TimingChanges_MetadataModeAppliesBoundsWithoutRestartingPlayback()
             For Each adaptive As Boolean In New Boolean() {False, True}
                 Using timer As New TrackingTimer()
@@ -741,6 +748,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub TimingChanges_DifferentFpsWithSameRoundedIntervalPreservesAdaptiveTiming()
             Using timer As New TrackingTimer()
                 Using control As New AniGif()
@@ -826,6 +834,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub TimingChanges_MetadataModeUpdatesMissingOrInvalidDelayFallback()
             For Each missingDelay As Boolean In New Boolean() {False, True}
                 Using timer As New TrackingTimer()
@@ -860,6 +869,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub TimingChanges_WhileHiddenOrPausedDoNotStartTheTimer()
             Using parent As New Panel()
                 Using timer As New TrackingTimer()
@@ -939,6 +949,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <STATestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub TimerPlayback_EquivalentFpsAssignmentsAllowRealTicks()
             Using control As New AniGif()
                 Using assignmentTimer As New System.Windows.Forms.Timer()
@@ -1028,6 +1039,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub VisibilityChanges_SuppressFramesInBothSpeedModes()
             For Each customSpeed As Boolean In New Boolean() {False, True}
                 Using parent As New Panel()
@@ -1323,6 +1335,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
+        <CodeAnalysis.SuppressMessage("Style", "IDE0058:Der Ausdruckswert wird niemals verwendet.", Justification:="<Ausstehend>")>
         Public Sub GifReplacement_PreservesPlaybackAndReleasesImagesInBothSpeedModes()
             For Each customSpeed As Boolean In New Boolean() {False, True}
                 Using source As Bitmap = LoadAnimatedGif()
@@ -1390,6 +1404,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
+        <CodeAnalysis.SuppressMessage("Style", "IDE0058:Der Ausdruckswert wird niemals verwendet.", Justification:="<Ausstehend>")>
         Public Sub Dispose_StopsPlaybackAndReleasesResourcesInBothSpeedModes()
             For Each customSpeed As Boolean In New Boolean() {False, True}
                 Using control As New AniGif()
@@ -1528,6 +1544,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Style", "IDE0058:Der Ausdruckswert wird niemals verwendet.", Justification:="<Ausstehend>")>
         Public Sub SeekFrame_HandlesStillImagesAndDisposedControls()
             Dim control As New AniGif()
             Using stillImage As New Bitmap(8, 8)
@@ -1570,6 +1587,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub AnimationStarted_HandlerCanChangeTimingAndPause()
             Using timer As New TrackingTimer()
                 Using control As New AniGif()
@@ -1601,6 +1619,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub AutoPlayChanged_HandlerCanChangeTimingWithoutDuplicateStart()
             Using timer As New TrackingTimer()
                 Using control As New AniGif()
@@ -1628,6 +1647,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub NoAnimation_HandlerCanReplaceImageAndStartPlayback()
             Using source As Bitmap = LoadAnimatedGif()
                 Using stillImage As New Bitmap(8, 8)
@@ -1820,6 +1840,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <STATestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub Diagnostics_CountsTimerFramesInBothSpeedAndAdaptiveModes()
             For Each customSpeed As Boolean In New Boolean() {False, True}
                 For Each adaptive As Boolean In New Boolean() {False, True}
@@ -2036,6 +2057,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <STATestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub Diagnostics_ResetWhilePlayingAndTimingChangesPreservePlayback()
             Using control As New PaintProbeAniGif()
                 control.ClientSize = New Size(32, 32)
@@ -2112,6 +2134,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <STATestMethod>
+        <CodeAnalysis.SuppressMessage("Style", "IDE0058:Der Ausdruckswert wird niemals verwendet.", Justification:="<Ausstehend>")>
         Public Sub Diagnostics_SeekImageChangesResetAndDisposePreserveTheirContracts()
             Using control As New PaintProbeAniGif()
                 control.ClientSize = New Size(32, 32)
@@ -2359,6 +2382,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         End Sub
 
         <STATestMethod>
+        <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub Diagnostics_DoesNotChangePixelsTimerOrPlaybackEvents()
             For Each mode As ImageSizeMode In New ImageSizeMode() {ImageSizeMode.Normal, ImageSizeMode.CenterImage, ImageSizeMode.Zoom, ImageSizeMode.Fill}
                 For Each preset As GifScalingQualityPreset In New GifScalingQualityPreset() {GifScalingQualityPreset.Photo, GifScalingQualityPreset.PixelArt}

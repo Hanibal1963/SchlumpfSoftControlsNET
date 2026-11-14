@@ -6,7 +6,7 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ## 2. Vollständig owner-drawn rendern
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
@@ -18,25 +18,37 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ## 3. Layout-Neuberechnung minimieren
 
+**Status:** &#x2705; Umgesetzt.
+
 **Umsetzung:**
 
-- Wertänderungen clampen und nur bei echter Änderung rendern.
+- `Value` und `ProgressMaximumValue` werden begrenzt. Nur Änderungen des jeweils begrenzten Werts lösen eine Invalidierung aus; bei einem kleineren Maximum wird `Value` nötigenfalls angepasst.
 
-- Berechnete Rechtecke (Fill/Gloss/Border) cachen und nur bei Size/Style ändern.
+- Inhalts- und Glanzrechteck werden zwischengespeichert und bei Änderungen von `ClientRectangle`, `Size` oder `Padding` beim nächsten Zeichnen neu berechnet.
 
-**Nutzen:** Geringere CPU-Last bei häufigen Fortschrittsupdates.
+- Füll- und Leerrechteck werden zusätzlich bei Änderungen von `Value` oder `ProgressMaximumValue` neu berechnet. Farben und `IsGlossy` benötigen keine neue Geometrie.
+
+- Der Rahmen entsteht weiterhin durch Hintergrundfarbe und Padding; ein eigenes Rahmenrechteck ist nicht erforderlich. Explizites Neuzeichnen und das `Paint`-Ereignis bleiben erhalten.
+
+**Nutzen:** Weniger unnötige Invalidierungen und Geometrieberechnungen bei häufigen Fortschrittsupdates.
 
 ## 4. Farbübergänge effizient gestalten
 
+**Status:** &#x2705; Umgesetzt.
+
 **Umsetzung:**
 
-- Brushes/Pens nur bei Farbänderung neu erzeugen.
+- Die Brushes für Füllung, Leerbereich und Glanz werden bei Bedarf pro Control erzeugt und bei weiteren Zeichenvorgängen wiederverwendet.
 
-- Disposable-GDI-Objekte konsequent freigeben.
+- Bei Änderungen von `BarColor` oder `EmptyColor` wird der jeweilige Brush freigegeben und erst beim nächsten Zeichnen neu erzeugt. Systemfarben werden beim Ereignis `SystemColorsChanged` entsprechend aktualisiert.
 
-**Nutzen:** Weniger GDI-Druck und stabilere Langzeitnutzung.
+- Die verbleibenden Brushes werden beim Entsorgen des Controls freigegeben. Der Rahmen benötigt weiterhin keinen eigenen Pen.
+
+**Nutzen:** Weniger wiederholte GDI+-Brush-Erzeugungen und zuverlässige Freigabe der Zeichenressourcen.
 
 ## 5. API-Konsistenz verbessern
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -48,6 +60,8 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ## 6. Accessibility-Basis ergänzen
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - `AccessibleName`, `AccessibleDescription`, `AccessibleRole=ProgressBar` sinnvoll setzen.
@@ -58,8 +72,5 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ## 7. Empfohlene Reihenfolge
 
-1. Owner-Draw-Rendering (umgesetzt)
-2. Layout-Caching
-3. GDI-Objektmanagement
-4. API-Konsistenz
-5. Accessibility
+1. API-Konsistenz (5.)
+2. Accessibility (6.)

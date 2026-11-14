@@ -22,6 +22,8 @@ Namespace ColorProgressBarControl
 
         Inherits UserControl
 
+#Region "Variablen"
+
         Private ReadOnly _ProgressUnit As Integer = 20
         Private _ProgressValue As Integer = 1
         Private _MaxValue As Integer = 10
@@ -30,30 +32,28 @@ Namespace ColorProgressBarControl
         Private _BarColor As System.Drawing.Color = Color.Blue
         Private _EmptyColor As System.Drawing.Color = Color.Silver
         Private _BorderColor As System.Drawing.Color = Color.Black
+        Private _barBrush As SolidBrush
+        Private _emptyBrush As SolidBrush
+        Private _glossBrush As SolidBrush
+        Private _isGeometryCached As Boolean
+        Private _cachedClientBounds As Rectangle
+        Private _cachedControlSize As Size
+        Private _cachedPadding As Padding
+        Private _cachedProgressValue As Int32
+        Private _cachedMaximumValue As Int32
+        Private _cachedContentBounds As Rectangle
+        Private _cachedFillBounds As Rectangle
+        Private _cachedEmptyBounds As Rectangle
+        Private _cachedGlossBounds As Rectangle
 
-        ''' <summary>
-        ''' Initialisiert das Steuerelement, aktiviert flimmerfreies Zeichnen und setzt die Standarddarstellung.
-        ''' </summary>
-        Public Sub New()
-
-            ' Dieser Aufruf ist für den Designer erforderlich.
-            Me.InitializeComponent()
-
-            Me.DoubleBuffered = True
-            Me.SetStyle(ControlStyles.OptimizedDoubleBuffer Or ControlStyles.AllPaintingInWmPaint Or
-                        ControlStyles.UserPaint Or ControlStyles.ResizeRedraw Or ControlStyles.StandardClick, True)
-            Me.UpdateStyles()
-
-            ' Standardwerte setzen
-            Me.InitializeDefaults()
-
-        End Sub
+#End Region
 
 #Region "öffentliche Eigenschaften"
 
         ''' <summary>
         ''' Gibt den aktuellen Fortschrittswert zurück oder legt diesen fest (Bereich: 0 bis
-        ''' <see cref="ProgressMaximumValue"/> ).
+        ''' <see cref="ProgressMaximumValue"/>). Werte außerhalb des Bereichs werden begrenzt.
+        ''' Bei unverändertem begrenztem Wert wird keine erneute Invalidierung ausgelöst.
         ''' </summary>
         <Browsable(True)>
         <Category("Behavior")>
@@ -65,13 +65,18 @@ Namespace ColorProgressBarControl
             End Get
             Set(value As Int32)
                 ' Wert auf den gültigen Bereich begrenzen, damit keine ungültigen Zustände entstehen.
-                Me._ProgressValue = Math.Max(0, Math.Min(value, Me._MaxValue))
-                Me.Invalidate()
+                Dim boundedValue As Int32 = Math.Max(0, Math.Min(value, Me._MaxValue))
+                If boundedValue <> Me._ProgressValue Then
+                    Me._ProgressValue = boundedValue
+                    Me.Invalidate()
+                End If
             End Set
         End Property
 
         ''' <summary>
-        ''' Gibt den Maximalwert des Fortschrittsbalkens zurück oder legt diesen fest.
+        ''' Gibt den Maximalwert des Fortschrittsbalkens zurück oder legt diesen fest. Werte kleiner als 1
+        ''' werden auf 1 begrenzt und ein darüber liegender Fortschrittswert wird angepasst.
+        ''' Bei unverändertem begrenztem Maximum wird keine erneute Invalidierung ausgelöst.
         ''' </summary>
         <Browsable(True)>
         <Category("Behavior")>
@@ -86,16 +91,19 @@ Namespace ColorProgressBarControl
                 Dim minValue As Int32 = 1
                 Dim boundedValue As Int32 = Math.Max(minValue, value)
 
-                Me._MaxValue = boundedValue
+                If boundedValue <> Me._MaxValue Then
+                    Me._MaxValue = boundedValue
 
-                ' Falls der aktuelle Wert über dem neuen Maximum liegt, wird er automatisch reduziert.
-                Me._ProgressValue = Math.Min(Me._ProgressValue, Me._MaxValue)
-                Me.Invalidate()
+                    ' Falls der aktuelle Wert über dem neuen Maximum liegt, wird er automatisch reduziert.
+                    Me._ProgressValue = Math.Min(Me._ProgressValue, Me._MaxValue)
+                    Me.Invalidate()
+                End If
             End Set
         End Property
 
         ''' <summary>
         ''' Gibt die Farbe des gefüllten Fortschrittsbereichs zurück oder legt diese fest.
+        ''' Transparente Farben und Systemfarben werden unterstützt.
         ''' </summary>
         <Browsable(True)>
         <Category("Appearance")>
@@ -106,13 +114,18 @@ Namespace ColorProgressBarControl
                 Return Me._BarColor
             End Get
             Set(value As Color)
+                Dim colorChanged As Boolean = Me._BarColor <> value
                 Me._BarColor = value
+                If colorChanged Then
+                    DisposeCachedBrush(Me._barBrush)
+                End If
                 Me.Invalidate()
             End Set
         End Property
 
         ''' <summary>
         ''' Gibt die Farbe des leeren Fortschrittsbereichs zurück oder legt diese fest.
+        ''' Transparente Farben und Systemfarben werden unterstützt.
         ''' </summary>
         <Browsable(True)>
         <Category("Appearance")>
@@ -123,7 +136,11 @@ Namespace ColorProgressBarControl
                 Return Me._EmptyColor
             End Get
             Set(value As Color)
+                Dim colorChanged As Boolean = Me._EmptyColor <> value
                 Me._EmptyColor = value
+                If colorChanged Then
+                    DisposeCachedBrush(Me._emptyBrush)
+                End If
                 Me.Invalidate()
             End Set
         End Property
@@ -273,54 +290,84 @@ Namespace ColorProgressBarControl
 
 #End Region
 
+#Region "öffentliche Methoden"
+
+        ''' <summary>
+        ''' Initialisiert das Steuerelement, aktiviert flimmerfreies Zeichnen und setzt die Standarddarstellung.
+        ''' </summary>
+        Public Sub New()
+
+            ' Dieser Aufruf ist für den Designer erforderlich.
+            Me.InitializeComponent()
+
+            Me.DoubleBuffered = True
+            Me.SetStyle(ControlStyles.OptimizedDoubleBuffer Or ControlStyles.AllPaintingInWmPaint Or
+                        ControlStyles.UserPaint Or ControlStyles.ResizeRedraw Or ControlStyles.StandardClick, True)
+            Me.UpdateStyles()
+
+            ' Standardwerte setzen
+            Me.InitializeDefaults()
+
+        End Sub
+
+#End Region
+
 #Region "interne Methoden"
 
         ''' <summary>
-        ''' Zeichnet den Fortschritt, den leeren Bereich und den optionalen Glanzeffekt.
+        ''' Aktualisiert die Zeichenrechtecke nur bei geänderter Geometrie oder geändertem Fortschritt.
         ''' </summary>
-        ''' <param name="e">Stellt die Zeichenfläche und den zu aktualisierenden Bereich bereit.</param>
-        Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        Private Sub UpdateCachedGeometry()
 
-            ' Das Padding lässt den von der Hintergrundfarbe gezeichneten Rahmen frei.
             Dim clientBounds As Rectangle = Me.ClientRectangle
-            Dim contentWidth As Int32 = Math.Max(0, clientBounds.Width - Me.Padding.Horizontal)
-            Dim contentHeight As Int32 = Math.Max(0, clientBounds.Height - Me.Padding.Vertical)
-            Dim contentX As Int32 = clientBounds.X + Me.Padding.Left
-            Dim contentY As Int32 = clientBounds.Y + Me.Padding.Top
+            Dim controlSize As Size = Me.Size
+            Dim currentPadding As Padding = Me.Padding
+            ' Auch die Clientfläche kann sich unabhängig von der äußeren Größe ändern.
+            Dim layoutChanged As Boolean = Not Me._isGeometryCached OrElse
+                Not clientBounds.Equals(Me._cachedClientBounds) OrElse
+                Not controlSize.Equals(Me._cachedControlSize) OrElse
+                Not currentPadding.Equals(Me._cachedPadding)
 
-            If contentWidth > 0 AndAlso contentHeight > 0 Then
-                ' Zwischenwerte verwenden weiterhin die Außenbreite; bei Maximum wird die Innenfläche gefüllt.
-                Dim fillWidth As Int32
-                If Me._ProgressValue = Me._MaxValue Then
-                    fillWidth = contentWidth
-                Else
-                    Dim ratio As Double = CDbl(Me._ProgressValue) / CDbl(Me._MaxValue)
-                    fillWidth = CInt(Math.Round(ratio * CDbl(Me.Width)))
-                    fillWidth = Math.Max(0, Math.Min(contentWidth, fillWidth))
-                End If
+            If layoutChanged Then
+                ' Das Padding lässt den von der Hintergrundfarbe gezeichneten Rahmen frei.
+                Dim contentWidth As Int32 = Math.Max(0, clientBounds.Width - currentPadding.Horizontal)
+                Dim contentHeight As Int32 = Math.Max(0, clientBounds.Height - currentPadding.Vertical)
+                Dim contentX As Int32 = clientBounds.X + currentPadding.Left
+                Dim contentY As Int32 = clientBounds.Y + currentPadding.Top
+                Dim glossHeight As Int32 = Math.Min(contentHeight, controlSize.Height \ 3)
 
-                If fillWidth > 0 Then
-                    Using barBrush As New SolidBrush(Me._BarColor)
-                        e.Graphics.FillRectangle(barBrush, contentX, contentY, fillWidth, contentHeight)
-                    End Using
-                End If
-
-                If fillWidth < contentWidth Then
-                    Using emptyBrush As New SolidBrush(Me._EmptyColor)
-                        e.Graphics.FillRectangle(emptyBrush, contentX + fillWidth, contentY, contentWidth - fillWidth, contentHeight)
-                    End Using
-                End If
-
-                ' Der halbtransparente Glanz liegt über beiden Bereichen im oberen Drittel.
-                Dim glossHeight As Int32 = Math.Min(contentHeight, Me.Height \ 3)
-                If Me._IsGlossy AndAlso glossHeight > 0 Then
-                    Using glossBrush As New SolidBrush(Color.FromArgb(100, 255, 255, 255))
-                        e.Graphics.FillRectangle(glossBrush, contentX, contentY, contentWidth, glossHeight)
-                    End Using
-                End If
+                Me._cachedContentBounds = New Rectangle(contentX, contentY, contentWidth, contentHeight)
+                Me._cachedGlossBounds = New Rectangle(contentX, contentY, contentWidth, glossHeight)
+                Me._cachedClientBounds = clientBounds
+                Me._cachedControlSize = controlSize
+                Me._cachedPadding = currentPadding
             End If
 
-            MyBase.OnPaint(e)
+            If layoutChanged OrElse Me._cachedProgressValue <> Me._ProgressValue OrElse
+                Me._cachedMaximumValue <> Me._MaxValue Then
+                Dim fillWidth As Int32 = 0
+                Dim contentWidth As Int32 = Me._cachedContentBounds.Width
+                Dim contentHeight As Int32 = Me._cachedContentBounds.Height
+
+                If contentWidth > 0 AndAlso contentHeight > 0 Then
+                    ' Zwischenwerte verwenden weiterhin die Außenbreite; bei Maximum wird die Innenfläche gefüllt.
+                    If Me._ProgressValue = Me._MaxValue Then
+                        fillWidth = contentWidth
+                    Else
+                        Dim ratio As Double = CDbl(Me._ProgressValue) / CDbl(Me._MaxValue)
+                        fillWidth = CInt(Math.Round(ratio * CDbl(controlSize.Width)))
+                        fillWidth = Math.Max(0, Math.Min(contentWidth, fillWidth))
+                    End If
+                End If
+
+                Me._cachedFillBounds = New Rectangle(Me._cachedContentBounds.X, Me._cachedContentBounds.Y, fillWidth, contentHeight)
+                Me._cachedEmptyBounds = New Rectangle(Me._cachedContentBounds.X + fillWidth, Me._cachedContentBounds.Y,
+                                                      contentWidth - fillWidth, contentHeight)
+                Me._cachedProgressValue = Me._ProgressValue
+                Me._cachedMaximumValue = Me._MaxValue
+            End If
+
+            Me._isGeometryCached = True
         End Sub
 
         ''' <summary>
@@ -352,6 +399,99 @@ Namespace ColorProgressBarControl
 
             Me.UpdatePadding()
 
+        End Sub
+
+        ''' <summary>
+        ''' Gibt die eigenen Zeichenressourcen beim Entsorgen des Steuerelements frei.
+        ''' </summary>
+        Private Sub ColorProgressBar_Disposed(sender As Object, e As EventArgs) Handles Me.Disposed
+
+            Try
+                DisposeCachedBrush(Me._barBrush)
+            Finally
+                Try
+                    DisposeCachedBrush(Me._emptyBrush)
+                Finally
+                    DisposeCachedBrush(Me._glossBrush)
+                End Try
+            End Try
+
+        End Sub
+
+        ''' <summary>
+        ''' Entfernt einen zwischengespeicherten Brush und gibt seine Ressourcen frei.
+        ''' </summary>
+        ''' <param name="brush">Der zu entfernende Brush; anschließend <see langword="Nothing"/>.</param>
+        Private Shared Sub DisposeCachedBrush(ByRef brush As SolidBrush)
+
+            If brush IsNot Nothing Then
+                Dim oldBrush As SolidBrush = brush
+                brush = Nothing
+                oldBrush.Dispose()
+            End If
+
+        End Sub
+
+        ''' <summary>
+        ''' Zeichnet den Fortschritt, den leeren Bereich und den optionalen Glanzeffekt.
+        ''' </summary>
+        ''' <param name="e">Stellt die Zeichenfläche und den zu aktualisierenden Bereich bereit.</param>
+        ''' <exception cref="ObjectDisposedException">Das Steuerelement wird oder wurde bereits freigegeben.</exception>
+        Protected Overrides Sub OnPaint(e As PaintEventArgs)
+
+#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
+            If Me.IsDisposed OrElse Me.Disposing Then
+                Throw New ObjectDisposedException(NameOf(ColorProgressBar))
+            End If
+#Enable Warning CA1513
+
+            Me.UpdateCachedGeometry()
+
+            If Me._cachedFillBounds.Width > 0 AndAlso Me._cachedFillBounds.Height > 0 Then
+                If Me._barBrush Is Nothing Then
+                    Me._barBrush = New SolidBrush(Me._BarColor)
+                End If
+                e.Graphics.FillRectangle(Me._barBrush, Me._cachedFillBounds)
+            End If
+
+            If Me._cachedEmptyBounds.Width > 0 AndAlso Me._cachedEmptyBounds.Height > 0 Then
+                If Me._emptyBrush Is Nothing Then
+                    Me._emptyBrush = New SolidBrush(Me._EmptyColor)
+                End If
+                e.Graphics.FillRectangle(Me._emptyBrush, Me._cachedEmptyBounds)
+            End If
+
+            If Me._IsGlossy AndAlso Me._cachedGlossBounds.Width > 0 AndAlso Me._cachedGlossBounds.Height > 0 Then
+                If Me._glossBrush Is Nothing Then
+                    Me._glossBrush = New SolidBrush(Color.FromArgb(100, 255, 255, 255))
+                End If
+                e.Graphics.FillRectangle(Me._glossBrush, Me._cachedGlossBounds)
+            End If
+
+            MyBase.OnPaint(e)
+        End Sub
+
+        ''' <summary>
+        ''' Aktualisiert zwischengespeicherte Systemfarben und löst das zugehörige Ereignis aus.
+        ''' </summary>
+        ''' <param name="e">Stellt die Ereignisdaten bereit.</param>
+        Protected Overrides Sub OnSystemColorsChanged(e As EventArgs)
+
+            Dim usesSystemColor As Boolean = Me._BarColor.IsSystemColor OrElse Me._EmptyColor.IsSystemColor
+
+            ' Ereignishandler können bereits synchron mit den neuen Systemfarben zeichnen.
+            If Me._BarColor.IsSystemColor Then
+                DisposeCachedBrush(Me._barBrush)
+            End If
+            If Me._EmptyColor.IsSystemColor Then
+                DisposeCachedBrush(Me._emptyBrush)
+            End If
+
+            MyBase.OnSystemColorsChanged(e)
+
+            If usesSystemColor AndAlso Not Me.IsDisposed AndAlso Not Me.Disposing Then
+                Me.Invalidate()
+            End If
         End Sub
 
 #End Region

@@ -6,7 +6,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 2. Rendering-Pipeline entkoppeln
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
@@ -20,7 +20,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 3. Ressourcenlebenszyklus härten
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
@@ -34,7 +34,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 4. Frame-Timing präzisieren
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
@@ -48,7 +48,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 5. Qualitätsoptionen beim Skalieren
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
@@ -60,7 +60,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 6. Diagnostik für Betrieb hinzufügen
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
@@ -74,7 +74,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 7. GIF-Zuweisungen nach der Ressourcenfreigabe absichern
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Ausgangslage:** `SetGifImage()` erstellte und speicherte auch nach `Dispose()` eine Bitmap-Kopie. `DisposeAnimationResources()` gab wegen des gesetzten Dispose-Zustands anschließend keine weitere Bitmap frei.
 
@@ -90,7 +90,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 8. Skalierungsgeometrie an die Clientfläche anpassen
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Ausgangslage:** `GetRectStartSize()` in [FunctionDefinitions.vb](FunctionDefinitions.vb) berücksichtigte für `Zoom` und `Fill` nur die Orientierung des Bildes, nicht das Seitenverhältnis der Clientfläche. Beispielsweise wurde ein quadratisches Bild bei einem Control von 400 × 100 und `ZoomFactor = 100` auf 400 × 400 skaliert und dadurch abgeschnitten. Bei 100 × 400 und `Fill` blieb es dagegen 100 × 100 groß und füllte die Fläche nicht aus.
 
@@ -106,7 +106,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 9. Unnötige Timer-Neustarts vermeiden
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Ausgangslage:** `UpdateTimerState()` stoppte die Wiedergabe zunächst immer, auch wenn sie nach einer Einstellungsänderung weiterlaufen sollte. Zudem löste `FramesPerSecond` selbst bei unverändertem Wert die Aktualisierung aus. Bei laufender Animation entstanden dadurch zusätzliche Stopp- und Startereignisse.
 
@@ -122,7 +122,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 10. Frame-Delay-Metadaten wiederverwenden
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Ausgangslage:** `RefreshFrameDelayCache()` las bei animierten Bildern die GIF-Metadaten erneut und erstellte ein neues Array, wenn `FramesPerSecond`, `MinimumFrameIntervalMs` oder `MaximumFrameIntervalMs` geändert wurde.
 
@@ -140,7 +140,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 11. Wiederholte Berechnungen pro Timer-Tick reduzieren
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Ausgangslage:** `Timer_Tick()` las und berechnete die verstrichene Zeit auch bei deaktiviertem `AdaptiveTiming`. Im benutzerdefinierten Geschwindigkeitsmodus wurde das FPS-Intervall bei jedem Framewechsel erneut berechnet.
 
@@ -158,7 +158,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 12. Sichtbarkeitsprüfung vereinfachen
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Ausgangslage:** `IsControlTreeVisible()` prüfte nach `Visible` nochmals alle übergeordneten Controls. Bei aktivierter Diagnostik wurde die Sichtbarkeit im Timerpfad unmittelbar danach erneut vor dem Framewechsel geprüft.
 
@@ -178,7 +178,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 13. Aktualisierungsbereich bei Framewechseln begrenzen
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Ausgangslage:** `InvalidateIfVisible()` forderte bei einem Framewechsel die Neuzeichnung der gesamten Clientfläche an, auch wenn das Bild nur einen Teil davon belegte.
 
@@ -200,7 +200,7 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 14. Ungenutzte ImageAnimator-Pfade entfernen
 
-**Status:** Umgesetzt.
+**Status:** &#x2705; Umgesetzt.
 
 **Ausgangslage:** Beide Geschwindigkeitsarten verwendeten den Timer. Für den privaten `OnNextFrame`-Handler war kein `ImageAnimator.Animate()` registriert; `StopAnimationCore()` rief dennoch `ImageAnimator.StopAnimate()` auf.
 

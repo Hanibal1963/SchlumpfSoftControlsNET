@@ -1,4 +1,4 @@
-# WizardControl
+﻿# WizardControl
 
 Ein Control zum Erstellen eines Assistenten.
 
@@ -51,91 +51,6 @@ Dieses Steuerelement wurde in Anlehnung an den [Wizard](https://marketplace.visu
 
 - Seitenwechsel können über `BeforeSwitchPages` validiert und abgebrochen werden.
 
-## 7. Optimierungsvorschläge
+## [7. Optimierungsvorschläge](WizardOptimierungsvorschläge.md)
 
-### 7.1. Zielbild
-
-Vorhersagbarer Seitenfluss mit sauberer Validierung und performanter UI.
-
-### 7.2. Navigationszustand zentralisieren
-
-**Umsetzung:**
-
-- Zustandsmaschine für `Back`, `Next`, `Finish`, `Cancel` einführen.
-
-- Aktivierungslogik der Buttons aus einem zentralen Evaluator ableiten.
-
-**Nutzen:** Keine inkonsistenten Navigationszustände.
-
-### 7.3. Seitenwechsel robuster machen
-
-**Umsetzung:**
-
-- `BeforeSwitchPages` mit klarer Cancel-Semantik absichern.
-
-- Reentrancy bei rekursiven Wechseln verhindern.
-
-**Nutzen:** Stabiler Ablauf auch bei komplexer Validierung.
-
-### 7.4. Rendering/Ladezeiten reduzieren
-
-**Umsetzung:**
-
-- Header-/Welcome-Bilder skaliert cachen.
-
-- Nur aktive Seite vollständig rendern.
-
-**Nutzen:** Schnellere Umschaltung bei großen Bildern.
-
-### 7.5. Ressourcenverwaltung verbessern
-
-**Umsetzung:**
-
-- Dynamisch erzeugte Seiten und Event-Abos in `Dispose` lösen.
-
-**Nutzen:** Keine Lecks bei wiederholter Wizard-Nutzung.
-
-### 7.6. Fehlersichtbarkeit erhöhen
-
-**Umsetzung:**
-
-- Validierungsfehler an Feldern markieren.
-
-- Optionales Fehlermodell pro Seite (`ValidationSummary`) anbieten.
-
-**Nutzen:** Höhere Abschlussquote und bessere UX.
-
-### 7.7. Empfohlene Reihenfolge
-
-1. Navigationszustandsmaschine
-2. Seitenwechsel-Härtung
-3. Ressourcenmanagement
-4. Rendering-Caches
-5. Validierungsfeedback
-
-## 8. Erweiterungsvorschläge
-
-### 8.1. Bedingte Seitenflüsse
-
-**Vorschlag:** Verzweigungen abhängig von Eingaben.
-**Umsetzung:** Navigationsregeln als deklaratives Rule-Set.
-
-### 8.2. Asynchrone Schrittverarbeitung
-
-**Vorschlag:** Lange Prüfungen/Operationen im Seitenwechsel unterstützen.
-**Umsetzung:** Async-Events (`BeforeSwitchPagesAsync`) mit Cancel/Progress.
-
-### 8.3. Validierungsframework pro Seite
-
-**Vorschlag:** Einheitliches Interface für Seitenvalidierung.
-**Umsetzung:** `IWizardPageValidation` mit Ergebnisobjekt.
-
-### 8.4. Persistenter Wizard-State
-
-**Vorschlag:** Wiederaufnahme nach Abbruch.
-**Umsetzung:** Serialisierung von Seitenindex + Eingabedaten.
-
-### 8.5. Lokalisierungsunterstützung ausbauen
-
-**Vorschlag:** Ressourcenbasierte Texte für Buttons und Seitenelemente.
-**Umsetzung:** ResourceManager-Integration und Laufzeitwechsel der Kultur.
+## [8. Erweiterungsvorschläge](WizardErweiterungsvorschläge.md)

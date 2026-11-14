@@ -18,15 +18,19 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ## 3. Layout-Neuberechnung minimieren
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
-- Wertänderungen clampen und nur bei echter Änderung rendern.
+- `Value` und `ProgressMaximumValue` werden begrenzt. Nur Änderungen des jeweils begrenzten Werts lösen eine Invalidierung aus; bei einem kleineren Maximum wird `Value` nötigenfalls angepasst.
 
-- Berechnete Rechtecke (Fill/Gloss/Border) cachen und nur bei Size/Style ändern.
+- Inhalts- und Glanzrechteck werden zwischengespeichert und bei Änderungen von `ClientRectangle`, `Size` oder `Padding` beim nächsten Zeichnen neu berechnet.
 
-**Nutzen:** Geringere CPU-Last bei häufigen Fortschrittsupdates.
+- Füll- und Leerrechteck werden zusätzlich bei Änderungen von `Value` oder `ProgressMaximumValue` neu berechnet. Farben und `IsGlossy` benötigen keine neue Geometrie.
+
+- Der Rahmen entsteht weiterhin durch Hintergrundfarbe und Padding; ein eigenes Rahmenrechteck ist nicht erforderlich. Explizites Neuzeichnen und das `Paint`-Ereignis bleiben erhalten.
+
+**Nutzen:** Weniger unnötige Invalidierungen und Geometrieberechnungen bei häufigen Fortschrittsupdates.
 
 ## 4. Farbübergänge effizient gestalten
 
@@ -66,7 +70,6 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ## 7. Empfohlene Reihenfolge
 
-1. Layout-Caching (3.)
-2. GDI-Objektmanagement (4.)
-3. API-Konsistenz (5.)
-4. Accessibility (6.)
+1. GDI-Objektmanagement (4.)
+2. API-Konsistenz (5.)
+3. Accessibility (6.)

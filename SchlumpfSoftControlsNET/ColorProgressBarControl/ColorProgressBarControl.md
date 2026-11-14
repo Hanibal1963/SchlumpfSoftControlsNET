@@ -32,9 +32,9 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 ## 3. Eigenschaften
 
-- `Value`: Gibt den aktuellen Fortschrittswert zurück oder legt diesen fest (Bereich: `0` bis `ProgressMaximumValue`).
+- `Value`: Gibt den aktuellen Fortschrittswert zurück oder legt diesen fest. Eingaben werden auf den Bereich `0` bis `ProgressMaximumValue` begrenzt. Bleibt der begrenzte Wert unverändert, wird keine Invalidierung ausgelöst.
 
-- `ProgressMaximumValue`: Gibt den Maximalwert des Fortschrittsbalkens zurück oder legt diesen fest.
+- `ProgressMaximumValue`: Gibt den Maximalwert des Fortschrittsbalkens zurück oder legt diesen fest. Eingaben kleiner als `1` werden auf `1` begrenzt; ein höherer Fortschrittswert wird auf das neue Maximum reduziert. Bleibt das begrenzte Maximum unverändert, wird keine Invalidierung ausgelöst.
 
 - `BarColor`: Gibt die Farbe des gefüllten Fortschrittsbereichs zurück oder legt diese fest.
 
@@ -68,11 +68,14 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 ## 6. Hinweise
 
-- Werte außerhalb des gültigen Bereichs von `0` bis `ProgressMaximumValue` werden über die Guard-Logik der `Value`-Eigenschaft abgefangen.
+- Werte außerhalb des gültigen Bereichs werden ohne Ausnahme auf die jeweiligen Grenzen begrenzt.
+
+- Ein Neuzeichnen kann auch bei unverändertem Fortschritt weiterhin mit `Invalidate()` oder `Refresh()` angefordert werden. Das `Paint`-Ereignis wird nach dem Zeichnen ausgelöst.
+
+- Die Zeichenrechtecke werden zwischengespeichert und bei Änderungen ihrer Geometrie- oder Fortschrittsdaten aktualisiert. Der Rahmen entsteht weiterhin durch Hintergrundfarbe und Padding.
 
 - Die Darstellung erfolgt ohne interne Panels. Anwendungen, die über `Controls` auf diese Panels zugegriffen haben, müssen entsprechend angepasst werden.
 
 ## [7. Optimierungsvorschläge](ColorProgressBarOptimierungsvorschläge.md)
 
 ## [8. Erweiterungsvorschläge](ColorProgressBarErweiterungsvorschläge.md)
-

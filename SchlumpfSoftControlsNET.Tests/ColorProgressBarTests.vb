@@ -32,6 +32,101 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
         End Sub
 
         <TestMethod>
+        Public Sub Value_OnlyInvalidatesWhenTheBoundedValueChanges()
+            Using control As New ColorProgressBar()
+                control.Value = 5
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                Dim invalidationCount As Integer = 0
+                AddHandler control.Invalidated, Sub(sender, e) invalidationCount += 1
+
+                control.Value = 5
+                Assert.AreEqual(0, invalidationCount)
+
+                control.Value = Integer.MinValue
+                Assert.AreEqual(0, control.Value)
+                Assert.AreEqual(1, invalidationCount)
+
+                control.Value = -1
+                control.Value = 0
+                Assert.AreEqual(1, invalidationCount)
+
+                control.Value = Integer.MaxValue
+                Assert.AreEqual(10, control.Value)
+                Assert.AreEqual(2, invalidationCount)
+
+                control.Value = 11
+                control.Value = 10
+                Assert.AreEqual(2, invalidationCount)
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub ProgressMaximumValue_OnlyInvalidatesWhenTheBoundedMaximumChanges()
+            Using control As New ColorProgressBar()
+                control.Value = 8
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                Dim invalidationCount As Integer = 0
+                AddHandler control.Invalidated, Sub(sender, e) invalidationCount += 1
+
+                control.ProgressMaximumValue = 10
+                Assert.AreEqual(0, invalidationCount)
+
+                control.ProgressMaximumValue = 0
+                Assert.AreEqual(1, control.ProgressMaximumValue)
+                Assert.AreEqual(1, control.Value)
+                Assert.AreEqual(1, invalidationCount)
+
+                control.ProgressMaximumValue = Integer.MinValue
+                control.ProgressMaximumValue = 1
+                Assert.AreEqual(1, invalidationCount)
+
+                control.ProgressMaximumValue = Integer.MaxValue
+                Assert.AreEqual(Integer.MaxValue, control.ProgressMaximumValue)
+                Assert.AreEqual(1, control.Value)
+                Assert.AreEqual(2, invalidationCount)
+
+                control.ProgressMaximumValue = Integer.MaxValue
+                Assert.AreEqual(2, invalidationCount)
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub StateChanges_InvalidateEvenWhenRoundedFillWidthIsUnchanged()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(10, 10)
+                control.ProgressMaximumValue = 1000
+                control.Value = 1
+                control.IsGlossy = False
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                Dim invalidationCount As Integer = 0
+                AddHandler control.Invalidated, Sub(sender, e) invalidationCount += 1
+
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Silver, image, 1, 5)
+                End Using
+
+                invalidationCount = 0
+                control.Value = 2
+                Assert.AreEqual(2, control.Value)
+                Assert.AreEqual(1, invalidationCount)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Silver, image, 1, 5)
+                End Using
+
+                invalidationCount = 0
+                control.ProgressMaximumValue = 2000
+                Assert.AreEqual(2, control.Value)
+                Assert.AreEqual(1, invalidationCount)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Silver, image, 1, 5)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
         Public Sub ShowBorder_UpdatesPadding()
             Using control As New ColorProgressBar()
                 control.ShowBorder = True
@@ -110,6 +205,28 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
         End Sub
 
         <TestMethod>
+        Public Sub TransparentColorChanges_AfterPaintingUseCurrentColors()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 5
+                control.IsGlossy = False
+
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                    AssertPixel(Color.Silver, image, 75, 10)
+                End Using
+
+                control.BorderColor = Color.White
+                control.BarColor = Color.FromArgb(128, Color.Red)
+                control.EmptyColor = Color.FromArgb(128, Color.Blue)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(BlendColors(Color.White, control.BarColor), image, 10, 10)
+                    AssertPixel(BlendColors(Color.White, control.EmptyColor), image, 75, 10)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
         Public Sub ShowBorder_TogglesRenderedBorder()
             Using control As New ColorProgressBar()
                 control.Size = New Size(100, 20)
@@ -127,6 +244,37 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Using image As Bitmap = RenderControl(control)
                     AssertPixel(Color.Red, image, 0, 10)
                     AssertPixel(Color.Silver, image, 99, 10)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub ExternalPaddingChanges_KeepGeometryConsistentWithBorder()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 5
+                control.IsGlossy = False
+
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Black, image, 0, 10)
+                End Using
+
+                control.ShowBorder = False
+                control.Padding = New Padding(3)
+                Assert.AreEqual(New Padding(0), control.Padding)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 0, 10)
+                    AssertPixel(Color.Silver, image, 99, 10)
+                End Using
+
+                control.ShowBorder = True
+                control.Padding = New Padding(3)
+                Assert.AreEqual(New Padding(1), control.Padding)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Black, image, 0, 10)
+                    AssertPixel(Color.Black, image, 99, 10)
+                    AssertPixel(Color.Blue, image, 1, 10)
+                    AssertPixel(Color.Silver, image, 98, 10)
                 End Using
             End Using
         End Sub
@@ -159,6 +307,67 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
         End Sub
 
         <TestMethod>
+        Public Sub ProgressMaximumValue_UpdatesCachedFillAndClampsValue()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 5
+                control.IsGlossy = False
+
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 50, 10)
+                    AssertPixel(Color.Silver, image, 51, 10)
+                End Using
+
+                control.ProgressMaximumValue = 20
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 25, 10)
+                    AssertPixel(Color.Silver, image, 26, 10)
+                End Using
+
+                control.ProgressMaximumValue = 4
+                Assert.AreEqual(4, control.Value)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 1, 10)
+                    AssertPixel(Color.Blue, image, 98, 10)
+                End Using
+
+                control.ProgressMaximumValue = 8
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 50, 10)
+                    AssertPixel(Color.Silver, image, 51, 10)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Value_PreservesIntermediateWidthRoundingAndClipping()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(5, 9)
+                control.IsGlossy = False
+                control.Value = 5
+
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Black, image, 0, 4)
+                    AssertPixel(Color.Blue, image, 1, 4)
+                    AssertPixel(Color.Blue, image, 2, 4)
+                    AssertPixel(Color.Silver, image, 3, 4)
+                    AssertPixel(Color.Black, image, 4, 4)
+                End Using
+
+                control.Value = 6
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 3, 4)
+                End Using
+
+                control.Value = 0
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Silver, image, 1, 4)
+                    AssertPixel(Color.Silver, image, 3, 4)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
         Public Sub Resize_UpdatesFillAndGlossGeometry()
             Using control As New ColorProgressBar()
                 control.Size = New Size(80, 20)
@@ -176,6 +385,72 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                     AssertPixel(Color.Blue, image, 25, 11)
                     AssertPixel(Color.Blue, image, 50, 15)
                     AssertPixel(Color.Silver, image, 51, 15)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub BorderStyleChange_UpdatesGeometryWhenOuterSizeIsUnchanged()
+            Using control As New TestableColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 10
+                control.IsGlossy = False
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                Dim originalSize As Size = control.Size
+                Dim originalClientWidth As Integer = control.ClientSize.Width
+
+                Using image As New Bitmap(100, 20)
+                    Using graphics As Graphics = Graphics.FromImage(image)
+                        Using args As New PaintEventArgs(graphics, New Rectangle(Point.Empty, image.Size))
+                            graphics.Clear(Color.Magenta)
+                            control.PaintForTest(args)
+                            AssertPixel(Color.Blue, image, originalClientWidth - 2, 5)
+
+                            control.BorderStyle = BorderStyle.FixedSingle
+                            Assert.AreEqual(originalSize, control.Size)
+                            Assert.IsLessThan(originalClientWidth, control.ClientSize.Width)
+
+                            graphics.Clear(Color.Magenta)
+                            control.PaintForTest(args)
+                            AssertPixel(Color.Blue, image, control.ClientSize.Width - 2, 5)
+                            AssertPixel(Color.Magenta, image, control.ClientSize.Width - 1, 5)
+                        End Using
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Resize_FromAndToEmptyContent_UpdatesCachedGeometry()
+            Using control As New TestableColorProgressBar()
+                control.Value = 10
+                control.IsGlossy = False
+
+                Using image As New Bitmap(3, 3)
+                    Using graphics As Graphics = Graphics.FromImage(image)
+                        Using args As New PaintEventArgs(graphics, New Rectangle(Point.Empty, image.Size))
+                            control.Size = New Size(3, 3)
+                            graphics.Clear(Color.Magenta)
+                            control.PaintForTest(args)
+                            AssertPixel(Color.Blue, image, 1, 1)
+
+                            control.Size = New Size(2, 2)
+                            graphics.Clear(Color.Magenta)
+                            control.PaintForTest(args)
+                            AssertPixel(Color.Magenta, image, 1, 1)
+
+                            control.Size = Size.Empty
+                            graphics.Clear(Color.Magenta)
+                            control.PaintForTest(args)
+                            AssertPixel(Color.Magenta, image, 1, 1)
+
+                            control.Size = New Size(3, 3)
+                            graphics.Clear(Color.Magenta)
+                            control.PaintForTest(args)
+                            AssertPixel(Color.Blue, image, 1, 1)
+                        End Using
+                    End Using
                 End Using
             End Using
         End Sub
@@ -237,6 +512,78 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Using image As Bitmap = RenderControl(control)
                     Assert.IsGreaterThan(0, paintCount)
                     AssertPixel(Color.Yellow, image, 10, 10)
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Paint_ExplicitRepaintStillDrawsAndRaisesEventWhenValuesAreUnchanged()
+            Using control As New TestableColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 5
+                control.IsGlossy = False
+                Dim paintCount As Integer = 0
+                AddHandler control.Paint, Sub(sender, e)
+                                              paintCount += 1
+                                              e.Graphics.FillRectangle(Brushes.Yellow, 10, 10, 1, 1)
+                                          End Sub
+
+                Using image As New Bitmap(100, 20)
+                    Using graphics As Graphics = Graphics.FromImage(image)
+                        Using args As New PaintEventArgs(graphics, New Rectangle(Point.Empty, image.Size))
+                            control.PaintForTest(args)
+                            Assert.AreEqual(1, paintCount)
+                            AssertPixel(Color.Blue, image, 25, 10)
+                            AssertPixel(Color.Yellow, image, 10, 10)
+
+                            control.Value = 5
+                            control.ProgressMaximumValue = 10
+                            graphics.Clear(Color.Magenta)
+                            control.PaintForTest(args)
+                            Assert.AreEqual(2, paintCount)
+                            AssertPixel(Color.Blue, image, 25, 10)
+                            AssertPixel(Color.Yellow, image, 10, 10)
+                        End Using
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub InvalidatedHandler_SeesUpdatedGeometryWhenPaintingSynchronously()
+            Using control As New TestableColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 5
+                control.IsGlossy = False
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                Dim invalidationCount As Integer = 0
+
+                Using image As New Bitmap(100, 20)
+                    Using graphics As Graphics = Graphics.FromImage(image)
+                        Using args As New PaintEventArgs(graphics, New Rectangle(Point.Empty, image.Size))
+                            control.PaintForTest(args)
+                            AssertPixel(Color.Blue, image, 50, 10)
+
+                            Dim repaintOnInvalidated As InvalidateEventHandler = Sub(sender, e)
+                                                                                     invalidationCount += 1
+                                                                                     graphics.Clear(Color.Magenta)
+                                                                                     control.PaintForTest(args)
+                                                                                 End Sub
+                            AddHandler control.Invalidated, repaintOnInvalidated
+
+                            control.Value = 7
+                            Assert.AreEqual(1, invalidationCount)
+                            AssertPixel(Color.Blue, image, 70, 10)
+                            AssertPixel(Color.Silver, image, 71, 10)
+
+                            control.ProgressMaximumValue = 14
+                            Assert.AreEqual(2, invalidationCount)
+                            AssertPixel(Color.Blue, image, 50, 10)
+                            AssertPixel(Color.Silver, image, 51, 10)
+                            RemoveHandler control.Invalidated, repaintOnInvalidated
+                        End Using
+                    End Using
                 End Using
             End Using
         End Sub

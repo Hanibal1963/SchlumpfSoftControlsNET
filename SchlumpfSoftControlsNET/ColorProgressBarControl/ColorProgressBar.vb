@@ -6,8 +6,13 @@
 
 Imports System
 Imports System.Windows.Forms
-Imports System.ComponentModel
 Imports System.Drawing
+Imports System.Globalization
+Imports System.Resources
+Imports System.ComponentModel
+Imports System.Runtime.InteropServices
+Imports System.Windows.Automation
+Imports System.Windows.Automation.Provider
 
 Namespace ColorProgressBarControl
 
@@ -25,6 +30,8 @@ Namespace ColorProgressBarControl
 #Region "Variablen"
 
         Private ReadOnly _ProgressUnit As Integer = 20
+        Private Shared ReadOnly _accessibilityResources As New ResourceManager("SchlumpfSoft.ControlsNET.ColorProgressBarAccessibility", GetType(ColorProgressBar).Assembly)
+        Private _uiaProvider As ProgressAutomationProvider
         Private _ProgressValue As Integer = 1
         Private _MaxValue As Integer = 10
         Private _ShowBorder As Boolean = True
@@ -311,9 +318,15 @@ Namespace ColorProgressBarControl
             Dim boundedValue As Int32 = Math.Max(0, Math.Min(value, boundedMaximum))
 
             If boundedMaximum <> Me._MaxValue OrElse boundedValue <> Me._ProgressValue Then
+                Dim previousMaximum As Int32 = Me._MaxValue
+                Dim previousValue As Int32 = Me._ProgressValue
                 Me._MaxValue = boundedMaximum
                 Me._ProgressValue = boundedValue
-                Me.Invalidate()
+                Try
+                    Me.NotifyProgressAccessibility(previousValue, previousMaximum, boundedValue, boundedMaximum)
+                Finally
+                    Me.Invalidate()
+                End Try
             End If
 
         End Sub
@@ -375,11 +388,21 @@ Namespace ColorProgressBarControl
         End Sub
 
         ''' <summary>
-        ''' Setzt die initiale Rahmenfarbe des Steuerelements.
+        ''' Setzt die initiale Rahmenfarbe und Accessibility-Eigenschaften des Steuerelements.
         ''' </summary>
         Private Sub InitializeDefaults()
 
             Me.BackColor = Me._BorderColor
+            Me.InitializeAccessibility()
+
+        End Sub
+
+        ''' <summary>
+        ''' Setzt die Accessibility-Rolle, die von der Anwendung überschrieben werden kann.
+        ''' </summary>
+        Private Sub InitializeAccessibility()
+
+            Me.AccessibleRole = AccessibleRole.ProgressBar
 
         End Sub
 
@@ -423,6 +446,41 @@ Namespace ColorProgressBarControl
         End Sub
 
         ''' <summary>
+        ''' Benachrichtigt Accessibility-Clients über einen geänderten Fortschritt.
+        ''' </summary>
+        ''' <param name="previousValue">Der vorherige Fortschrittswert.</param>
+        ''' <param name="previousMaximum">Das vorherige Maximum.</param>
+        ''' <param name="value">Der neue Fortschrittswert.</param>
+        ''' <param name="maximum">Das neue Maximum.</param>
+        Private Sub NotifyProgressAccessibility(previousValue As Int32, previousMaximum As Int32, value As Int32, maximum As Int32)
+
+            If Not Me.IsHandleCreated Then Return
+
+            Dim provider As ProgressAutomationProvider = Me._uiaProvider
+            If provider IsNot Nothing AndAlso Me.HasProgressAccessibleRole() AndAlso AutomationInteropProvider.ClientsAreListening Then
+                If previousValue <> value Then
+                    AutomationInteropProvider.RaiseAutomationPropertyChangedEvent(provider,
+                        New AutomationPropertyChangedEventArgs(RangeValuePatternIdentifiers.ValueProperty, CDbl(previousValue), CDbl(value)))
+                End If
+                If previousMaximum <> maximum Then
+                    AutomationInteropProvider.RaiseAutomationPropertyChangedEvent(provider,
+                        New AutomationPropertyChangedEventArgs(RangeValuePatternIdentifiers.MaximumProperty, CDbl(previousMaximum), CDbl(maximum)))
+                End If
+
+                Dim previousText As String = FormatAccessibleProgress(previousValue, previousMaximum)
+                Dim currentText As String = FormatAccessibleProgress(value, maximum)
+                If Not String.Equals(previousText, currentText, StringComparison.Ordinal) Then
+                    AutomationInteropProvider.RaiseAutomationPropertyChangedEvent(provider,
+                        New AutomationPropertyChangedEventArgs(ValuePatternIdentifiers.ValueProperty, previousText, currentText))
+                End If
+            End If
+
+            ' Die MSAA-Kind-ID -1 bezeichnet das Steuerelement selbst.
+            Me.AccessibilityNotifyClients(AccessibleEvents.ValueChange, -1)
+
+        End Sub
+
+        ''' <summary>
         ''' Entfernt einen zwischengespeicherten Brush und gibt seine Ressourcen frei.
         ''' </summary>
         ''' <param name="brush">Der zu entfernende Brush; anschließend <see langword="Nothing"/>.</param>
@@ -435,6 +493,44 @@ Namespace ColorProgressBarControl
             End If
 
         End Sub
+
+        ''' <summary>
+        ''' Prüft, ob die Accessibility-Rolle dem Fortschrittsbalken entspricht.
+        ''' </summary>
+        ''' <returns><see langword="True"/>, wenn die Standard- oder Fortschrittsrolle gesetzt ist.</returns>
+        Private Function HasProgressAccessibleRole() As Boolean
+
+            Return Me.AccessibleRole = AccessibleRole.Default OrElse Me.AccessibleRole = AccessibleRole.ProgressBar
+
+        End Function
+
+        ''' <summary>
+        ''' Liest einen lokalisierten Accessibility-Text aus den Control-Ressourcen.
+        ''' </summary>
+        ''' <param name="name">Der Ressourcenschlüssel.</param>
+        ''' <returns>Der lokalisierte Text.</returns>
+        Private Shared Function GetAccessibilityText(name As String) As String
+
+            Dim text As String = _accessibilityResources.GetString(name, CultureInfo.CurrentUICulture)
+            If text Is Nothing Then
+                Throw New MissingManifestResourceException($"Die Accessibility-Ressource '{name}' fehlt.")
+            End If
+            Return text
+
+        End Function
+
+        ''' <summary>
+        ''' Berechnet einen lokalisierten, abgerundeten Prozentwert für Hilfstechnologien.
+        ''' </summary>
+        ''' <param name="value">Der begrenzte Fortschrittswert.</param>
+        ''' <param name="maximum">Der begrenzte Maximalwert.</param>
+        ''' <returns>Der Prozentwert als lokalisierter Text.</returns>
+        Private Shared Function FormatAccessibleProgress(value As Int32, maximum As Int32) As String
+
+            Dim percentage As Int64 = (CLng(value) * 100L) \ maximum
+            Return (CDbl(percentage) / 100).ToString("P0", CultureInfo.CurrentCulture)
+
+        End Function
 
         ''' <summary>
         ''' Zeichnet den Fortschritt, den leeren Bereich und den optionalen Glanzeffekt.
@@ -497,6 +593,243 @@ Namespace ColorProgressBarControl
                 Me.Invalidate()
             End If
         End Sub
+
+        ''' <summary>
+        ''' Erstellt das MSAA-Objekt für den Fortschrittsbalken.
+        ''' </summary>
+        ''' <returns>Das Accessibility-Objekt des Steuerelements.</returns>
+        Protected Overrides Function CreateAccessibilityInstance() As AccessibleObject
+
+            Return New ProgressAccessibleObject(Me)
+
+        End Function
+
+        ''' <summary>
+        ''' Stellt den UI-Automation-Provider für das Fenster des Steuerelements bereit.
+        ''' </summary>
+        ''' <param name="m">Die zu verarbeitende Fensternachricht.</param>
+        Protected Overrides Sub WndProc(ByRef m As Message)
+
+            Const wmGetObject As Int32 = &H3D
+            If m.Msg = wmGetObject AndAlso m.LParam.ToInt64() = AutomationInteropProvider.RootObjectId AndAlso
+                Me.HasProgressAccessibleRole() AndAlso Not Me.IsDisposed AndAlso Not Me.Disposing Then
+                If Me._uiaProvider Is Nothing Then
+                    Me._uiaProvider = New ProgressAutomationProvider(Me, m.HWnd)
+                End If
+                m.Result = AutomationInteropProvider.ReturnRawElementProvider(m.HWnd, m.WParam, m.LParam, Me._uiaProvider)
+                Return
+            End If
+
+            MyBase.WndProc(m)
+
+        End Sub
+
+        ''' <summary>
+        ''' Trennt den UI-Automation-Provider vom alten Fenster-Handle.
+        ''' </summary>
+        ''' <param name="e">Stellt die Ereignisdaten bereit.</param>
+        Protected Overrides Sub OnHandleDestroyed(e As EventArgs)
+
+            Dim provider As ProgressAutomationProvider = Me._uiaProvider
+            Me._uiaProvider = Nothing
+            If provider IsNot Nothing Then
+                provider.Disconnect()
+            End If
+            MyBase.OnHandleDestroyed(e)
+
+        End Sub
+
+#End Region
+
+#Region "interne Klassen"
+
+        ''' <summary>
+        ''' Stellt lokalisierte MSAA-Vorgaben, Rolle und schreibgeschützten Fortschrittswert bereit.
+        ''' </summary>
+        Private NotInheritable Class ProgressAccessibleObject
+
+            Inherits Control.ControlAccessibleObject
+
+            Private ReadOnly _owner As ColorProgressBar
+
+            Public Sub New(owner As ColorProgressBar)
+                MyBase.New(owner)
+                Me._owner = owner
+            End Sub
+
+            Public Overrides Property Name As String
+                Get
+                    Dim accessibleName As String = MyBase.Name
+                    If accessibleName IsNot Nothing Then Return accessibleName
+                    Return GetAccessibilityText("AccessibleName")
+                End Get
+                Set(value As String)
+                    MyBase.Name = value
+                End Set
+            End Property
+
+            Public Overrides ReadOnly Property Description As String
+                Get
+                    Dim accessibleDescription As String = MyBase.Description
+                    If accessibleDescription IsNot Nothing Then Return accessibleDescription
+                    Return GetAccessibilityText("AccessibleDescription")
+                End Get
+            End Property
+
+            Public Overrides ReadOnly Property Role As AccessibleRole
+                Get
+                    If Me._owner.AccessibleRole = AccessibleRole.Default Then Return AccessibleRole.ProgressBar
+                    Return Me._owner.AccessibleRole
+                End Get
+            End Property
+
+            Public Overrides ReadOnly Property State As AccessibleStates
+                Get
+                    Return MyBase.State Or AccessibleStates.ReadOnly
+                End Get
+            End Property
+
+            Public Overrides Property Value As String
+                Get
+                    Return FormatAccessibleProgress(Me._owner.Value, Me._owner.ProgressMaximumValue)
+                End Get
+                Set(value As String)
+                    Throw New InvalidOperationException()
+                End Set
+            End Property
+        End Class
+
+        ''' <summary>
+        ''' Stellt die schreibgeschützten UI-Automation-Muster für den Fortschritt bereit.
+        ''' </summary>
+        <ComVisible(True)>
+        <ClassInterface(ClassInterfaceType.None)>
+        Private NotInheritable Class ProgressAutomationProvider
+
+            Implements IRawElementProviderSimple
+            Implements IRangeValueProvider
+            Implements IValueProvider
+
+            Private _owner As ColorProgressBar
+            Private ReadOnly _windowHandle As IntPtr
+            Private _connected As Boolean = True
+
+            Public Sub New(owner As ColorProgressBar, windowHandle As IntPtr)
+                Me._owner = owner
+                Me._windowHandle = windowHandle
+            End Sub
+
+            Public Sub Disconnect()
+                Me._connected = False
+                Me._owner = Nothing
+            End Sub
+
+            Private Sub EnsureAvailable()
+                If Not Me._connected OrElse Me._owner.IsDisposed OrElse Me._owner.Disposing OrElse
+                    Not Me._owner.HasProgressAccessibleRole() Then
+                    Throw New ElementNotAvailableException()
+                End If
+            End Sub
+
+            Private ReadOnly Property Options As ProviderOptions Implements IRawElementProviderSimple.ProviderOptions
+                Get
+                    Me.EnsureAvailable()
+                    Return ProviderOptions.ServerSideProvider Or ProviderOptions.UseComThreading
+                End Get
+            End Property
+
+            Private ReadOnly Property HostProvider As IRawElementProviderSimple Implements IRawElementProviderSimple.HostRawElementProvider
+                Get
+                    Me.EnsureAvailable()
+                    Return AutomationInteropProvider.HostProviderFromHandle(Me._windowHandle)
+                End Get
+            End Property
+
+            Private Function GetPatternProvider(patternId As Int32) As Object Implements IRawElementProviderSimple.GetPatternProvider
+                Me.EnsureAvailable()
+                If patternId = RangeValuePatternIdentifiers.Pattern.Id OrElse patternId = ValuePatternIdentifiers.Pattern.Id Then
+                    Return Me
+                End If
+                Return Nothing
+            End Function
+
+            Private Function GetPropertyValue(propertyId As Int32) As Object Implements IRawElementProviderSimple.GetPropertyValue
+                Me.EnsureAvailable()
+                Select Case propertyId
+                    Case AutomationElementIdentifiers.ControlTypeProperty.Id
+                        Return ControlType.ProgressBar.Id
+                    Case AutomationElementIdentifiers.NameProperty.Id
+                        Return Me._owner.AccessibilityObject.Name
+                    Case AutomationElementIdentifiers.HelpTextProperty.Id
+                        Return Me._owner.AccessibilityObject.Description
+                    Case AutomationElementIdentifiers.IsKeyboardFocusableProperty.Id
+                        Return Me._owner.CanSelect
+                    Case AutomationElementIdentifiers.IsControlElementProperty.Id, AutomationElementIdentifiers.IsContentElementProperty.Id
+                        Return True
+                End Select
+                Return Nothing
+            End Function
+
+            Private ReadOnly Property IsReadOnly As Boolean Implements IRangeValueProvider.IsReadOnly, IValueProvider.IsReadOnly
+                Get
+                    Me.EnsureAvailable()
+                    Return True
+                End Get
+            End Property
+
+            Private ReadOnly Property Minimum As Double Implements IRangeValueProvider.Minimum
+                Get
+                    Me.EnsureAvailable()
+                    Return 0
+                End Get
+            End Property
+
+            Private ReadOnly Property Maximum As Double Implements IRangeValueProvider.Maximum
+                Get
+                    Me.EnsureAvailable()
+                    Return CDbl(Me._owner.ProgressMaximumValue)
+                End Get
+            End Property
+
+            Private ReadOnly Property NumericValue As Double Implements IRangeValueProvider.Value
+                Get
+                    Me.EnsureAvailable()
+                    Return CDbl(Me._owner.Value)
+                End Get
+            End Property
+
+            Private ReadOnly Property LargeChange As Double Implements IRangeValueProvider.LargeChange
+                Get
+                    Me.EnsureAvailable()
+                    Return Double.NaN
+                End Get
+            End Property
+
+            Private ReadOnly Property SmallChange As Double Implements IRangeValueProvider.SmallChange
+                Get
+                    Me.EnsureAvailable()
+                    Return Double.NaN
+                End Get
+            End Property
+
+            Private ReadOnly Property TextValue As String Implements IValueProvider.Value
+                Get
+                    Me.EnsureAvailable()
+                    Return FormatAccessibleProgress(Me._owner.Value, Me._owner.ProgressMaximumValue)
+                End Get
+            End Property
+
+            Private Sub SetRangeValue(value As Double) Implements IRangeValueProvider.SetValue
+                Me.EnsureAvailable()
+                Throw New InvalidOperationException()
+            End Sub
+
+            Private Sub SetTextValue(value As String) Implements IValueProvider.SetValue
+                Me.EnsureAvailable()
+                Throw New InvalidOperationException()
+            End Sub
+
+        End Class
 
 #End Region
 

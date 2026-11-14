@@ -62,16 +62,18 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ## 6. Accessibility-Basis ergänzen
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
-- `AccessibleName`, `AccessibleDescription`, `AccessibleRole=ProgressBar` sinnvoll setzen.
+- Die Standardrolle ist `ProgressBar`. Name und Beschreibung können über `AccessibleName` und `AccessibleDescription` angepasst werden; andernfalls werden eine zugeordnete Beschriftung beziehungsweise lokalisierte Standardtexte verwendet.
 
-- Optionalen Text-Overlay (z. B. Prozent) als Screenreader-Text bereitstellen.
+- MSAA und UI Automation stellen den Fortschritt schreibgeschützt bereit: als lokalisierten Prozenttext sowie über `RangeValue` mit aktuellem Wert und Maximum. Änderungen werden an Accessibility-Clients gemeldet.
+
+- Die sichtbare Darstellung bleibt unverändert; ein Text-Overlay wurde nicht hinzugefügt.
 
 **Nutzen:** Bessere Nutzbarkeit und Compliance.
 
 ## 7. Empfohlene Reihenfolge
 
-1. Accessibility (6.)
+Die verpflichtenden Schritte 2 bis 6 sind umgesetzt; optionale Erweiterungen bleiben gesondert möglich.

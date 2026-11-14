@@ -178,19 +178,25 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 13. Aktualisierungsbereich bei Framewechseln begrenzen
 
-**Status:** Offen.
+**Status:** Umgesetzt.
 
-**Ausgangslage:** `InvalidateIfVisible()` fordert bei einem Framewechsel die Neuzeichnung der gesamten Clientfläche an, auch wenn das Bild nur einen Teil davon belegt.
+**Ausgangslage:** `InvalidateIfVisible()` forderte bei einem Framewechsel die Neuzeichnung der gesamten Clientfläche an, auch wenn das Bild nur einen Teil davon belegte.
 
 **Umsetzung:**
 
-- Bei unveränderter Bildgeometrie prüfen, ob nur der nicht leere Schnitt des Bildzielrechtecks mit der Clientfläche über `Invalidate(Rectangle)` aktualisiert werden kann.
+- `UsePartialFrameInvalidation` aktiviert die Optimierung ausdrücklich; standardmäßig bleibt die vollständige Invalidierung einschließlich der bisherigen Paint- und Invalidated-Bereiche erhalten. Das Demo bietet dafür den Schalter „Teilaktualisierung“.
 
-- Bei Bild-, Größen- oder Layoutänderungen weiterhin ausreichend große Bereiche aktualisieren; alte und neue Bildpositionen, transparente Frames, Interpolationsränder und externe `Paint`-Handler berücksichtigen.
+- Nach einer eigenen vollständigen Invalidierung und einem erfolgreichen Paint mit einem die Clientfläche abdeckenden Cliprechteck wird das bereits berechnete Bildzielrechteck wiederverwendet. Es erhält einen Sicherheitsrand von zwei Pixeln und wird auf die Clientfläche begrenzt. Ist der Bereich leer, unbekannt oder vollständig, bleibt die vollständige Invalidierung erhalten; `Rectangle.Empty` wird nicht an `Invalidate(Rectangle)` übergeben.
 
-- Darstellung und Hintergrund für alle Größenmodi mit Tests vergleichen und den Nutzen insbesondere bei kleinen Bildern in großen Controls messen.
+- Bild-, Layout-, Größen-, Hintergrund-, Sichtbarkeits- und Handleänderungen verwerfen den Bereich. Nach Herausgabe der veränderbaren Bitmap über `Gif` wird bis zur nächsten Bildzuweisung vollständig invalidiert; der erste Zugriff nach einer Teilinvalidierung fordert sofort eine vollständige Neuzeichnung an. Wiedereintretende Handler können Bild und Geometrie ändern oder das Control freigeben, ohne einen veralteten Bereich zu veröffentlichen.
 
-**Nutzen:** Kann die zu aktualisierende Fläche und damit den Zeichenaufwand verringern, ohne die bereits umgesetzte Bedingung für Framewechsel zu verändern.
+- Bei aktivierter Option werden relevante Hintergrund-, Layout-, Scroll-, Sichtbarkeits- und Elternänderungen der gesamten Elternkette beobachtet. Die Abonnements werden beim Umhängen aktualisiert und beim Deaktivieren oder Freigeben entfernt; die bestehende Diagnostik verwaltet ihre Abonnements weiterhin unabhängig davon.
+
+- Tests vergleichen aufeinanderfolgende vollständige und partielle Paints für alle Größenmodi, beide Qualitätsoptionen, transparente GIF-Frames und Hintergründe, Hintergrundbilder, Rahmen, unterschiedliche Bildgrößen und Zoomfaktoren. Sie sichern außerdem Größen- und Bildwechsel, Bitmap-Mutationen, Diagnosezähler, `SeekFrame()`, Rückeintritte, Fehlerzeitpunkte und einen echten WinForms-Timerlauf ab.
+
+**Nutzen:** Bei unveränderter Geometrie kann die zu aktualisierende Fläche und damit der Zeichenaufwand sinken. Externe Paint- oder Hintergrundroutinen dürfen im Opt-in nicht auf eine frameweise Aktualisierung außerhalb des Bildbereichs angewiesen sein und müssen Transformation und Clip des `Graphics`-Objekts vor der GIF-Zeichnung unverändert lassen.
+
+**Messung:** In lokalen Release-Läufen unter .NET Framework 4.8.1 mit einer Clientfläche von 800 × 600, einem GIF von 32 × 32 und deaktivierter Diagnostik betrug die pro Frame invalidierte und im Paint-Clip ausgewiesene Fläche im Modus `Normal` zuvor 480.000 Pixel; drei Messungen mit je 200 manuell ausgelösten Frames benötigten 989–1.270 ms. Im endgültigen Build sank die Fläche im Teilmodus auf 1.156 Pixel. Bei vier abwechselnden Messungen mit je 50 Frames lagen die Zeiten im Vollmodus bei 128–204 ms und im Teilmodus bei 35–43 ms. Bei `Zoom` mit 50 % sank die Fläche auf 92.416 Pixel, bei `Fill` blieb sie vollständig; die `Fill`-Zeiten überlappten. Die Werte schwankten, und der Test erzwingt durch `Update()` synchrones Zeichnen auf einer nicht sichtbaren Testform statt regulärer asynchroner Timerverarbeitung.
 
 ## 14. Ungenutzte ImageAnimator-Pfade entfernen
 
@@ -208,4 +214,4 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 15. Empfohlene Reihenfolge
 
-1. Aktualisierungsbereich bei Framewechseln begrenzen (7.13).
+Aktuell sind keine Optimierungspunkte mehr offen.

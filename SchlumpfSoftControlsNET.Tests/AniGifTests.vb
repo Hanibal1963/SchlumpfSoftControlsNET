@@ -12,7 +12,7 @@ Imports SchlumpfSoft.ControlsNET.AniGifControl
 
 Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
     <TestClass>
-    Public Class AniGifTests
+    Partial Public Class AniGifTests
 
         <TestMethod>
         Public Sub StartAnimation_SetsAutoPlayToTrue()
@@ -2663,7 +2663,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
         <TestMethod>
         Public Sub DiagnosticsCollector_CalculatesRatesDropsAndRenderTimesFromActiveIntervals()
-            Dim collectorType As Type = GetType(AniGif).Assembly.GetType(GetType(AniGif).Namespace & ".AniGifDiagnosticsCollector")
+            Dim collectorType As Type = GetType(AniGif).Assembly.GetType(GetType(AniGif).Namespace & ".DiagnosticsCollector")
             Assert.IsNotNull(collectorType)
             Dim collector As Object = Activator.CreateInstance(collectorType, True)
             Assert.IsNotNull(collector)
@@ -2703,7 +2703,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
         <TestMethod>
         Public Sub DiagnosticsCollector_DoesNotCountStaleClippedOrCancelledFrames()
-            Dim collectorType As Type = GetType(AniGif).Assembly.GetType(GetType(AniGif).Namespace & ".AniGifDiagnosticsCollector")
+            Dim collectorType As Type = GetType(AniGif).Assembly.GetType(GetType(AniGif).Namespace & ".DiagnosticsCollector")
             Assert.IsNotNull(collectorType)
             Dim collector As Object = Activator.CreateInstance(collectorType, True)
             Assert.IsNotNull(collector)

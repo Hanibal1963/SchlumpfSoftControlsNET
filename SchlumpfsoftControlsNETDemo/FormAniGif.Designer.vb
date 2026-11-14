@@ -42,9 +42,10 @@ Partial Class FormAniGif
         Me.Label_EventMessage = New System.Windows.Forms.Label()
         Me.Button_Pause = New System.Windows.Forms.Button()
         Me.Button_Resume = New System.Windows.Forms.Button()
-        Me.AniGif = New SchlumpfSoft.ControlsNET.AniGifControl.AniGif()
         Me.CheckBox_Diagnostics = New System.Windows.Forms.CheckBox()
+        Me.CheckBox_PartialFrameInvalidation = New System.Windows.Forms.CheckBox()
         Me.Button_Diagnostics = New System.Windows.Forms.Button()
+        Me.AniGif = New SchlumpfSoft.ControlsNET.AniGifControl.AniGif()
         CType(Me.NumericUpDown_CustomDisplaySpeed, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.NumericUpDown_ZoomFactor, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -71,7 +72,7 @@ Partial Class FormAniGif
         '
         'NumericUpDown_CustomDisplaySpeed
         '
-        Me.NumericUpDown_CustomDisplaySpeed.Location = New System.Drawing.Point(461, 138)
+        Me.NumericUpDown_CustomDisplaySpeed.Location = New System.Drawing.Point(461, 162)
         Me.NumericUpDown_CustomDisplaySpeed.Maximum = New Decimal(New Integer() {50, 0, 0, 0})
         Me.NumericUpDown_CustomDisplaySpeed.Name = "NumericUpDown_CustomDisplaySpeed"
         Me.NumericUpDown_CustomDisplaySpeed.Size = New System.Drawing.Size(47, 20)
@@ -106,7 +107,7 @@ Partial Class FormAniGif
         '
         'NumericUpDown_ZoomFactor
         '
-        Me.NumericUpDown_ZoomFactor.Location = New System.Drawing.Point(280, 200)
+        Me.NumericUpDown_ZoomFactor.Location = New System.Drawing.Point(280, 224)
         Me.NumericUpDown_ZoomFactor.Name = "NumericUpDown_ZoomFactor"
         Me.NumericUpDown_ZoomFactor.Size = New System.Drawing.Size(47, 20)
         Me.NumericUpDown_ZoomFactor.TabIndex = 7
@@ -115,7 +116,7 @@ Partial Class FormAniGif
         '
         Me.ComboBox_SizeMode.FormattingEnabled = True
         Me.ComboBox_SizeMode.Items.AddRange(New Object() {"normale Anzeige", "zentrierte Anzeige", "gezoomte Anzeige", "ausgefüllte Anzeige"})
-        Me.ComboBox_SizeMode.Location = New System.Drawing.Point(372, 167)
+        Me.ComboBox_SizeMode.Location = New System.Drawing.Point(372, 191)
         Me.ComboBox_SizeMode.Name = "ComboBox_SizeMode"
         Me.ComboBox_SizeMode.Size = New System.Drawing.Size(136, 21)
         Me.ComboBox_SizeMode.TabIndex = 8
@@ -123,7 +124,7 @@ Partial Class FormAniGif
         'Label_FramesPerSecound
         '
         Me.Label_FramesPerSecound.AutoSize = True
-        Me.Label_FramesPerSecound.Location = New System.Drawing.Point(277, 140)
+        Me.Label_FramesPerSecound.Location = New System.Drawing.Point(277, 164)
         Me.Label_FramesPerSecound.Name = "Label_FramesPerSecound"
         Me.Label_FramesPerSecound.Size = New System.Drawing.Size(162, 13)
         Me.Label_FramesPerSecound.TabIndex = 9
@@ -132,7 +133,7 @@ Partial Class FormAniGif
         'Label_Zoomfaktor
         '
         Me.Label_Zoomfaktor.AutoSize = True
-        Me.Label_Zoomfaktor.Location = New System.Drawing.Point(333, 202)
+        Me.Label_Zoomfaktor.Location = New System.Drawing.Point(333, 226)
         Me.Label_Zoomfaktor.Name = "Label_Zoomfaktor"
         Me.Label_Zoomfaktor.Size = New System.Drawing.Size(110, 13)
         Me.Label_Zoomfaktor.TabIndex = 10
@@ -169,7 +170,7 @@ Partial Class FormAniGif
         'Label_SizeMode
         '
         Me.Label_SizeMode.AutoSize = True
-        Me.Label_SizeMode.Location = New System.Drawing.Point(277, 170)
+        Me.Label_SizeMode.Location = New System.Drawing.Point(277, 194)
         Me.Label_SizeMode.Name = "Label_SizeMode"
         Me.Label_SizeMode.Size = New System.Drawing.Size(76, 13)
         Me.Label_SizeMode.TabIndex = 14
@@ -178,7 +179,7 @@ Partial Class FormAniGif
         'Label_ScalingQualityPreset
         '
         Me.Label_ScalingQualityPreset.AutoSize = True
-        Me.Label_ScalingQualityPreset.Location = New System.Drawing.Point(277, 112)
+        Me.Label_ScalingQualityPreset.Location = New System.Drawing.Point(277, 136)
         Me.Label_ScalingQualityPreset.Name = "Label_ScalingQualityPreset"
         Me.Label_ScalingQualityPreset.Size = New System.Drawing.Size(79, 13)
         Me.Label_ScalingQualityPreset.TabIndex = 15
@@ -188,16 +189,17 @@ Partial Class FormAniGif
         '
         Me.ComboBox_ScalingQualityPreset.FormattingEnabled = True
         Me.ComboBox_ScalingQualityPreset.Items.AddRange(New Object() {"Foto", "Pixel Art"})
-        Me.ComboBox_ScalingQualityPreset.Location = New System.Drawing.Point(382, 109)
+        Me.ComboBox_ScalingQualityPreset.Location = New System.Drawing.Point(382, 133)
         Me.ComboBox_ScalingQualityPreset.Name = "ComboBox_ScalingQualityPreset"
         Me.ComboBox_ScalingQualityPreset.Size = New System.Drawing.Size(126, 21)
         Me.ComboBox_ScalingQualityPreset.TabIndex = 16
         '
         'Label_EventMessage
         '
+        Me.Label_EventMessage.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D
         Me.Label_EventMessage.Location = New System.Drawing.Point(12, 321)
         Me.Label_EventMessage.Name = "Label_EventMessage"
-        Me.Label_EventMessage.Size = New System.Drawing.Size(496, 41)
+        Me.Label_EventMessage.Size = New System.Drawing.Size(496, 156)
         Me.Label_EventMessage.TabIndex = 17
         '
         'Button_Pause
@@ -218,6 +220,35 @@ Partial Class FormAniGif
         Me.Button_Resume.TabIndex = 19
         Me.Button_Resume.UseVisualStyleBackColor = True
         '
+        'CheckBox_Diagnostics
+        '
+        Me.CheckBox_Diagnostics.AutoSize = True
+        Me.CheckBox_Diagnostics.Location = New System.Drawing.Point(280, 84)
+        Me.CheckBox_Diagnostics.Name = "CheckBox_Diagnostics"
+        Me.CheckBox_Diagnostics.Size = New System.Drawing.Size(102, 17)
+        Me.CheckBox_Diagnostics.TabIndex = 20
+        Me.CheckBox_Diagnostics.Text = "Diagnosemodus"
+        Me.CheckBox_Diagnostics.UseVisualStyleBackColor = True
+        '
+        'CheckBox_PartialFrameInvalidation
+        '
+        Me.CheckBox_PartialFrameInvalidation.AutoSize = True
+        Me.CheckBox_PartialFrameInvalidation.Location = New System.Drawing.Point(280, 107)
+        Me.CheckBox_PartialFrameInvalidation.Name = "CheckBox_PartialFrameInvalidation"
+        Me.CheckBox_PartialFrameInvalidation.Size = New System.Drawing.Size(108, 17)
+        Me.CheckBox_PartialFrameInvalidation.TabIndex = 21
+        Me.CheckBox_PartialFrameInvalidation.Text = "Teilaktualisierung"
+        Me.CheckBox_PartialFrameInvalidation.UseVisualStyleBackColor = True
+        '
+        'Button_Diagnostics
+        '
+        Me.Button_Diagnostics.Image = Global.SchlumpfsoftControlsNETDemo.My.Resources.Resources.AniGif_Diagnostics
+        Me.Button_Diagnostics.Location = New System.Drawing.Point(304, 285)
+        Me.Button_Diagnostics.Name = "Button_Diagnostics"
+        Me.Button_Diagnostics.Size = New System.Drawing.Size(43, 24)
+        Me.Button_Diagnostics.TabIndex = 22
+        Me.Button_Diagnostics.UseVisualStyleBackColor = True
+        '
         'AniGif
         '
         Me.AniGif.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle
@@ -230,31 +261,13 @@ Partial Class FormAniGif
         Me.AniGif.TabIndex = 0
         Me.AniGif.ZoomFactor = New Decimal(New Integer() {50, 0, 0, 0})
         '
-        'CheckBox_Diagnostics
-        '
-        Me.CheckBox_Diagnostics.AutoSize = True
-        Me.CheckBox_Diagnostics.Location = New System.Drawing.Point(280, 84)
-        Me.CheckBox_Diagnostics.Name = "CheckBox_Diagnostics"
-        Me.CheckBox_Diagnostics.Size = New System.Drawing.Size(102, 17)
-        Me.CheckBox_Diagnostics.TabIndex = 20
-        Me.CheckBox_Diagnostics.Text = "Diagnosemodus"
-        Me.CheckBox_Diagnostics.UseVisualStyleBackColor = True
-        '
-        'Button_Diagnostics
-        '
-        Me.Button_Diagnostics.Image = Global.SchlumpfsoftControlsNETDemo.My.Resources.Resources.AniGif_Diagnostics
-        Me.Button_Diagnostics.Location = New System.Drawing.Point(304, 285)
-        Me.Button_Diagnostics.Name = "Button_Diagnostics"
-        Me.Button_Diagnostics.Size = New System.Drawing.Size(43, 24)
-        Me.Button_Diagnostics.TabIndex = 21
-        Me.Button_Diagnostics.UseVisualStyleBackColor = True
-        '
         'FormAniGif
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(519, 372)
+        Me.ClientSize = New System.Drawing.Size(519, 486)
         Me.Controls.Add(Me.Button_Diagnostics)
+        Me.Controls.Add(Me.CheckBox_PartialFrameInvalidation)
         Me.Controls.Add(Me.CheckBox_Diagnostics)
         Me.Controls.Add(Me.Button_Resume)
         Me.Controls.Add(Me.Button_Pause)
@@ -309,5 +322,6 @@ Partial Class FormAniGif
     Private WithEvents Button_Pause As Button
     Private WithEvents Button_Resume As Button
     Private WithEvents CheckBox_Diagnostics As CheckBox
+    Private WithEvents CheckBox_PartialFrameInvalidation As CheckBox
     Friend WithEvents Button_Diagnostics As Button
 End Class

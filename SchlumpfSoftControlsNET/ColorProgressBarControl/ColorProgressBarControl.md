@@ -34,9 +34,9 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 ## 3. Eigenschaften
 
-- `Value`: Gibt den aktuellen Fortschrittswert zurück oder legt diesen fest. Eingaben werden auf den Bereich `0` bis `ProgressMaximumValue` begrenzt. Bleibt der begrenzte Wert unverändert, wird keine Invalidierung ausgelöst.
+- `Value` (`Int32`, Standardwert `1`): Gibt den aktuellen Fortschrittswert zurück oder legt diesen fest. Eingaben werden auf den Bereich `0` bis `ProgressMaximumValue` begrenzt. Bleibt der begrenzte Wert unverändert, wird keine Invalidierung ausgelöst.
 
-- `ProgressMaximumValue`: Gibt den Maximalwert des Fortschrittsbalkens zurück oder legt diesen fest. Eingaben kleiner als `1` werden auf `1` begrenzt; ein höherer Fortschrittswert wird auf das neue Maximum reduziert. Bleibt das begrenzte Maximum unverändert, wird keine Invalidierung ausgelöst.
+- `ProgressMaximumValue` (`Int32`, Standardwert `10`): Gibt den Maximalwert des Fortschrittsbalkens zurück oder legt diesen fest. Eingaben kleiner als `1` werden auf `1` begrenzt; ein höherer Fortschrittswert wird auf das neue Maximum reduziert. Bleibt das begrenzte Maximum unverändert, wird keine Invalidierung ausgelöst.
 
 - `BarColor`: Gibt die Farbe des gefüllten Fortschrittsbereichs zurück oder legt diese fest. Transparente Farben, `Color.Empty` und Systemfarben werden unterstützt.
 
@@ -47,6 +47,14 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 - `ShowBorder`: Legt fest, ob ein Rahmen um die Fortschrittsanzeige angezeigt wird.
 
 - `IsGlossy`: Legt fest, ob ein Glanzeffekt über dem gefüllten und dem leeren Fortschrittsbereich angezeigt wird.
+
+- `AccessibleName` (geerbt): Ein expliziter Name überschreibt die zugeordnete Beschriftung und den lokalisierten Standardnamen. Eine leere Zeichenfolge bleibt ein explizit leerer Name; `Nothing` aktiviert die Standardermittlung.
+
+- `AccessibleDescription` (geerbt): Eine explizite Beschreibung überschreibt die lokalisierte Standardbeschreibung. `Nothing` aktiviert die Standardbeschreibung.
+
+- `AccessibleRole` (geerbt): Standardmäßig `ProgressBar`; eine explizit gesetzte andere Rolle bleibt erhalten. `Default` verwendet ebenfalls die Fortschrittsrolle.
+
+- `AccessibilityObject` (geerbt, schreibgeschützt): Stellt Name, Beschreibung, Rolle und den aktuellen Fortschritt für MSAA bereit. Sein `Value` ist ein lokalisierter Prozenttext und schreibgeschützt; ein Schreibversuch löst `InvalidOperationException` aus.
 
 - `BackColor` (überschrieben, ausgeblendet): Hintergrundfarbe ist intern als Rahmenfarbe vorgesehen.
 
@@ -70,7 +78,17 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 ## 6. Hinweise
 
-- Werte außerhalb des gültigen Bereichs werden ohne Ausnahme auf die jeweiligen Grenzen begrenzt.
+- Das Minimum für `Value` ist fest `0`; `ProgressMaximumValue` liegt zwischen `1` und `Int32.MaxValue`. Werte außerhalb des gültigen Bereichs werden ohne Ausnahme auf die jeweiligen Grenzen begrenzt.
+
+- Das nachträgliche Erhöhen von `ProgressMaximumValue` stellt einen zuvor begrenzten Fortschrittswert nicht wieder her. Soll ein größerer Wert angezeigt werden, muss das Maximum vor oder der Wert nach der Erhöhung gesetzt werden.
+
+- Ohne expliziten Namen wird eine zugeordnete WinForms-Beschriftung verwendet, falls vorhanden; ansonsten wird ein lokalisierter Standardname bereitgestellt. Die Standardbeschreibung wird unabhängig davon verwendet, wenn keine explizite Beschreibung gesetzt ist. Die Standardtexte richten sich nach `CurrentUICulture`: Deutsch und Englisch werden unterstützt, andere Sprachen verwenden Deutsch. Sie werden nicht als feste Eigenschaftswerte im Designer serialisiert.
+
+- Der Accessibility-Prozentwert wird anhand von `CurrentCulture` formatiert und auf ganze Prozent abgerundet; `100 %` wird erst beim Maximum ausgegeben. Die sichtbare Darstellung erhält kein Text-Overlay.
+
+- UI Automation bietet die schreibgeschützten Muster `RangeValue` (Minimum `0`, Maximum `ProgressMaximumValue`, aktueller `Value`) und `Value` (Prozenttext). Bei Änderungen werden MSAA- und UI-Automation-Clients benachrichtigt; ohne Fenster-Handle wird kein Handle allein für eine Benachrichtigung erzeugt.
+
+- Für UI Automation werden die Windows-Desktop-Framework-APIs verwendet; unter modernem .NET ist dafür zusätzlich die Frameworkreferenz `Microsoft.WindowsDesktop.App.WPF` erforderlich. Es wurden keine NuGet-Pakete ergänzt.
 
 - Ein Neuzeichnen kann auch bei unverändertem Fortschritt weiterhin mit `Invalidate()` oder `Refresh()` angefordert werden. Das `Paint`-Ereignis wird nach dem Zeichnen ausgelöst.
 
@@ -85,5 +103,7 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 - Die Darstellung erfolgt ohne interne Panels. Anwendungen, die über `Controls` auf diese Panels zugegriffen haben, müssen entsprechend angepasst werden.
 
 ## [7. Optimierungsvorschläge](ColorProgressBarOptimierungsvorschläge.md)
+
+z.Zt. alle umgesetzt
 
 ## [8. Erweiterungsvorschläge](ColorProgressBarErweiterungsvorschläge.md)

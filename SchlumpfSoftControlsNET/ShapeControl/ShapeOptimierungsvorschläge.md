@@ -6,6 +6,8 @@ Leichtgewichtiges Vektor-Control mit sauberer Zeichenqualität.
 
 ## 2. Zeichenpfade cachen
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Geometrie für Rechteck/Ellipse/Diagonale bei Größenänderung vorberechnen.
@@ -15,6 +17,8 @@ Leichtgewichtiges Vektor-Control mit sauberer Zeichenqualität.
 **Nutzen:** Weniger CPU-Last bei häufigen Repaints.
 
 ## 3. GDI-Objekte wiederverwenden
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -26,6 +30,8 @@ Leichtgewichtiges Vektor-Control mit sauberer Zeichenqualität.
 
 ## 4. Pixelgenauigkeit verbessern
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Linienstärken auf Device-Pixel ausrichten.
@@ -36,6 +42,8 @@ Leichtgewichtiges Vektor-Control mit sauberer Zeichenqualität.
 
 ## 5. Property-Setter optimieren
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Nur bei echter Wertänderung `Invalidate` auslösen.
@@ -45,6 +53,8 @@ Leichtgewichtiges Vektor-Control mit sauberer Zeichenqualität.
 **Nutzen:** Reduziert redundante Repaints.
 
 ## 6. Designer-Verhalten härten
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 

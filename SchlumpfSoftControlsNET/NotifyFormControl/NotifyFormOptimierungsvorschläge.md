@@ -6,6 +6,8 @@ Ressourcenschonende, flüssige Benachrichtigungen mit konsistentem Verhalten.
 
 ## 2. Animationslogik zentralisieren
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Einblend-/Ausblendanimation in klaren Zustandsautomaten überführen.
@@ -15,6 +17,8 @@ Ressourcenschonende, flüssige Benachrichtigungen mit konsistentem Verhalten.
 **Nutzen:** Keine flackernden oder überlappenden Zustände.
 
 ## 3. Timer-/Handle-Management absichern
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -26,6 +30,8 @@ Ressourcenschonende, flüssige Benachrichtigungen mit konsistentem Verhalten.
 
 ## 4. Multi-Monitor/Taskbar-Kollisionen verbessern
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Positionierung auf Arbeitsbereich des Zielmonitors.
@@ -36,6 +42,8 @@ Ressourcenschonende, flüssige Benachrichtigungen mit konsistentem Verhalten.
 
 ## 5. Rendering-Qualität erhöhen
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Textmessung DPI-sicher gestalten.
@@ -45,6 +53,8 @@ Ressourcenschonende, flüssige Benachrichtigungen mit konsistentem Verhalten.
 **Nutzen:** Schärfere Darstellung bei High-DPI.
 
 ## 6. Fehlertoleranz im Message-Input
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 

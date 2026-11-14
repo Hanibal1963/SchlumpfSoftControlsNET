@@ -6,6 +6,8 @@ Schnelles, präzises Segment-Rendering für Single- und MultiDigit-Varianten.
 
 ## 2.  Geometrie-Caching einführen
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Segmentpolygone pro Größe/ItalicFactor/SegmentWidth cachen.
@@ -15,6 +17,8 @@ Schnelles, präzises Segment-Rendering für Single- und MultiDigit-Varianten.
 **Nutzen:** Deutlich weniger Rechenaufwand beim Repaint.
 
 ## 3. Repaint-Granularität verbessern
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -26,6 +30,8 @@ Schnelles, präzises Segment-Rendering für Single- und MultiDigit-Varianten.
 
 ## 4. Zeichnungsqualität steuerbar machen
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Smoothing/PixelOffset als QualityMode anbieten.
@@ -36,6 +42,8 @@ Schnelles, präzises Segment-Rendering für Single- und MultiDigit-Varianten.
 
 ## 5. Eingabevalidierung konsolidieren
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - `DigitValue`/`CustomBitPattern` zentral validieren.
@@ -45,6 +53,8 @@ Schnelles, präzises Segment-Rendering für Single- und MultiDigit-Varianten.
 **Nutzen:** Vorhersagbares API-Verhalten.
 
 ## 6. Farb- und Kontrastdefaults optimieren
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 

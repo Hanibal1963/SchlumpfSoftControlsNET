@@ -6,6 +6,8 @@ Konsistente, robuste INI-Verarbeitung und reaktive UI-Teilcontrols.
 
 ## 2. Datenmodell von UI trennen
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Parsing/Schreiblogik in klar getrennten Core-Service auslagern.
@@ -15,6 +17,8 @@ Konsistente, robuste INI-Verarbeitung und reaktive UI-Teilcontrols.
 **Nutzen:** Bessere Testbarkeit und geringere Kopplung.
 
 ## 3. Parser robuster machen
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -26,6 +30,8 @@ Konsistente, robuste INI-Verarbeitung und reaktive UI-Teilcontrols.
 
 ## 4. Änderungsverfolgung verbessern
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Dirty-Tracking pro Abschnitt/Eintrag einführen.
@@ -36,6 +42,8 @@ Konsistente, robuste INI-Verarbeitung und reaktive UI-Teilcontrols.
 
 ## 5. Eventmodell konsolidieren
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Einheitliche Events für Add/Rename/Delete mit gemeinsamen EventArgs.
@@ -45,6 +53,8 @@ Konsistente, robuste INI-Verarbeitung und reaktive UI-Teilcontrols.
 **Nutzen:** Einfachere Anbindung im Host-Code.
 
 ## 6. Performance bei großen Dateien
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 

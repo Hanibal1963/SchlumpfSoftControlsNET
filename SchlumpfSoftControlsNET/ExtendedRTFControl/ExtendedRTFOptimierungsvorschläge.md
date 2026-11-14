@@ -6,6 +6,8 @@ Stabile RichText-Formatierung mit performantem Batch-Verhalten.
 
 ## 2. Redraw-Suppression vereinheitlichen
 
+v
+
 **Umsetzung:**
 
 - Alle formatierenden Methoden in ein gemeinsames Batch-API einhängen.
@@ -15,6 +17,8 @@ Stabile RichText-Formatierung mit performantem Batch-Verhalten.
 **Nutzen:** Weniger Flackern und konsistentes Repaint-Verhalten.
 
 ## 3. Font-Objekte und Stilwechsel optimieren
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -26,6 +30,8 @@ Stabile RichText-Formatierung mit performantem Batch-Verhalten.
 
 ## 4. Mixed-State-Ermittlung beschleunigen
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Selektionsscans minimieren und Ergebnisse temporär cachen.
@@ -36,6 +42,8 @@ Stabile RichText-Formatierung mit performantem Batch-Verhalten.
 
 ## 5. RTF-Interoperabilität härten
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Grenzfälle (leer, ungültiges RTF, fremde Encodings) robust behandeln.
@@ -45,6 +53,8 @@ Stabile RichText-Formatierung mit performantem Batch-Verhalten.
 **Nutzen:** Weniger Laufzeitfehler bei externen Inhalten.
 
 ## 6. API-Dokumentation präzisieren
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 

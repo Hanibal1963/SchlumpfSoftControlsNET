@@ -6,6 +6,8 @@ Schnelle Navigation in großen Verzeichnisstrukturen mit reaktiver UI.
 
 ## 2. Lazy-Loading weiter ausbauen
 
+v
+
 **Umsetzung:**
 
 - Unterknoten nur bei Expand laden.
@@ -18,6 +20,8 @@ Schnelle Navigation in großen Verzeichnisstrukturen mit reaktiver UI.
 
 ## 3. Dateisystemzugriffe entkoppeln
 
+v
+
 **Umsetzung:**
 
 - Auflistungen in Hintergrund-Tasks ausführen.
@@ -27,6 +31,8 @@ Schnelle Navigation in großen Verzeichnisstrukturen mit reaktiver UI.
 **Nutzen:** UI friert bei langsamen Netzlaufwerken nicht ein.
 
 ## 4. Caching für Icons und SpecialFolders
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -38,6 +44,8 @@ Schnelle Navigation in großen Verzeichnisstrukturen mit reaktiver UI.
 
 ## 5. Fehlerbehandlung verbessern
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - `UnauthorizedAccessException`, `PathTooLongException`, Offline-Shares gezielt behandeln.
@@ -47,6 +55,8 @@ Schnelle Navigation in großen Verzeichnisstrukturen mit reaktiver UI.
 **Nutzen:** Robuste Navigation auch in problematischen Ordnern.
 
 ## 6. Refresh-Strategie optimieren
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 

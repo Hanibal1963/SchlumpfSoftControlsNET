@@ -6,6 +6,8 @@ Vorhersagbarer Seitenfluss mit sauberer Validierung und performanter UI.
 
 ## 2. Navigationszustand zentralisieren
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Zustandsmaschine für `Back`, `Next`, `Finish`, `Cancel` einführen.
@@ -15,6 +17,8 @@ Vorhersagbarer Seitenfluss mit sauberer Validierung und performanter UI.
 **Nutzen:** Keine inkonsistenten Navigationszustände.
 
 ## 3. Seitenwechsel robuster machen
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -26,6 +30,8 @@ Vorhersagbarer Seitenfluss mit sauberer Validierung und performanter UI.
 
 ## 4. Rendering/Ladezeiten reduzieren
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Header-/Welcome-Bilder skaliert cachen.
@@ -36,6 +42,8 @@ Vorhersagbarer Seitenfluss mit sauberer Validierung und performanter UI.
 
 ## 5. Ressourcenverwaltung verbessern
 
+**Status:** &#x1F4A1; offen
+
 **Umsetzung:**
 
 - Dynamisch erzeugte Seiten und Event-Abos in `Dispose` lösen.
@@ -43,6 +51,8 @@ Vorhersagbarer Seitenfluss mit sauberer Validierung und performanter UI.
 **Nutzen:** Keine Lecks bei wiederholter Wizard-Nutzung.
 
 ## 6. Fehlersichtbarkeit erhöhen
+
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 

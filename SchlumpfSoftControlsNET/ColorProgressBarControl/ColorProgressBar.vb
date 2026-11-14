@@ -22,6 +22,8 @@ Namespace ColorProgressBarControl
 
         Inherits UserControl
 
+#Region "Variablen"
+
         Private ReadOnly _ProgressUnit As Integer = 20
         Private _ProgressValue As Integer = 1
         Private _MaxValue As Integer = 10
@@ -30,6 +32,9 @@ Namespace ColorProgressBarControl
         Private _BarColor As System.Drawing.Color = Color.Blue
         Private _EmptyColor As System.Drawing.Color = Color.Silver
         Private _BorderColor As System.Drawing.Color = Color.Black
+        Private _barBrush As SolidBrush
+        Private _emptyBrush As SolidBrush
+        Private _glossBrush As SolidBrush
         Private _isGeometryCached As Boolean
         Private _cachedClientBounds As Rectangle
         Private _cachedControlSize As Size
@@ -41,23 +46,7 @@ Namespace ColorProgressBarControl
         Private _cachedEmptyBounds As Rectangle
         Private _cachedGlossBounds As Rectangle
 
-        ''' <summary>
-        ''' Initialisiert das Steuerelement, aktiviert flimmerfreies Zeichnen und setzt die Standarddarstellung.
-        ''' </summary>
-        Public Sub New()
-
-            ' Dieser Aufruf ist für den Designer erforderlich.
-            Me.InitializeComponent()
-
-            Me.DoubleBuffered = True
-            Me.SetStyle(ControlStyles.OptimizedDoubleBuffer Or ControlStyles.AllPaintingInWmPaint Or
-                        ControlStyles.UserPaint Or ControlStyles.ResizeRedraw Or ControlStyles.StandardClick, True)
-            Me.UpdateStyles()
-
-            ' Standardwerte setzen
-            Me.InitializeDefaults()
-
-        End Sub
+#End Region
 
 #Region "öffentliche Eigenschaften"
 
@@ -114,6 +103,7 @@ Namespace ColorProgressBarControl
 
         ''' <summary>
         ''' Gibt die Farbe des gefüllten Fortschrittsbereichs zurück oder legt diese fest.
+        ''' Transparente Farben und Systemfarben werden unterstützt.
         ''' </summary>
         <Browsable(True)>
         <Category("Appearance")>
@@ -124,13 +114,18 @@ Namespace ColorProgressBarControl
                 Return Me._BarColor
             End Get
             Set(value As Color)
+                Dim colorChanged As Boolean = Me._BarColor <> value
                 Me._BarColor = value
+                If colorChanged Then
+                    DisposeCachedBrush(Me._barBrush)
+                End If
                 Me.Invalidate()
             End Set
         End Property
 
         ''' <summary>
         ''' Gibt die Farbe des leeren Fortschrittsbereichs zurück oder legt diese fest.
+        ''' Transparente Farben und Systemfarben werden unterstützt.
         ''' </summary>
         <Browsable(True)>
         <Category("Appearance")>
@@ -141,7 +136,11 @@ Namespace ColorProgressBarControl
                 Return Me._EmptyColor
             End Get
             Set(value As Color)
+                Dim colorChanged As Boolean = Me._EmptyColor <> value
                 Me._EmptyColor = value
+                If colorChanged Then
+                    DisposeCachedBrush(Me._emptyBrush)
+                End If
                 Me.Invalidate()
             End Set
         End Property
@@ -291,36 +290,29 @@ Namespace ColorProgressBarControl
 
 #End Region
 
-#Region "interne Methoden"
+#Region "öffentliche Methoden"
 
         ''' <summary>
-        ''' Zeichnet den Fortschritt, den leeren Bereich und den optionalen Glanzeffekt.
+        ''' Initialisiert das Steuerelement, aktiviert flimmerfreies Zeichnen und setzt die Standarddarstellung.
         ''' </summary>
-        ''' <param name="e">Stellt die Zeichenfläche und den zu aktualisierenden Bereich bereit.</param>
-        Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        Public Sub New()
 
-            Me.UpdateCachedGeometry()
+            ' Dieser Aufruf ist für den Designer erforderlich.
+            Me.InitializeComponent()
 
-            If Me._cachedFillBounds.Width > 0 AndAlso Me._cachedFillBounds.Height > 0 Then
-                Using barBrush As New SolidBrush(Me._BarColor)
-                    e.Graphics.FillRectangle(barBrush, Me._cachedFillBounds)
-                End Using
-            End If
+            Me.DoubleBuffered = True
+            Me.SetStyle(ControlStyles.OptimizedDoubleBuffer Or ControlStyles.AllPaintingInWmPaint Or
+                        ControlStyles.UserPaint Or ControlStyles.ResizeRedraw Or ControlStyles.StandardClick, True)
+            Me.UpdateStyles()
 
-            If Me._cachedEmptyBounds.Width > 0 AndAlso Me._cachedEmptyBounds.Height > 0 Then
-                Using emptyBrush As New SolidBrush(Me._EmptyColor)
-                    e.Graphics.FillRectangle(emptyBrush, Me._cachedEmptyBounds)
-                End Using
-            End If
+            ' Standardwerte setzen
+            Me.InitializeDefaults()
 
-            If Me._IsGlossy AndAlso Me._cachedGlossBounds.Width > 0 AndAlso Me._cachedGlossBounds.Height > 0 Then
-                Using glossBrush As New SolidBrush(Color.FromArgb(100, 255, 255, 255))
-                    e.Graphics.FillRectangle(glossBrush, Me._cachedGlossBounds)
-                End Using
-            End If
-
-            MyBase.OnPaint(e)
         End Sub
+
+#End Region
+
+#Region "interne Methoden"
 
         ''' <summary>
         ''' Aktualisiert die Zeichenrechtecke nur bei geänderter Geometrie oder geändertem Fortschritt.
@@ -407,6 +399,99 @@ Namespace ColorProgressBarControl
 
             Me.UpdatePadding()
 
+        End Sub
+
+        ''' <summary>
+        ''' Gibt die eigenen Zeichenressourcen beim Entsorgen des Steuerelements frei.
+        ''' </summary>
+        Private Sub ColorProgressBar_Disposed(sender As Object, e As EventArgs) Handles Me.Disposed
+
+            Try
+                DisposeCachedBrush(Me._barBrush)
+            Finally
+                Try
+                    DisposeCachedBrush(Me._emptyBrush)
+                Finally
+                    DisposeCachedBrush(Me._glossBrush)
+                End Try
+            End Try
+
+        End Sub
+
+        ''' <summary>
+        ''' Entfernt einen zwischengespeicherten Brush und gibt seine Ressourcen frei.
+        ''' </summary>
+        ''' <param name="brush">Der zu entfernende Brush; anschließend <see langword="Nothing"/>.</param>
+        Private Shared Sub DisposeCachedBrush(ByRef brush As SolidBrush)
+
+            If brush IsNot Nothing Then
+                Dim oldBrush As SolidBrush = brush
+                brush = Nothing
+                oldBrush.Dispose()
+            End If
+
+        End Sub
+
+        ''' <summary>
+        ''' Zeichnet den Fortschritt, den leeren Bereich und den optionalen Glanzeffekt.
+        ''' </summary>
+        ''' <param name="e">Stellt die Zeichenfläche und den zu aktualisierenden Bereich bereit.</param>
+        ''' <exception cref="ObjectDisposedException">Das Steuerelement wird oder wurde bereits freigegeben.</exception>
+        Protected Overrides Sub OnPaint(e As PaintEventArgs)
+
+#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
+            If Me.IsDisposed OrElse Me.Disposing Then
+                Throw New ObjectDisposedException(NameOf(ColorProgressBar))
+            End If
+#Enable Warning CA1513
+
+            Me.UpdateCachedGeometry()
+
+            If Me._cachedFillBounds.Width > 0 AndAlso Me._cachedFillBounds.Height > 0 Then
+                If Me._barBrush Is Nothing Then
+                    Me._barBrush = New SolidBrush(Me._BarColor)
+                End If
+                e.Graphics.FillRectangle(Me._barBrush, Me._cachedFillBounds)
+            End If
+
+            If Me._cachedEmptyBounds.Width > 0 AndAlso Me._cachedEmptyBounds.Height > 0 Then
+                If Me._emptyBrush Is Nothing Then
+                    Me._emptyBrush = New SolidBrush(Me._EmptyColor)
+                End If
+                e.Graphics.FillRectangle(Me._emptyBrush, Me._cachedEmptyBounds)
+            End If
+
+            If Me._IsGlossy AndAlso Me._cachedGlossBounds.Width > 0 AndAlso Me._cachedGlossBounds.Height > 0 Then
+                If Me._glossBrush Is Nothing Then
+                    Me._glossBrush = New SolidBrush(Color.FromArgb(100, 255, 255, 255))
+                End If
+                e.Graphics.FillRectangle(Me._glossBrush, Me._cachedGlossBounds)
+            End If
+
+            MyBase.OnPaint(e)
+        End Sub
+
+        ''' <summary>
+        ''' Aktualisiert zwischengespeicherte Systemfarben und löst das zugehörige Ereignis aus.
+        ''' </summary>
+        ''' <param name="e">Stellt die Ereignisdaten bereit.</param>
+        Protected Overrides Sub OnSystemColorsChanged(e As EventArgs)
+
+            Dim usesSystemColor As Boolean = Me._BarColor.IsSystemColor OrElse Me._EmptyColor.IsSystemColor
+
+            ' Ereignishandler können bereits synchron mit den neuen Systemfarben zeichnen.
+            If Me._BarColor.IsSystemColor Then
+                DisposeCachedBrush(Me._barBrush)
+            End If
+            If Me._EmptyColor.IsSystemColor Then
+                DisposeCachedBrush(Me._emptyBrush)
+            End If
+
+            MyBase.OnSystemColorsChanged(e)
+
+            If usesSystemColor AndAlso Not Me.IsDisposed AndAlso Not Me.Disposing Then
+                Me.Invalidate()
+            End If
         End Sub
 
 #End Region

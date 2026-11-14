@@ -1,6 +1,9 @@
 ﻿Imports System.Drawing
+Imports System.Reflection
 Imports System.Windows.Forms
+
 Imports Microsoft.VisualStudio.TestTools.UnitTesting
+
 Imports SchlumpfSoft.ControlsNET.ColorProgressBarControl
 
 Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
@@ -127,6 +130,49 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
         End Sub
 
         <TestMethod>
+        Public Sub SystemColorChange_ReplacesOnlyBrushesUsingSystemColors()
+            Using control As New TestableColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 5
+                control.IsGlossy = False
+                Dim systemColor As Color = SystemColors.Highlight
+                Dim fixedColor As Color = Color.FromArgb(systemColor.ToArgb())
+                control.BarColor = systemColor
+                control.EmptyColor = fixedColor
+
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(systemColor, image, 10, 10)
+                    AssertPixel(fixedColor, image, 75, 10)
+                End Using
+                Dim systemBar As SolidBrush = CachedBrush(control, "_barBrush")
+                Dim fixedEmpty As SolidBrush = CachedBrush(control, "_emptyBrush")
+                Assert.IsNotNull(systemBar)
+                Assert.IsNotNull(fixedEmpty)
+
+                control.RaiseSystemColorsChangedForTest()
+                Assert.IsNull(CachedBrush(control, "_barBrush"))
+                Assert.AreSame(fixedEmpty, CachedBrush(control, "_emptyBrush"))
+                AssertBrushDisposed(systemBar)
+
+                control.BarColor = fixedColor
+                control.EmptyColor = systemColor
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(fixedColor, image, 10, 10)
+                    AssertPixel(systemColor, image, 75, 10)
+                End Using
+                Dim fixedBar As SolidBrush = CachedBrush(control, "_barBrush")
+                Dim systemEmpty As SolidBrush = CachedBrush(control, "_emptyBrush")
+                Assert.IsNotNull(fixedBar)
+                Assert.IsNotNull(systemEmpty)
+
+                control.RaiseSystemColorsChangedForTest()
+                Assert.AreSame(fixedBar, CachedBrush(control, "_barBrush"))
+                Assert.IsNull(CachedBrush(control, "_emptyBrush"))
+                AssertBrushDisposed(systemEmpty)
+            End Using
+        End Sub
+
+        <TestMethod>
         Public Sub ShowBorder_UpdatesPadding()
             Using control As New ColorProgressBar()
                 control.ShowBorder = True
@@ -224,6 +270,424 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                     AssertPixel(BlendColors(Color.White, control.EmptyColor), image, 75, 10)
                 End Using
             End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Brushes_AreCreatedLazilyAndReusedAcrossPaints()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 0
+                control.IsGlossy = False
+
+                Assert.IsNull(CachedBrush(control, "_barBrush"))
+                Assert.IsNull(CachedBrush(control, "_emptyBrush"))
+                Assert.IsNull(CachedBrush(control, "_glossBrush"))
+
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Silver, image, 10, 10)
+                End Using
+                Dim emptyBrush As SolidBrush = CachedBrush(control, "_emptyBrush")
+                Assert.IsNotNull(emptyBrush)
+                Assert.IsNull(CachedBrush(control, "_barBrush"))
+                Assert.IsNull(CachedBrush(control, "_glossBrush"))
+
+                control.Value = 5
+                control.IsGlossy = True
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                    AssertPixel(Color.Silver, image, 75, 10)
+                End Using
+                Dim barBrush As SolidBrush = CachedBrush(control, "_barBrush")
+                Dim glossBrush As SolidBrush = CachedBrush(control, "_glossBrush")
+                Assert.IsNotNull(barBrush)
+                Assert.IsNotNull(glossBrush)
+                Assert.AreSame(emptyBrush, CachedBrush(control, "_emptyBrush"))
+
+                For index As Integer = 1 To 20
+                    Using image As Bitmap = RenderControl(control)
+                        AssertPixel(Color.Blue, image, 10, 10)
+                        AssertPixel(Color.Silver, image, 75, 10)
+                    End Using
+                Next
+
+                control.IsGlossy = False
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 10, 2)
+                End Using
+                control.IsGlossy = True
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(BlendColors(Color.Blue, Color.FromArgb(100, 255, 255, 255)), image, 10, 2)
+                End Using
+
+                Assert.AreSame(barBrush, CachedBrush(control, "_barBrush"))
+                Assert.AreSame(emptyBrush, CachedBrush(control, "_emptyBrush"))
+                Assert.AreSame(glossBrush, CachedBrush(control, "_glossBrush"))
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub ColorSetters_InvalidateAndReplaceBrushesOnlyAfterARealChange()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 5
+                control.IsGlossy = False
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                    AssertPixel(Color.Silver, image, 75, 10)
+                End Using
+                Dim barBrush As SolidBrush = CachedBrush(control, "_barBrush")
+                Dim emptyBrush As SolidBrush = CachedBrush(control, "_emptyBrush")
+                Assert.IsNotNull(barBrush)
+                Assert.IsNotNull(emptyBrush)
+                Dim invalidationCount As Integer = 0
+                AddHandler control.Invalidated, Sub(sender, e) invalidationCount += 1
+
+                control.BarColor = Color.Blue
+                control.EmptyColor = Color.Silver
+                Assert.AreEqual(2, invalidationCount)
+                Assert.AreSame(barBrush, CachedBrush(control, "_barBrush"))
+                Assert.AreSame(emptyBrush, CachedBrush(control, "_emptyBrush"))
+
+                control.BarColor = Color.Red
+                control.BarColor = Color.Orange
+                control.EmptyColor = Color.Green
+                control.EmptyColor = Color.White
+                Assert.AreEqual(6, invalidationCount)
+                Assert.IsNull(CachedBrush(control, "_barBrush"))
+                Assert.IsNull(CachedBrush(control, "_emptyBrush"))
+                AssertBrushDisposed(barBrush)
+                AssertBrushDisposed(emptyBrush)
+
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Orange, image, 10, 10)
+                    AssertPixel(Color.White, image, 75, 10)
+                End Using
+                Assert.AreNotSame(barBrush, CachedBrush(control, "_barBrush"))
+                Assert.AreNotSame(emptyBrush, CachedBrush(control, "_emptyBrush"))
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub ColorChanges_AreVisibleDuringSynchronousInvalidation()
+            Using control As New TestableColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 5
+                control.IsGlossy = False
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                Dim invalidationCount As Integer = 0
+
+                Using image As New Bitmap(100, 20)
+                    Using graphics As Graphics = Graphics.FromImage(image)
+                        Using args As New PaintEventArgs(graphics, New Rectangle(Point.Empty, image.Size))
+                            graphics.Clear(Color.White)
+                            control.PaintForTest(args)
+                            Dim repaint As InvalidateEventHandler = Sub(sender, e)
+                                                                        invalidationCount += 1
+                                                                        graphics.Clear(Color.White)
+                                                                        control.PaintForTest(args)
+                                                                    End Sub
+                            AddHandler control.Invalidated, repaint
+                            Try
+                                control.BarColor = Color.FromArgb(128, Color.Red)
+                                Assert.AreEqual(1, invalidationCount)
+                                AssertPixel(BlendColors(Color.White, control.BarColor), image, 10, 10)
+
+                                control.EmptyColor = Color.Empty
+                                Assert.AreEqual(2, invalidationCount)
+                                Assert.AreEqual(Color.Empty, control.EmptyColor)
+                                AssertPixel(Color.White, image, 75, 10)
+
+                                control.EmptyColor = Color.FromArgb(96, Color.Blue)
+                                Assert.AreEqual(3, invalidationCount)
+                                AssertPixel(BlendColors(Color.White, control.EmptyColor), image, 75, 10)
+
+                                control.BarColor = Color.Empty
+                                Assert.AreEqual(4, invalidationCount)
+                                AssertPixel(Color.White, image, 10, 10)
+                            Finally
+                                RemoveHandler control.Invalidated, repaint
+                            End Try
+                        End Using
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub SystemColors_RefreshCachedBrushesBeforeRaisingTheEvent()
+            Using control As New TestableColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 5
+                control.IsGlossy = False
+                Dim systemColor As Color = SystemColors.Highlight
+                Dim fixedColor As Color = Color.FromArgb(systemColor.ToArgb())
+                Assert.AreNotEqual(systemColor, fixedColor)
+                control.BarColor = fixedColor
+                control.EmptyColor = fixedColor
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+
+                Using image As New Bitmap(100, 20)
+                    Using graphics As Graphics = Graphics.FromImage(image)
+                        Using args As New PaintEventArgs(graphics, New Rectangle(Point.Empty, image.Size))
+                            control.PaintForTest(args)
+                            Dim fixedBar As SolidBrush = CachedBrush(control, "_barBrush")
+                            Dim fixedEmpty As SolidBrush = CachedBrush(control, "_emptyBrush")
+                            Assert.IsNotNull(fixedBar)
+                            Assert.IsNotNull(fixedEmpty)
+
+                            control.BarColor = systemColor
+                            control.EmptyColor = systemColor
+                            Assert.IsNull(CachedBrush(control, "_barBrush"))
+                            Assert.IsNull(CachedBrush(control, "_emptyBrush"))
+                            AssertBrushDisposed(fixedBar)
+                            AssertBrushDisposed(fixedEmpty)
+                            control.PaintForTest(args)
+                            Dim systemBar As SolidBrush = CachedBrush(control, "_barBrush")
+                            Dim systemEmpty As SolidBrush = CachedBrush(control, "_emptyBrush")
+                            Assert.IsNotNull(systemBar)
+                            Assert.IsNotNull(systemEmpty)
+                            Assert.AreEqual(systemColor, systemBar.Color)
+                            Assert.AreEqual(systemColor, systemEmpty.Color)
+
+                            Dim systemEventCount As Integer = 0
+                            Dim invalidationCount As Integer = 0
+                            Dim onSystemColorsChanged As EventHandler = Sub(sender, e)
+                                                                            systemEventCount += 1
+                                                                            control.PaintForTest(args)
+                                                                            Assert.AreNotSame(systemBar, CachedBrush(control, "_barBrush"))
+                                                                            Assert.AreNotSame(systemEmpty, CachedBrush(control, "_emptyBrush"))
+                                                                        End Sub
+                            Dim onInvalidated As InvalidateEventHandler = Sub(sender, e) invalidationCount += 1
+                            AddHandler control.SystemColorsChanged, onSystemColorsChanged
+                            AddHandler control.Invalidated, onInvalidated
+                            Try
+                                control.RaiseSystemColorsChangedForTest()
+                                Assert.AreEqual(1, systemEventCount)
+                                Assert.IsGreaterThan(0, invalidationCount)
+                                AssertPixel(systemColor, image, 10, 10)
+                                AssertPixel(systemColor, image, 75, 10)
+                                AssertBrushDisposed(systemBar)
+                                AssertBrushDisposed(systemEmpty)
+                            Finally
+                                RemoveHandler control.SystemColorsChanged, onSystemColorsChanged
+                                RemoveHandler control.Invalidated, onInvalidated
+                            End Try
+
+                            control.BarColor = fixedColor
+                            control.EmptyColor = fixedColor
+                            control.PaintForTest(args)
+                            fixedBar = CachedBrush(control, "_barBrush")
+                            fixedEmpty = CachedBrush(control, "_emptyBrush")
+                            control.RaiseSystemColorsChangedForTest()
+                            control.PaintForTest(args)
+                            Assert.AreSame(fixedBar, CachedBrush(control, "_barBrush"))
+                            Assert.AreSame(fixedEmpty, CachedBrush(control, "_emptyBrush"))
+                        End Using
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Dispose_ReleasesOwnedBrushesWithoutAffectingOtherControls()
+            Using first As New TestableColorProgressBar(), second As New TestableColorProgressBar()
+                first.Size = New Size(100, 20)
+                first.Value = 5
+                second.Size = New Size(100, 20)
+                second.Value = 5
+
+                Using image As Bitmap = RenderControl(first)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                End Using
+                Using image As Bitmap = RenderControl(second)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                End Using
+
+                Dim firstBar As SolidBrush = CachedBrush(first, "_barBrush")
+                Dim firstEmpty As SolidBrush = CachedBrush(first, "_emptyBrush")
+                Dim firstGloss As SolidBrush = CachedBrush(first, "_glossBrush")
+                Dim secondBar As SolidBrush = CachedBrush(second, "_barBrush")
+                Dim secondEmpty As SolidBrush = CachedBrush(second, "_emptyBrush")
+                Dim secondGloss As SolidBrush = CachedBrush(second, "_glossBrush")
+                Assert.IsNotNull(firstBar)
+                Assert.IsNotNull(firstEmpty)
+                Assert.IsNotNull(firstGloss)
+                Assert.IsNotNull(secondBar)
+                Assert.IsNotNull(secondEmpty)
+                Assert.IsNotNull(secondGloss)
+                Assert.AreNotSame(firstBar, secondBar)
+                Assert.AreNotSame(firstEmpty, secondEmpty)
+                Assert.AreNotSame(firstGloss, secondGloss)
+
+                first.Dispose()
+                first.Dispose()
+                Assert.IsNull(CachedBrush(first, "_barBrush"))
+                Assert.IsNull(CachedBrush(first, "_emptyBrush"))
+                Assert.IsNull(CachedBrush(first, "_glossBrush"))
+                AssertBrushDisposed(firstBar)
+                AssertBrushDisposed(firstEmpty)
+                AssertBrushDisposed(firstGloss)
+
+                Using image As Bitmap = RenderControl(second)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                    AssertPixel(Color.Silver, image, 75, 10)
+                End Using
+                Assert.AreSame(secondBar, CachedBrush(second, "_barBrush"))
+                Assert.AreSame(secondEmpty, CachedBrush(second, "_emptyBrush"))
+                Assert.AreSame(secondGloss, CachedBrush(second, "_glossBrush"))
+
+                first.BarColor = Color.Red
+                first.EmptyColor = Color.White
+                Using image As New Bitmap(100, 20)
+                    Using graphics As Graphics = Graphics.FromImage(image)
+                        Using args As New PaintEventArgs(graphics, New Rectangle(Point.Empty, image.Size))
+                            Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() first.PaintForTest(args))
+                        End Using
+                    End Using
+                End Using
+                Assert.IsNull(CachedBrush(first, "_barBrush"))
+                Assert.IsNull(CachedBrush(first, "_emptyBrush"))
+                Assert.IsNull(CachedBrush(first, "_glossBrush"))
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Dispose_BeforePaintingAndWithPartiallyCreatedBrushes()
+            Using unpainted As New ColorProgressBar()
+                unpainted.Dispose()
+                unpainted.Dispose()
+                Assert.IsNull(CachedBrush(unpainted, "_barBrush"))
+                Assert.IsNull(CachedBrush(unpainted, "_emptyBrush"))
+                Assert.IsNull(CachedBrush(unpainted, "_glossBrush"))
+            End Using
+
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 0
+                control.IsGlossy = False
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Silver, image, 10, 10)
+                End Using
+                Dim emptyBrush As SolidBrush = CachedBrush(control, "_emptyBrush")
+                Assert.IsNotNull(emptyBrush)
+                Assert.IsNull(CachedBrush(control, "_barBrush"))
+                Assert.IsNull(CachedBrush(control, "_glossBrush"))
+                control.Dispose()
+                AssertBrushDisposed(emptyBrush)
+                Assert.IsNull(CachedBrush(control, "_emptyBrush"))
+            End Using
+
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 10
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                End Using
+                Dim barBrush As SolidBrush = CachedBrush(control, "_barBrush")
+                Dim glossBrush As SolidBrush = CachedBrush(control, "_glossBrush")
+                Assert.IsNotNull(barBrush)
+                Assert.IsNotNull(glossBrush)
+                Assert.IsNull(CachedBrush(control, "_emptyBrush"))
+                control.Dispose()
+                AssertBrushDisposed(barBrush)
+                AssertBrushDisposed(glossBrush)
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub DisposedEvent_CannotRecreateBrushesByPaintingSynchronously()
+            Using control As New TestableColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 5
+                Dim disposedEventCount As Integer = 0
+
+                Using image As New Bitmap(100, 20)
+                    Using graphics As Graphics = Graphics.FromImage(image)
+                        Using args As New PaintEventArgs(graphics, New Rectangle(Point.Empty, image.Size))
+                            control.PaintForTest(args)
+                            Dim barBrush As SolidBrush = CachedBrush(control, "_barBrush")
+                            Dim emptyBrush As SolidBrush = CachedBrush(control, "_emptyBrush")
+                            Dim glossBrush As SolidBrush = CachedBrush(control, "_glossBrush")
+                            Dim onDisposed As EventHandler = Sub(sender, e)
+                                                                 disposedEventCount += 1
+                                                                 Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.PaintForTest(args))
+                                                                 Assert.IsNull(CachedBrush(control, "_barBrush"))
+                                                                 Assert.IsNull(CachedBrush(control, "_emptyBrush"))
+                                                                 Assert.IsNull(CachedBrush(control, "_glossBrush"))
+                                                             End Sub
+                            AddHandler control.Disposed, onDisposed
+                            Try
+                                control.Dispose()
+                                Assert.IsGreaterThan(0, disposedEventCount)
+                                control.Dispose()
+                            Finally
+                                RemoveHandler control.Disposed, onDisposed
+                            End Try
+
+                            AssertBrushDisposed(barBrush)
+                            AssertBrushDisposed(emptyBrush)
+                            AssertBrushDisposed(glossBrush)
+                        End Using
+                    End Using
+                End Using
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub HandleRecreation_PreservesLiveBrushes()
+            Using control As New TestableColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.Value = 5
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                End Using
+                Dim barBrush As SolidBrush = CachedBrush(control, "_barBrush")
+                Dim emptyBrush As SolidBrush = CachedBrush(control, "_emptyBrush")
+                Dim glossBrush As SolidBrush = CachedBrush(control, "_glossBrush")
+                Assert.IsNotNull(barBrush)
+                Assert.IsNotNull(emptyBrush)
+                Assert.IsNotNull(glossBrush)
+
+                control.RecreateHandleForTest()
+                Assert.IsTrue(control.IsHandleCreated)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                    AssertPixel(Color.Silver, image, 75, 10)
+                End Using
+                Assert.AreSame(barBrush, CachedBrush(control, "_barBrush"))
+                Assert.AreSame(emptyBrush, CachedBrush(control, "_emptyBrush"))
+                Assert.AreSame(glossBrush, CachedBrush(control, "_glossBrush"))
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub RepeatedControlDisposal_ReleasesEveryCreatedBrush()
+            For index As Integer = 1 To 25
+                Using control As New ColorProgressBar()
+                    control.Size = New Size(100, 20)
+                    control.Value = 5
+                    Using image As Bitmap = RenderControl(control)
+                        AssertPixel(Color.Blue, image, 10, 10)
+                    End Using
+                    Dim barBrush As SolidBrush = CachedBrush(control, "_barBrush")
+                    Dim emptyBrush As SolidBrush = CachedBrush(control, "_emptyBrush")
+                    Dim glossBrush As SolidBrush = CachedBrush(control, "_glossBrush")
+                    Assert.IsNotNull(barBrush)
+                    Assert.IsNotNull(emptyBrush)
+                    Assert.IsNotNull(glossBrush)
+                    control.Dispose()
+                    AssertBrushDisposed(barBrush)
+                    AssertBrushDisposed(emptyBrush)
+                    AssertBrushDisposed(glossBrush)
+                End Using
+            Next
         End Sub
 
         <TestMethod>
@@ -623,6 +1087,21 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
             Assert.AreEqual(expected.ToArgb(), image.GetPixel(x, y).ToArgb(), $"Unerwartete Farbe bei ({x}, {y}).")
         End Sub
 
+        Private Shared Function CachedBrush(control As ColorProgressBar, fieldName As String) As SolidBrush
+            Dim field As FieldInfo = GetType(ColorProgressBar).GetField(fieldName, BindingFlags.Instance Or BindingFlags.NonPublic)
+            Assert.IsNotNull(field, $"Der Brush-Cache {fieldName} wurde nicht gefunden.")
+            Return DirectCast(field.GetValue(control), SolidBrush)
+        End Function
+
+        Private Shared Sub AssertBrushDisposed(brush As SolidBrush)
+            Assert.IsNotNull(brush)
+            Using image As New Bitmap(1, 1)
+                Using graphics As Graphics = Graphics.FromImage(image)
+                    Assert.ThrowsExactly(Of ArgumentException)(Sub() graphics.FillRectangle(brush, 0, 0, 1, 1))
+                End Using
+            End Using
+        End Sub
+
         Private Shared Function BlendColors(background As Color, overlay As Color) As Color
             Using image As New Bitmap(1, 1)
                 Using graphics As Graphics = Graphics.FromImage(image)
@@ -650,6 +1129,14 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
 
             Public Sub RaiseClickForTest()
                 Me.OnClick(EventArgs.Empty)
+            End Sub
+
+            Public Sub RaiseSystemColorsChangedForTest()
+                Me.OnSystemColorsChanged(EventArgs.Empty)
+            End Sub
+
+            Public Sub RecreateHandleForTest()
+                Me.RecreateHandle()
             End Sub
         End Class
     End Class

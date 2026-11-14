@@ -34,15 +34,17 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ## 4. Farbübergänge effizient gestalten
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
-- Brushes/Pens nur bei Farbänderung neu erzeugen.
+- Die Brushes für Füllung, Leerbereich und Glanz werden bei Bedarf pro Control erzeugt und bei weiteren Zeichenvorgängen wiederverwendet.
 
-- Disposable-GDI-Objekte konsequent freigeben.
+- Bei Änderungen von `BarColor` oder `EmptyColor` wird der jeweilige Brush freigegeben und erst beim nächsten Zeichnen neu erzeugt. Systemfarben werden beim Ereignis `SystemColorsChanged` entsprechend aktualisiert.
 
-**Nutzen:** Weniger GDI-Druck und stabilere Langzeitnutzung.
+- Die verbleibenden Brushes werden beim Entsorgen des Controls freigegeben. Der Rahmen benötigt weiterhin keinen eigenen Pen.
+
+**Nutzen:** Weniger wiederholte GDI+-Brush-Erzeugungen und zuverlässige Freigabe der Zeichenressourcen.
 
 ## 5. API-Konsistenz verbessern
 
@@ -70,6 +72,5 @@ Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
 
 ## 7. Empfohlene Reihenfolge
 
-1. GDI-Objektmanagement (4.)
-2. API-Konsistenz (5.)
-3. Accessibility (6.)
+1. API-Konsistenz (5.)
+2. Accessibility (6.)

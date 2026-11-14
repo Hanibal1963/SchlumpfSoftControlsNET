@@ -30,15 +30,17 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 - `Paint`: Registrierte Ereignishandler werden nach der Darstellung des Steuerelements aufgerufen und können diese ergänzen.
 
+- `SystemColorsChanged`: Bei Systemfarben in `BarColor` oder `EmptyColor` werden deren Brushes vor dem Aufruf der Ereignishandler verworfen und eine Neuzeichnung angefordert.
+
 ## 3. Eigenschaften
 
 - `Value`: Gibt den aktuellen Fortschrittswert zurück oder legt diesen fest. Eingaben werden auf den Bereich `0` bis `ProgressMaximumValue` begrenzt. Bleibt der begrenzte Wert unverändert, wird keine Invalidierung ausgelöst.
 
 - `ProgressMaximumValue`: Gibt den Maximalwert des Fortschrittsbalkens zurück oder legt diesen fest. Eingaben kleiner als `1` werden auf `1` begrenzt; ein höherer Fortschrittswert wird auf das neue Maximum reduziert. Bleibt das begrenzte Maximum unverändert, wird keine Invalidierung ausgelöst.
 
-- `BarColor`: Gibt die Farbe des gefüllten Fortschrittsbereichs zurück oder legt diese fest.
+- `BarColor`: Gibt die Farbe des gefüllten Fortschrittsbereichs zurück oder legt diese fest. Transparente Farben, `Color.Empty` und Systemfarben werden unterstützt.
 
-- `EmptyColor`: Gibt die Farbe des leeren Fortschrittsbereichs zurück oder legt diese fest.
+- `EmptyColor`: Gibt die Farbe des leeren Fortschrittsbereichs zurück oder legt diese fest. Transparente Farben, `Color.Empty` und Systemfarben werden unterstützt.
 
 - `BorderColor`: Gibt die Farbe des Rahmens zurück oder legt diese fest.
 
@@ -73,6 +75,12 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 - Ein Neuzeichnen kann auch bei unverändertem Fortschritt weiterhin mit `Invalidate()` oder `Refresh()` angefordert werden. Das `Paint`-Ereignis wird nach dem Zeichnen ausgelöst.
 
 - Die Zeichenrechtecke werden zwischengespeichert und bei Änderungen ihrer Geometrie- oder Fortschrittsdaten aktualisiert. Der Rahmen entsteht weiterhin durch Hintergrundfarbe und Padding.
+
+- Die Brushes für Füllung, Leerbereich und Glanz werden bei Bedarf pro Control erzeugt und wiederverwendet. Ersetzte Brushes und die verbleibenden Brushes beim Entsorgen des Controls werden freigegeben.
+
+- Eine Zuweisung an `BarColor` oder `EmptyColor` invalidiert auch bei unveränderter Farbe; der vorhandene Brush bleibt dabei erhalten.
+
+- Während oder nach dem Entsorgen löst ein direkter `OnPaint`-Aufruf aus einer abgeleiteten Klasse eine `ObjectDisposedException` aus; es werden keine neuen Brushes angelegt.
 
 - Die Darstellung erfolgt ohne interne Panels. Anwendungen, die über `Controls` auf diese Panels zugegriffen haben, müssen entsprechend angepasst werden.
 

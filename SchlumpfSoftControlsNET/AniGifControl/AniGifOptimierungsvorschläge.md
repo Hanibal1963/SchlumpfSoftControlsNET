@@ -158,19 +158,23 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 12. Sichtbarkeitsprüfung vereinfachen
 
-**Status:** Offen.
+**Status:** Umgesetzt.
 
-**Ausgangslage:** `IsControlTreeVisible()` prüft nach `Visible` nochmals alle übergeordneten Controls. Im Timerpfad wird die Sichtbarkeit zusätzlich sowohl vor dem Framewechsel als auch in `InvalidateIfVisible()` geprüft.
+**Ausgangslage:** `IsControlTreeVisible()` prüfte nach `Visible` nochmals alle übergeordneten Controls. Bei aktivierter Diagnostik wurde die Sichtbarkeit im Timerpfad unmittelbar danach erneut vor dem Framewechsel geprüft.
 
 **Umsetzung:**
 
-- Die zusätzliche Elternschleife prüfen: Der Getter von [Control.Visible](https://learn.microsoft.com/dotnet/api/system.windows.forms.control.visible) berücksichtigt bereits die Sichtbarkeit des übergeordneten Controls.
+- `IsControlTreeVisible()` verwendet den Getter von [Control.Visible](https://learn.microsoft.com/dotnet/api/system.windows.forms.control.visible), der die Sichtbarkeit der Elternkette bereits berücksichtigt.
 
-- Eine wiederholte Prüfung innerhalb desselben Ticks vermeiden, soweit dazwischen keine Zustandsänderung möglich ist. Die Schutzprüfungen für Dispose-Zustand, Handle und Clientgröße erhalten.
+- Bei aktivierter Diagnostik und vorhandenem Bild teilen sich Diagnostik und Frameprüfung dieselbe Sichtbarkeitsmomentaufnahme; zwischen diesen Prüfungen werden keine Ereignishandler ausgelöst. Andere Diagnoseaufrufe und `SeekFrame()` prüfen die Sichtbarkeit weiterhin eigenständig.
 
-- Sichtbarkeitswechsel des Controls und mehrerer verschachtelter Eltern sowie das Fortsetzen der Wiedergabe testen.
+- Vor `Invalidate()` bleibt die erneute Sichtbarkeitsprüfung erhalten: Ein abgeleiteter Timer kann bei einer Intervalländerung über seinen überschreibbaren `Enabled`-Getter wiedereintreten und die Sichtbarkeit ändern. Auch die Schutzprüfungen für Dispose-Zustand, Handle und Clientgröße bleiben bestehen.
+
+- Tests sichern verschachtelte und umgehängte Eltern, beide Geschwindigkeitsarten, adaptives Timing, Diagnostik, Pause, fehlendes Handle, leere Clientfläche, Timer-Rückeintritte und einen echten WinForms-Timerlauf ab. Das bestehende Verhalten bleibt erhalten: Bei ausgeblendeten Eltern kann der Timer weiterlaufen, ohne Frames umzuschalten oder Frame-Neuzeichnungen anzufordern.
 
 **Nutzen:** Weniger redundante Abfragen pro Frame bei unverändertem Verhalten für ausgeblendete Controls.
+
+**Messung:** In zwei lokalen Release-Läufen unter .NET Framework 4.8.1 mit jeweils drei Messungen und je 500.000 isolierten Sichtbarkeitsabfragen lagen die Zeiten ohne Eltern zuvor bei 14,8–53,6 ms und danach bei 4,8–10,8 ms; bei zehn Eltern waren es zuvor 860,0–916,7 ms und danach 22,7–71,7 ms. Je 800 manuell aufgerufene Ticks mit Handle, beiden Geschwindigkeitsarten, aktivierter oder deaktivierter Diagnostik und null beziehungsweise fünf Eltern schwankten zuvor zwischen 192 und 708 ms und danach zwischen 194 und 786 ms. Daraus lässt sich kein verlässlicher Gesamtgeschwindigkeitsgewinn ableiten; tatsächliche Timerintervalle und Bildausgabe wurden nicht gemessen.
 
 ## 13. Aktualisierungsbereich bei Framewechseln begrenzen
 
@@ -204,5 +208,4 @@ Stabilere GIF-Wiedergabe mit geringerer CPU-Last und sauberer Ressourcenfreigabe
 
 ## 15. Empfohlene Reihenfolge
 
-1. Sichtbarkeitsprüfung vereinfachen (7.12).
-2. Aktualisierungsbereich bei Framewechseln begrenzen (7.13).
+1. Aktualisierungsbereich bei Framewechseln begrenzen (7.13).

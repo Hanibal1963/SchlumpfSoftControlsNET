@@ -1,4 +1,10 @@
-﻿Imports System
+﻿' --------------------------------------------------------------------------------------------------------
+' Datei: WizardTests.vb
+' Author: Andreas Sauer
+' Datum: 15.11.2026
+' --------------------------------------------------------------------------------------------------------
+
+Imports System
 Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Reflection

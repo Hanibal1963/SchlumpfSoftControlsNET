@@ -1,3 +1,9 @@
+﻿' --------------------------------------------------------------------------------------------------------
+' Datei: FileListTests.vb
+' Author: Andreas Sauer
+' Datum: 15.11.2026
+' --------------------------------------------------------------------------------------------------------
+
 Imports System
 Imports System.Windows.Forms
 Imports Microsoft.VisualStudio.TestTools.UnitTesting

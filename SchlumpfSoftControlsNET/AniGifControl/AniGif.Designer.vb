@@ -1,11 +1,18 @@
-﻿Namespace AniGifControl
+﻿' --------------------------------------------------------------------------------------------------------
+' Datei: AniGif.Designer.vb
+' Author: Andreas Sauer
+' Datum: 15.11.2026
+' --------------------------------------------------------------------------------------------------------
+
+Namespace AniGifControl
 
     <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
     Partial Class AniGif
 
         Inherits System.Windows.Forms.UserControl
 
-        ' UserControl überschreibt Dispose, um die Komponentenliste zu bereinigen.
+        ''' <summary>Gibt die Animationsressourcen und die Komponentenliste frei.</summary>
+        ''' <param name="disposing">Gibt an, ob verwaltete Ressourcen freigegeben werden.</param>
         <System.Diagnostics.DebuggerNonUserCode()>
         Protected Overrides Sub Dispose(ByVal disposing As Boolean)
             Try

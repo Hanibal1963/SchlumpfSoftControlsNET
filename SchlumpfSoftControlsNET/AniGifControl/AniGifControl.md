@@ -34,6 +34,14 @@ Weitere Infos unter:
 
 - `AutoPlay`: Steuert, ob die GIF-Animation automatisch gestartet wird, sobald ein animierbares Bild vorhanden und das Control sichtbar ist. Eine explizite Pause verändert den Wert nicht.
 
+- `LoopCount`: Anzahl der Segmentdurchläufe; `0` (Standard) bedeutet unbegrenzte Wiedergabe. Negative Werte lösen `ArgumentOutOfRangeException` aus. Nach dem letzten Frameintervall eines begrenzten Durchlaufs wird `AutoPlay` auf `False` und der Wiedergabezustand auf `Stopped` gesetzt; der letzte Frame bleibt sichtbar. Ein erneuter Start beginnt am Segmentanfang.
+
+- `PlayRangeStart`: Nullbasierter erster Segmentframe, Standard `0`. Negative Werte lösen `ArgumentOutOfRangeException` aus.
+
+- `PlayRangeEnd`: Nullbasierter letzter Segmentframe, einschließlich; `-1` (Standard) bezeichnet das Bildende. Werte kleiner als `-1` lösen `ArgumentOutOfRangeException` aus.
+
+  Die wirksamen Grenzen werden auf das aktuelle Bild begrenzt; ein Ende vor dem Anfang ergibt ein Segment aus einem Frame. Änderungen des Bereichs setzen den Durchlaufzähler zurück und wählen bei Bedarf den Segmentanfang. Die Werte bleiben bei Bildwechsel erhalten. Die Eigenschaften müssen auf dem UI-Thread verwendet werden.
+
 - `Gif`: Gibt die aktuell verwendete interne Bitmap zurück oder legt eine GIF-Grafik fest. Bei der Zuweisung erstellt das Control eine eigene Kopie und gibt vom Aufrufer verwaltete Bilder nicht frei. Die zurückgegebene interne Bitmap gehört dem Control und wird bei einem Bildwechsel oder bei der Ressourcenfreigabe freigegeben. `Nothing` stellt eine Kopie des Standardbilds wieder her. Nach Beginn der Ressourcenfreigabe lösen beide Zuweisungen eine `ObjectDisposedException` aus, ohne das übergebene Bild zu verändern. Nach abgeschlossener Freigabe gibt der Getter `Nothing` zurück. Bei aktivierter Teilinvalidierung kann der erste Zugriff nach einer Teilinvalidierung eine vollständige Neuzeichnung auslösen. Die Zuweisung muss auf dem UI-Thread des Controls erfolgen.
 
 - `GifSizeMode`: Legt die Skalierung und Ausrichtung der GIF-Grafik fest. `Zoom` passt das Bild proportional in die Clientfläche ein, `Fill` füllt sie proportional und kann Bildränder abschneiden. `Normal` und `CenterImage` verwenden die Originalgröße.
@@ -150,11 +158,13 @@ Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlay
 
 - Pause und Fortsetzen verändern `AutoPlay` nicht. `AnimationStopped` beziehungsweise `AnimationStarted` werden nur beim tatsächlichen Anhalten beziehungsweise Wiederanlaufen ausgelöst; eine Frameauswahl löst diese Ereignisse nicht aus.
 
+- Ein Durchlauf endet nach Ablauf des Intervalls des letzten Segmentframes. Bei einem Segment aus einem Frame wird dessen Intervall ebenfalls für jeden Durchlauf abgewartet. Pause und Unsichtbarkeit erhalten den Zähler; ein expliziter Stopp, eine Änderung von `LoopCount` oder des Bereichs, `SeekFrame()` und ein Bildwechsel setzen ihn zurück. Ein außerhalb des Segments ausgewählter Frame wird beim nächsten Timer-Tick durch den Segmentanfang ersetzt. Statische Bilder lösen weiterhin `NoAnimation` aus.
+
 - Der mit `GetPlaybackState()` abgefragte Zustand ist unabhängig von der Sichtbarkeit. `Playing` bedeutet nicht zwangsläufig, dass die Animation tatsächlich läuft, beispielsweise bei einem unsichtbaren Control oder einer nicht animierbaren Grafik.
 
 - Bei ausgeblendeten Eltern kann der Timer weiterlaufen, wenn WinForms keinen entsprechenden Sichtbarkeitswechsel am Control auslöst. Solange `Visible` wegen der Elternkette `False` liefert, schalten Timer-Ticks keinen Frame um und fordern keine Frame-Neuzeichnung an.
 
-- Beim Austausch von `Gif` werden laufende Wiedergabemechanismen gestoppt, intern erzeugte Bilder freigegeben und der Frame auf `0` gesetzt. Eine explizite Pause bleibt erhalten.
+- Beim Austausch von `Gif` werden laufende Wiedergabemechanismen gestoppt, intern erzeugte Bilder freigegeben und der Frame auf den wirksamen Segmentanfang gesetzt. Eine explizite Pause bleibt erhalten.
 
 - Jede Instanz besitzt eine eigene Bitmap-Kopie des Standardbilds, damit Frameänderungen andere Instanzen nicht beeinflussen.
 

@@ -1,4 +1,10 @@
-﻿Imports System.ComponentModel
+﻿' --------------------------------------------------------------------------------------------------------
+' Datei: AniGifTests.vb
+' Author: Andreas Sauer
+' Datum: 15.11.2026
+' --------------------------------------------------------------------------------------------------------
+
+Imports System.ComponentModel
 Imports System.Diagnostics
 Imports System.Drawing
 Imports System.Drawing.Imaging

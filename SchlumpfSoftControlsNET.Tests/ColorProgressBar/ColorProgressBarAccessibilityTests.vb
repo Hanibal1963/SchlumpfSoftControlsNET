@@ -22,8 +22,10 @@ Imports Microsoft.VisualStudio.TestTools.UnitTesting
 Imports SchlumpfSoft.ControlsNET.ColorProgressBarControl
 
 Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
+
     <STATestClass>
     Public Class ColorProgressBarAccessibilityTests
+
         <TestMethod>
         <DataRow("de-DE", "Fortschrittsanzeige", "Zeigt den Fortschritt eines Vorgangs an.")>
         <DataRow("en-US", "Progress indicator", "Shows the progress of an operation.")>
@@ -35,8 +37,8 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Using control As New ColorProgressBar()
                     Assert.IsNull(control.AccessibleName)
                     Assert.IsNull(control.AccessibleDescription)
-                    Assert.IsFalse(TypeDescriptor.GetProperties(control)(NameOf(Control.AccessibleName)).ShouldSerializeValue(control))
-                    Assert.IsFalse(TypeDescriptor.GetProperties(control)(NameOf(Control.AccessibleDescription)).ShouldSerializeValue(control))
+                    Assert.IsFalse(TypeDescriptor.GetProperties(control)(NameOf(control.AccessibleName)).ShouldSerializeValue(control))
+                    Assert.IsFalse(TypeDescriptor.GetProperties(control)(NameOf(control.AccessibleDescription)).ShouldSerializeValue(control))
                     Assert.AreEqual(AccessibleRole.ProgressBar, control.AccessibleRole)
                     Assert.AreEqual(expectedName, control.AccessibilityObject.Name)
                     Assert.AreEqual(expectedDescription, control.AccessibilityObject.Description)
@@ -261,9 +263,9 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                                                  Dim element As AutomationElement = Nothing
                                                  Dim registered As Boolean = False
                                                  Dim handler As AutomationPropertyChangedEventHandler = Sub(sender, e)
-                                                                                                           events.Enqueue(e)
-                                                                                                           If Interlocked.Increment(eventCount) = 7 Then received.Set()
-                                                                                                       End Sub
+                                                                                                            events.Enqueue(e)
+                                                                                                            If Interlocked.Increment(eventCount) = 7 Then received.Set()
+                                                                                                        End Sub
                                                  Try
                                                      element = AutomationElement.FromHandle(handle)
                                                      Assert.IsNotNull(element)
@@ -508,11 +510,14 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
         End Function
 
         Private Class TestableColorProgressBar
+
             Inherits ColorProgressBar
 
             Public Sub RecreateHandleForTest()
                 Me.RecreateHandle()
             End Sub
         End Class
+
     End Class
+
 End Namespace

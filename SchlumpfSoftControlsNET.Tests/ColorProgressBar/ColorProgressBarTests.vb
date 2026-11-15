@@ -15,8 +15,10 @@ Imports Microsoft.VisualStudio.TestTools.UnitTesting
 Imports SchlumpfSoft.ControlsNET.ColorProgressBarControl
 
 Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
+
     <STATestClass>
     Public Class ColorProgressBarTests
+
         <TestMethod>
         Public Sub Value_IsClampedToValidRange()
             Using control As New ColorProgressBar()
@@ -1252,6 +1254,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
         End Function
 
         Private Class TestableColorProgressBar
+
             Inherits ColorProgressBar
 
             Public ReadOnly Property StandardClickEnabled As Boolean
@@ -1275,6 +1278,9 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
             Public Sub RecreateHandleForTest()
                 Me.RecreateHandle()
             End Sub
+
         End Class
+
     End Class
+
 End Namespace

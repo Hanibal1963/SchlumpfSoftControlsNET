@@ -38,13 +38,22 @@ Namespace DriveWatcherControl
 
 #Region "Variablen"
 
+        ''' <summary>Empfangsfenster für native Geräteänderungen und deren Ereignisse.</summary>
         Private WithEvents NatForm As NativeForm ' Unsichtbares natives Fenster für den Empfang von WM_DEVICECHANGE.
 
+        ''' <summary>Synchronisiert Zustellung, Freigabe und Diagnoseeinstellungen.</summary>
         Private ReadOnly _notificationSyncRoot As New Object
 
+        ''' <summary>Optionales Ziel für die threadübergreifende Ereigniszustellung.</summary>
         Private _synchronizingObject As ISynchronizeInvoke
+
+        ''' <summary>Kennzeichnet die beendete Ereigniszustellung.</summary>
         Private _notificationDisposed As Boolean
+
+        ''' <summary>Aktuelle Diagnosestufe dieser Instanz.</summary>
         Private _traceLevel As TraceLevel = TraceLevel.Off
+
+        ''' <summary>Unterdrückt wiederholte Laufwerksereignisse innerhalb des Zeitfensters.</summary>
         Private ReadOnly _debouncer As New DriveEventDebouncer()
 
 #End Region
@@ -211,6 +220,8 @@ Namespace DriveWatcherControl
         ''' Die Methode überführt Laufwerksinformationen in stabile EventArgs. Falls ein Laufwerk noch nicht
         ''' bereit ist, bleiben Detailfelder neutral befüllt.
         ''' </remarks>
+        ''' <param name="sender">Das native Empfangsfenster.</param>
+        ''' <param name="e">Der Name des hinzugefügten Laufwerks.</param>
         Private Sub NatForm_DriveAdded(sender As Object, e As String) Handles NatForm.DriveAdded
             Me.OnDriveAdded(Me.ReadDriveInfo(e, DriveEventType.Added))
         End Sub
@@ -218,6 +229,8 @@ Namespace DriveWatcherControl
         ''' <summary>
         ''' Übernimmt das interne NativeForm-Ereignis für ein entferntes Laufwerk.
         ''' </summary>
+        ''' <param name="sender">Das native Empfangsfenster.</param>
+        ''' <param name="e">Der Name des entfernten Laufwerks.</param>
         Private Sub NatForm_DriveRemoved(sender As Object, e As String) Handles NatForm.DriveRemoved
 
             ' Beim Entfernen ist typischerweise nur noch der Laufwerksname zuverlässig vorhanden.
@@ -258,18 +271,30 @@ Namespace DriveWatcherControl
         ''' Die Methode überführt Laufwerksinformationen in stabile EventArgs. Falls ein Laufwerk noch nicht
         ''' bereit ist, bleiben Detailfelder neutral befüllt.
         ''' </remarks>
+        ''' <param name="sender">Das native Empfangsfenster.</param>
+        ''' <param name="e">Der Name des hinzugefügten Netzlaufwerks.</param>
         Private Sub NatForm_NetworkDriveAdded(sender As Object, e As String) Handles NatForm.NetworkDriveAdded
 
             Me.OnNetworkDriveAdded(Me.ReadDriveInfo(e, DriveEventType.NetworkAdded))
 
         End Sub
 
+        ''' <summary>Protokolliert bei ausführlicher Diagnose die nativen Volume-Daten.</summary>
+        ''' <param name="sender">Das native Empfangsfenster.</param>
+        ''' <param name="eventCode">Der native Ereigniscode.</param>
+        ''' <param name="driveName">Der Name des betroffenen Laufwerks.</param>
+        ''' <param name="unitMask">Die native Laufwerksbitmaske.</param>
+        ''' <param name="flags">Die nativen Volume-Flags.</param>
         Private Sub NatForm_VolumeObserved(sender As Object, eventCode As Integer, driveName As String, unitMask As Integer, flags As Short) Handles NatForm.VolumeObserved
             If Me.IsTraceEnabled(System.Diagnostics.TraceLevel.Verbose) Then
                 WriteDiagnostic($"Native EventCode=0x{eventCode:X4} Drive={driveName} UnitMask=0x{unitMask:X8} Flags=0x{CInt(flags) And &HFFFF:X4}")
             End If
         End Sub
 
+        ''' <summary>Liest einen Laufwerks-Snapshot und protokolliert gegebenenfalls Lesefehler.</summary>
+        ''' <param name="driveName">Der Name des zu lesenden Laufwerks.</param>
+        ''' <param name="eventType">Der Ereignistyp für die Diagnose.</param>
+        ''' <returns>Die gelesenen Laufwerksinformationen einschließlich etwaiger Lesefehler.</returns>
         Private Function ReadDriveInfo(driveName As String, eventType As DriveEventType) As DriveAddedEventArgs
             Dim result As DriveAddedEventArgs = DriveInfoSnapshotReader.Read(driveName)
             If Me.IsTraceEnabled(System.Diagnostics.TraceLevel.Error) Then
@@ -280,11 +305,16 @@ Namespace DriveWatcherControl
             Return result
         End Function
 
+        ''' <summary>Schreibt eine Diagnosemeldung mit UTC-Zeitstempel in den Trace.</summary>
+        ''' <param name="message">Der Inhalt der Diagnosemeldung.</param>
         Private Shared Sub WriteDiagnostic(message As String)
             Dim timestamp As String = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)
             Trace.WriteLine($"DriveWatcher Timestamp={timestamp} {message}")
         End Sub
 
+        ''' <summary>Prüft die Diagnosestufe unter Berücksichtigung der Freigabe.</summary>
+        ''' <param name="level">Die mindestens benötigte Diagnosestufe.</param>
+        ''' <returns>Ob die Diagnose für diese Stufe aktiviert ist.</returns>
         Private Function IsTraceEnabled(level As System.Diagnostics.TraceLevel) As Boolean
             SyncLock Me._notificationSyncRoot
                 Return Not Me._notificationDisposed AndAlso Me._traceLevel >= level
@@ -294,6 +324,8 @@ Namespace DriveWatcherControl
         ''' <summary>
         ''' Übernimmt das interne NativeForm-Ereignis für ein entferntes Netzlaufwerk.
         ''' </summary>
+        ''' <param name="sender">Das native Empfangsfenster.</param>
+        ''' <param name="e">Der Name des entfernten Netzlaufwerks.</param>
         Private Sub NatForm_NetworkDriveRemoved(sender As Object, e As String) Handles NatForm.NetworkDriveRemoved
 
             Dim arg As New DriveRemovedEventArgs(e)
@@ -381,6 +413,7 @@ Namespace DriveWatcherControl
         ''' <param name="raiseEventAction">Die auszuführende Ereignisbenachrichtigung.</param>
         Private Sub DispatchEvent(raiseEventAction As Action)
             Dim target As ISynchronizeInvoke
+            ' Das Ziel wird einmalig erfasst; spätere Änderungen betreffen nur neue Ereignisse.
             SyncLock Me._notificationSyncRoot
                 If Me._notificationDisposed Then Return
                 target = Me._synchronizingObject
@@ -394,6 +427,7 @@ Namespace DriveWatcherControl
                 End If
 
                 If target.InvokeRequired Then
+                    ' Die Freigabe wird beim späteren Ausführen erneut geprüft.
                     target.BeginInvoke(New Action(Sub() Me.RaiseEventIfActive(raiseEventAction)), Nothing)
                     Return
                 End If
@@ -410,6 +444,7 @@ Namespace DriveWatcherControl
             SyncLock Me._notificationSyncRoot
                 If Me._notificationDisposed Then Return
             End SyncLock
+            ' Handler außerhalb der Sperre ausführen, damit deren Code die Zustellung nicht blockiert.
             raiseEventAction()
         End Sub
 

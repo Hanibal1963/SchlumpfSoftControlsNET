@@ -8,7 +8,7 @@
 
 - Erhalte und erweitere vorhandene XML-Kommentare.
 
-- Füge Inline-Kommentare zum besseren Verständnis der Funktionsweise des Codes hinzu.
+- Füge XML-Kommentare für alle öffentlichen und privaten Member sowie Inlinekommentare zum besseren Verständnis der Funktionsweise des Codes hinzu in die Quellcode-Dateien ein. Die Kommentare sollen den Zweck, die Funktionsweise und die Verwendung der Member beschreiben. Kommentare sollen nicht nur den Code wiederholen, sondern zusätzliche Informationen liefern.
 
 - Verwende Tabs und die standardmäßigen Datei-Header-Optionen.
 

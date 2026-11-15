@@ -32,75 +32,116 @@ Namespace DriveWatcherControl
 
 #Region "Variablen"
 
+        ''' <summary>Gibt an, ob die Instanz bereits freigegeben wurde.</summary>
         Private _disposedValue As Boolean
 
 #End Region
 
 #Region " Konstanten"
 
-        ' Windows-Nachricht für Geräteänderungen.
-        ' Diese Nachricht wird vom Betriebssystem gesendet, wenn z. B. USB-Medien
-        ' eingesteckt oder entfernt werden.
+        ''' <summary>Windows-Nachricht für Geräteänderungen.</summary>
+        ''' <remarks>Wird vom Betriebssystem gesendet, wenn z. B. USB-Medien eingesteckt oder entfernt werden.</remarks>
         Private Const WM_DEVICECHANGE As Int32 = &H219
 
-        ' Ereigniscodes aus wParam von WM_DEVICECHANGE.
-        ' Sie geben an, ob ein Gerät angekommen ist oder entfernt wurde.
+        ''' <summary>Ereigniscode für die Ankunft eines Geräts.</summary>
+        ''' <remarks>Sie geben an, ob ein Gerät angekommen ist oder entfernt wurde.</remarks>
         Private Const DBT_DEVICEARRIVAL As Int32 = &H8000
+
+        ''' <summary>Ereigniscode für die abgeschlossene Entfernung eines Geräts.</summary>
         Private Const DBT_DEVICEREMOVECOMPLETE As Int32 = &H8004
 
-        ' Flag-Bits in DEV_BROADCAST_VOLUME.dbcv_flags.
-        ' DBTF_MEDIA: Wechselmedium wurde eingelegt/entfernt (z. B. CD/DVD/SD-Karte).
-        ' DBTF_NET: Das betroffene Laufwerk ist ein Netzlaufwerk.
+        ''' <summary>Kennzeichnet einen Medienwechsel.</summary>
+        ''' <remarks>
+        ''' Flag-Bits in DEV_BROADCAST_VOLUME.dbcv_flags.
+        ''' DBTF_MEDIA: Wechselmedium wurde eingelegt/entfernt (z. B. CD/DVD/SD-Karte).
+        ''' DBTF_NET: Das betroffene Laufwerk ist ein Netzlaufwerk.
+        ''' </remarks>
         Private Const DBTF_MEDIA As Int16 = &H1
+
+        ''' <summary>Kennzeichnet ein Netzlaufwerk.</summary>
         Private Const DBTF_NET As Int16 = &H2
 
 #End Region
 
 #Region "Interne Auflistungen"
 
-        ' Gerätetypen aus den DEV_BROADCAST_* Strukturen.
-        ' In den Broadcast-Strukturen werden diese Werte als Integer geliefert.
-        ' Für diese Klasse ist primär DBT_DEVTYP.VOLUME relevant.
+        ''' <summary>Gerätetypen in Windows-Broadcast-Strukturen.</summary>
+        ''' <remarks>
+        ''' Die Werte werden in den Broadcast-Strukturen als Integer geliefert.
+        ''' Für diese Klasse ist primär DBT_DEVTYP.VOLUME relevant.
+        ''' </remarks>
         Private Enum DBT_DEVTYP
-            OEM = 0 ' OEM-/IHV-definierte Geräteklasse (herstellerspezifische Meldungen)
-            DEVNODE = 1 ' Geräteknoten (Device Node) im Plug-and-Play-Baum
-            VOLUME = 2 ' Logisches Volume/Laufwerk (für diese Komponente relevant)
-            PORT = 3 ' Portgerät (z. B. seriell oder parallel)
-            NET = 4 ' Netzwerkressource
-            DEVICEINTERFACE = 5 ' Geräteschnittstellenklasse (Interface-basiert)
-            HANDLE = 6 ' Dateisystem-Handle
+
+            ''' <summary>Herstellerspezifische Geräteklasse.</summary>
+            OEM = 0
+
+            ''' <summary>Geräteknoten im Plug-and-Play-Baum.</summary>
+            DEVNODE = 1
+
+            ''' <summary>Logisches Volume beziehungsweise Laufwerk.</summary>
+            VOLUME = 2
+
+            ''' <summary>Portgerät.</summary>
+            PORT = 3
+
+            ''' <summary>Netzwerkressource.</summary>
+            NET = 4
+
+            ''' <summary>Geräteschnittstellenklasse.</summary>
+            DEVICEINTERFACE = 5
+
+            ''' <summary>Dateisystem-Handle.</summary>
+            HANDLE = 6
+
         End Enum
 
 #End Region
 
 #Region "Interne Strukturen"
 
-        ' Die Struktur für den Header.
-        ' https://learn.microsoft.com/de-de/windows/win32/api/dbt/ns-dbt-dev_broadcast_hdr
+        ''' <summary>Gemeinsamer Header einer Geräte-Broadcast-Meldung.</summary>
+        ''' <remarks>
+        ''' Die Struktur wird in <c>WM_DEVICECHANGE</c>-Nachrichten übergeben.
+        ''' Sie enthält die Gesamtgröße der Meldung, den Gerätetyp und ein reserviertes Feld
+        ''' https://learn.microsoft.com/de-de/windows/win32/api/dbt/ns-dbt-dev_broadcast_hdr
+        ''' </remarks>
         Private Structure DEV_BROADCAST_HDR
-            ' Gesamtgröße der Struktur in Bytes.
+
+            ''' <summary>Gesamtgröße der Struktur in Bytes.</summary>
             Public dbch_size As Int32
-            ' Gerätetyp der Meldung (Wert aus DBT_DEVTYP).
+
+            ''' <summary>Gerätetyp der Meldung als Wert von <see cref="DBT_DEVTYP"/>.</summary>
             Public dbch_devicetype As Int32
-            ' Von Windows reserviert; nicht auswerten.
+
+            ''' <summary>Von Windows reserviertes Feld.</summary>
             Public dbch_reserved As Int32
+
         End Structure
 
-        ' Die Struktur für Volumes.
-        ' https://learn.microsoft.com/de-de/windows/win32/api/dbt/ns-dbt-dev_broadcast_volume
+        ''' <summary>Broadcast-Daten für eine Volume-Änderung.</summary>
+        ''' <remarks>
+        ''' Die Struktur wird in <c>WM_DEVICECHANGE</c>-Nachrichten übergeben. Sie enthält die Gesamtgröße der Meldung,
+        ''' den Gerätetyp, ein reserviertes Feld, die Laufwerksmaske und Zusatzinformationen.
+        ''' https://learn.microsoft.com/de-de/windows/win32/api/dbt/ns-dbt-dev_broadcast_volume
+        ''' </remarks>
         Private Structure DEV_BROADCAST_VOLUME
-            ' Gesamtgröße der Struktur in Bytes.
+
+            ''' <summary>Gesamtgröße der Struktur in Bytes.</summary>
             Public dbch_size As Int32
-            ' Gerätetyp der Meldung (für Volumes: DBT_DEVTYP.VOLUME).
+
+            ''' <summary>Gerätetyp der Meldung für ein Volume. (für Volumes: DBT_DEVTYP.VOLUME)</summary>
             Public dbch_devicetype As Int32
-            ' Von Windows reserviert; nicht auswerten.
+
+            ''' <summary>Von Windows reserviertes Feld.</summary>
             Public dbch_reserved As Int32
-            ' Bitmaske der betroffenen Laufwerksbuchstaben (Bit 0=A ... Bit 25=Z).
+
+            ''' <summary>Bitmaske der betroffenen Laufwerksbuchstaben von A bis Z. (Bit 0=A ... Bit 25=Z)</summary>
             Public dbcv_unitmask As Int32
-            ' Zusatzinformationen zur Meldung (Bitmaske):
-            ' - DBTF_MEDIA (&H1): Medienwechsel
-            ' - DBTF_NET (&H2): Netzlaufwerk
+
+            ''' <summary>Zusatzinformationen zum Medienwechsel oder Netzlaufwerk als Bitmaske.</summary>
+            ''' <remarks> Die Werte sind in den Konstanten DBTF_MEDIA  (&amp;H1 - Medienwechsel) und DBTF_NET (&amp;H2 -Netzlaufwerk) definiert. </remarks>
             Public dbcv_flags As Int16
+
         End Structure
 
 #End Region
@@ -209,6 +250,7 @@ Namespace DriveWatcherControl
         ''' <param name="m">Die empfangene Windows-Nachricht.</param>
         Private Sub HandleHeader(ByRef m As Message)
             Dim header As DEV_BROADCAST_HDR
+            ' Vor dem Auslesen den Zeiger und die gemeldete Mindestgröße prüfen.
             If m.LParam = IntPtr.Zero Then
                 Trace.TraceWarning("WM_DEVICECHANGE enthält keinen Geräteheader.")
                 Return
@@ -219,6 +261,7 @@ Namespace DriveWatcherControl
             End If
             header = DirectCast(m.GetLParam(header.GetType), DEV_BROADCAST_HDR)
             If header.dbch_devicetype = DBT_DEVTYP.VOLUME Then
+                ' Die Volume-Struktur benötigt mehr Platz als der gemeinsame Header.
                 If header.dbch_size < Marshal.SizeOf(Of DEV_BROADCAST_VOLUME)() Then
                     Trace.TraceWarning("WM_DEVICECHANGE enthält eine zu kurze Volume-Struktur.")
                     Return
@@ -291,6 +334,7 @@ Namespace DriveWatcherControl
         ''' </summary>
         ''' <param name="mask">Bitmaske aus <c>dbcv_unitmask</c>.</param>
         ''' <returns>Den Laufwerksbuchstaben von <c>A</c> bis <c>Z</c>.</returns>
+		''' <remarks>Wenn kein Laufwerksbuchstabe gesetzt ist, wird das Nullzeichen zurückgegeben.</remarks>
         Private Function DriveFromMask(mask As Int32) As Char
 
             ' Standardwert für den Fall, dass kein Bit gesetzt ist.

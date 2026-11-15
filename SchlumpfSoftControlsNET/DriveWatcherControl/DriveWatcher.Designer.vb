@@ -60,12 +60,14 @@
 
         End Sub
 
-        'Wird vom Komponenten-Designer benötigt.
+        ''' <summary>Container für die vom Komponenten-Designer verwalteten Komponenten.</summary>
         Private components As System.ComponentModel.IContainer
 
-        'Hinweis: Die folgende Prozedur ist für den Komponenten-Designer erforderlich.
-        'Das Bearbeiten ist mit dem Komponenten-Designer möglich.
-        'Das Bearbeiten mit dem Code-Editor ist nicht möglich.
+        ''' <summary>Initialisiert den vom Komponenten-Designer benötigten Container.</summary>
+        ''' <remarks>Hinweis: Die folgende Prozedur ist für den Komponenten-Designer erforderlich.
+        ''' Das Bearbeiten ist mit dem Komponenten-Designer möglich.
+        ''' Das Bearbeiten mit dem Code-Editor ist nicht möglich.
+        ''' </remarks>
         <System.Diagnostics.DebuggerStepThrough()>
         Private Sub InitializeComponent()
 

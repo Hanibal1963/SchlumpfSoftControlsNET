@@ -21,7 +21,9 @@ Namespace DriveWatcherControl
     ''' </remarks>
     Public Class DriveAddedEventArgs : Inherits EventArgs
 
+		''' <summary>Speichert Lesefehler nach Eigenschaftsnamen.</summary>
         Private ReadOnly _readErrors As New Dictionary(Of String, Exception)(StringComparer.Ordinal)
+		''' <summary>Stellt eine schreibgeschützte Sicht auf die Lesefehler bereit.</summary>
         Private ReadOnly _readErrorsView As IReadOnlyDictionary(Of String, Exception)
 
 #Region "Öffentliche Eigenschaften"
@@ -99,6 +101,9 @@ Namespace DriveWatcherControl
             End Get
         End Property
 
+		''' <summary>Erfasst einen Lesefehler für eine Eigenschaft.</summary>
+		''' <param name="propertyName">Name der Eigenschaft oder der Laufwerksabfrage.</param>
+		''' <param name="errorValue">Beim Lesen aufgetretene Ausnahme.</param>
         Friend Sub AddReadError(propertyName As String, errorValue As Exception)
             Me._readErrors.Add(propertyName, errorValue)
         End Sub
@@ -113,6 +118,7 @@ Namespace DriveWatcherControl
         Public Sub New()
 
             MyBase.New
+			' Die Sicht bleibt mit dem internen Fehlerwörterbuch verbunden.
             Me._readErrorsView = New ReadOnlyDictionary(Of String, Exception)(Me._readErrors)
 
         End Sub

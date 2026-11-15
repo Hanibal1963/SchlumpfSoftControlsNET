@@ -30,8 +30,8 @@
     <RepositoryUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</PackageProjectUrl>
-    <AssemblyVersion>1.2026.1115.4</AssemblyVersion>
-    <FileVersion>1.2026.1115.4</FileVersion>
+    <AssemblyVersion>1.2026.1115.7</AssemblyVersion>
+    <FileVersion>1.2026.1115.7</FileVersion>
   </PropertyGroup>
 	
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -168,6 +168,10 @@
     <EmbeddedResource Include="WizardControl\WizardControl.HeaderImage.jpg" />
     <EmbeddedResource Include="WizardControl\WizardControl.WelcomeImage.jpg" />
     <EmbeddedResource Include="WizardControl\WizardControl.Wizard.bmp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="SchlumpfSoftControlsNET.Tests" />
   </ItemGroup>
 
   <ItemGroup>

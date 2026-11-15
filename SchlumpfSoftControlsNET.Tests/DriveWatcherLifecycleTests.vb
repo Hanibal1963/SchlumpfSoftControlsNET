@@ -48,6 +48,20 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         End Sub
 
         <TestMethod>
+        Public Sub ShortHeader_DoesNotReadVolumeOrRaiseEvents()
+            Using watcher As New CountingDriveWatcher()
+                Dim buffer As IntPtr = Marshal.AllocHGlobal(4)
+                Try
+                    Marshal.WriteInt32(buffer, 4)
+                    SendMessage(GetNativeWindow(watcher).Handle, WM_DEVICECHANGE, New IntPtr(DBT_DEVICEARRIVAL), buffer)
+                    Assert.AreEqual(0, watcher.AdditionDispatches)
+                Finally
+                    Marshal.FreeHGlobal(buffer)
+                End Try
+            End Using
+        End Sub
+
+        <TestMethod>
         Public Sub DerivedWatcher_DisposeAfterConstruction_InvokesOverrideAndReleasesWindow()
             Dim watcher As New DerivedDriveWatcher(Nothing)
             Dim nativeWindow As NativeWindow = GetNativeWindow(watcher)
@@ -335,6 +349,37 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             Assert.IsNotNull(nativeWindow)
             Return nativeWindow
         End Function
+
+        <TestMethod>
+        <DataRow(0, 2, 1)>
+        <DataRow(12, 2, 1)>
+        <DataRow(20, 0, 1)>
+        <DataRow(20, 2, 0)>
+        Public Sub InvalidBroadcast_DoesNotRaiseEvents(size As Integer, deviceType As Integer, mask As Integer)
+            Using watcher As New CountingDriveWatcher()
+                Dim volume As New DeviceBroadcastVolume With {.Size = size, .DeviceType = deviceType, .UnitMask = mask}
+                Dim buffer As IntPtr = Marshal.AllocHGlobal(Marshal.SizeOf(Of DeviceBroadcastVolume)())
+                Try
+                    Marshal.StructureToPtr(volume, buffer, False)
+                    SendMessage(GetNativeWindow(watcher).Handle, WM_DEVICECHANGE, New IntPtr(DBT_DEVICEARRIVAL), buffer)
+                    Assert.AreEqual(0, watcher.AdditionDispatches)
+                    Assert.AreEqual(0, watcher.RemovalDispatches)
+                Finally
+                    Marshal.FreeHGlobal(buffer)
+                End Try
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub NullOrUnrelatedBroadcast_DoesNotRaiseEvents()
+            Using watcher As New CountingDriveWatcher()
+                Dim handle As IntPtr = GetNativeWindow(watcher).Handle
+                SendMessage(handle, WM_DEVICECHANGE, New IntPtr(DBT_DEVICEARRIVAL), IntPtr.Zero)
+                SendMessage(handle, WM_DEVICECHANGE, New IntPtr(7), IntPtr.Zero)
+                Assert.AreEqual(0, watcher.AdditionDispatches)
+                Assert.AreEqual(0, watcher.RemovalDispatches)
+            End Using
+        End Sub
 
         Private Shared Sub SendVolumeRemoval(handle As IntPtr, unitMask As Integer, flags As Short)
             SendVolumeChange(handle, DBT_DEVICEREMOVECOMPLETE, unitMask, flags)

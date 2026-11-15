@@ -32,17 +32,20 @@ Namespace DriveWatcherControl
 
         Inherits Component
 
+#Region "Konstanten"
+
         Private Const DriveEventDebounceMs As Int32 = 200
+
+#End Region
 
 #Region "Variablen"
 
-        ' Unsichtbares natives Fenster für den Empfang von WM_DEVICECHANGE.
-        Private WithEvents NatForm As NativeForm
+        Private WithEvents NatForm As NativeForm ' Unsichtbares natives Fenster für den Empfang von WM_DEVICECHANGE.
 
         Private ReadOnly _notificationSyncRoot As New Object
+
         Private _synchronizingObject As ISynchronizeInvoke
         Private _notificationDisposed As Boolean
-
         ' Felder für eine kurze Entprellung direkt aufeinanderfolgender identischer Ereignisse.
         Private ReadOnly _DebounceSyncRoot As New Object
         Private _LastDriveEventName As String = ""
@@ -50,6 +53,8 @@ Namespace DriveWatcherControl
         Private _LastDriveEventTimeUtc As DateTime = DateTime.MinValue
 
 #End Region
+
+#Region "private Auflistungen"
 
         Private Enum DriveEventType
             None = 0
@@ -60,6 +65,8 @@ Namespace DriveWatcherControl
             MediaInserted = 5
             MediaRemoved = 6
         End Enum
+
+#End Region
 
 #Region "Öffentliche Ereignisse"
 
@@ -187,52 +194,20 @@ Namespace DriveWatcherControl
         ''' Übernimmt das interne NativeForm-Ereignis für ein hinzugefügtes Laufwerk.
         ''' </summary>
         ''' <remarks>
-        ''' Die Methode überführt <see cref="DriveInfo"/> in stabile EventArgs. Falls ein Laufwerk noch nicht
+        ''' Die Methode überführt Laufwerksinformationen in stabile EventArgs. Falls ein Laufwerk noch nicht
         ''' bereit ist, bleiben Detailfelder neutral befüllt.
         ''' </remarks>
-        Private Sub NatForm_DriveAdded(sender As Object, e As DriveInfo) Handles NatForm.DriveAdded
-
-            ' Basisdaten aus der Betriebssystemmeldung übernehmen.
-            Dim arg As New DriveAddedEventArgs(e.Name, e.DriveType, e.IsReady)
-
-            ' Mit neutralen Standardwerten initialisieren.
-            With arg
-                .VolumeLabel = ""
-                .AvailableFreeSpace = 0
-                .TotalFreeSpace = 0
-                .TotalSize = 0
-                .DriveFormat = ""
-            End With
-
-            If e.IsReady Then
-                Try
-                    ' Erweiterte Laufwerksinfos nur auslesen, wenn das Volume bereits zugreifbar ist.
-                    With arg
-                        .VolumeLabel = e.VolumeLabel
-                        .AvailableFreeSpace = e.AvailableFreeSpace
-                        .TotalFreeSpace = e.TotalFreeSpace
-                        .TotalSize = e.TotalSize
-                        .DriveFormat = e.DriveFormat
-                    End With
-                Catch ex As IOException
-                    ' Laufwerk kann zwischenzeitlich nicht mehr gelesen werden.
-                Catch ex As UnauthorizedAccessException
-                    ' Zugriff auf Metadaten wurde vom System verweigert.
-                Catch ex As SystemException
-                    ' Schutz gegen weitere systemnahe Fehler beim Auslesen.
-                End Try
-            End If
-
-            Me.OnDriveAdded(arg)
+        Private Sub NatForm_DriveAdded(sender As Object, e As String) Handles NatForm.DriveAdded
+            Me.OnDriveAdded(DriveInfoSnapshotReader.Read(e))
         End Sub
 
         ''' <summary>
         ''' Übernimmt das interne NativeForm-Ereignis für ein entferntes Laufwerk.
         ''' </summary>
-        Private Sub NatForm_DriveRemoved(sender As Object, e As DriveInfo) Handles NatForm.DriveRemoved
+        Private Sub NatForm_DriveRemoved(sender As Object, e As String) Handles NatForm.DriveRemoved
 
             ' Beim Entfernen ist typischerweise nur noch der Laufwerksname zuverlässig vorhanden.
-            Dim arg As New DriveRemovedEventArgs(e.Name)
+            Dim arg As New DriveRemovedEventArgs(e)
             Me.OnDriveRemoved(arg)
 
         End Sub
@@ -243,34 +218,9 @@ Namespace DriveWatcherControl
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
         ''' <param name="e">Die Laufwerksinformationen des betroffenen Laufwerks.</param>
-        Private Sub NatForm_MediaInserted(sender As Object, e As DriveInfo) Handles NatForm.MediaInserted
+        Private Sub NatForm_MediaInserted(sender As Object, e As String) Handles NatForm.MediaInserted
 
-            Dim arg As New DriveAddedEventArgs(e.Name, e.DriveType, e.IsReady)
-
-            With arg
-                .VolumeLabel = ""
-                .AvailableFreeSpace = 0
-                .TotalFreeSpace = 0
-                .TotalSize = 0
-                .DriveFormat = ""
-            End With
-
-            If e.IsReady Then
-                Try
-                    With arg
-                        .VolumeLabel = e.VolumeLabel
-                        .AvailableFreeSpace = e.AvailableFreeSpace
-                        .TotalFreeSpace = e.TotalFreeSpace
-                        .TotalSize = e.TotalSize
-                        .DriveFormat = e.DriveFormat
-                    End With
-                Catch ex As IOException
-                Catch ex As UnauthorizedAccessException
-                Catch ex As SystemException
-                End Try
-            End If
-
-            Me.OnMediaInserted(arg)
+            Me.OnMediaInserted(DriveInfoSnapshotReader.Read(e))
 
         End Sub
 
@@ -280,9 +230,9 @@ Namespace DriveWatcherControl
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
         ''' <param name="e">Die Laufwerksinformationen des betroffenen Laufwerks.</param>
-        Private Sub NatForm_MediaRemoved(sender As Object, e As DriveInfo) Handles NatForm.MediaRemoved
+        Private Sub NatForm_MediaRemoved(sender As Object, e As String) Handles NatForm.MediaRemoved
 
-            Dim arg As New DriveRemovedEventArgs(e.Name)
+            Dim arg As New DriveRemovedEventArgs(e)
             Me.OnMediaRemoved(arg)
 
         End Sub
@@ -291,46 +241,21 @@ Namespace DriveWatcherControl
         ''' Übernimmt das interne NativeForm-Ereignis für ein hinzugefügtes Netzlaufwerk.
         ''' </summary>
         ''' <remarks>
-        ''' Die Methode überführt <see cref="DriveInfo"/> in stabile EventArgs. Falls ein Laufwerk noch nicht
+        ''' Die Methode überführt Laufwerksinformationen in stabile EventArgs. Falls ein Laufwerk noch nicht
         ''' bereit ist, bleiben Detailfelder neutral befüllt.
         ''' </remarks>
-        Private Sub NatForm_NetworkDriveAdded(sender As Object, e As DriveInfo) Handles NatForm.NetworkDriveAdded
+        Private Sub NatForm_NetworkDriveAdded(sender As Object, e As String) Handles NatForm.NetworkDriveAdded
 
-            Dim arg As New DriveAddedEventArgs(e.Name, e.DriveType, e.IsReady)
-
-            With arg
-                .VolumeLabel = ""
-                .AvailableFreeSpace = 0
-                .TotalFreeSpace = 0
-                .TotalSize = 0
-                .DriveFormat = ""
-            End With
-
-            If e.IsReady Then
-                Try
-                    With arg
-                        .VolumeLabel = e.VolumeLabel
-                        .AvailableFreeSpace = e.AvailableFreeSpace
-                        .TotalFreeSpace = e.TotalFreeSpace
-                        .TotalSize = e.TotalSize
-                        .DriveFormat = e.DriveFormat
-                    End With
-                Catch ex As IOException
-                Catch ex As UnauthorizedAccessException
-                Catch ex As SystemException
-                End Try
-            End If
-
-            Me.OnNetworkDriveAdded(arg)
+            Me.OnNetworkDriveAdded(DriveInfoSnapshotReader.Read(e))
 
         End Sub
 
         ''' <summary>
         ''' Übernimmt das interne NativeForm-Ereignis für ein entferntes Netzlaufwerk.
         ''' </summary>
-        Private Sub NatForm_NetworkDriveRemoved(sender As Object, e As DriveInfo) Handles NatForm.NetworkDriveRemoved
+        Private Sub NatForm_NetworkDriveRemoved(sender As Object, e As String) Handles NatForm.NetworkDriveRemoved
 
-            Dim arg As New DriveRemovedEventArgs(e.Name)
+            Dim arg As New DriveRemovedEventArgs(e)
             Me.OnNetworkDriveRemoved(arg)
 
         End Sub

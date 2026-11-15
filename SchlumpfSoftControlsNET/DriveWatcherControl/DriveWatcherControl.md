@@ -59,11 +59,19 @@ DriveWatcher1.SynchronizingObject = Me
 
 ## 5. Hilfstypen/Strukturen
 
-- Keine zusätzlichen öffentlichen Hilfstypen oder Strukturen dokumentiert.
+- `DriveAddedEventArgs`: Enthält `DriveName`, `DriveType`, `IsReady`, `VolumeLabel`, `DriveFormat`, `AvailableFreeSpace`, `TotalFreeSpace` und `TotalSize`. Die vorhandenen Konstruktoren akzeptieren den Laufwerksnamen und optional Typ und Bereitschaft. Sie führen keine Systemabfragen durch.
+
+- `DriveAddedEventArgs.ReadErrors As IReadOnlyDictionary(Of String, Exception)`: Schreibgeschützte Fehlerzuordnung für Systemabfragen. Der Schlüssel ist der Name der betroffenen Eigenschaft; `DriveInfo` bezeichnet einen Fehler beim Erstellen der Abfrage. Bei selbst erstellten Ereignisdaten ist die Zuordnung leer. Fehlgeschlagene Felder behalten ihren neutralen Wert (`Unknown`, `False`, leere Zeichenfolge oder `0`). Bei nicht bereitem Laufwerk werden Detailfelder nicht abgefragt. Ein leeres Wörterbuch bedeutet dabei nicht, dass die Detailwerte gelesen wurden.
+
+- `DriveRemovedEventArgs`: Enthält den gemeldeten Laufwerksnamen; beim Entfernen sind keine Metadatenabfragen erforderlich.
 
 ## 6. Hinweise
 
 - Das Control reagiert auf Laufwerksänderungen des Betriebssystems und meldet diese über die genannten Ereignisse.
+
+- Die Informationen hinzugefügter Laufwerke werden unabhängig voneinander gelesen. Erwartete Zugriffs- und Systemfehler stehen in `ReadErrors`; andere Felder bleiben erhalten. `IsReady` kann vom Betriebssystem auch ohne Ausnahme `False` melden, sodass die Ursache nicht immer erkennbar ist. Unerwartete Ausnahmen werden nicht unterdrückt. Die Komponente führt keine WMI-Abfragen durch.
+
+- Nur Ankunfts- und vollständige Entfernungsbenachrichtigungen mit gültiger Volume-Struktur werden ausgewertet. Fehlende oder zu kurze Strukturen und ungültige Laufwerksmasken werden über `Trace.TraceWarning` gemeldet. Bei mehreren gesetzten Laufwerksbits wird weiterhin das erste ausgewertet.
 
 - Jede Instanz besitzt genau ein eigenes unsichtbares Empfangsfenster. Windows sendet die standardmäßigen Volume-Benachrichtigungen an dieses Fenster; eine zusätzliche Geräteanmeldung ist dafür nicht erforderlich.
 

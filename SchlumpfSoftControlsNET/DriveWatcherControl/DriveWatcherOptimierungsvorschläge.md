@@ -32,13 +32,13 @@ Robustes und fehlertolerantes Laufwerks-Monitoring mit stabilen Events.
 
 ## 4. WMI/Win32-Fehlerpfade absichern
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
-- Try/Catch an allen Systemabfragen ergänzen.
+- Laufwerksinformationen werden unabhängig voneinander abgefragt; erwartete Fehler werden in `ReadErrors` bereitgestellt. WMI wird nicht verwendet.
 
-- Teilinformationen in EventArgs zulassen statt Gesamtabbruch.
+- Teilinformationen bleiben in den EventArgs erhalten. Ungültige Win32-Nachrichten werden geprüft und diagnostiziert.
 
 **Nutzen:** Höhere Stabilität bei exotischer Hardware.
 
@@ -68,6 +68,5 @@ Robustes und fehlertolerantes Laufwerks-Monitoring mit stabilen Events.
 
 ## 7. Empfohlene Reihenfolge
 
-1. Fehlerpfade (4.)
-2. Deduplizierung (2.)
-3. Diagnoselogs (6.)
+1. Deduplizierung (2.)
+2. Diagnoselogs (6.)

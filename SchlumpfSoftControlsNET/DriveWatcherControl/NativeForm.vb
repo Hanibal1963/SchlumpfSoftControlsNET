@@ -6,6 +6,8 @@
 
 Imports System.Windows.Forms
 Imports System
+Imports System.Diagnostics
+Imports System.Runtime.InteropServices
 Imports Microsoft
 
 Namespace DriveWatcherControl
@@ -84,21 +86,6 @@ Namespace DriveWatcherControl
             Public dbch_reserved As Int32
         End Structure
 
-        ' Die Struktur für OEM.
-        ' https://learn.microsoft.com/de-de/windows/win32/api/dbt/ns-dbt-dev_broadcast_oem
-        Private Structure DEV_BROADCAST_OEM
-            ' Größe der gesamten DEV_BROADCAST_OEM-Struktur in Bytes.
-            Public dbco_size As Int32
-            ' Gerätetyp der Meldung (z. B. DBT_DEVTYP.OEM).
-            Public dbco_devicetype As Int32
-            ' Reserviert durch Windows, normalerweise nicht auswerten.
-            Public dbco_reserved As Int32
-            ' OEM-/Herstellerdefinierter Identifier zur Klassifizierung des gemeldeten Geräts/Ereignisses.
-            Public dbco_identifier As Int32
-            ' OEM-/Herstellerdefinierter „Supplemental Function“-Wert (zusätzliche Funktions- bzw. Ereignisinformation).
-            Public dbco_suppfunc As Int32
-        End Structure
-
         ' Die Struktur für Volumes.
         ' https://learn.microsoft.com/de-de/windows/win32/api/dbt/ns-dbt-dev_broadcast_volume
         Private Structure DEV_BROADCAST_VOLUME
@@ -124,43 +111,43 @@ Namespace DriveWatcherControl
         ''' Wird ausgelöst, wenn ein logisches Volume vom Betriebssystem als hinzugefügt gemeldet wird.
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
-        ''' <param name="e">Die Laufwerksinformationen aus <see cref="IO.DriveInfo"/>.</param>
-        Public Event DriveAdded(sender As Object, e As IO.DriveInfo)
+        ''' <param name="e">Der gemeldete Laufwerksname.</param>
+        Public Event DriveAdded(sender As Object, e As String)
 
         ''' <summary>
         ''' Wird ausgelöst, wenn ein logisches Volume vom Betriebssystem als entfernt gemeldet wird.
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
-        ''' <param name="e">Die Laufwerksinformationen aus <see cref="IO.DriveInfo"/>.</param>
-        Public Event DriveRemoved(sender As Object, e As IO.DriveInfo)
+        ''' <param name="e">Der gemeldete Laufwerksname.</param>
+        Public Event DriveRemoved(sender As Object, e As String)
 
         ''' <summary>
         ''' Wird ausgelöst, wenn ein Medium in einem bestehenden Wechsel-/CD-/DVD-Laufwerk eingelegt wurde.
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
-        ''' <param name="e">Die Laufwerksinformationen aus <see cref="IO.DriveInfo"/>.</param>
-        Public Event MediaInserted(sender As Object, e As IO.DriveInfo)
+        ''' <param name="e">Der gemeldete Laufwerksname.</param>
+        Public Event MediaInserted(sender As Object, e As String)
 
         ''' <summary>
         ''' Wird ausgelöst, wenn ein Medium aus einem bestehenden Wechsel-/CD-/DVD-Laufwerk entfernt wurde.
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
-        ''' <param name="e">Die Laufwerksinformationen aus <see cref="IO.DriveInfo"/>.</param>
-        Public Event MediaRemoved(sender As Object, e As IO.DriveInfo)
+        ''' <param name="e">Der gemeldete Laufwerksname.</param>
+        Public Event MediaRemoved(sender As Object, e As String)
 
         ''' <summary>
         ''' Wird ausgelöst, wenn ein Netzlaufwerk vom Betriebssystem als hinzugefügt gemeldet wird.
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
-        ''' <param name="e">Die Laufwerksinformationen aus <see cref="IO.DriveInfo"/>.</param>
-        Public Event NetworkDriveAdded(sender As Object, e As IO.DriveInfo)
+        ''' <param name="e">Der gemeldete Laufwerksname.</param>
+        Public Event NetworkDriveAdded(sender As Object, e As String)
 
         ''' <summary>
         ''' Wird ausgelöst, wenn ein Netzlaufwerk vom Betriebssystem als entfernt gemeldet wird.
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
-        ''' <param name="e">Die Laufwerksinformationen aus <see cref="IO.DriveInfo"/>.</param>
-        Public Event NetworkDriveRemoved(sender As Object, e As IO.DriveInfo)
+        ''' <param name="e">Der gemeldete Laufwerksname.</param>
+        Public Event NetworkDriveRemoved(sender As Object, e As String)
 
 #End Region
 
@@ -226,25 +213,21 @@ Namespace DriveWatcherControl
         ''' <param name="m">Die empfangene Windows-Nachricht.</param>
         Private Sub HandleHeader(ByRef m As Message)
             Dim header As DEV_BROADCAST_HDR
-
-            ' lParam enthält bei WM_DEVICECHANGE einen Zeiger auf eine
-            ' strukturierte Geräteinformation (beginnend mit DEV_BROADCAST_HDR).
-            Dim objHeader As Object = m.GetLParam(header.GetType)
-            If Not VisualBasic.IsNothing(objHeader) Then
-                ' Nur nach Gerätetyp verzweigen; die eigentlichen Daten werden
-                ' in den spezialisierten Handlern gelesen.
-                Select Case header.dbch_devicetype
-                    Case DBT_DEVTYP.OEM
-                        Me.HandleOEM(m)
-                    Case DBT_DEVTYP.DEVNODE
-                    Case DBT_DEVTYP.VOLUME
-                        Me.HandleVolume(m)
-                    Case DBT_DEVTYP.PORT
-                    Case DBT_DEVTYP.NET
-                    Case DBT_DEVTYP.DEVICEINTERFACE
-                    Case DBT_DEVTYP.HANDLE
-                        ' Diese Typen sind für die Laufwerksüberwachung hier nicht relevant.
-                End Select
+            If m.LParam = IntPtr.Zero Then
+                Trace.TraceWarning("WM_DEVICECHANGE enthält keinen Geräteheader.")
+                Return
+            End If
+            If Marshal.ReadInt32(m.LParam) < Marshal.SizeOf(Of DEV_BROADCAST_HDR)() Then
+                Trace.TraceWarning("WM_DEVICECHANGE enthält einen zu kurzen Geräteheader.")
+                Return
+            End If
+            header = DirectCast(m.GetLParam(header.GetType), DEV_BROADCAST_HDR)
+            If header.dbch_devicetype = DBT_DEVTYP.VOLUME Then
+                If header.dbch_size < Marshal.SizeOf(Of DEV_BROADCAST_VOLUME)() Then
+                    Trace.TraceWarning("WM_DEVICECHANGE enthält eine zu kurze Volume-Struktur.")
+                    Return
+                End If
+                Me.HandleVolume(m)
             End If
         End Sub
 
@@ -261,67 +244,48 @@ Namespace DriveWatcherControl
             If Not VisualBasic.IsNothing(objVolume) Then
                 volume = DirectCast(objVolume, DEV_BROADCAST_VOLUME)
 
-                ' Aus der Bitmaske den ersten passenden Laufwerksbuchstaben ableiten
-                ' und in eine DriveInfo-Instanz überführen.
-                Dim di As New IO.DriveInfo(Me.DriveFromMask(volume.dbcv_unitmask))
+                ' Der Name ist bereits bekannt, auch wenn das Laufwerk nicht mehr lesbar ist.
+                Dim driveLetter As Char = Me.DriveFromMask(volume.dbcv_unitmask)
+                If driveLetter = ControlChars.NullChar Then
+                    Trace.TraceWarning("WM_DEVICECHANGE enthält keine gültige Laufwerksmaske.")
+                    Return
+                End If
+                Dim driveName As String = $"{driveLetter}:\"
 
                 ' wParam enthält den konkreten Änderungstyp (Ankunft/Entfernen).
                 ' dbcv_flags enthält Zusatzkontext zur Art des Volumes.
-                ' Aktuell wird dieses Flag nicht zur Filterung verwendet, kann aber
-                ' bei Bedarf für differenziertere Ereignislogik genutzt werden.
                 Dim isMediaEvent As Boolean = (volume.dbcv_flags And DBTF_MEDIA) = DBTF_MEDIA
                 Dim isNetworkVolume As Boolean = (volume.dbcv_flags And DBTF_NET) = DBTF_NET
-
-                ' Aktuell erfolgt keine abweichende Behandlung; die Auswertung dient
-                ' nur als vorbereitete Stelle für spätere, feinere Filterlogik.
-                If isMediaEvent OrElse isNetworkVolume Then
-                End If
                 Select Case CInt(m.WParam)
                     Case DBT_DEVICEARRIVAL
                         ' Internes Ereignis „Laufwerk hinzugefügt" weitergeben.
-                        RaiseEvent DriveAdded(Me, di)
+                        RaiseEvent DriveAdded(Me, driveName)
 
                         ' Bei gesetztem DBTF_MEDIA handelt es sich um einen Medienwechsel
                         ' (z. B. CD eingelegt, SD-Karte eingesetzt) im vorhandenen Laufwerk.
                         If isMediaEvent AndAlso Not isNetworkVolume Then
-                            RaiseEvent MediaInserted(Me, di)
+                            RaiseEvent MediaInserted(Me, driveName)
                         End If
 
                         ' Bei gesetztem DBTF_NET handelt es sich um ein Netzlaufwerk.
                         If isNetworkVolume Then
-                            RaiseEvent NetworkDriveAdded(Me, di)
+                            RaiseEvent NetworkDriveAdded(Me, driveName)
                         End If
                     Case DBT_DEVICEREMOVECOMPLETE
                         ' Internes Ereignis „Laufwerk entfernt" weitergeben.
-                        RaiseEvent DriveRemoved(Me, di)
+                        RaiseEvent DriveRemoved(Me, driveName)
 
                         ' Bei gesetztem DBTF_MEDIA handelt es sich um einen Medienwechsel
                         ' (z. B. CD entnommen, SD-Karte entfernt) im vorhandenen Laufwerk.
                         If isMediaEvent AndAlso Not isNetworkVolume Then
-                            RaiseEvent MediaRemoved(Me, di)
+                            RaiseEvent MediaRemoved(Me, driveName)
                         End If
 
                         ' Bei gesetztem DBTF_NET handelt es sich um ein Netzlaufwerk.
                         If isNetworkVolume Then
-                            RaiseEvent NetworkDriveRemoved(Me, di)
+                            RaiseEvent NetworkDriveRemoved(Me, driveName)
                         End If
                 End Select
-            End If
-        End Sub
-
-        ''' <summary>
-        ''' Verarbeitet OEM-Broadcasts und leitet nur Volume-relevante Meldungen weiter.
-        ''' </summary>
-        ''' <param name="m">Die empfangene Windows-Nachricht.</param>
-        Private Sub HandleOEM(ByRef m As Message)
-            Dim oem As DEV_BROADCAST_OEM
-
-            ' Manche Treiber senden OEM-Broadcasts. Nur wenn darin als Gerätetyp
-            ' wiederum ein Volume steckt, behandeln wir die Nachricht wie ein Volume-Event.
-            Dim objOem As Object = m.GetLParam(oem.GetType)
-            If Not VisualBasic.IsNothing(objOem) Then
-                oem = DirectCast(objOem, DEV_BROADCAST_OEM)
-                If oem.dbco_devicetype = DBT_DEVTYP.VOLUME Then Me.HandleVolume(m)
             End If
         End Sub
 
@@ -359,7 +323,10 @@ Namespace DriveWatcherControl
 
             ' Zentrale Eintrittsstelle für alle Fensternachrichten dieses NativeWindow.
             ' Für dieses Control interessiert ausschließlich WM_DEVICECHANGE.
-            If m.Msg = WM_DEVICECHANGE Then Me.HandleHeader(m)
+            If m.Msg = WM_DEVICECHANGE AndAlso
+                (m.WParam = New IntPtr(DBT_DEVICEARRIVAL) OrElse m.WParam = New IntPtr(DBT_DEVICEREMOVECOMPLETE)) Then
+                Me.HandleHeader(m)
+            End If
 
             ' Nicht verarbeitete Nachrichten an die Basisklasse weiterreichen.
             MyBase.WndProc(m)

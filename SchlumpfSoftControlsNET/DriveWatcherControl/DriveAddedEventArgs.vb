@@ -5,6 +5,8 @@
 ' --------------------------------------------------------------------------------------------------------
 
 Imports System
+Imports System.Collections.Generic
+Imports System.Collections.ObjectModel
 
 Namespace DriveWatcherControl
 
@@ -18,6 +20,9 @@ Namespace DriveWatcherControl
     ''' (z. B. Name, Volumebezeichnung, Dateisystem, Typ und Speichergrößen in Bytes).
     ''' </remarks>
     Public Class DriveAddedEventArgs : Inherits EventArgs
+
+        Private ReadOnly _readErrors As New Dictionary(Of String, Exception)(StringComparer.Ordinal)
+        Private ReadOnly _readErrorsView As IReadOnlyDictionary(Of String, Exception)
 
 #Region "Öffentliche Eigenschaften"
 
@@ -83,6 +88,21 @@ Namespace DriveWatcherControl
         ''' </summary>
         Public Property IsReady As Boolean
 
+        ''' <summary>
+        ''' Ruft die Fehler beim Lesen der Laufwerksinformationen ab. Die Schlüssel entsprechen den
+        ''' Eigenschaftsnamen; <c>DriveInfo</c> bezeichnet einen Fehler beim Erstellen der Abfrage.
+        ''' </summary>
+        ''' <remarks>Die Auflistung ist schreibgeschützt und bei erfolgreich gelesenen Daten leer.</remarks>
+        Public ReadOnly Property ReadErrors As IReadOnlyDictionary(Of String, Exception)
+            Get
+                Return Me._readErrorsView
+            End Get
+        End Property
+
+        Friend Sub AddReadError(propertyName As String, errorValue As Exception)
+            Me._readErrors.Add(propertyName, errorValue)
+        End Sub
+
 #End Region
 
 #Region "Öffentliche Methoden"
@@ -93,6 +113,7 @@ Namespace DriveWatcherControl
         Public Sub New()
 
             MyBase.New
+            Me._readErrorsView = New ReadOnlyDictionary(Of String, Exception)(Me._readErrors)
 
         End Sub
 

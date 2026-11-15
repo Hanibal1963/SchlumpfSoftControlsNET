@@ -5,7 +5,8 @@
 
         Inherits System.Windows.Forms.UserControl
 
-        ' UserControl überschreibt Dispose, um die Komponentenliste zu bereinigen.
+        ''' <summary>Gibt die vom Designer verwalteten Komponenten frei.</summary>
+        ''' <param name="disposing">Gibt an, ob verwaltete Ressourcen freigegeben werden sollen.</param>
         <System.Diagnostics.DebuggerNonUserCode()>
         Protected Overrides Sub Dispose(ByVal disposing As Boolean)
             Try
@@ -17,12 +18,13 @@
             End Try
         End Sub
 
-        ' Erforderlich für den Windows Form-Designer
+        ''' <summary>Enthält die vom Windows Forms-Designer verwalteten Komponenten.</summary>
         Private components As System.ComponentModel.IContainer
 
-        ' HINWEIS: Die folgende Prozedur wird vom Windows Form-Designer benötigt
-        ' Sie kann mit dem Windows Form-Designer geändert werden.  
-        ' Nicht mit dem Code-Editor ändern.
+        ''' <summary>Initialisiert die vom Windows Forms-Designer festgelegten Eigenschaften.</summary>
+        ''' <remarks>HINWEIS: Die folgende Prozedur wird vom Windows Form-Designer benötigt
+        ''' Sie kann mit dem Windows Form-Designer geändert werden.
+        ''' Nicht mit dem Code-Editor ändern.</remarks>
         <System.Diagnostics.DebuggerStepThrough()>
         Private Sub InitializeComponent()
             Me.SuspendLayout()

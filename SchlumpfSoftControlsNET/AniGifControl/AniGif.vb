@@ -31,42 +31,112 @@ Namespace AniGifControl
 
 #Region "Variablen"
 
-        Private _usePartialFrameInvalidation As Boolean ' Aktiviert die auf den Bildbereich begrenzte Invalidierung bei Framewechseln
-        Private _frameInvalidationBounds As Rectangle ' Zwischengespeicherter Bereich für die Teilinvalidierung
-        Private _frameInvalidationBoundsValid As Boolean ' Kennzeichnet einen gültigen zwischengespeicherten Invalidierungsbereich
-        Private _fullFrameInvalidationPending As Boolean ' Kennzeichnet eine ausstehende vollständige Neuzeichnung zur Ermittlung des Bildbereichs
-        Private _frameInvalidationToken As Object ' Kennzeichnet die aktuelle Geometrie und entwertet veraltete Zeichenvorgänge
-        Private _partialFrameInvalidationIssued As Boolean ' Kennzeichnet, dass seit dem Bildwechsel eine Teilinvalidierung ausgelöst wurde
-        Private _frameInvalidationAncestors As List(Of Control) ' Beobachtete übergeordnete Controls für Änderungen des Zeichenbereichs
-        Private _diagnosticsEnabled As Boolean ' Aktiviert die Erfassung der Wiedergabe- und Zeichenmetriken
-        Private _diagnosticsCollector As DiagnosticsCollector ' Sammelt die Messwerte der aktuellen Diagnostiksitzung
-        Private _diagnosticsAncestors As List(Of Control) ' Beobachtete übergeordnete Controls für die Sichtbarkeit der Diagnostik
-        Private _diagnosticsHandleAvailable As Boolean ' Kennzeichnet ein für die Diagnostik verfügbares Control-Handle
-        Private _FramesPerSecond As Decimal ' Benutzerdefinierte Wiedergabegeschwindigkeit (nur aktiv bei CustomDisplaySpeed = True)
-        Private _defaultFrameIntervalMs As Int32 ' Begrenztes FPS-Intervall und Fallback für GIF-Delays
-        Private _Dimension As FrameDimension ' GIF-Frame-Dimension (bei GIFs i. d. R. Time)
-        Private _Frame As Int32 ' Aktueller Frame-Index für die Timer-basierte Wiedergabe
-        Private _MaxFrame As Int32 ' Letzter gültiger Frame-Index des geladenen GIFs
-        Private _Autoplay As Boolean ' Steuert, ob die Animation automatisch starten soll
-        Private _ZoomFactor As Decimal ' Zoomfaktor in Prozent für den Zoom-Modus
-        Private _CustomDisplaySpeed As Boolean ' True = FPS-Intervall, False = GIF-Metadaten-Verzögerung verwenden
-        Private _GifSizeMode As ImageSizeMode ' Art der Darstellung (Normal, Stretch, Zoom, ...)
+        ''' <summary>Aktiviert die auf den Bildbereich begrenzte Invalidierung bei Framewechseln.</summary>
+        Private _usePartialFrameInvalidation As Boolean
+
+        ''' <summary>Zwischengespeicherter Bereich für die Teilinvalidierung.</summary>
+        Private _frameInvalidationBounds As Rectangle
+
+        ''' <summary>Kennzeichnet einen gültigen zwischengespeicherten Invalidierungsbereich.</summary>
+        Private _frameInvalidationBoundsValid As Boolean
+
+        ''' <summary>Kennzeichnet eine ausstehende vollständige Neuzeichnung zur Ermittlung des Bildbereichs.</summary>
+        Private _fullFrameInvalidationPending As Boolean
+
+        ''' <summary>Kennzeichnet die aktuelle Geometrie und entwertet veraltete Zeichenvorgänge.</summary>
+        Private _frameInvalidationToken As Object
+
+        ''' <summary>Kennzeichnet, dass seit dem Bildwechsel eine Teilinvalidierung ausgelöst wurde.</summary>
+        Private _partialFrameInvalidationIssued As Boolean
+
+        ''' <summary>Beobachtete übergeordnete Controls für Änderungen des Zeichenbereichs.</summary>
+        Private _frameInvalidationAncestors As List(Of Control)
+
+        ''' <summary>Aktiviert die Erfassung der Wiedergabe- und Zeichenmetriken.</summary>
+        Private _diagnosticsEnabled As Boolean
+
+        ''' <summary>Sammelt die Messwerte der aktuellen Diagnostiksitzung.</summary>
+        Private _diagnosticsCollector As DiagnosticsCollector
+
+        ''' <summary>Beobachtete übergeordnete Controls für die Sichtbarkeit der Diagnostik.</summary>
+        Private _diagnosticsAncestors As List(Of Control)
+
+        ''' <summary>Kennzeichnet ein für die Diagnostik verfügbares Control-Handle.</summary>
+        Private _diagnosticsHandleAvailable As Boolean
+
+        ''' <summary>Benutzerdefinierte Wiedergabegeschwindigkeit (nur aktiv bei CustomDisplaySpeed = True).</summary>
+        Private _FramesPerSecond As Decimal
+
+        ''' <summary>Begrenztes FPS-Intervall und Fallback für GIF-Delays.</summary>
+        Private _defaultFrameIntervalMs As Int32
+
+        ''' <summary>GIF-Frame-Dimension (bei GIFs i. d. R. Time).</summary>
+        Private _Dimension As FrameDimension
+
+        ''' <summary>Aktueller Frame-Index für die Timer-basierte Wiedergabe.</summary>
+        Private _Frame As Int32
+
+        ''' <summary>Letzter gültiger Frame-Index des geladenen GIFs.</summary>
+        Private _MaxFrame As Int32
+
+        ''' <summary>Steuert, ob die Animation automatisch starten soll.</summary>
+        Private _Autoplay As Boolean
+
+        ''' <summary>Zoomfaktor in Prozent für den Zoom-Modus.</summary>
+        Private _ZoomFactor As Decimal
+
+        ''' <summary>True = FPS-Intervall, False = GIF-Metadaten-Verzögerung verwenden.</summary>
+        Private _CustomDisplaySpeed As Boolean
+
+        ''' <summary>Art der Darstellung (Normal, Stretch, Zoom, ...).</summary>
+        Private _GifSizeMode As ImageSizeMode
+        ''' <summary>Qualitäts-Preset für die GIF-Skalierung in den Modi Zoom und Fill.</summary>
         Private _scalingQualityPreset As GifScalingQualityPreset
-        Private _Gif As Bitmap ' Aktuell angezeigtes Bild (intern immer als Bitmap gehalten)
-        Private _OwnsGif As Boolean ' Kennzeichnet, ob _Gif vom Control geklont/erstellt wurde und damit freigegeben werden muss
-        Private _IsAnimating As Boolean ' Interner Status, ob aktuell eine Animation aktiv läuft
-        Private _playbackState As PlaybackState ' Gewünschter Wiedergabezustand unabhängig von der Sichtbarkeit
-        Private _IsDisposed As Boolean  ' Kennzeichnet, dass die Ressourcenfreigabe des Controls begonnen hat
-        Private _MinimumFrameIntervalMs As Int32 ' Untere Grenze für normalisierte Frame-Intervalle
-        Private _MaximumFrameIntervalMs As Int32 ' Obere Grenze für normalisierte Frame-Intervalle
-        Private _NormalizedFrameDelaysMs() As Int32 ' Normalisierte Delay-Werte je Frame
-        Private _rawFrameDelaysMs() As Int32 ' Unnormalisierte Delay-Werte der aktuellen Bitmap
-        Private _rawFrameDelayCount As Int32 ' Anzahl der aus den GIF-Metadaten gelesenen Frame-Verzögerungen
-        Private _rawFrameDelayCacheValid As Boolean ' Kennzeichnet gültige zwischengespeicherte Frame-Delay-Metadaten
-        Private _lastFrameDelayFallbackMs As Int32 ' Zuletzt bei der Normalisierung verwendetes Fallback-Intervall in Millisekunden
-        Private _gifWasExposed As Boolean ' Kennzeichnet, dass die interne Bitmap über die Gif-Eigenschaft herausgegeben wurde
-        Private _LastFrameTickTimestamp As Int64 ' Zeitstempel des letzten Timer-Ticks
-        Private _AdaptiveTiming As Boolean ' Aktiviert Drift-Korrektur auf Basis der UI-Thread-Last
+
+        ''' <summary>Aktuell angezeigtes Bild (intern immer als Bitmap gehalten).</summary>
+        Private _Gif As Bitmap
+
+        ''' <summary>Kennzeichnet, ob _Gif vom Control geklont/erstellt wurde und damit freigegeben werden muss.</summary>
+        Private _OwnsGif As Boolean
+
+        ''' <summary>Interner Status, ob aktuell eine Animation aktiv läuft.</summary>
+        Private _IsAnimating As Boolean
+
+        ''' <summary>Gewünschter Wiedergabezustand unabhängig von der Sichtbarkeit.</summary>
+        Private _playbackState As PlaybackState
+
+        ''' <summary>Kennzeichnet, dass die Ressourcenfreigabe des Controls begonnen hat.</summary>
+        Private _IsDisposed As Boolean
+
+        ''' <summary>Untere Grenze für normalisierte Frame-Intervalle.</summary>
+        Private _MinimumFrameIntervalMs As Int32
+
+        ''' <summary>Obere Grenze für normalisierte Frame-Intervalle.</summary>
+        Private _MaximumFrameIntervalMs As Int32
+
+        ''' <summary>Normalisierte Delay-Werte je Frame.</summary>
+        Private _NormalizedFrameDelaysMs() As Int32
+
+        ''' <summary>Unnormalisierte Delay-Werte der aktuellen Bitmap.</summary>
+        Private _rawFrameDelaysMs() As Int32
+
+        ''' <summary>Anzahl der aus den GIF-Metadaten gelesenen Frame-Verzögerungen.</summary>
+        Private _rawFrameDelayCount As Int32
+
+        ''' <summary>Kennzeichnet gültige zwischengespeicherte Frame-Delay-Metadaten.</summary>
+        Private _rawFrameDelayCacheValid As Boolean
+
+        ''' <summary>Zuletzt bei der Normalisierung verwendetes Fallback-Intervall in Millisekunden.</summary>
+        Private _lastFrameDelayFallbackMs As Int32
+
+        ''' <summary>Kennzeichnet, dass die interne Bitmap über die Gif-Eigenschaft herausgegeben wurde.</summary>
+        Private _gifWasExposed As Boolean
+
+        ''' <summary>Zeitstempel des letzten Timer-Ticks.</summary>
+        Private _LastFrameTickTimestamp As Int64
+
+        ''' <summary>Aktiviert Drift-Korrektur auf Basis der UI-Thread-Last.</summary>
+        Private _AdaptiveTiming As Boolean
 
 #End Region
 

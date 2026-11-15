@@ -6,7 +6,7 @@ Schnelle Navigation in großen Verzeichnisstrukturen mit reaktiver UI.
 
 ## 2. Lazy-Loading weiter ausbauen
 
-v
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 
@@ -20,7 +20,7 @@ v
 
 ## 3. Dateisystemzugriffe entkoppeln
 
-v
+**Status:** &#x1F4A1; offen
 
 **Umsetzung:**
 

@@ -6,13 +6,13 @@ Robustes und fehlertolerantes Laufwerks-Monitoring mit stabilen Events.
 
 ## 2. Event-Deduplizierung einführen
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
-- Kurzzeit-Cache für zuletzt gemeldete Device-Events einbauen.
+- Kurzzeit-Cache je Laufwerk und Ereignistyp mit monotoner Zeitmessung und automatischer Entfernung abgelaufener Einträge.
 
-- Gleiche Ereignisse innerhalb eines Zeitfensters zusammenfassen.
+- Gleiche Ereignisse innerhalb von 200 Millisekunden unterdrücken. Entgegengesetzte Zustandswechsel geben das zugehörige Ereignis wieder frei; verschiedene Laufwerke und Ereignistypen bleiben unabhängig.
 
 **Nutzen:** Verhindert Event-Stürme bei USB-/Volume-Flapping.
 
@@ -58,15 +58,14 @@ Robustes und fehlertolerantes Laufwerks-Monitoring mit stabilen Events.
 
 ## 6. Diagnoselogs optional bereitstellen
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
-- Optionales Trace-Level mit Rohdaten (Eventtyp, Laufwerk, Timestamp).
+- Die instanzbezogene Eigenschaft `TraceLevel` ist standardmäßig ausgeschaltet. Ab `Info` werden Ereignistyp, Laufwerk, UTC-Zeitstempel und Unterdrückungsentscheidung protokolliert; `Verbose` ergänzt die nativen Rohdaten. Lesefehler sind ab `Error` sichtbar.
 
 **Nutzen:** Schnellere Ursachenanalyse in Produktion.
 
 ## 7. Empfohlene Reihenfolge
 
-1. Deduplizierung (2.)
-2. Diagnoselogs (6.)
+Alle aufgeführten Optimierungsvorschläge sind umgesetzt.

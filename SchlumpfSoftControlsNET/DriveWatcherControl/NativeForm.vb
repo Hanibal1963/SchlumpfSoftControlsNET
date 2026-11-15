@@ -107,44 +107,40 @@ Namespace DriveWatcherControl
 
 #Region "Öffentliche Ereignisse"
 
-        ''' <summary>
-        ''' Wird ausgelöst, wenn ein logisches Volume vom Betriebssystem als hinzugefügt gemeldet wird.
-        ''' </summary>
+        ''' <summary>Wird vor der Verarbeitung einer gültigen Volume-Meldung ausgelöst.</summary>
+        ''' <param name="sender">Das Empfangsfenster.</param>
+        ''' <param name="eventCode">Der Windows-Ereigniscode.</param>
+        ''' <param name="driveName">Der erste gemeldete Laufwerksname.</param>
+        ''' <param name="unitMask">Die unveränderte Laufwerksmaske.</param>
+        ''' <param name="flags">Die unveränderten Volume-Flags.</param>
+        Public Event VolumeObserved(sender As Object, eventCode As Integer, driveName As String, unitMask As Integer, flags As Short)
+
+        ''' <summary>Wird ausgelöst, wenn ein logisches Volume vom Betriebssystem als hinzugefügt gemeldet wird. </summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
         ''' <param name="e">Der gemeldete Laufwerksname.</param>
         Public Event DriveAdded(sender As Object, e As String)
 
-        ''' <summary>
-        ''' Wird ausgelöst, wenn ein logisches Volume vom Betriebssystem als entfernt gemeldet wird.
-        ''' </summary>
+        ''' <summary>Wird ausgelöst, wenn ein logisches Volume vom Betriebssystem als entfernt gemeldet wird.</summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
         ''' <param name="e">Der gemeldete Laufwerksname.</param>
         Public Event DriveRemoved(sender As Object, e As String)
 
-        ''' <summary>
-        ''' Wird ausgelöst, wenn ein Medium in einem bestehenden Wechsel-/CD-/DVD-Laufwerk eingelegt wurde.
-        ''' </summary>
+        ''' <summary>Wird ausgelöst, wenn ein Medium in einem bestehenden Wechsel-/CD-/DVD-Laufwerk eingelegt wurde.</summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
         ''' <param name="e">Der gemeldete Laufwerksname.</param>
         Public Event MediaInserted(sender As Object, e As String)
 
-        ''' <summary>
-        ''' Wird ausgelöst, wenn ein Medium aus einem bestehenden Wechsel-/CD-/DVD-Laufwerk entfernt wurde.
-        ''' </summary>
+        ''' <summary>Wird ausgelöst, wenn ein Medium aus einem bestehenden Wechsel-/CD-/DVD-Laufwerk entfernt wurde.</summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
         ''' <param name="e">Der gemeldete Laufwerksname.</param>
         Public Event MediaRemoved(sender As Object, e As String)
 
-        ''' <summary>
-        ''' Wird ausgelöst, wenn ein Netzlaufwerk vom Betriebssystem als hinzugefügt gemeldet wird.
-        ''' </summary>
+        ''' <summary>Wird ausgelöst, wenn ein Netzlaufwerk vom Betriebssystem als hinzugefügt gemeldet wird.</summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
         ''' <param name="e">Der gemeldete Laufwerksname.</param>
         Public Event NetworkDriveAdded(sender As Object, e As String)
 
-        ''' <summary>
-        ''' Wird ausgelöst, wenn ein Netzlaufwerk vom Betriebssystem als entfernt gemeldet wird.
-        ''' </summary>
+        ''' <summary>Wird ausgelöst, wenn ein Netzlaufwerk vom Betriebssystem als entfernt gemeldet wird.</summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
         ''' <param name="e">Der gemeldete Laufwerksname.</param>
         Public Event NetworkDriveRemoved(sender As Object, e As String)
@@ -251,6 +247,7 @@ Namespace DriveWatcherControl
                     Return
                 End If
                 Dim driveName As String = $"{driveLetter}:\"
+                RaiseEvent VolumeObserved(Me, CInt(m.WParam), driveName, volume.dbcv_unitmask, volume.dbcv_flags)
 
                 ' wParam enthält den konkreten Änderungstyp (Ankunft/Entfernen).
                 ' dbcv_flags enthält Zusatzkontext zur Art des Volumes.

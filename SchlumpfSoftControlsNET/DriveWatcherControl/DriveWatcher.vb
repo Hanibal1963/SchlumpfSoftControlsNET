@@ -8,6 +8,8 @@ Imports System
 Imports System.ComponentModel
 Imports System.IO
 Imports System.Drawing
+Imports System.Diagnostics
+Imports System.Globalization
 
 Namespace DriveWatcherControl
 
@@ -23,6 +25,8 @@ Namespace DriveWatcherControl
     ''' zusätzlich <see cref="NetworkDriveAdded"/> und <see cref="NetworkDriveRemoved"/> bereitgestellt.
     ''' Ohne <see cref="SynchronizingObject"/> werden Geräteereignisse auf dem Thread des Empfangsfensters ausgelöst.
     ''' Mit einem Synchronisierungsobjekt können die Ereignisse auf dessen Thread zugestellt werden.
+    ''' Identische Ereignisse desselben Laufwerks werden innerhalb von 200 Millisekunden unterdrückt;
+    ''' ein entgegengesetzter Zustandswechsel hebt die Unterdrückung für das entsprechende Ereignispaar auf.
     ''' </remarks>
     <ToolboxItem(True)>
     <DesignTimeVisible(True)>
@@ -32,12 +36,6 @@ Namespace DriveWatcherControl
 
         Inherits Component
 
-#Region "Konstanten"
-
-        Private Const DriveEventDebounceMs As Int32 = 200
-
-#End Region
-
 #Region "Variablen"
 
         Private WithEvents NatForm As NativeForm ' Unsichtbares natives Fenster für den Empfang von WM_DEVICECHANGE.
@@ -46,25 +44,8 @@ Namespace DriveWatcherControl
 
         Private _synchronizingObject As ISynchronizeInvoke
         Private _notificationDisposed As Boolean
-        ' Felder für eine kurze Entprellung direkt aufeinanderfolgender identischer Ereignisse.
-        Private ReadOnly _DebounceSyncRoot As New Object
-        Private _LastDriveEventName As String = ""
-        Private _LastDriveEventType As DriveEventType = DriveEventType.None
-        Private _LastDriveEventTimeUtc As DateTime = DateTime.MinValue
-
-#End Region
-
-#Region "private Auflistungen"
-
-        Private Enum DriveEventType
-            None = 0
-            Added = 1
-            Removed = 2
-            NetworkAdded = 3
-            NetworkRemoved = 4
-            MediaInserted = 5
-            MediaRemoved = 6
-        End Enum
+        Private _traceLevel As TraceLevel = TraceLevel.Off
+        Private ReadOnly _debouncer As New DriveEventDebouncer()
 
 #End Region
 
@@ -130,6 +111,39 @@ Namespace DriveWatcherControl
 #End Region
 
 #Region "Öffentliche Eigenschaften"
+
+        ''' <summary>Ruft die optionale Diagnosestufe für diese Instanz ab oder legt sie fest.</summary>
+        ''' <value>Die Diagnosestufe; standardmäßig <see cref="System.Diagnostics.TraceLevel.Off"/>.</value>
+        ''' <remarks>
+        ''' Error meldet Fehler beim Lesen von Laufwerksinformationen, Info zusätzlich Ereignisse einschließlich
+        ''' unterdrückter Duplikate und Verbose zusätzlich native Volume-Rohdaten. Warning enthält dieselben
+        ''' Meldungen wie Error. Die Ausgabe erfolgt über <see cref="Trace.Listeners"/> auf dem aufrufenden Thread.
+        ''' Warnungen über ungültige native Nachrichten sind von dieser Einstellung unabhängig.
+        ''' </remarks>
+        ''' <exception cref="InvalidEnumArgumentException">Der Wert ist keine gültige Diagnosestufe.</exception>
+        ''' <exception cref="ObjectDisposedException">Die Eigenschaft wird nach dem Freigeben gesetzt.</exception>
+        <DefaultValue(TraceLevel.Off)>
+        <Description("Optionale Diagnosestufe für Laufwerksmeldungen.")>
+        Public Property TraceLevel As TraceLevel
+            Get
+                SyncLock Me._notificationSyncRoot
+                    Return Me._traceLevel
+                End SyncLock
+            End Get
+            Set(value As TraceLevel)
+                SyncLock Me._notificationSyncRoot
+#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
+                    If Me._notificationDisposed Then Throw New ObjectDisposedException(NameOf(DriveWatcher))
+#Enable Warning CA1513
+#Disable Warning CA2263 ' Die generische IsDefined-Überladung ist unter .NET Framework nicht verfügbar.
+                    If Not [Enum].IsDefined(GetType(TraceLevel), value) Then
+#Enable Warning CA2263
+                        Throw New InvalidEnumArgumentException(NameOf(value), CInt(value), GetType(TraceLevel))
+                    End If
+                    Me._traceLevel = value
+                End SyncLock
+            End Set
+        End Property
 
         ''' <summary>
         ''' Ruft das optionale Objekt für die Zustellung der Ereignisse auf dessen Thread ab oder legt es fest.
@@ -198,7 +212,7 @@ Namespace DriveWatcherControl
         ''' bereit ist, bleiben Detailfelder neutral befüllt.
         ''' </remarks>
         Private Sub NatForm_DriveAdded(sender As Object, e As String) Handles NatForm.DriveAdded
-            Me.OnDriveAdded(DriveInfoSnapshotReader.Read(e))
+            Me.OnDriveAdded(Me.ReadDriveInfo(e, DriveEventType.Added))
         End Sub
 
         ''' <summary>
@@ -220,7 +234,7 @@ Namespace DriveWatcherControl
         ''' <param name="e">Die Laufwerksinformationen des betroffenen Laufwerks.</param>
         Private Sub NatForm_MediaInserted(sender As Object, e As String) Handles NatForm.MediaInserted
 
-            Me.OnMediaInserted(DriveInfoSnapshotReader.Read(e))
+            Me.OnMediaInserted(Me.ReadDriveInfo(e, DriveEventType.MediaInserted))
 
         End Sub
 
@@ -246,9 +260,36 @@ Namespace DriveWatcherControl
         ''' </remarks>
         Private Sub NatForm_NetworkDriveAdded(sender As Object, e As String) Handles NatForm.NetworkDriveAdded
 
-            Me.OnNetworkDriveAdded(DriveInfoSnapshotReader.Read(e))
+            Me.OnNetworkDriveAdded(Me.ReadDriveInfo(e, DriveEventType.NetworkAdded))
 
         End Sub
+
+        Private Sub NatForm_VolumeObserved(sender As Object, eventCode As Integer, driveName As String, unitMask As Integer, flags As Short) Handles NatForm.VolumeObserved
+            If Me.IsTraceEnabled(System.Diagnostics.TraceLevel.Verbose) Then
+                WriteDiagnostic($"Native EventCode=0x{eventCode:X4} Drive={driveName} UnitMask=0x{unitMask:X8} Flags=0x{CInt(flags) And &HFFFF:X4}")
+            End If
+        End Sub
+
+        Private Function ReadDriveInfo(driveName As String, eventType As DriveEventType) As DriveAddedEventArgs
+            Dim result As DriveAddedEventArgs = DriveInfoSnapshotReader.Read(driveName)
+            If Me.IsTraceEnabled(System.Diagnostics.TraceLevel.Error) Then
+                For Each entry In result.ReadErrors
+                    WriteDiagnostic($"ReadError Event={eventType} Drive={driveName} Field={entry.Key} Exception={entry.Value.GetType().FullName} Message={entry.Value.Message}")
+                Next
+            End If
+            Return result
+        End Function
+
+        Private Shared Sub WriteDiagnostic(message As String)
+            Dim timestamp As String = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)
+            Trace.WriteLine($"DriveWatcher Timestamp={timestamp} {message}")
+        End Sub
+
+        Private Function IsTraceEnabled(level As System.Diagnostics.TraceLevel) As Boolean
+            SyncLock Me._notificationSyncRoot
+                Return Not Me._notificationDisposed AndAlso Me._traceLevel >= level
+            End SyncLock
+        End Function
 
         ''' <summary>
         ''' Übernimmt das interne NativeForm-Ereignis für ein entferntes Netzlaufwerk.
@@ -380,6 +421,7 @@ Namespace DriveWatcherControl
                 Me._notificationDisposed = True
                 Me._synchronizingObject = Nothing
             End SyncLock
+            Me._debouncer.Clear()
         End Sub
 
         ''' <summary>
@@ -392,25 +434,11 @@ Namespace DriveWatcherControl
         ''' </returns>
         Private Function IsDebouncedEvent(driveName As String, eventType As DriveEventType) As Boolean
 
-            Dim normalizedDriveName As String = If(driveName, "")
-            Dim nowUtc As DateTime = DateTime.UtcNow
-
-            SyncLock Me._DebounceSyncRoot
-                ' Nur identischer Name + identischer Typ + sehr kurzer zeitlicher Abstand gilt als Duplikat.
-                If Me._LastDriveEventType = eventType AndAlso
-                   String.Equals(Me._LastDriveEventName, normalizedDriveName, StringComparison.OrdinalIgnoreCase) AndAlso
-                   (nowUtc - Me._LastDriveEventTimeUtc).TotalMilliseconds <= DriveEventDebounceMs Then
-
-                    Return True
-                End If
-
-                ' Letztes gültiges Ereignis als neue Referenz speichern.
-                Me._LastDriveEventName = normalizedDriveName
-                Me._LastDriveEventType = eventType
-                Me._LastDriveEventTimeUtc = nowUtc
-            End SyncLock
-
-            Return False
+            Dim duplicate As Boolean = Me._debouncer.IsDuplicate(driveName, eventType)
+            If Me.IsTraceEnabled(System.Diagnostics.TraceLevel.Info) Then
+                WriteDiagnostic($"Event={eventType} Drive={driveName} Suppressed={duplicate}")
+            End If
+            Return duplicate
 
         End Function
 

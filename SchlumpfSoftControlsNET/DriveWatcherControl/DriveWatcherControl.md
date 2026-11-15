@@ -22,6 +22,8 @@ DriveWatcher Control wurde mit folgenden Geräten getestet:
 
 - Virtuelle Festplatte
 
+- Netzlaufwerk
+
 ## 1. Konstruktoren
 
 - `New()`: Initialisiert eine neue Instanz von `DriveWatcher` und erstellt ein Fenster für den Empfang von Geräteänderungen. Falls das Fenster nicht erstellt werden kann, kann eine `Win32Exception` auftreten.
@@ -31,6 +33,8 @@ DriveWatcher Control wurde mit folgenden Geräten getestet:
 ## 2. Ereignisse
 
 Ohne `SynchronizingObject` werden alle Ereignisse synchron auf dem Thread ausgelöst, der das Empfangsfenster erstellt hat. Bei einem konfigurierten Synchronisierungsobjekt erfolgt die Zustellung auf dessen Thread. Geschützte `On...`-Methoden, die von abgeleiteten Klassen direkt aufgerufen werden, verwenden ohne Synchronisierungsobjekt den jeweiligen aufrufenden Thread.
+
+Gleiche Ereignisse desselben Laufwerks werden innerhalb von 200 Millisekunden nach der ersten zugelassenen Meldung unterdrückt. Laufwerksnamen werden ohne Beachtung der Groß-/Kleinschreibung verglichen; andere Laufwerke und Ereignistypen besitzen jeweils eigene Einträge. Ein entgegengesetzter Zustandswechsel (hinzugefügt/entfernt beziehungsweise Medium eingelegt/entfernt) hebt den Eintrag seines Ereignispartners auf, sodass beispielsweise Hinzufügen–Entfernen–Hinzufügen vollständig gemeldet wird. Unterdrückte Duplikate verlängern das Zeitfenster nicht. Die Prüfung erfolgt vor einer gegebenenfalls asynchronen Zustellung.
 
 - `DriveAdded`: Wird ausgelöst, wenn ein logisches Laufwerk (Volume) hinzugefügt wurde.
 
@@ -45,6 +49,12 @@ Ohne `SynchronizingObject` werden alle Ereignisse synchron auf dem Thread ausgel
 - `NetworkDriveRemoved`: Wird ausgelöst, wenn ein Netzlaufwerk entfernt wurde.
 
 ## 3. Eigenschaften
+
+- `TraceLevel As System.Diagnostics.TraceLevel`: Instanzbezogene Diagnosestufe, standardmäßig `Off`. `Error` meldet Lesefehler mit Ereignistyp, Laufwerk, Feld, Ausnahmetyp und Meldung; `Warning` enthält derzeit dieselben Meldungen. `Info` ergänzt alle verarbeiteten Ereignisse einschließlich ihrer Unterdrückungsentscheidung; `Verbose` ergänzt native Volume-Rohmeldungen mit Windows-Ereigniscode, Laufwerksmaske und Flags. Jeder Eintrag enthält einen UTC-Zeitstempel im Roundtrip-Format. Ungültige Enumwerte lösen `InvalidEnumArgumentException` aus, das Setzen nach `Dispose()` löst `ObjectDisposedException` aus.
+
+```vb
+DriveWatcher1.TraceLevel = System.Diagnostics.TraceLevel.Verbose
+```
 
 - `SynchronizingObject As System.ComponentModel.ISynchronizeInvoke`: Optionales Ziel für die Zustellung aller sechs Ereignisse; der Standardwert ist `Nothing`. `Nothing` stellt die direkte Zustellung wieder her. Ist `InvokeRequired` wahr, wird die Zustellung asynchron mit `BeginInvoke` vorgemerkt, andernfalls erfolgt sie direkt. Ein Windows Forms-Steuerelement muss bei der Zustellung ein bereits erstelltes Fensterhandle besitzen; andernfalls wird `InvalidOperationException` ausgelöst. Das Setzen nach `Dispose()` löst `ObjectDisposedException` aus. Die Eigenschaft wird zur Laufzeit gesetzt und nicht vom Designer serialisiert.
 
@@ -82,6 +92,10 @@ DriveWatcher1.SynchronizingObject = Me
 - Fehler beim Vormerken werden weitergegeben. Ausnahmen asynchroner Handler folgen der Fehlerbehandlung des jeweiligen `ISynchronizeInvoke`-Objekts; bei Windows Forms erfolgt diese über den zugehörigen Thread. Für den nativen Nachrichtenweg gelten außerdem die Fehlerbehandlungsregeln von Windows Forms.
 
 - Die Komponente ist für Windows und Windows Forms vorgesehen.
+
+- Das Entprellungsfenster verwendet eine monotone Zeitmessung und ist nicht konfigurierbar. Abgelaufene Einträge werden bei nachfolgenden Ereignissen entfernt; beim Freigeben wird der Cache geleert.
+
+- Die optionale Diagnose schreibt synchron auf dem empfangenden beziehungsweise aufrufenden Thread über `System.Diagnostics.Trace.Listeners`. Die Anwendung verwaltet ihre Listener selbst; sie muss einen geeigneten Listener konfigurieren und bei Bedarf leeren. Trace-Ausgaben benötigen ein mit `TRACE` kompiliertes Control. Listenerfehler werden nicht abgefangen und können die Ereignisverarbeitung unterbrechen. Ausnahmetexte und Laufwerksnamen können sensible Informationen enthalten. Die vorhandenen Warnungen bei ungültigen Windows-Nachrichten bleiben unabhängig von `TraceLevel` aktiv.
 
 ## [7. Optimierungsvorschläge](DriveWatcherOptimierungsvorschläge.md)
 

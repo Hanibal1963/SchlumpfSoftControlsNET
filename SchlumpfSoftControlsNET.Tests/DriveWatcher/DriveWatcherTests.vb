@@ -1,4 +1,11 @@
+﻿' --------------------------------------------------------------------------------------------------------
+' Datei: DriveWatcherTests.vb
+' Author: Andreas Sauer
+' Datum: 15.11.2026
+' --------------------------------------------------------------------------------------------------------
+
 Imports System.IO
+
 Imports Microsoft.VisualStudio.TestTools.UnitTesting
 Imports SchlumpfSoft.ControlsNET.DriveWatcherControl
 
@@ -11,6 +18,28 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
             Assert.IsNotNull(args)
             Assert.IsNull(args.DriveName)
+        End Sub
+
+        <TestMethod>
+        Public Sub Debounce_InterleavedEventsAndOppositeTransition_PreservesRealTransitions()
+            Using watcher As New TestDriveWatcher()
+                Dim added As Integer = 0
+                Dim removed As Integer = 0
+                Dim media As Integer = 0
+                AddHandler watcher.DriveAdded, Sub(sender, e) added += 1
+                AddHandler watcher.DriveRemoved, Sub(sender, e) removed += 1
+                AddHandler watcher.MediaInserted, Sub(sender, e) media += 1
+                watcher.RaiseDriveAdded(New DriveAddedEventArgs("E:\"))
+                watcher.RaiseDriveAdded(New DriveAddedEventArgs("F:\"))
+                watcher.RaiseMediaInserted(New DriveAddedEventArgs("E:\"))
+                watcher.RaiseDriveAdded(New DriveAddedEventArgs("e:\"))
+                Assert.AreEqual(2, added)
+                Assert.AreEqual(1, media)
+                watcher.RaiseDriveRemoved(New DriveRemovedEventArgs("E:\"))
+                watcher.RaiseDriveAdded(New DriveAddedEventArgs("E:\"))
+                Assert.AreEqual(3, added)
+                Assert.AreEqual(1, removed)
+            End Using
         End Sub
 
         <TestMethod>

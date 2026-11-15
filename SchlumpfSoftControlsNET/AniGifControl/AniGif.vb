@@ -13,9 +13,7 @@ Imports System.Windows.Forms
 
 Namespace AniGifControl
 
-    ''' <summary>
-    ''' Control zum Anzeigen von animierten Grafiken.
-    ''' </summary>
+    ''' <summary>Control zum Anzeigen von animierten Grafiken.</summary>
     <Description("Control zum Anzeigen von animierten Grafiken.")>
     <ToolboxItem(True)>
     <ToolboxBitmap(GetType(AniGif), "AniGifControl.AniGif.bmp")>
@@ -33,76 +31,145 @@ Namespace AniGifControl
 
 #Region "Variablen"
 
+        ''' <summary>Aktiviert die auf den Bildbereich begrenzte Invalidierung bei Framewechseln.</summary>
         Private _usePartialFrameInvalidation As Boolean
-        Private _frameInvalidationBounds As Rectangle
-        Private _frameInvalidationBoundsValid As Boolean
-        Private _fullFrameInvalidationPending As Boolean
-        Private _frameInvalidationToken As Object
-        Private _partialFrameInvalidationIssued As Boolean
-        Private _frameInvalidationAncestors As List(Of Control)
-        Private _diagnosticsEnabled As Boolean
-        Private _diagnosticsCollector As DiagnosticsCollector
-        Private _diagnosticsAncestors As List(Of Control)
-        Private _diagnosticsHandleAvailable As Boolean
-        Private _FramesPerSecond As Decimal ' Benutzerdefinierte Wiedergabegeschwindigkeit (nur aktiv bei CustomDisplaySpeed = True)
-        Private _defaultFrameIntervalMs As Int32 ' Begrenztes FPS-Intervall und Fallback für GIF-Delays
-        Private _Dimension As FrameDimension ' GIF-Frame-Dimension (bei GIFs i. d. R. Time)
-        Private _Frame As Int32 ' Aktueller Frame-Index für die Timer-basierte Wiedergabe
-        Private _MaxFrame As Int32 ' Letzter gültiger Frame-Index des geladenen GIFs
-        Private _Autoplay As Boolean ' Steuert, ob die Animation automatisch starten soll
-        Private _ZoomFactor As Decimal ' Zoomfaktor in Prozent für den Zoom-Modus
-        Private _CustomDisplaySpeed As Boolean ' True = FPS-Intervall, False = GIF-Metadaten-Verzögerung verwenden
-        Private _GifSizeMode As ImageSizeMode ' Art der Darstellung (Normal, Stretch, Zoom, ...)
-        Private _scalingQualityPreset As GifScalingQualityPreset
-        Private _Gif As Bitmap ' Aktuell angezeigtes Bild (intern immer als Bitmap gehalten)
-        Private _OwnsGif As Boolean ' Kennzeichnet, ob _Gif vom Control geklont/erstellt wurde und damit freigegeben werden muss
-        Private _IsAnimating As Boolean ' Interner Status, ob aktuell eine Animation aktiv läuft
-        Private _playbackState As PlaybackState ' Gewünschter Wiedergabezustand unabhängig von der Sichtbarkeit
-        Private _IsDisposed As Boolean  ' Kennzeichnet, dass die Ressourcenfreigabe des Controls begonnen hat
-        Private _MinimumFrameIntervalMs As Int32 ' Untere Grenze für normalisierte Frame-Intervalle
-        Private _MaximumFrameIntervalMs As Int32 ' Obere Grenze für normalisierte Frame-Intervalle
-        Private _NormalizedFrameDelaysMs() As Int32 ' Normalisierte Delay-Werte je Frame
-        Private _rawFrameDelaysMs() As Int32 ' Unnormalisierte Delay-Werte der aktuellen Bitmap
-        Private _rawFrameDelayCount As Int32
-        Private _rawFrameDelayCacheValid As Boolean
-        Private _lastFrameDelayFallbackMs As Int32
-        Private _gifWasExposed As Boolean
-        Private _LastFrameTickTimestamp As Int64 ' Zeitstempel des letzten Timer-Ticks
-        Private _AdaptiveTiming As Boolean ' Aktiviert Drift-Korrektur auf Basis der UI-Thread-Last
 
+        ''' <summary>Zwischengespeicherter Bereich für die Teilinvalidierung.</summary>
+        Private _frameInvalidationBounds As Rectangle
+
+        ''' <summary>Kennzeichnet einen gültigen zwischengespeicherten Invalidierungsbereich.</summary>
+        Private _frameInvalidationBoundsValid As Boolean
+
+        ''' <summary>Kennzeichnet eine ausstehende vollständige Neuzeichnung zur Ermittlung des Bildbereichs.</summary>
+        Private _fullFrameInvalidationPending As Boolean
+
+        ''' <summary>Kennzeichnet die aktuelle Geometrie und entwertet veraltete Zeichenvorgänge.</summary>
+        Private _frameInvalidationToken As Object
+
+        ''' <summary>Kennzeichnet, dass seit dem Bildwechsel eine Teilinvalidierung ausgelöst wurde.</summary>
+        Private _partialFrameInvalidationIssued As Boolean
+
+        ''' <summary>Beobachtete übergeordnete Controls für Änderungen des Zeichenbereichs.</summary>
+        Private _frameInvalidationAncestors As List(Of Control)
+
+        ''' <summary>Aktiviert die Erfassung der Wiedergabe- und Zeichenmetriken.</summary>
+        Private _diagnosticsEnabled As Boolean
+
+        ''' <summary>Sammelt die Messwerte der aktuellen Diagnostiksitzung.</summary>
+        Private _diagnosticsCollector As DiagnosticsCollector
+
+        ''' <summary>Beobachtete übergeordnete Controls für die Sichtbarkeit der Diagnostik.</summary>
+        Private _diagnosticsAncestors As List(Of Control)
+
+        ''' <summary>Kennzeichnet ein für die Diagnostik verfügbares Control-Handle.</summary>
+        Private _diagnosticsHandleAvailable As Boolean
+
+        ''' <summary>Benutzerdefinierte Wiedergabegeschwindigkeit (nur aktiv bei CustomDisplaySpeed = True).</summary>
+        Private _FramesPerSecond As Decimal
+
+        ''' <summary>Begrenztes FPS-Intervall und Fallback für GIF-Delays.</summary>
+        Private _defaultFrameIntervalMs As Int32
+
+        ''' <summary>GIF-Frame-Dimension (bei GIFs i. d. R. Time).</summary>
+        Private _Dimension As FrameDimension
+
+        ''' <summary>Aktueller Frame-Index für die Timer-basierte Wiedergabe.</summary>
+        Private _Frame As Int32
+
+        ''' <summary>Letzter gültiger Frame-Index des geladenen GIFs.</summary>
+        Private _MaxFrame As Int32
+
+        ''' <summary>Steuert, ob die Animation automatisch starten soll.</summary>
+        Private _Autoplay As Boolean
+
+        ''' <summary>Zoomfaktor in Prozent für den Zoom-Modus.</summary>
+        Private _ZoomFactor As Decimal
+
+        ''' <summary>True = FPS-Intervall, False = GIF-Metadaten-Verzögerung verwenden.</summary>
+        Private _CustomDisplaySpeed As Boolean
+
+        ''' <summary>Art der Darstellung (Normal, Stretch, Zoom, ...).</summary>
+        Private _GifSizeMode As ImageSizeMode
+        ''' <summary>Qualitäts-Preset für die GIF-Skalierung in den Modi Zoom und Fill.</summary>
+        Private _scalingQualityPreset As GifScalingQualityPreset
+
+        ''' <summary>Aktuell angezeigtes Bild (intern immer als Bitmap gehalten).</summary>
+        Private _Gif As Bitmap
+
+        ''' <summary>Kennzeichnet, ob _Gif vom Control geklont/erstellt wurde und damit freigegeben werden muss.</summary>
+        Private _OwnsGif As Boolean
+
+        ''' <summary>Interner Status, ob aktuell eine Animation aktiv läuft.</summary>
+        Private _IsAnimating As Boolean
+
+        ''' <summary>Gewünschter Wiedergabezustand unabhängig von der Sichtbarkeit.</summary>
+        Private _playbackState As PlaybackState
+
+        ''' <summary>Kennzeichnet, dass die Ressourcenfreigabe des Controls begonnen hat.</summary>
+        Private _IsDisposed As Boolean
+
+        ''' <summary>Untere Grenze für normalisierte Frame-Intervalle.</summary>
+        Private _MinimumFrameIntervalMs As Int32
+
+        ''' <summary>Obere Grenze für normalisierte Frame-Intervalle.</summary>
+        Private _MaximumFrameIntervalMs As Int32
+
+        ''' <summary>Normalisierte Delay-Werte je Frame.</summary>
+        Private _NormalizedFrameDelaysMs() As Int32
+
+        ''' <summary>Unnormalisierte Delay-Werte der aktuellen Bitmap.</summary>
+        Private _rawFrameDelaysMs() As Int32
+
+        ''' <summary>Anzahl der aus den GIF-Metadaten gelesenen Frame-Verzögerungen.</summary>
+        Private _rawFrameDelayCount As Int32
+
+        ''' <summary>Kennzeichnet gültige zwischengespeicherte Frame-Delay-Metadaten.</summary>
+        Private _rawFrameDelayCacheValid As Boolean
+
+        ''' <summary>Zuletzt bei der Normalisierung verwendetes Fallback-Intervall in Millisekunden.</summary>
+        Private _lastFrameDelayFallbackMs As Int32
+
+        ''' <summary>Kennzeichnet, dass die interne Bitmap über die Gif-Eigenschaft herausgegeben wurde.</summary>
+        Private _gifWasExposed As Boolean
+
+        ''' <summary>Zeitstempel des letzten Timer-Ticks.</summary>
+        Private _LastFrameTickTimestamp As Int64
+
+        ''' <summary>Aktiviert Drift-Korrektur auf Basis der UI-Thread-Last.</summary>
+        Private _AdaptiveTiming As Boolean
 
 #End Region
 
 #Region "Öffentliche Ereignisse"
 
-        ''' <summary>
-        ''' Wird ausgelöst wenn die Grafik nicht animiert werden kann.
-        ''' </summary>
+        ''' <summary>Wird ausgelöst wenn die Grafik nicht animiert werden kann.</summary>
+        ''' <param name="sender">Das auslösende Control.</param>
+        ''' <param name="e">Die Ereignisdaten.</param>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Wird ausgelöst wenn die Grafik nicht animiert werden kann.")>
         Public Event NoAnimation(sender As Object, e As EventArgs)
 
-        ''' <summary>
-        ''' Wird ausgelöst wenn sich die Eigenschaft Autoplay geändert hat.
-        ''' </summary>
+        ''' <summary>Wird ausgelöst wenn sich die Eigenschaft Autoplay geändert hat.</summary>
+        ''' <param name="sender">Das auslösende Control.</param>
+        ''' <param name="e">Die Ereignisdaten.</param>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Wird ausgelöst wenn sich die Eigenschaft Autoplay geändert hat.")>
         Public Event AutoPlayChanged(sender As Object, e As EventArgs)
 
-        ''' <summary>
-        ''' Wird ausgelöst, wenn die Animation gestartet oder nach einer Unterbrechung fortgesetzt wurde.
-        ''' </summary>
+        ''' <summary>Wird ausgelöst, wenn die Animation gestartet oder nach einer Unterbrechung fortgesetzt wurde.</summary>
+        ''' <param name="sender">Das auslösende Control.</param>
+        ''' <param name="e">Die Ereignisdaten.</param>
         ''' <remarks>Änderungen der Geschwindigkeit oder Intervallgrenzen lösen das Ereignis nicht aus, solange die Wiedergabe weiterläuft.</remarks>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Wird ausgelöst wenn die Animation gestartet oder nach einer Unterbrechung fortgesetzt wurde.")>
         Public Event AnimationStarted(sender As Object, e As EventArgs)
 
-        ''' <summary>
-        ''' Wird ausgelöst, wenn die laufende Animation angehalten oder gestoppt wurde.
-        ''' </summary>
+        ''' <summary>Wird ausgelöst, wenn die laufende Animation angehalten oder gestoppt wurde.</summary>
+        ''' <param name="sender">Das auslösende Control.</param>
+        ''' <param name="e">Die Ereignisdaten.</param>
         ''' <remarks>Änderungen der Geschwindigkeit oder Intervallgrenzen lösen das Ereignis nicht aus, solange die Wiedergabe weiterläuft.</remarks>
         <Browsable(True)>
         <Category("Behavior")>
@@ -121,12 +188,8 @@ Namespace AniGifControl
 
 #Region "Öffentliche Eigenschaften"
 
-        ''' <summary>
-        ''' Steuert, ob die GIF‑Animation automatisch gestartet wird, sobald ein Bild vorhanden ist.
-        ''' </summary>
-        ''' <remarks>
-        ''' Eine explizite Pause verändert diese Eigenschaft nicht.
-        ''' </remarks>
+        ''' <summary>Steuert, ob die GIF‑Animation automatisch gestartet wird, sobald ein Bild vorhanden ist.</summary>
+        ''' <remarks>Eine explizite Pause verändert diese Eigenschaft nicht.</remarks>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Legt fest ob die Animation sofort nach dem laden gestartet wird.")>
@@ -143,9 +206,8 @@ Namespace AniGifControl
                 Me.UpdateTimerState()
             End Set
         End Property
-        ''' <summary>
-        ''' Gibt die animierte GIF‑Grafik zurück oder legt diese fest.
-        ''' </summary>
+
+        ''' <summary> Gibt die animierte GIF‑Grafik zurück oder legt diese fest.</summary>
         ''' <remarks>
         ''' Bei der Zuweisung erstellt das Control eine eigene Bitmap-Kopie und gibt vom Aufrufer verwaltete Bilder nicht frei.
         ''' Der Getter liefert die interne Bitmap, die beim Bildwechsel oder bei der Ressourcenfreigabe freigegeben wird.
@@ -153,9 +215,7 @@ Namespace AniGifControl
         ''' Bei animierten Bildern werden Änderungen ihrer Frame-Delay-Metadaten beim nächsten tatsächlichen Wechsel von FPS oder Intervallgrenzen eingelesen.
         ''' Nothing stellt eine Kopie des Standardbilds wieder her. Nach der Ressourcenfreigabe gibt der Getter Nothing zurück.
         ''' </remarks>
-        ''' <exception cref="ObjectDisposedException">
-        ''' Die Eigenschaft wird nach Beginn der Ressourcenfreigabe festgelegt.
-        ''' </exception>
+        ''' <exception cref="ObjectDisposedException">Die Eigenschaft wird nach Beginn der Ressourcenfreigabe festgelegt.</exception>
         <Browsable(True)>
         <Category("Appearance")>
         <Description("Gibt die animierte Gif-Grafik zurück oder legt diese fest.")>
@@ -174,9 +234,8 @@ Namespace AniGifControl
                 Me.SetGifImage(value)
             End Set
         End Property
-        ''' <summary>
-        ''' Gibt den Anzeigemodus (Skalierung/Ausrichtung) der GIF‑Grafik zurück oder legt ihn fest.
-        ''' </summary>
+
+        ''' <summary>Gibt den Anzeigemodus (Skalierung/Ausrichtung) der GIF‑Grafik zurück oder legt ihn fest.</summary>
         ''' <remarks>
         ''' Zoom passt die Grafik anhand von <see cref="ZoomFactor"/> in die Clientfläche ein.
         ''' Fill füllt die Clientfläche und kann die Grafik an den Rändern beschneiden.
@@ -194,9 +253,8 @@ Namespace AniGifControl
                 Me.SetGifSizeMode(value)
             End Set
         End Property
-        ''' <summary>
-        ''' Legt das Qualitäts-Preset für die GIF-Skalierung in den Modi Zoom und Fill fest. Der Standardwert ist Photo.
-        ''' </summary>
+
+        ''' <summary>Legt das Qualitäts-Preset für die GIF-Skalierung in den Modi Zoom und Fill fest. Der Standardwert ist Photo.</summary>
         ''' <exception cref="InvalidEnumArgumentException">
         ''' Der Wert ist kein gültiges Qualitäts-Preset.
         ''' </exception>
@@ -212,10 +270,9 @@ Namespace AniGifControl
                 Me.SetScalingQualityPreset(value)
             End Set
         End Property
-        ''' <summary>
-        ''' Legt fest, ob die timerbasierte Wiedergabe die benutzerdefinierte Anzeigegeschwindigkeit (FPS)
-        ''' oder die im GIF hinterlegten normalisierten Frame-Verzögerungen verwendet.
-        ''' </summary>
+
+        ''' <summary> Legt fest, ob die timerbasierte Wiedergabe die benutzerdefinierte Anzeigegeschwindigkeit (FPS)
+        ''' oder die im GIF hinterlegten normalisierten Frame-Verzögerungen verwendet.</summary>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Legt fest ob die benutzerdefinierte Anzeigegeschwindigkeit oder die in der Datei festgelegte Geschwindigkeit benutzt wird.")>
@@ -228,9 +285,8 @@ Namespace AniGifControl
                 Me.SetCustomDisplaySpeed(value)
             End Set
         End Property
-        ''' <summary>
-        ''' Legt die benutzerdefinierte Anzeigegeschwindigkeit in Bildern pro Sekunde (FPS) fest.
-        ''' </summary>
+
+        ''' <summary>Legt die benutzerdefinierte Anzeigegeschwindigkeit in Bildern pro Sekunde (FPS) fest.</summary>
         ''' <remarks>
         ''' Werte außerhalb von 1 bis 50 werden begrenzt; gleichwertige Zuweisungen bleiben ohne Wirkung.
         ''' Die Bildrate dient auch als Fallback für fehlende oder ungültige GIF-Frame-Verzögerungen.
@@ -252,9 +308,8 @@ Namespace AniGifControl
                 RaiseEvent FramesPerSecondChanged(previousIntervalMs)
             End Set
         End Property
-        ''' <summary>
-        ''' Legt das minimale Frame-Intervall in Millisekunden fest, das nach der Delay-Normalisierung verwendet wird.
-        ''' </summary>
+
+        ''' <summary>Legt das minimale Frame-Intervall in Millisekunden fest, das nach der Delay-Normalisierung verwendet wird.</summary>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Legt das minimale Frame-Intervall in Millisekunden fest.")>
@@ -267,9 +322,8 @@ Namespace AniGifControl
                 Me.SetMinimumFrameIntervalMs(value)
             End Set
         End Property
-        ''' <summary>
-        ''' Legt das maximale Frame-Intervall in Millisekunden fest, das nach der Delay-Normalisierung verwendet wird.
-        ''' </summary>
+
+        ''' <summary>Legt das maximale Frame-Intervall in Millisekunden fest, das nach der Delay-Normalisierung verwendet wird.</summary>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Legt das maximale Frame-Intervall in Millisekunden fest.")>
@@ -283,12 +337,8 @@ Namespace AniGifControl
             End Set
         End Property
 
-        ''' <summary>
-        ''' Legt fest, ob das Timer-Intervall adaptiv an erkannte UI-Thread-Last angepasst wird.
-        ''' </summary>
-        ''' <remarks>
-        ''' Beim Aktivieren beginnt die Zeitmessung neu; beim Deaktivieren bleibt das aktuelle Timer-Intervall zunächst unverändert.
-        ''' </remarks>
+        ''' <summary>Legt fest, ob das Timer-Intervall adaptiv an erkannte UI-Thread-Last angepasst wird.</summary>
+        ''' <remarks>Beim Aktivieren beginnt die Zeitmessung neu; beim Deaktivieren bleibt das aktuelle Timer-Intervall zunächst unverändert. </remarks>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Aktiviert adaptive Drift-Korrektur für die Frame-Wiedergabe.")>
@@ -301,10 +351,9 @@ Namespace AniGifControl
                 Me.SetAdaptiveTiming(value)
             End Set
         End Property
-        ''' <summary>
-        ''' Legt den Zoomfaktor in Prozent für den Modus <see cref="ImageSizeMode.Zoom"/> fest.
-        ''' Werte außerhalb von 1 bis 100 werden auf diesen Bereich begrenzt; der Standardwert ist 50.
-        ''' </summary>
+
+        ''' <summary>Legt den Zoomfaktor in Prozent für den Modus <see cref="ImageSizeMode.Zoom"/> fest.
+        ''' Werte außerhalb von 1 bis 100 werden auf diesen Bereich begrenzt; der Standardwert ist 50.</summary>
         <Browsable(True)>
         <Category("Behavior")>
         <Description("Legt den Zoomfaktor fest wenn GifSizeMode auf Zoom festgelegt ist.")>
@@ -317,9 +366,8 @@ Namespace AniGifControl
                 Me.SetZoomFactor(value)
             End Set
         End Property
-        ''' <summary>
-        ''' Begrenzt die Neuzeichnung bei Framewechseln optional auf den Bildbereich. Der Standardwert ist <see langword="False"/>.
-        ''' </summary>
+
+        ''' <summary>Begrenzt die Neuzeichnung bei Framewechseln optional auf den Bildbereich. Der Standardwert ist <see langword="False"/>.</summary>
         ''' <remarks>
         ''' Bei unbekannter Geometrie oder nach der Herausgabe der internen Bitmap über <see cref="Gif"/> wird weiterhin die gesamte Clientfläche invalidiert.
         ''' Nach einer Teilinvalidierung veranlasst der erste Zugriff auf <see cref="Gif"/> eine vollständige Neuzeichnung; 
@@ -350,218 +398,14 @@ Namespace AniGifControl
                 Me.InvalidateFullFrameArea()
             End Set
         End Property
-#End Region
 
-#Region "ausgeblendete Eigenschaften"
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        Public Overrides Property MaximumSize As Size
-            Get
-                Return MyBase.MaximumSize
-            End Get
-            Set(value As Size)
-                MyBase.MaximumSize = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        Public Overrides Property MinimumSize As Size
-            Get
-                Return MyBase.MinimumSize
-            End Get
-            Set(value As Size)
-                MyBase.MinimumSize = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        Public Overrides Property RightToLeft() As RightToLeft
-            Get
-                Return MyBase.RightToLeft
-            End Get
-            Set(value As RightToLeft)
-                MyBase.RightToLeft = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        Public Overrides Property Text() As String
-            Get
-                Return MyBase.Text
-            End Get
-            Set(value As String)
-                MyBase.Text = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        Public Overrides Property AllowDrop() As Boolean
-            Get
-                Return MyBase.AllowDrop
-            End Get
-            Set(value As Boolean)
-                MyBase.AllowDrop = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        Public Overrides Property AutoScrollOffset As Point
-            Get
-                Return MyBase.AutoScrollOffset
-            End Get
-            Set(value As Point)
-                MyBase.AutoScrollOffset = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        Public Overrides Property AutoSize As Boolean
-            Get
-                Return MyBase.AutoSize
-            End Get
-            Set(value As Boolean)
-                MyBase.AutoSize = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        Public Overrides Property BackgroundImage() As Image
-            Get
-                Return MyBase.BackgroundImage
-            End Get
-            Set(value As Image)
-                MyBase.BackgroundImage = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        Public Overrides Property BackgroundImageLayout() As ImageLayout
-            Get
-                Return MyBase.BackgroundImageLayout
-            End Get
-            Set(value As ImageLayout)
-                MyBase.BackgroundImageLayout = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        Public Overrides Property ContextMenuStrip() As ContextMenuStrip
-            Get
-                Return MyBase.ContextMenuStrip
-            End Get
-            Set(value As ContextMenuStrip)
-                MyBase.ContextMenuStrip = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        Public Overrides Property Dock() As DockStyle
-            Get
-                Return MyBase.Dock
-            End Get
-            Set(value As DockStyle)
-                MyBase.Dock = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        Public Overrides Property Font() As Font
-            Get
-                Return MyBase.Font
-            End Get
-            Set(value As Font)
-                MyBase.Font = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        Public Overrides Property ForeColor() As Color
-            Get
-                Return MyBase.ForeColor
-            End Get
-            Set(value As Color)
-                MyBase.ForeColor = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Ausgeblendet da für dieses Control nicht relevant.
-        ''' </summary>
-        <Browsable(False)>
-        <EditorBrowsable(EditorBrowsableState.Never)>
-        <DefaultValue(GetType(Padding), "0")>
-        Public Overloads Property Padding As Padding
-            Get
-                Return MyBase.Padding
-            End Get
-            Set(value As Padding)
-                MyBase.Padding = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Aktiviert oder deaktiviert die optionale Erfassung der Wiedergabe- und Zeichenmetriken.
-        ''' Der Standardwert ist <see langword="False"/>.
-        ''' </summary>
+        ''' <summary>Aktiviert oder deaktiviert die optionale Erfassung der Wiedergabe- und Zeichenmetriken.
+        ''' Der Standardwert ist <see langword="False"/>.</summary>
         ''' <remarks>
         ''' Das Aktivieren beginnt eine neue Messung; das Deaktivieren friert die bisherigen Werte ein.
         ''' Die Eigenschaft muss auf dem UI-Thread des Controls verwendet werden.
         ''' </remarks>
-        ''' <exception cref="ObjectDisposedException">
-        ''' Die Diagnostik wird nach Beginn der Ressourcenfreigabe aktiviert.
-        ''' </exception>
+        ''' <exception cref="ObjectDisposedException">Die Diagnostik wird nach Beginn der Ressourcenfreigabe aktiviert.</exception>
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         <DefaultValue(False)>
@@ -588,9 +432,8 @@ Namespace AniGifControl
                 End If
             End Set
         End Property
-        ''' <summary>
-        ''' Gibt eine unveränderliche Momentaufnahme der Diagnostik zurück.
-        ''' </summary>
+
+        ''' <summary>Gibt eine unveränderliche Momentaufnahme der Diagnostik zurück.</summary>
         ''' <remarks>
         ''' Eingefrorene Werte bleiben nach dem Deaktivieren und nach der Ressourcenfreigabe lesbar.
         ''' Die Eigenschaft muss auf dem UI-Thread des Controls gelesen werden.
@@ -606,12 +449,184 @@ Namespace AniGifControl
             End Get
         End Property
 
+#End Region
 
+#Region "ausgeblendete Eigenschaften"
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        Public Overrides Property MaximumSize As Size
+            Get
+                Return MyBase.MaximumSize
+            End Get
+            Set(value As Size)
+                MyBase.MaximumSize = value
+            End Set
+        End Property
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        Public Overrides Property MinimumSize As Size
+            Get
+                Return MyBase.MinimumSize
+            End Get
+            Set(value As Size)
+                MyBase.MinimumSize = value
+            End Set
+        End Property
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        Public Overrides Property RightToLeft() As RightToLeft
+            Get
+                Return MyBase.RightToLeft
+            End Get
+            Set(value As RightToLeft)
+                MyBase.RightToLeft = value
+            End Set
+        End Property
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        Public Overrides Property Text() As String
+            Get
+                Return MyBase.Text
+            End Get
+            Set(value As String)
+                MyBase.Text = value
+            End Set
+        End Property
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        Public Overrides Property AllowDrop() As Boolean
+            Get
+                Return MyBase.AllowDrop
+            End Get
+            Set(value As Boolean)
+                MyBase.AllowDrop = value
+            End Set
+        End Property
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        Public Overrides Property AutoScrollOffset As Point
+            Get
+                Return MyBase.AutoScrollOffset
+            End Get
+            Set(value As Point)
+                MyBase.AutoScrollOffset = value
+            End Set
+        End Property
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        Public Overrides Property AutoSize As Boolean
+            Get
+                Return MyBase.AutoSize
+            End Get
+            Set(value As Boolean)
+                MyBase.AutoSize = value
+            End Set
+        End Property
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        Public Overrides Property BackgroundImage() As Image
+            Get
+                Return MyBase.BackgroundImage
+            End Get
+            Set(value As Image)
+                MyBase.BackgroundImage = value
+            End Set
+        End Property
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        Public Overrides Property BackgroundImageLayout() As ImageLayout
+            Get
+                Return MyBase.BackgroundImageLayout
+            End Get
+            Set(value As ImageLayout)
+                MyBase.BackgroundImageLayout = value
+            End Set
+        End Property
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        Public Overrides Property ContextMenuStrip() As ContextMenuStrip
+            Get
+                Return MyBase.ContextMenuStrip
+            End Get
+            Set(value As ContextMenuStrip)
+                MyBase.ContextMenuStrip = value
+            End Set
+        End Property
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        Public Overrides Property Dock() As DockStyle
+            Get
+                Return MyBase.Dock
+            End Get
+            Set(value As DockStyle)
+                MyBase.Dock = value
+            End Set
+        End Property
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        Public Overrides Property Font() As Font
+            Get
+                Return MyBase.Font
+            End Get
+            Set(value As Font)
+                MyBase.Font = value
+            End Set
+        End Property
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        Public Overrides Property ForeColor() As Color
+            Get
+                Return MyBase.ForeColor
+            End Get
+            Set(value As Color)
+                MyBase.ForeColor = value
+            End Set
+        End Property
+
+        ''' <summary>Ausgeblendet da für dieses Control nicht relevant.</summary>
+        <Browsable(False)>
+        <EditorBrowsable(EditorBrowsableState.Never)>
+        <DefaultValue(GetType(Padding), "0")>
+        Public Overloads Property Padding As Padding
+            Get
+                Return MyBase.Padding
+            End Get
+            Set(value As Padding)
+                MyBase.Padding = value
+            End Set
+        End Property
 
 #End Region
 
 #Region "Öffentliche Methoden"
 
+        ''' <summary>Initialisiert das Control mit dem Standardbild und den Standardwerten.</summary>
         Public Sub New()
             Me.InitializeComponent() 'Designer-Initialisierung
             Me.SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.OptimizedDoubleBuffer Or ControlStyles.UserPaint Or ControlStyles.ResizeRedraw, True)
@@ -619,9 +634,7 @@ Namespace AniGifControl
             Me.InitializeDefaults()
         End Sub
 
-        ''' <summary>
-        ''' Startet die Animation oder setzt eine pausierte Animation beim aktuellen Frame fort.
-        ''' </summary>
+        ''' <summary>Startet die Animation oder setzt eine pausierte Animation beim aktuellen Frame fort.</summary>
         Public Sub StartAnimation()
             If Me._IsDisposed OrElse Me.IsDisposed Then Return
             If Not Me.AutoPlay Then
@@ -632,9 +645,7 @@ Namespace AniGifControl
             End If
         End Sub
 
-        ''' <summary>
-        ''' Stoppt die Animation und hält den Timer an. Der aktuelle Frame bleibt erhalten.
-        ''' </summary>
+        ''' <summary>Stoppt die Animation und hält den Timer an. Der aktuelle Frame bleibt erhalten.</summary>
         Public Sub StopAnimation()
             If Me._IsDisposed OrElse Me.IsDisposed Then Return
             If Me.AutoPlay Then
@@ -645,10 +656,8 @@ Namespace AniGifControl
             End If
         End Sub
 
-        ''' <summary>
-        ''' Hält die Wiedergabe beim aktuellen Frame an, ohne AutoPlay zu verändern.
-        ''' Ist die Wiedergabe bereits pausiert oder gestoppt, bleibt der Aufruf ohne Wirkung.
-        ''' </summary>
+        ''' <summary>Hält die Wiedergabe beim aktuellen Frame an, ohne AutoPlay zu verändern.
+        ''' Ist die Wiedergabe bereits pausiert oder gestoppt, bleibt der Aufruf ohne Wirkung.</summary>
         Public Sub PauseAnimation()
             If Me._IsDisposed OrElse Me.IsDisposed OrElse Me._playbackState <> PlaybackState.Playing Then Return
 
@@ -656,10 +665,8 @@ Namespace AniGifControl
             Me.StopAnimationCore(True)
         End Sub
 
-        ''' <summary>
-        ''' Setzt eine pausierte Wiedergabe beim aktuellen Frame fort und beginnt dessen Intervall erneut.
-        ''' Ist die Wiedergabe nicht pausiert, bleibt der Aufruf ohne Wirkung.
-        ''' </summary>
+        ''' <summary>Setzt eine pausierte Wiedergabe beim aktuellen Frame fort und beginnt dessen Intervall erneut.
+        ''' Ist die Wiedergabe nicht pausiert, bleibt der Aufruf ohne Wirkung.</summary>
         Public Sub ResumeAnimation()
             If Me._IsDisposed OrElse Me.IsDisposed OrElse Me._playbackState <> PlaybackState.Paused Then Return
 
@@ -667,10 +674,8 @@ Namespace AniGifControl
             Me.UpdateTimerState()
         End Sub
 
-        ''' <summary>
-        ''' Wählt einen Frame aus, ohne den Wiedergabezustand zu verändern.
-        ''' Bei laufender Wiedergabe beginnt das Intervall des gewählten Frames erneut.
-        ''' </summary>
+        ''' <summary>Wählt einen Frame aus, ohne den Wiedergabezustand zu verändern.
+        ''' Bei laufender Wiedergabe beginnt das Intervall des gewählten Frames erneut.</summary>
         ''' <param name="index">Nullbasierter Index des anzuzeigenden Frames.</param>
         ''' <exception cref="ArgumentOutOfRangeException">Der Index liegt außerhalb des gültigen Framebereichs.</exception>
         ''' <exception cref="InvalidOperationException">Es ist kein Bild vorhanden.</exception>
@@ -695,19 +700,13 @@ Namespace AniGifControl
             Me.InvalidateIfVisible()
         End Sub
 
-        ''' <summary>
-        ''' Gibt den aktuellen Wiedergabezustand zurück (Playing, Paused, Stopped).
-        ''' </summary>
-        ''' <returns>
-        ''' Der aktuelle Wiedergabezustand.
-        ''' </returns>
+        ''' <summary>Gibt den aktuellen Wiedergabezustand zurück (Playing, Paused, Stopped).</summary>
+        ''' <returns>Der aktuelle Wiedergabezustand.</returns>
         Public Function GetPlaybackState() As PlaybackState
             Return Me._playbackState
         End Function
 
-        ''' <summary>
-        ''' Setzt die Diagnosewerte zurück, ohne den Wiedergabezustand zu ändern.
-        ''' </summary>
+        ''' <summary>Setzt die Diagnosewerte zurück, ohne den Wiedergabezustand zu ändern.</summary>
         ''' <remarks>
         ''' Bei aktivierter Diagnostik beginnt eine neue Messung. Nach der Ressourcenfreigabe bleibt der Aufruf ohne Wirkung.
         ''' Die Methode muss auf dem UI-Thread des Controls aufgerufen werden.
@@ -723,6 +722,7 @@ Namespace AniGifControl
 #Region "Interne Methoden"
 
         Private Sub InitializeDefaults()
+
             Me._FramesPerSecond = 30D
             Me._ZoomFactor = 50D
             Me._GifSizeMode = ImageSizeMode.Normal
@@ -746,9 +746,11 @@ Namespace AniGifControl
             Me._LastFrameTickTimestamp = 0
             Me._AdaptiveTiming = False
             Me.InitializeGifFrames()
+
         End Sub
 
         Private Sub InitializeGifFrames()
+
             Me._Dimension = Nothing
             Me._MaxFrame = 0
             Me._Frame = 0
@@ -763,28 +765,37 @@ Namespace AniGifControl
             Me._Dimension = New FrameDimension(Me._Gif.FrameDimensionsList(0))
             Dim frameCount As Int32 = Me._Gif.GetFrameCount(Me._Dimension)
             Me._MaxFrame = Math.Max(0, frameCount - 1)
+
             If Me._MaxFrame > 0 Then
+
                 Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, 0)
+
             End If
+
             Me.RefreshFrameDelayCache()
+
         End Sub
 
         Private Sub AniGif_GifChange() Handles Me.GifChanged
+
             If Me._IsDisposed OrElse Me.IsDisposed Then Return
 
             Me.InitializeGifFrames()
             Me.InvalidateFullFrameArea()
             Me.UpdateTimerState()
+
         End Sub
 
-        Private Sub AniGif_CustomDisplaySpeedChanged(previousIntervalMs As Int32) Handles Me.CustomDisplaySpeedChanged
+        Private Sub AniGif_CustomDisplaySpeedChanged(previousIntervalMs As Int32) Handles _
+            Me.CustomDisplaySpeedChanged
 
             ' Nach einem Wechsel zwischen FPS und GIF-Verzögerungen den Timer neu konfigurieren.
             Me.UpdateTimerState(previousIntervalMs)
 
         End Sub
 
-        Private Sub AniGif_Disposed(sender As Object, e As EventArgs) Handles Me.Disposed
+        Private Sub AniGif_Disposed(sender As Object, e As EventArgs) Handles _
+            Me.Disposed
 
             Me.DisposeAnimationResources()
 
@@ -805,16 +816,20 @@ Namespace AniGifControl
 
             ' Nur intern erzeugte Bitmaps freigeben (fremde Instanzen nicht ungefragt disposen).
             If Me._OwnsGif AndAlso Me._Gif IsNot Nothing Then
+
                 Me._Gif.Dispose()
                 Me._Gif = Nothing
                 Me._OwnsGif = False
+
             End If
+
             Me.ClearFrameDelayCache()
             Me._gifWasExposed = False
 
         End Sub
 
-        Private Sub AniGif_FramesPerSecondChanged(previousIntervalMs As Int32) Handles Me.FramesPerSecondChanged
+        Private Sub AniGif_FramesPerSecondChanged(previousIntervalMs As Int32) Handles _
+            Me.FramesPerSecondChanged
 
             ' Sicherheitsprüfung
             If Me._FramesPerSecond < 1D Then Me._FramesPerSecond = 1D
@@ -826,49 +841,71 @@ Namespace AniGifControl
         End Sub
 
         Private Sub UpdateDefaultFrameIntervalMs()
+
             Dim fpsInterval As Int32 = CInt(Math.Round(1000D / Math.Max(Me._FramesPerSecond, 1D), MidpointRounding.AwayFromZero))
             Me._defaultFrameIntervalMs = Me.NormalizeFrameIntervalMs(Math.Max(1, fpsInterval))
+
         End Sub
 
         Private Sub ClearFrameDelayCache()
+
             Me._rawFrameDelaysMs = Array.Empty(Of Int32)()
             Me._rawFrameDelayCount = 0
             Me._rawFrameDelayCacheValid = False
             Me._lastFrameDelayFallbackMs = 0
             Me._NormalizedFrameDelaysMs = Array.Empty(Of Int32)()
+
         End Sub
 
         Private Sub RefreshFrameDelayCache(Optional fallbackOnly As Boolean = False)
+
             If Me._Gif Is Nothing OrElse Me._MaxFrame <= 0 Then
+
                 Me.ClearFrameDelayCache()
                 Return
+
             End If
 
             Dim frameCount As Int32 = Me._MaxFrame + 1
             Dim metadataChanged As Boolean = False
+
             ' Nach der Herausgabe kann die Bitmap auch später noch extern verändert werden.
             If Not Me._rawFrameDelayCacheValid OrElse Me._gifWasExposed Then
+
                 metadataChanged = Me.ReadFrameDelayMetadata(frameCount)
+
             End If
 
             If Me._NormalizedFrameDelaysMs.Length <> frameCount Then
+
                 Me._NormalizedFrameDelaysMs = New Int32(frameCount - 1) {}
                 metadataChanged = True
+
             End If
 
             Dim fallbackDelay As Int32 = Me.GetDefaultFrameIntervalMs()
             If fallbackOnly AndAlso Not metadataChanged AndAlso Me._lastFrameDelayFallbackMs = fallbackDelay Then Return
 
             For i As Int32 = 0 To frameCount - 1
+
                 If i < Me._rawFrameDelayCount AndAlso Me._rawFrameDelaysMs(i) > 0 Then
+
                     If Not fallbackOnly OrElse metadataChanged Then
+
                         Me._NormalizedFrameDelaysMs(i) = Me.NormalizeFrameIntervalMs(Me._rawFrameDelaysMs(i))
+
                     End If
+
                 Else
+
                     Me._NormalizedFrameDelaysMs(i) = fallbackDelay
+
                 End If
+
             Next
+
             Me._lastFrameDelayFallbackMs = fallbackDelay
+
         End Sub
 
         Private Sub InvalidateIfVisible(Optional isTimerFrame As Boolean = False)
@@ -882,15 +919,21 @@ Namespace AniGifControl
 
         End Sub
 
-        Private Sub Timer_Tick(sender As Object, e As EventArgs) Handles Timer.Tick
+        Private Sub Timer_Tick(sender As Object, e As EventArgs) Handles _
+            Timer.Tick
 
             If Me._IsDisposed OrElse Me.IsDisposed OrElse Me.DesignMode OrElse Not Me.AutoPlay OrElse Me._playbackState <> PlaybackState.Playing Then Exit Sub
+
             Dim isVisible As Boolean? = Nothing
+
             If Me._diagnosticsEnabled Then
+
                 If Me._Gif IsNot Nothing Then isVisible = Me.IsControlTreeVisible()
                 ' Die Diagnoseprüfung löst vor der Timerprüfung keine Ereignishandler aus.
                 Me.UpdateDiagnosticsActivity(isVisible)
+
             End If
+
             If Me._Gif Is Nothing Then Exit Sub
             If Not If(isVisible, Me.IsControlTreeVisible()) Then Exit Sub
 
@@ -898,12 +941,19 @@ Namespace AniGifControl
             If Me._MaxFrame = 0 Then Exit Sub
 
             Dim elapsedMs As Int32 = 0
+
             If Me._AdaptiveTiming Then
+
                 Dim currentTimestamp As Int64 = Stopwatch.GetTimestamp()
+
                 If Me._LastFrameTickTimestamp > 0 Then
+
                     elapsedMs = CInt(Math.Max(0, (currentTimestamp - Me._LastFrameTickTimestamp) * 1000L \ Stopwatch.Frequency))
+
                 End If
+
                 Me._LastFrameTickTimestamp = currentTimestamp
+
             End If
 
             ' Nur bei echtem Framewechsel umschalten/zeichnen
@@ -938,8 +988,10 @@ Namespace AniGifControl
             Me.StopAnimationCore(False)
 
             If Me._OwnsGif AndAlso Me._Gif IsNot Nothing Then
+
                 ' Vorheriges, intern besessenes Bild freigeben
                 Me._Gif.Dispose()
+
             End If
 
             Me._gifWasExposed = False
@@ -990,8 +1042,11 @@ Namespace AniGifControl
 
             Dim previousIntervalMs As Int32 = Me.GetFrameIntervalForIndex(Me._Frame)
             Me._MinimumFrameIntervalMs = validatedValue
+
             If Me._MaximumFrameIntervalMs < Me._MinimumFrameIntervalMs Then
+
                 Me._MaximumFrameIntervalMs = Me._MinimumFrameIntervalMs
+
             End If
 
             Me.UpdateDefaultFrameIntervalMs()
@@ -1046,25 +1101,33 @@ Namespace AniGifControl
                 Me.IsControlTreeVisible()
 
             If Me._IsAnimating AndAlso (Not playbackRequested OrElse Me._MaxFrame <= 0) Then
+
                 Me.StopAnimationCore(True)
                 ' Ein Ereignishandler kann den Zustand bereits erneut geändert haben.
                 Return
+
             End If
 
             If Not playbackRequested Then Return
             If Me._MaxFrame <= 0 Then
+
                 RaiseEvent NoAnimation(Me, EventArgs.Empty)
                 Return
+
             End If
 
             Dim targetIntervalMs As Int32 = Me.GetFrameIntervalForIndex(Me._Frame)
             If Me._IsAnimating Then
+
                 ' Das Sollintervall kann vom adaptiv korrigierten Timerintervall abweichen.
                 If previousIntervalMs.HasValue AndAlso previousIntervalMs.Value <> targetIntervalMs AndAlso Me.Timer.Interval <> targetIntervalMs Then
+
                     Me.Timer.Interval = targetIntervalMs
                     If Me._AdaptiveTiming Then Me._LastFrameTickTimestamp = Stopwatch.GetTimestamp()
+
                 End If
                 Return
+
             End If
 
             Me.Timer.Interval = targetIntervalMs
@@ -1086,7 +1149,9 @@ Namespace AniGifControl
             If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
 
             If raiseAnimationStopped AndAlso wasAnimating Then
+
                 RaiseEvent AnimationStopped(Me, EventArgs.Empty)
+
             End If
 
         End Sub
@@ -1100,74 +1165,101 @@ Namespace AniGifControl
                 Me.ClientSize.Width > 0 AndAlso Me.ClientSize.Height > 0 AndAlso
                 If(isVisible, Me.IsControlTreeVisible())
             If isActive <> Me._diagnosticsCollector.IsActive Then
+
                 Me._diagnosticsCollector.SetActive(isActive, Stopwatch.GetTimestamp())
+
             End If
+
         End Sub
 
         Private Sub SuspendDiagnosticsActivity()
+
             If Not Me._diagnosticsEnabled Then Return
             If Me._diagnosticsCollector.IsActive Then
+
                 Me._diagnosticsCollector.SetActive(False, Stopwatch.GetTimestamp())
+
             Else
+
                 Me._diagnosticsCollector.CancelPendingFrame()
+
             End If
+
         End Sub
 
         Private Sub RefreshDiagnosticsAncestors()
+
             Me.DetachDiagnosticsAncestors()
             Dim ancestor As Control = Me.Parent
             If ancestor Is Nothing Then Return
             If Me._diagnosticsAncestors Is Nothing Then Me._diagnosticsAncestors = New List(Of Control)()
 
             While ancestor IsNot Nothing
+
                 Me._diagnosticsAncestors.Add(ancestor)
                 AddHandler ancestor.VisibleChanged, AddressOf Me.DiagnosticsAncestorVisibleChanged
                 AddHandler ancestor.ParentChanged, AddressOf Me.DiagnosticsAncestorParentChanged
                 ancestor = ancestor.Parent
+
             End While
+
         End Sub
 
         Private Sub DetachDiagnosticsAncestors()
+
             If Me._diagnosticsAncestors Is Nothing Then Return
             For Each ancestor As Control In Me._diagnosticsAncestors
                 RemoveHandler ancestor.VisibleChanged, AddressOf Me.DiagnosticsAncestorVisibleChanged
                 RemoveHandler ancestor.ParentChanged, AddressOf Me.DiagnosticsAncestorParentChanged
             Next
             Me._diagnosticsAncestors.Clear()
+
         End Sub
 
         Private Sub DiagnosticsAncestorVisibleChanged(sender As Object, e As EventArgs)
+
             If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
+
         End Sub
 
         Private Sub DiagnosticsAncestorParentChanged(sender As Object, e As EventArgs)
+
             If Not Me._diagnosticsEnabled Then Return
             Me.RefreshDiagnosticsAncestors()
             Me.UpdateDiagnosticsActivity()
+
         End Sub
 
         Private Sub ResetFrameInvalidationBounds()
+
             Me._frameInvalidationBounds = Rectangle.Empty
             Me._frameInvalidationBoundsValid = False
             Me._fullFrameInvalidationPending = False
+            ' Ein neues Token entwertet laufende Zeichen- und Invalidierungsvorgänge mit alter Geometrie.
             Me._frameInvalidationToken = If(Me._usePartialFrameInvalidation, New Object(), Nothing)
+
         End Sub
 
         Private Sub InvalidateFullFrameArea()
+
             If Me._usePartialFrameInvalidation AndAlso Not Me._gifWasExposed AndAlso
                 Not Me._frameInvalidationBoundsValid AndAlso Me.IsHandleCreated Then
                 Me._fullFrameInvalidationPending = True
             End If
             Me.Invalidate()
+
         End Sub
 
         Private Sub OnGifExposedForFrameInvalidation()
+
             If Not Me._usePartialFrameInvalidation Then Return
             Me.ResetFrameInvalidationBounds()
             If Me._partialFrameInvalidationIssued Then Me.InvalidateFullFrameArea()
+
         End Sub
 
         Private Sub RefreshFrameInvalidationAncestors()
+
             Me.DetachFrameInvalidationAncestors()
             If Not Me._usePartialFrameInvalidation OrElse Me._IsDisposed OrElse Me.IsDisposed Then Return
             Dim ancestor As Control = Me.Parent
@@ -1175,6 +1267,7 @@ Namespace AniGifControl
             If Me._frameInvalidationAncestors Is Nothing Then Me._frameInvalidationAncestors = New List(Of Control)()
 
             While ancestor IsNot Nothing
+
                 Me._frameInvalidationAncestors.Add(ancestor)
                 AddHandler ancestor.BackColorChanged, AddressOf Me.FrameInvalidationAncestorChanged
                 AddHandler ancestor.BackgroundImageChanged, AddressOf Me.FrameInvalidationAncestorChanged
@@ -1187,12 +1280,17 @@ Namespace AniGifControl
                 Dim scrollable As ScrollableControl = TryCast(ancestor, ScrollableControl)
                 If scrollable IsNot Nothing Then AddHandler scrollable.Scroll, AddressOf Me.FrameInvalidationAncestorScroll
                 ancestor = ancestor.Parent
+
             End While
+
         End Sub
 
         Private Sub DetachFrameInvalidationAncestors()
+
             If Me._frameInvalidationAncestors Is Nothing Then Return
+
             For Each ancestor As Control In Me._frameInvalidationAncestors
+
                 RemoveHandler ancestor.BackColorChanged, AddressOf Me.FrameInvalidationAncestorChanged
                 RemoveHandler ancestor.BackgroundImageChanged, AddressOf Me.FrameInvalidationAncestorChanged
                 RemoveHandler ancestor.BackgroundImageLayoutChanged, AddressOf Me.FrameInvalidationAncestorChanged
@@ -1203,35 +1301,48 @@ Namespace AniGifControl
                 RemoveHandler ancestor.ParentChanged, AddressOf Me.FrameInvalidationAncestorParentChanged
                 Dim scrollable As ScrollableControl = TryCast(ancestor, ScrollableControl)
                 If scrollable IsNot Nothing Then RemoveHandler scrollable.Scroll, AddressOf Me.FrameInvalidationAncestorScroll
+
             Next
+
             Me._frameInvalidationAncestors.Clear()
+
         End Sub
 
         Private Sub FrameInvalidationAncestorLayout(sender As Object, e As LayoutEventArgs)
+
             Me.FrameInvalidationAncestorChanged(sender, e)
+
         End Sub
 
         Private Sub FrameInvalidationAncestorScroll(sender As Object, e As ScrollEventArgs)
+
             Me.FrameInvalidationAncestorChanged(sender, e)
+
         End Sub
 
         Private Sub FrameInvalidationAncestorChanged(sender As Object, e As EventArgs)
+
             If Not Me._usePartialFrameInvalidation OrElse Me._IsDisposed OrElse Me.IsDisposed Then Return
             Me.ResetFrameInvalidationBounds()
             Me.InvalidateIfVisible()
+
         End Sub
 
         Private Sub FrameInvalidationAncestorParentChanged(sender As Object, e As EventArgs)
+
             If Not Me._usePartialFrameInvalidation OrElse Me._IsDisposed OrElse Me.IsDisposed Then Return
             Me.RefreshFrameInvalidationAncestors()
             Me.FrameInvalidationAncestorChanged(sender, e)
+
         End Sub
 
         Private Sub CompleteFrameInvalidationPaint(token As Object, imageRectangle As Rectangle, e As PaintEventArgs)
+
             If token Is Nothing OrElse Not Object.ReferenceEquals(token, Me._frameInvalidationToken) OrElse
                 Not Me._usePartialFrameInvalidation OrElse Me._gifWasExposed OrElse Me._IsDisposed OrElse Me.IsDisposed OrElse
                 Not Me.IsHandleCreated OrElse Not Me.IsControlTreeVisible() Then Return
 
+            ' Den Bildbereich erst nach einer vollständigen Neuzeichnung als sicher übernehmen.
             Dim client As Rectangle = Me.ClientRectangle
             If client.Width <= 0 OrElse client.Height <= 0 OrElse Not e.ClipRectangle.Contains(client) Then Return
 
@@ -1239,9 +1350,11 @@ Namespace AniGifControl
             If bounds.Width <= 0 OrElse bounds.Height <= 0 Then Return
             Me._frameInvalidationBounds = bounds
             Me._frameInvalidationBoundsValid = True
+
         End Sub
 
         Private Sub InvalidateFrameArea(isTimerFrame As Boolean)
+
             Dim bounds As Rectangle = Me._frameInvalidationBounds
             Dim usePartial As Boolean = Me._usePartialFrameInvalidation AndAlso Me._frameInvalidationBoundsValid AndAlso
                 Not Me._gifWasExposed AndAlso bounds.Width > 0 AndAlso bounds.Height > 0 AndAlso bounds <> Me.ClientRectangle
@@ -1249,8 +1362,10 @@ Namespace AniGifControl
             ' Vor Invalidate markieren, da dessen Ereignishandler erneut in das Control eintreten können.
             If isTimerFrame AndAlso Me._diagnosticsEnabled Then Me._diagnosticsCollector.QueueTimerFrame()
             If Not usePartial Then
+
                 Me.InvalidateFullFrameArea()
                 Return
+
             End If
 
             Dim token As Object = Me._frameInvalidationToken
@@ -1262,6 +1377,7 @@ Namespace AniGifControl
             If Me._IsDisposed OrElse Me.IsDisposed OrElse Not Me.IsHandleCreated OrElse Not Me.IsControlTreeVisible() Then Return
             If Me.ClientSize.Width <= 0 OrElse Me.ClientSize.Height <= 0 Then Return
             Me.InvalidateFullFrameArea()
+
         End Sub
 
         Private Function NormalizeFrameIntervalMs(value As Int32) As Int32
@@ -1273,7 +1389,9 @@ Namespace AniGifControl
         End Function
 
         Private Function GetDefaultFrameIntervalMs() As Int32
+
             Return Me._defaultFrameIntervalMs
+
         End Function
 
         Private Function GetFrameIntervalForIndex(frameIndex As Int32) As Int32
@@ -1290,9 +1408,12 @@ Namespace AniGifControl
         Private Function ApplyAdaptiveTiming(targetIntervalMs As Int32, elapsedMs As Int32, lastScheduledIntervalMs As Int32) As Int32
 
             If Not Me._AdaptiveTiming OrElse elapsedMs <= 0 Then
+
                 Return Me.NormalizeFrameIntervalMs(targetIntervalMs)
+
             End If
 
+            ' Die Abweichung vom letzten geplanten Intervall im nächsten Intervall ausgleichen.
             Dim driftMs As Int32 = elapsedMs - Math.Max(1, lastScheduledIntervalMs)
             Dim adjustedInterval As Int32 = targetIntervalMs - driftMs
             Return Me.NormalizeFrameIntervalMs(adjustedInterval)
@@ -1300,35 +1421,48 @@ Namespace AniGifControl
         End Function
 
         Private Function ReadFrameDelayMetadata(frameCount As Int32) As Boolean
+
             Dim metadataChanged As Boolean = Not Me._rawFrameDelayCacheValid
             Dim previousCount As Int32 = Me._rawFrameDelayCount
             Me._rawFrameDelayCacheValid = False
             Dim delayBytes As Byte() = Nothing
 
             Try
+
                 Dim delayProperty As PropertyItem = Me._Gif.GetPropertyItem(FrameDelayPropertyTag)
                 If delayProperty IsNot Nothing Then delayBytes = delayProperty.Value
+
             Catch ex As ArgumentException
+
                 ' Ohne Delay-Metadaten werden für alle Frames Fallbacks verwendet.
+
             End Try
 
             Dim availableCount As Int32 = If(delayBytes Is Nothing, 0, Math.Min(frameCount, delayBytes.Length \ 4))
+
             If Me._rawFrameDelaysMs.Length <> frameCount Then
+
                 Me._rawFrameDelaysMs = New Int32(frameCount - 1) {}
                 metadataChanged = True
+
             End If
+
             If availableCount <> previousCount Then metadataChanged = True
 
+            ' GIF-Delays liegen als vier Byte je Frame in Hundertstelsekunden vor.
             For i As Int32 = 0 To availableCount - 1
+
                 Dim delayInCentiseconds As Int32 = BitConverter.ToInt32(delayBytes, i * 4)
                 Dim delayInMs As Int32 = delayInCentiseconds * 10
                 If Me._rawFrameDelaysMs(i) <> delayInMs Then metadataChanged = True
                 Me._rawFrameDelaysMs(i) = delayInMs
+
             Next
 
             Me._rawFrameDelayCount = availableCount
             Me._rawFrameDelayCacheValid = True
             Return metadataChanged
+
         End Function
 
         Private Function IsControlTreeVisible() As Boolean
@@ -1339,12 +1473,15 @@ Namespace AniGifControl
         End Function
 
         Private Function BeginFrameInvalidationPaint() As Object
+
             If Not Me._usePartialFrameInvalidation OrElse Not Me._fullFrameInvalidationPending Then Return Nothing
             Me._fullFrameInvalidationPending = False
             Return Me._frameInvalidationToken
+
         End Function
 
         Private Shared Function GetFrameInvalidationBounds(imageRectangle As Rectangle, client As Rectangle) As Rectangle
+
             If imageRectangle.Width <= 0 OrElse imageRectangle.Height <= 0 OrElse client.Width <= 0 OrElse client.Height <= 0 Then Return Rectangle.Empty
             ' Den Sicherheitsrand vor dem Schnitt mit Int64 berechnen, damit große Zielrechtecke nicht überlaufen.
             Dim left As Int64 = Math.Max(CLng(client.X), CLng(imageRectangle.X) - FrameInvalidationMargin)
@@ -1353,25 +1490,39 @@ Namespace AniGifControl
             Dim bottom As Int64 = Math.Min(CLng(client.Y) + client.Height, CLng(imageRectangle.Y) + imageRectangle.Height + FrameInvalidationMargin)
             If right <= left OrElse bottom <= top Then Return Rectangle.Empty
             Return New Rectangle(CInt(left), CInt(top), CInt(right - left), CInt(bottom - top))
+
         End Function
 
+        ''' <summary>Aktualisiert bei Sichtbarkeitsänderungen die Zeichenfläche und Wiedergabe.</summary>
+        ''' <param name="e">Die Ereignisdaten.</param>
         Protected Overrides Sub OnVisibleChanged(e As EventArgs)
+
             Me.ResetFrameInvalidationBounds()
             MyBase.OnVisibleChanged(e)
             Me.UpdateTimerState()
+
         End Sub
 
+        ''' <summary>Aktualisiert bei einem Elternwechsel die Beobachtung und Wiedergabe.</summary>
+        ''' <param name="e">Die Ereignisdaten.</param>
         Protected Overrides Sub OnParentChanged(e As EventArgs)
+
             Me.ResetFrameInvalidationBounds()
             MyBase.OnParentChanged(e)
             Me.RefreshFrameInvalidationAncestors()
             Me.UpdateTimerState()
+
             If Me._diagnosticsEnabled Then
+
                 Me.RefreshDiagnosticsAncestors()
                 Me.UpdateDiagnosticsActivity()
+
             End If
+
         End Sub
 
+        ''' <summary>Zeichnet den aktuellen Frame und erfasst gegebenenfalls Diagnostikwerte.</summary>
+        ''' <param name="e">Zeichenkontext und begrenzender Zeichenbereich.</param>
         Protected Overrides Sub OnPaint(e As PaintEventArgs)
 
             Dim frameInvalidationToken As Object = Me.BeginFrameInvalidationPaint()
@@ -1384,12 +1535,15 @@ Namespace AniGifControl
             Dim diagnosticsVersion As Int64 = 0
             Dim frameGeneration As Int64 = 0
             Dim renderStartTimestamp As Int64 = 0
+
             If Me._diagnosticsEnabled Then
+
                 Me.UpdateDiagnosticsActivity()
                 diagnostics = Me._diagnosticsCollector
                 diagnosticsVersion = diagnostics.SessionVersion
                 frameGeneration = diagnostics.PendingFrameGeneration
                 renderStartTimestamp = Stopwatch.GetTimestamp()
+
             End If
 
             ' Variable für Zeichenfläche
@@ -1404,93 +1558,144 @@ Namespace AniGifControl
 
             ' Qualitätsverbesserung nur bei Skalierung
             If Me._GifSizeMode = ImageSizeMode.Zoom OrElse Me._GifSizeMode = ImageSizeMode.Fill Then
+
                 If Me._scalingQualityPreset = GifScalingQualityPreset.PixelArt Then
+
                     g.InterpolationMode = Drawing2D.InterpolationMode.NearestNeighbor
                     g.PixelOffsetMode = Drawing2D.PixelOffsetMode.Half
                     g.SmoothingMode = Drawing2D.SmoothingMode.None
+
                 Else
+
                     g.InterpolationMode = Drawing2D.InterpolationMode.HighQualityBicubic
                     g.PixelOffsetMode = Drawing2D.PixelOffsetMode.HighQuality
                     g.SmoothingMode = Drawing2D.SmoothingMode.HighQuality
+
                 End If
+
             End If
 
             ' Zeichenfläche festlegen und Bild zeichnen
             Dim imageRectangle As New Rectangle(rectstartpoint, rectstartsize)
             g.DrawImage(Me._Gif, imageRectangle)
 
+            ' Eine während des Zeichnens zurückgesetzte Sitzung darf keine alten Messwerte übernehmen.
             If diagnostics IsNot Nothing AndAlso Me._diagnosticsEnabled AndAlso
                 Me._diagnosticsCollector Is diagnostics AndAlso diagnostics.SessionVersion = diagnosticsVersion Then
                 Dim renderTicks As Int64 = Stopwatch.GetTimestamp() - renderStartTimestamp
                 Dim intersectsClip As Boolean = False
+
                 If frameGeneration <> 0 Then
+
                     Dim clippedRectangle As Rectangle = Rectangle.Intersect(imageRectangle, e.ClipRectangle)
                     clippedRectangle = Rectangle.Intersect(clippedRectangle, Me.ClientRectangle)
                     intersectsClip = clippedRectangle.Width > 0 AndAlso clippedRectangle.Height > 0 AndAlso g.IsVisible(clippedRectangle)
+
                 End If
+
                 diagnostics.RecordDraw(renderTicks, frameGeneration, intersectsClip)
+
             End If
 
             Me.CompleteFrameInvalidationPaint(frameInvalidationToken, imageRectangle, e)
 
         End Sub
 
+        ''' <summary>Aktualisiert Zeichenbereich und Diagnostik nach dem Erstellen des Handles.</summary>
+        ''' <param name="e">Die Ereignisdaten.</param>
         Protected Overrides Sub OnHandleCreated(e As EventArgs)
+
             Me.ResetFrameInvalidationBounds()
             Me._diagnosticsHandleAvailable = True
             If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
             MyBase.OnHandleCreated(e)
             If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
+
         End Sub
 
+        ''' <summary>Verwirft den Zeichenbereich und unterbricht die Diagnostik beim Verlust des Handles.</summary>
+        ''' <param name="e">Die Ereignisdaten.</param>
         Protected Overrides Sub OnHandleDestroyed(e As EventArgs)
+
             Me.ResetFrameInvalidationBounds()
             Me._diagnosticsHandleAvailable = False
             Me.SuspendDiagnosticsActivity()
             MyBase.OnHandleDestroyed(e)
+
         End Sub
 
+        ''' <summary>Aktualisiert Zeichenbereich und Diagnostik bei geänderter Clientgröße.</summary>
+        ''' <param name="e">Die Ereignisdaten.</param>
         Protected Overrides Sub OnClientSizeChanged(e As EventArgs)
+
             Me.ResetFrameInvalidationBounds()
             If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
             MyBase.OnClientSizeChanged(e)
             If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
+
         End Sub
 
+        ''' <summary>Verwirft den zwischengespeicherten Zeichenbereich bei Positionsänderungen.</summary>
+        ''' <param name="e">Die Ereignisdaten.</param>
         Protected Overrides Sub OnLocationChanged(e As EventArgs)
+
             Me.ResetFrameInvalidationBounds()
             MyBase.OnLocationChanged(e)
+
         End Sub
 
+        ''' <summary>Verwirft den zwischengespeicherten Zeichenbereich bei Layoutänderungen.</summary>
+        ''' <param name="e">Die Layout-Ereignisdaten.</param>
         Protected Overrides Sub OnLayout(e As LayoutEventArgs)
+
             Me.ResetFrameInvalidationBounds()
             MyBase.OnLayout(e)
+
         End Sub
 
+        ''' <summary>Verwirft den zwischengespeicherten Zeichenbereich bei Änderung der Hintergrundfarbe.</summary>
+        ''' <param name="e">Die Ereignisdaten.</param>
         Protected Overrides Sub OnBackColorChanged(e As EventArgs)
+
             Me.ResetFrameInvalidationBounds()
             MyBase.OnBackColorChanged(e)
+
         End Sub
 
+        ''' <summary>Verwirft den zwischengespeicherten Zeichenbereich bei Änderung des Hintergrundbilds.</summary>
+        ''' <param name="e">Die Ereignisdaten.</param>
         Protected Overrides Sub OnBackgroundImageChanged(e As EventArgs)
+
             Me.ResetFrameInvalidationBounds()
             MyBase.OnBackgroundImageChanged(e)
+
         End Sub
 
+        ''' <summary>Verwirft den zwischengespeicherten Zeichenbereich bei Änderung des Hintergrundlayouts.</summary>
+        ''' <param name="e">Die Ereignisdaten.</param>
         Protected Overrides Sub OnBackgroundImageLayoutChanged(e As EventArgs)
+
             Me.ResetFrameInvalidationBounds()
             MyBase.OnBackgroundImageLayoutChanged(e)
+
         End Sub
 
+        ''' <summary>Verwirft den zwischengespeicherten Zeichenbereich bei Änderung des Innenabstands.</summary>
+        ''' <param name="e">Die Ereignisdaten.</param>
         Protected Overrides Sub OnPaddingChanged(e As EventArgs)
+
             Me.ResetFrameInvalidationBounds()
             MyBase.OnPaddingChanged(e)
+
         End Sub
 
+        ''' <summary>Initialisiert das Layout und aktualisiert den Wiedergabezustand.</summary>
         Protected Overloads Overrides Sub InitLayout()
+
             MyBase.InitLayout()
             ' Nach Layout-Initialisierung den korrekten Animationsmodus setzen
             Me.UpdateTimerState()
+
         End Sub
 
 #End Region

@@ -1,3 +1,9 @@
+﻿' --------------------------------------------------------------------------------------------------------
+' Datei: TransparentLabelTests.vb
+' Author: Andreas Sauer
+' Datum: 15.11.2026
+' --------------------------------------------------------------------------------------------------------
+
 Imports System
 Imports System.Drawing
 Imports System.Windows.Forms

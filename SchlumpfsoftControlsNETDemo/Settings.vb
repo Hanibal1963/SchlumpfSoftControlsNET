@@ -1,4 +1,9 @@
-﻿
+﻿' --------------------------------------------------------------------------------------------------------
+' Datei: Settings.vb
+' Author: Andreas Sauer
+' Datum: 15.11.2026
+' --------------------------------------------------------------------------------------------------------
+
 Namespace My
     
     'Diese Klasse ermöglicht die Behandlung bestimmter Ereignisse der Einstellungsklasse:

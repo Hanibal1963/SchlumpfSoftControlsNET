@@ -1,4 +1,10 @@
-﻿Imports System.Collections.Concurrent
+﻿' --------------------------------------------------------------------------------------------------------
+' Datei: ColorProgressBarAccessibilityTests.vb
+' Author: Andreas Sauer
+' Datum: 15.11.2026
+' --------------------------------------------------------------------------------------------------------
+
+Imports System.Collections.Concurrent
 Imports System.Collections.Generic
 Imports System.ComponentModel
 Imports System.Diagnostics

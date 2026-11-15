@@ -16,10 +16,8 @@ Imports System.Windows.Automation.Provider
 
 Namespace ColorProgressBarControl
 
-    ''' <summary>
-    ''' Ein benutzerdefiniertes Windows Forms-Steuerelement zur Anzeige eines farbigen Fortschrittsbalkens mit
-    ''' optionalem Rahmen und Glanzeffekt.
-    ''' </summary>
+    ''' <summary>Ein benutzerdefiniertes Windows Forms-Steuerelement zur Anzeige eines farbigen Fortschrittsbalkens mit
+    ''' optionalem Rahmen und Glanzeffekt.</summary>
     <Description("Control zum Anzeigen eines farbigen Fortschrittbalkens.")>
     <ToolboxItem(True)>
     <ToolboxBitmap(GetType(ColorProgressBar), "ColorProgressBarControl.ColorProgressBar.bmp")>
@@ -29,28 +27,73 @@ Namespace ColorProgressBarControl
 
 #Region "Variablen"
 
+        ''' <summary>Vorgesehene Fortschrittseinheit des Steuerelements.</summary>
         Private ReadOnly _ProgressUnit As Integer = 20
+
+        ''' <summary>Verwaltet die lokalisierten Accessibility-Ressourcen.</summary>
         Private Shared ReadOnly _accessibilityResources As New ResourceManager("SchlumpfSoft.ControlsNET.ColorProgressBarAccessibility", GetType(ColorProgressBar).Assembly)
+
+        ''' <summary>UI-Automation-Provider für das aktuelle Fensterhandle, sofern erstellt.</summary>
         Private _uiaProvider As ProgressAutomationProvider
+
+        ''' <summary>Aktueller begrenzter Fortschrittswert.</summary>
         Private _ProgressValue As Integer = 1
+
+        ''' <summary>Aktueller Maximalwert des Fortschritts.</summary>
         Private _MaxValue As Integer = 10
+
+        ''' <summary>Gibt an, ob der Rahmen angezeigt wird.</summary>
         Private _ShowBorder As Boolean = True
+
+        ''' <summary>Gibt an, ob der Glanzeffekt angezeigt wird.</summary>
         Private _IsGlossy As Boolean = True
+
+        ''' <summary>Farbe des gefüllten Bereichs.</summary>
         Private _BarColor As System.Drawing.Color = Color.Blue
+
+        ''' <summary>Farbe des leeren Bereichs.</summary>
         Private _EmptyColor As System.Drawing.Color = Color.Silver
+
+        ''' <summary>Farbe des Rahmens.</summary>
         Private _BorderColor As System.Drawing.Color = Color.Black
+
+        ''' <summary>Wiederverwendeter Pinsel für den gefüllten Bereich.</summary>
         Private _barBrush As SolidBrush
+
+        ''' <summary>Wiederverwendeter Pinsel für den leeren Bereich.</summary>
         Private _emptyBrush As SolidBrush
+
+        ''' <summary>Wiederverwendeter Pinsel für den Glanzeffekt.</summary>
         Private _glossBrush As SolidBrush
+
+        ''' <summary>Gibt an, ob bereits Geometriedaten berechnet wurden.</summary>
         Private _isGeometryCached As Boolean
+
+        ''' <summary>Clientfläche bei der letzten Geometrieberechnung.</summary>
         Private _cachedClientBounds As Rectangle
+
+        ''' <summary>Steuerelementgröße bei der letzten Geometrieberechnung.</summary>
         Private _cachedControlSize As Size
+
+        ''' <summary>Innenabstand bei der letzten Geometrieberechnung.</summary>
         Private _cachedPadding As Padding
+
+        ''' <summary>Fortschrittswert bei der letzten Berechnung der Bereichsrechtecke.</summary>
         Private _cachedProgressValue As Int32
+
+        ''' <summary>Maximum bei der letzten Berechnung der Bereichsrechtecke.</summary>
         Private _cachedMaximumValue As Int32
+
+        ''' <summary>Zwischengespeicherte Innenfläche ohne Rahmen.</summary>
         Private _cachedContentBounds As Rectangle
+
+        ''' <summary>Zwischengespeicherte Fläche des gefüllten Bereichs.</summary>
         Private _cachedFillBounds As Rectangle
+
+        ''' <summary>Zwischengespeicherte Fläche des leeren Bereichs.</summary>
         Private _cachedEmptyBounds As Rectangle
+
+        ''' <summary>Zwischengespeicherte Fläche des Glanzeffekts.</summary>
         Private _cachedGlossBounds As Rectangle
 
 #End Region
@@ -322,6 +365,7 @@ Namespace ColorProgressBarControl
                 Dim previousValue As Int32 = Me._ProgressValue
                 Me._MaxValue = boundedMaximum
                 Me._ProgressValue = boundedValue
+                ' Auch bei einem Fehler der Accessibility-Benachrichtigung muss neu gezeichnet werden.
                 Try
                     Me.NotifyProgressAccessibility(previousValue, previousMaximum, boundedValue, boundedMaximum)
                 Finally
@@ -422,6 +466,8 @@ Namespace ColorProgressBarControl
         ''' <summary>
         ''' Erzwingt bei externen Padding-Änderungen den für die Rahmenoption korrekten Padding-Wert.
         ''' </summary>
+        ''' <param name="sender">Das auslösende Steuerelement.</param>
+        ''' <param name="e">Die Ereignisdaten.</param>
         Private Sub ColorProgressBar_PaddingChanged(sender As Object, e As EventArgs) Handles Me.PaddingChanged
 
             Me.UpdatePadding()
@@ -431,8 +477,11 @@ Namespace ColorProgressBarControl
         ''' <summary>
         ''' Gibt die eigenen Zeichenressourcen beim Entsorgen des Steuerelements frei.
         ''' </summary>
+        ''' <param name="sender">Das entsorgte Steuerelement.</param>
+        ''' <param name="e">Die Ereignisdaten.</param>
         Private Sub ColorProgressBar_Disposed(sender As Object, e As EventArgs) Handles Me.Disposed
 
+            ' Jeder Pinsel wird auch dann freigegeben, wenn ein vorheriges Dispose fehlschlägt.
             Try
                 DisposeCachedBrush(Me._barBrush)
             Finally
@@ -457,6 +506,7 @@ Namespace ColorProgressBarControl
             If Not Me.IsHandleCreated Then Return
 
             Dim provider As ProgressAutomationProvider = Me._uiaProvider
+            ' UIA-Ereignisse nur für einen vorhandenen Provider und aktive Clients auslösen.
             If provider IsNot Nothing AndAlso Me.HasProgressAccessibleRole() AndAlso AutomationInteropProvider.ClientsAreListening Then
                 If previousValue <> value Then
                     AutomationInteropProvider.RaiseAutomationPropertyChangedEvent(provider,
@@ -547,6 +597,7 @@ Namespace ColorProgressBarControl
 
             Me.UpdateCachedGeometry()
 
+            ' Pinsel werden bei Bedarf erzeugt und bis zur Farbänderung wiederverwendet.
             If Me._cachedFillBounds.Width > 0 AndAlso Me._cachedFillBounds.Height > 0 Then
                 If Me._barBrush Is Nothing Then
                     Me._barBrush = New SolidBrush(Me._BarColor)
@@ -611,6 +662,7 @@ Namespace ColorProgressBarControl
         Protected Overrides Sub WndProc(ByRef m As Message)
 
             Const wmGetObject As Int32 = &H3D
+            ' Nur die UIA-Root-Anfrage für eine Fortschrittsrolle selbst beantworten.
             If m.Msg = wmGetObject AndAlso m.LParam.ToInt64() = AutomationInteropProvider.RootObjectId AndAlso
                 Me.HasProgressAccessibleRole() AndAlso Not Me.IsDisposed AndAlso Not Me.Disposing Then
                 If Me._uiaProvider Is Nothing Then
@@ -650,13 +702,17 @@ Namespace ColorProgressBarControl
 
             Inherits Control.ControlAccessibleObject
 
+            ''' <summary>Steuerelement, dessen Accessibility-Daten bereitgestellt werden.</summary>
             Private ReadOnly _owner As ColorProgressBar
 
+            ''' <summary>Erstellt das MSAA-Objekt für das angegebene Steuerelement.</summary>
+            ''' <param name="owner">Zugehöriges Fortschrittssteuerelement.</param>
             Public Sub New(owner As ColorProgressBar)
                 MyBase.New(owner)
                 Me._owner = owner
             End Sub
 
+            ''' <summary>Verwendet den expliziten Namen oder den lokalisierten Standardnamen.</summary>
             Public Overrides Property Name As String
                 Get
                     Dim accessibleName As String = MyBase.Name
@@ -668,6 +724,7 @@ Namespace ColorProgressBarControl
                 End Set
             End Property
 
+            ''' <summary>Verwendet die explizite Beschreibung oder den lokalisierten Standardtext.</summary>
             Public Overrides ReadOnly Property Description As String
                 Get
                     Dim accessibleDescription As String = MyBase.Description
@@ -676,6 +733,7 @@ Namespace ColorProgressBarControl
                 End Get
             End Property
 
+            ''' <summary>Gibt die konfigurierte Rolle beziehungsweise die Fortschrittsrolle zurück.</summary>
             Public Overrides ReadOnly Property Role As AccessibleRole
                 Get
                     If Me._owner.AccessibleRole = AccessibleRole.Default Then Return AccessibleRole.ProgressBar
@@ -683,12 +741,15 @@ Namespace ColorProgressBarControl
                 End Get
             End Property
 
+            ''' <summary>Ergänzt den Basiszustand um die schreibgeschützte Kennzeichnung.</summary>
             Public Overrides ReadOnly Property State As AccessibleStates
                 Get
                     Return MyBase.State Or AccessibleStates.ReadOnly
                 End Get
             End Property
 
+            ''' <summary>Gibt den lokalisierten Fortschritt zurück; Änderungen sind nicht zulässig.</summary>
+            ''' <exception cref="InvalidOperationException">Beim Versuch, den Wert zu setzen.</exception>
             Public Overrides Property Value As String
                 Get
                     Return FormatAccessibleProgress(Me._owner.Value, Me._owner.ProgressMaximumValue)
@@ -710,27 +771,38 @@ Namespace ColorProgressBarControl
             Implements IRangeValueProvider
             Implements IValueProvider
 
+            ''' <summary>Zugehöriges Steuerelement, bis der Provider getrennt wird.</summary>
             Private _owner As ColorProgressBar
+            ''' <summary>Fensterhandle, für das dieser Provider erstellt wurde.</summary>
             Private ReadOnly _windowHandle As IntPtr
+            ''' <summary>Gibt an, ob der Provider noch mit seinem Fenster verbunden ist.</summary>
             Private _connected As Boolean = True
 
+            ''' <summary>Erstellt einen UI-Automation-Provider für ein Fenster.</summary>
+            ''' <param name="owner">Zugehöriges Fortschrittssteuerelement.</param>
+            ''' <param name="windowHandle">Handle des zugehörigen Fensters.</param>
             Public Sub New(owner As ColorProgressBar, windowHandle As IntPtr)
                 Me._owner = owner
                 Me._windowHandle = windowHandle
             End Sub
 
+            ''' <summary>Trennt den Provider vom Steuerelement und seinem bisherigen Fenster.</summary>
             Public Sub Disconnect()
                 Me._connected = False
                 Me._owner = Nothing
             End Sub
 
+            ''' <summary>Prüft, ob der Provider weiterhin für die Fortschrittsrolle verfügbar ist.</summary>
+            ''' <exception cref="ElementNotAvailableException">Der Provider ist getrennt, das Control wird entsorgt oder besitzt eine andere Rolle.</exception>
             Private Sub EnsureAvailable()
+                ' Der Kurzschluss verhindert den Zugriff auf den nach Disconnect gelösten Owner.
                 If Not Me._connected OrElse Me._owner.IsDisposed OrElse Me._owner.Disposing OrElse
                     Not Me._owner.HasProgressAccessibleRole() Then
                     Throw New ElementNotAvailableException()
                 End If
             End Sub
 
+            ''' <summary>Gibt die serverseitigen Provideroptionen einschließlich COM-Threading zurück.</summary>
             Private ReadOnly Property Options As ProviderOptions Implements IRawElementProviderSimple.ProviderOptions
                 Get
                     Me.EnsureAvailable()
@@ -738,6 +810,7 @@ Namespace ColorProgressBarControl
                 End Get
             End Property
 
+            ''' <summary>Gibt den UI-Automation-Hostprovider des Fensters zurück.</summary>
             Private ReadOnly Property HostProvider As IRawElementProviderSimple Implements IRawElementProviderSimple.HostRawElementProvider
                 Get
                     Me.EnsureAvailable()
@@ -745,6 +818,9 @@ Namespace ColorProgressBarControl
                 End Get
             End Property
 
+            ''' <summary>Stellt die unterstützten Bereichswert- und Textwertmuster bereit.</summary>
+            ''' <param name="patternId">Kennung des angeforderten Musters.</param>
+            ''' <returns>Dieser Provider für unterstützte Muster, andernfalls <see langword="Nothing"/>.</returns>
             Private Function GetPatternProvider(patternId As Int32) As Object Implements IRawElementProviderSimple.GetPatternProvider
                 Me.EnsureAvailable()
                 If patternId = RangeValuePatternIdentifiers.Pattern.Id OrElse patternId = ValuePatternIdentifiers.Pattern.Id Then
@@ -753,8 +829,12 @@ Namespace ColorProgressBarControl
                 Return Nothing
             End Function
 
+            ''' <summary>Ermittelt den Wert einer unterstützten UI-Automation-Eigenschaft.</summary>
+            ''' <param name="propertyId">Kennung der angeforderten Eigenschaft.</param>
+            ''' <returns>Der Eigenschaftswert oder <see langword="Nothing"/> für unbekannte Kennungen.</returns>
             Private Function GetPropertyValue(propertyId As Int32) As Object Implements IRawElementProviderSimple.GetPropertyValue
                 Me.EnsureAvailable()
+                ' Nicht explizit behandelte Eigenschaften werden dem UIA-Standard überlassen.
                 Select Case propertyId
                     Case AutomationElementIdentifiers.ControlTypeProperty.Id
                         Return ControlType.ProgressBar.Id
@@ -770,6 +850,7 @@ Namespace ColorProgressBarControl
                 Return Nothing
             End Function
 
+            ''' <summary>Kennzeichnet beide Wertmuster als schreibgeschützt.</summary>
             Private ReadOnly Property IsReadOnly As Boolean Implements IRangeValueProvider.IsReadOnly, IValueProvider.IsReadOnly
                 Get
                     Me.EnsureAvailable()
@@ -777,6 +858,7 @@ Namespace ColorProgressBarControl
                 End Get
             End Property
 
+            ''' <summary>Gibt die untere Grenze des Fortschrittsbereichs zurück.</summary>
             Private ReadOnly Property Minimum As Double Implements IRangeValueProvider.Minimum
                 Get
                     Me.EnsureAvailable()
@@ -784,6 +866,7 @@ Namespace ColorProgressBarControl
                 End Get
             End Property
 
+            ''' <summary>Gibt das aktuelle Fortschrittsmaximum zurück.</summary>
             Private ReadOnly Property Maximum As Double Implements IRangeValueProvider.Maximum
                 Get
                     Me.EnsureAvailable()
@@ -791,6 +874,7 @@ Namespace ColorProgressBarControl
                 End Get
             End Property
 
+            ''' <summary>Gibt den aktuellen numerischen Fortschrittswert zurück.</summary>
             Private ReadOnly Property NumericValue As Double Implements IRangeValueProvider.Value
                 Get
                     Me.EnsureAvailable()
@@ -798,6 +882,7 @@ Namespace ColorProgressBarControl
                 End Get
             End Property
 
+            ''' <summary>Gibt an, dass keine große Änderungsschrittweite unterstützt wird.</summary>
             Private ReadOnly Property LargeChange As Double Implements IRangeValueProvider.LargeChange
                 Get
                     Me.EnsureAvailable()
@@ -805,6 +890,7 @@ Namespace ColorProgressBarControl
                 End Get
             End Property
 
+            ''' <summary>Gibt an, dass keine kleine Änderungsschrittweite unterstützt wird.</summary>
             Private ReadOnly Property SmallChange As Double Implements IRangeValueProvider.SmallChange
                 Get
                     Me.EnsureAvailable()
@@ -812,6 +898,7 @@ Namespace ColorProgressBarControl
                 End Get
             End Property
 
+            ''' <summary>Gibt den Fortschritt als lokalisierten Prozenttext zurück.</summary>
             Private ReadOnly Property TextValue As String Implements IValueProvider.Value
                 Get
                     Me.EnsureAvailable()
@@ -819,11 +906,19 @@ Namespace ColorProgressBarControl
                 End Get
             End Property
 
+            ''' <summary>Lehnt Änderungen am schreibgeschützten numerischen Wert ab.</summary>
+            ''' <param name="value">Der angeforderte numerische Wert.</param>
+            ''' <exception cref="ElementNotAvailableException">Der Provider ist nicht mehr verfügbar.</exception>
+            ''' <exception cref="InvalidOperationException">Der Provider ist verfügbar, aber der Wert ist schreibgeschützt.</exception>
             Private Sub SetRangeValue(value As Double) Implements IRangeValueProvider.SetValue
                 Me.EnsureAvailable()
                 Throw New InvalidOperationException()
             End Sub
 
+            ''' <summary>Lehnt Änderungen am schreibgeschützten Textwert ab.</summary>
+            ''' <param name="value">Der angeforderte Textwert.</param>
+            ''' <exception cref="ElementNotAvailableException">Der Provider ist nicht mehr verfügbar.</exception>
+            ''' <exception cref="InvalidOperationException">Der Provider ist verfügbar, aber der Wert ist schreibgeschützt.</exception>
             Private Sub SetTextValue(value As String) Implements IValueProvider.SetValue
                 Me.EnsureAvailable()
                 Throw New InvalidOperationException()

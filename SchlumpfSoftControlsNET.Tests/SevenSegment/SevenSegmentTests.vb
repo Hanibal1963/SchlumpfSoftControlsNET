@@ -1,3 +1,9 @@
+﻿' --------------------------------------------------------------------------------------------------------
+' Datei: SevenSegmentTests.vb
+' Author: Andreas Sauer
+' Datum: 15.11.2026
+' --------------------------------------------------------------------------------------------------------
+
 Imports System
 Imports System.Collections.Generic
 Imports System.Drawing

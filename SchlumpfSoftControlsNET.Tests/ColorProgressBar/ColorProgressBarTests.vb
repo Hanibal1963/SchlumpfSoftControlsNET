@@ -1,4 +1,10 @@
-﻿Imports System.Collections.Generic
+﻿' --------------------------------------------------------------------------------------------------------
+' Datei: ColorProgressBarTests.vb
+' Author: Andreas Sauer
+' Datum: 15.11.2026
+' --------------------------------------------------------------------------------------------------------
+
+Imports System.Collections.Generic
 Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Reflection

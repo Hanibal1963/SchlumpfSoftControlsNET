@@ -23,15 +23,18 @@ Partial Class FormDriveWatcher
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
-        Me.DriveWatcher = New SchlumpfSoft.ControlsNET.DriveWatcherControl.DriveWatcher(Me.components)
+        Me.DW = New SchlumpfSoft.ControlsNET.DriveWatcherControl.DriveWatcher(Me.components)
         Me.Label_Info = New System.Windows.Forms.Label()
         Me.TextBox_DriveInfo = New System.Windows.Forms.TextBox()
         Me.SuspendLayout()
         '
+        'DW
+        '
+        '
         'Label_Info
         '
         Me.Label_Info.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle
-        Me.Label_Info.Image = My.Resources.Resources.Information
+        Me.Label_Info.Image = Global.SchlumpfsoftControlsNETDemo.My.Resources.Resources.Information
         Me.Label_Info.Location = New System.Drawing.Point(12, 20)
         Me.Label_Info.Name = "Label_Info"
         Me.Label_Info.Size = New System.Drawing.Size(461, 131)
@@ -67,7 +70,7 @@ Partial Class FormDriveWatcher
         Me.PerformLayout()
 
     End Sub
-    Private WithEvents DriveWatcher As SchlumpfSoft.ControlsNET.DriveWatcherControl.DriveWatcher
+    Private WithEvents DW As SchlumpfSoft.ControlsNET.DriveWatcherControl.DriveWatcher
     Private WithEvents Label_Info As Label
     Private WithEvents TextBox_DriveInfo As TextBox
 End Class

@@ -1,3 +1,9 @@
+﻿' --------------------------------------------------------------------------------------------------------
+' Datei: ShapeTests.vb
+' Author: Andreas Sauer
+' Datum: 15.11.2026
+' --------------------------------------------------------------------------------------------------------
+
 Imports System.Drawing
 Imports System.Windows.Forms
 Imports Microsoft.VisualStudio.TestTools.UnitTesting

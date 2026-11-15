@@ -79,6 +79,21 @@ Namespace AniGifControl
         ''' <summary>Letzter gültiger Frame-Index des geladenen GIFs.</summary>
         Private _MaxFrame As Int32
 
+        ''' <summary>Maximale Anzahl der Segmentdurchläufe; 0 bedeutet unbegrenzte Wiedergabe.</summary>
+        Private _loopCount As Int32
+
+        ''' <summary>Zählt die seit dem letzten Zurücksetzen abgeschlossenen Segmentdurchläufe.</summary>
+        Private _completedLoops As Int32
+
+        ''' <summary>Konfigurierter nullbasierter Anfang des Wiedergabebereichs.</summary>
+        Private _playRangeStart As Int32
+
+        ''' <summary>Konfiguriertes einschließliches Ende des Wiedergabebereichs; -1 steht für das Bildende.</summary>
+        Private _playRangeEnd As Int32 = -1
+
+        ''' <summary>Kennzeichnet eine abgeschlossene begrenzte Wiedergabe, damit ein Neustart am Segmentanfang beginnt.</summary>
+        Private _playbackCompleted As Boolean
+
         ''' <summary>Steuert, ob die Animation automatisch starten soll.</summary>
         Private _Autoplay As Boolean
 
@@ -200,10 +215,63 @@ Namespace AniGifControl
             End Get
             Set(value As Boolean)
                 If Me._Autoplay = value Then Return
+                If value Then
+                    Me.PreparePlaybackStart()
+                Else
+                    Me._completedLoops = 0
+                End If
                 Me._Autoplay = value
                 Me._playbackState = If(value, PlaybackState.Playing, PlaybackState.Stopped)
                 RaiseEvent AutoPlayChanged(Me, EventArgs.Empty)
                 Me.UpdateTimerState()
+            End Set
+        End Property
+
+        ''' <summary>Legt die Anzahl der Segmentdurchläufe fest; 0 bedeutet unbegrenzte Wiedergabe.</summary>
+        ''' <remarks>Eine Änderung beginnt die Zählung erneut. Die Eigenschaft muss auf dem UI-Thread verwendet werden.</remarks>
+        ''' <exception cref="ArgumentOutOfRangeException">Der Wert ist negativ.</exception>
+        <Category("Behavior"), DefaultValue(0)>
+        Public Property LoopCount As Int32
+            Get
+                Return Me._loopCount
+            End Get
+            Set(value As Int32)
+                If value < 0 Then Throw New ArgumentOutOfRangeException(NameOf(value))
+                If Me._loopCount = value Then Return
+                Me._loopCount = value
+                Me._completedLoops = 0
+            End Set
+        End Property
+
+        ''' <summary>Legt den nullbasierten ersten Frame des Wiedergabebereichs fest.</summary>
+        ''' <remarks>Der tatsächlich verwendete Bereich wird auf die Frames des aktuellen Bilds begrenzt.</remarks>
+        ''' <exception cref="ArgumentOutOfRangeException">Der Wert ist negativ.</exception>
+        <Category("Behavior"), DefaultValue(0)>
+        Public Property PlayRangeStart As Int32
+            Get
+                Return Me._playRangeStart
+            End Get
+            Set(value As Int32)
+                If value < 0 Then Throw New ArgumentOutOfRangeException(NameOf(value))
+                If Me._playRangeStart = value Then Return
+                Me._playRangeStart = value
+                Me.OnPlayRangeChanged()
+            End Set
+        End Property
+
+        ''' <summary>Legt den letzten Frame des Wiedergabebereichs fest; -1 bezeichnet das Bildende.</summary>
+        ''' <remarks>Der tatsächlich verwendete Bereich wird auf das aktuelle Bild und mindestens auf den Bereichsanfang begrenzt.</remarks>
+        ''' <exception cref="ArgumentOutOfRangeException">Der Wert ist kleiner als -1.</exception>
+        <Category("Behavior"), DefaultValue(-1)>
+        Public Property PlayRangeEnd As Int32
+            Get
+                Return Me._playRangeEnd
+            End Get
+            Set(value As Int32)
+                If value < -1 Then Throw New ArgumentOutOfRangeException(NameOf(value))
+                If Me._playRangeEnd = value Then Return
+                Me._playRangeEnd = value
+                Me.OnPlayRangeChanged()
             End Set
         End Property
 
@@ -640,6 +708,7 @@ Namespace AniGifControl
             If Not Me.AutoPlay Then
                 Me.AutoPlay = True
             ElseIf Me._playbackState <> PlaybackState.Playing Then
+                If Me._playbackState = PlaybackState.Stopped Then Me.PreparePlaybackStart()
                 Me._playbackState = PlaybackState.Playing
                 Me.UpdateTimerState()
             End If
@@ -683,6 +752,8 @@ Namespace AniGifControl
             If Me._IsDisposed OrElse Me.IsDisposed Then Return
             If Me._Gif Is Nothing Then Throw New InvalidOperationException("Es ist kein Bild vorhanden.")
             If index < 0 OrElse index > Me._MaxFrame Then Throw New ArgumentOutOfRangeException(NameOf(index))
+            Me._completedLoops = 0
+            Me._playbackCompleted = False
             If index = Me._Frame Then Return
 
             Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, index)
@@ -765,10 +836,13 @@ Namespace AniGifControl
             Me._Dimension = New FrameDimension(Me._Gif.FrameDimensionsList(0))
             Dim frameCount As Int32 = Me._Gif.GetFrameCount(Me._Dimension)
             Me._MaxFrame = Math.Max(0, frameCount - 1)
+            Me._completedLoops = 0
+            Me._playbackCompleted = False
 
             If Me._MaxFrame > 0 Then
 
-                Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, 0)
+                Me._Frame = Me.GetPlayRangeStart()
+                Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, Me._Frame)
 
             End If
 
@@ -956,10 +1030,29 @@ Namespace AniGifControl
 
             End If
 
-            ' Nur bei echtem Framewechsel umschalten/zeichnen
-            Dim nextFrame As Int32 = Me._Frame + 1
-            If nextFrame > Me._MaxFrame Then nextFrame = 0
-            If nextFrame = Me._Frame Then Exit Sub
+            Dim rangeStart As Int32 = Me.GetPlayRangeStart()
+            Dim rangeEnd As Int32 = Me.GetPlayRangeEnd()
+            Dim nextFrame As Int32
+            If Me._Frame < rangeStart OrElse Me._Frame > rangeEnd Then
+                nextFrame = rangeStart
+            ElseIf Me._Frame = rangeEnd Then
+                If Me._loopCount > 0 Then
+                    Me._completedLoops += 1
+                    If Me._completedLoops >= Me._loopCount Then
+                        Me._playbackCompleted = True
+                        Me.AutoPlay = False
+                        Return
+                    End If
+                End If
+                nextFrame = rangeStart
+            Else
+                nextFrame = Me._Frame + 1
+            End If
+
+            If nextFrame = Me._Frame Then
+                Me.Timer.Interval = Me.ApplyAdaptiveTiming(Me.GetFrameIntervalForIndex(Me._Frame), elapsedMs, Me.Timer.Interval)
+                Return
+            End If
 
             Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, nextFrame)
             Me._Frame = nextFrame
@@ -971,6 +1064,32 @@ Namespace AniGifControl
             ' Nur neu zeichnen wenn das Control sichtbar ist
             Me.InvalidateIfVisible(True)
 
+        End Sub
+
+        Private Function GetPlayRangeStart() As Int32
+            Return Math.Min(Me._playRangeStart, Me._MaxFrame)
+        End Function
+
+        Private Function GetPlayRangeEnd() As Int32
+            Dim requestedEnd As Int32 = If(Me._playRangeEnd = -1, Me._MaxFrame, Me._playRangeEnd)
+            Return Math.Max(Me.GetPlayRangeStart(), Math.Min(requestedEnd, Me._MaxFrame))
+        End Function
+
+        Private Sub OnPlayRangeChanged()
+            Me._completedLoops = 0
+            Me._playbackCompleted = False
+            If Me._IsDisposed OrElse Me.IsDisposed OrElse Me._Gif Is Nothing Then Return
+            If Me._Frame < Me.GetPlayRangeStart() OrElse Me._Frame > Me.GetPlayRangeEnd() Then
+                Me.SeekFrame(Me.GetPlayRangeStart())
+            End If
+        End Sub
+
+        Private Sub PreparePlaybackStart()
+            Me._completedLoops = 0
+            If Me._Gif IsNot Nothing AndAlso (Me._playbackCompleted OrElse Me._Frame < Me.GetPlayRangeStart() OrElse Me._Frame > Me.GetPlayRangeEnd()) Then
+                Me.SeekFrame(Me.GetPlayRangeStart())
+            End If
+            Me._playbackCompleted = False
         End Sub
 
         Private Sub SetGifImage(value As Bitmap)

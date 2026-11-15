@@ -23,6 +23,59 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
     <TestClass>
     Partial Public Class AniGifTests
 
+        <TestMethod>
+        Public Sub PlaybackRange_FiniteLoopsStopAfterLastFrameAndRestartAtBeginning()
+            Using control As New AniGif()
+                control.PlayRangeStart = 1
+                control.PlayRangeEnd = 2
+                control.LoopCount = 2
+                control.StartAnimation()
+                Assert.AreEqual(1, GetCurrentFrame(control))
+                InvokeTimerTick(control)
+                Assert.AreEqual(2, GetCurrentFrame(control))
+                InvokeTimerTick(control)
+                Assert.AreEqual(1, GetCurrentFrame(control))
+                control.PauseAnimation()
+                control.ResumeAnimation()
+                InvokeTimerTick(control)
+                Assert.AreEqual(2, GetCurrentFrame(control))
+                InvokeTimerTick(control)
+                Assert.AreEqual(2, GetCurrentFrame(control))
+                Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
+                Assert.IsFalse(control.AutoPlay)
+                Assert.IsFalse(GetTimer(control).Enabled)
+                control.StartAnimation()
+                Assert.AreEqual(1, GetCurrentFrame(control))
+                Assert.IsTrue(GetTimer(control).Enabled)
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub PlaybackRange_SingleFrameAndConfigurationChanges()
+            Using control As New AniGif()
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.LoopCount = -1)
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeStart = -1)
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeEnd = -2)
+                control.PlayRangeStart = 2
+                control.PlayRangeEnd = 2
+                control.LoopCount = 2
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                Assert.AreEqual(2, GetCurrentFrame(control))
+                Assert.IsTrue(GetTimer(control).Enabled)
+                control.SeekFrame(2)
+                InvokeTimerTick(control)
+                Assert.IsTrue(GetTimer(control).Enabled)
+                InvokeTimerTick(control)
+                Assert.IsFalse(GetTimer(control).Enabled)
+                control.PlayRangeEnd = -1
+                control.LoopCount = 0
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                Assert.AreEqual(3, GetCurrentFrame(control))
+            End Using
+        End Sub
+
         Private NotInheritable Class FrameInvalidationProbe
             Inherits AniGif
 

@@ -8,11 +8,11 @@
 
 ## 2 Loop- und Segmentsteuerung
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Vorschlag:** Eigenschaften `LoopCount`, `PlayRangeStart`, `PlayRangeEnd`.
 
-**Umsetzung:** Framezähler mit optionalem Abbruch bzw. Segmentwiedergabe.
+**Umsetzung:** `LoopCount`, `PlayRangeStart` und `PlayRangeEnd` steuern die begrenzte oder endlose Segmentwiedergabe. Einzelheiten stehen in [AniGifControl.md](AniGifControl.md).
 
 ## 3 Eventmodell ausbauen
 

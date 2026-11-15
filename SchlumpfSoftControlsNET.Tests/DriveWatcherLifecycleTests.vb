@@ -3,8 +3,12 @@
 ' --------------------------------------------------------------------------------------------------------
 
 Imports System.ComponentModel
+Imports System.Diagnostics
 Imports System.Reflection
+Imports System.Runtime.ExceptionServices
 Imports System.Runtime.InteropServices
+Imports System.Threading
+Imports System.Threading.Tasks
 Imports System.Windows.Forms
 
 Imports Microsoft.VisualStudio.TestTools.UnitTesting
@@ -226,6 +230,81 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Assert.AreEqual(0, mediaEvents)
                 Assert.AreEqual(IntPtr.Zero, nativeWindow.Handle)
                 Assert.IsFalse(IsWindow(handle))
+            End Using
+        End Sub
+
+        <TestMethod>
+        <DataRow(False)>
+        <DataRow(True)>
+        Public Sub NativeDeviceMessage_RaisesEventOnExpectedThread(useSynchronizingControl As Boolean)
+            Using target As New Control(), ready As New ManualResetEventSlim(), stopWorker As New ManualResetEventSlim(), received As New ManualResetEventSlim()
+                Dim targetHandle As IntPtr = target.Handle
+                Dim targetThread As Integer = Thread.CurrentThread.ManagedThreadId
+                Dim sourceThread As Integer = 0
+                Dim handlerThread As Integer = 0
+                Dim sourceHandle As IntPtr = IntPtr.Zero
+                Dim eventSender As Object = Nothing
+                Dim expectedSender As DriveWatcher = Nothing
+                Dim driveName As String = Nothing
+                Dim workerError As Exception = Nothing
+
+                Dim worker As New Thread(Sub()
+                                             Try
+                                                 Using watcher As New DriveWatcher()
+                                                     expectedSender = watcher
+                                                     If useSynchronizingControl Then watcher.SynchronizingObject = target
+                                                     AddHandler watcher.DriveRemoved,
+                                                         Sub(sender, e)
+                                                             eventSender = sender
+                                                             driveName = e.DriveName
+                                                             handlerThread = Thread.CurrentThread.ManagedThreadId
+                                                             received.Set()
+                                                         End Sub
+                                                     sourceThread = Thread.CurrentThread.ManagedThreadId
+                                                     sourceHandle = GetNativeWindow(watcher).Handle
+                                                     ready.Set()
+                                                     While Not stopWorker.Wait(5)
+                                                         Application.DoEvents()
+                                                     End While
+                                                 End Using
+                                             Catch ex As Exception
+                                                 workerError = ex
+                                             Finally
+                                                 ready.Set()
+                                             End Try
+                                         End Sub)
+                worker.IsBackground = True
+                worker.SetApartmentState(ApartmentState.STA)
+                worker.Start()
+
+                Dim senderTask As Task = Nothing
+                Try
+                    Assert.AreNotEqual(IntPtr.Zero, targetHandle)
+                    Assert.IsTrue(ready.Wait(TimeSpan.FromSeconds(5)))
+                    If workerError IsNot Nothing Then ExceptionDispatchInfo.Capture(workerError).Throw()
+                    Assert.AreNotEqual(IntPtr.Zero, sourceHandle)
+                    Assert.AreNotEqual(targetThread, sourceThread)
+
+                    senderTask = Task.Run(Sub() SendVolumeRemoval(sourceHandle, 4, DBTF_MEDIA))
+                    Assert.IsTrue(senderTask.Wait(TimeSpan.FromSeconds(5)), "Die native Nachricht muss ohne Warten auf den Zielthread zurückkehren.")
+
+                    Dim timer As Stopwatch = Stopwatch.StartNew()
+                    While Not received.IsSet AndAlso timer.Elapsed < TimeSpan.FromSeconds(5)
+                        Application.DoEvents()
+                        Thread.Yield()
+                    End While
+
+                    Assert.IsTrue(received.IsSet, "Das Ereignis wurde nicht auf dem Zielthread zugestellt.")
+                    Assert.AreEqual(If(useSynchronizingControl, targetThread, sourceThread), handlerThread)
+                    Assert.AreSame(expectedSender, eventSender)
+                    Assert.AreEqual("C:\", driveName)
+                Finally
+                    stopWorker.Set()
+                    If senderTask IsNot Nothing AndAlso Not senderTask.IsCompleted Then Application.DoEvents()
+                    If Not worker.Join(TimeSpan.FromSeconds(5)) Then Throw New TimeoutException("Der Empfangsthread wurde nicht beendet.")
+                End Try
+
+                If workerError IsNot Nothing Then ExceptionDispatchInfo.Capture(workerError).Throw()
             End Using
         End Sub
 

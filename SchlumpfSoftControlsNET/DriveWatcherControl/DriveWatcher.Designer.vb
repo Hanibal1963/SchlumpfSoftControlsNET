@@ -36,7 +36,7 @@
         End Sub
 
         ''' <summary>
-        ''' Gibt das Empfangsfenster und die verwalteten Komponenten frei.
+        ''' Beendet die Ereigniszustellung und gibt das Empfangsfenster und die verwalteten Komponenten frei.
         ''' </summary>
         ''' <param name="disposing">Gibt an, ob verwaltete Ressourcen freigegeben werden sollen.</param>
         <System.Diagnostics.DebuggerNonUserCode()>
@@ -44,6 +44,7 @@
 
             Try
                 If disposing Then
+                    Me.StopEventDispatch()
                     Dim nativeForm As NativeForm = NatForm
                     ' Die WithEvents-Handler vor dem Zerstören des Fensters abmelden.
                     NatForm = Nothing

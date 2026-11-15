@@ -18,13 +18,15 @@ Robustes und fehlertolerantes Laufwerks-Monitoring mit stabilen Events.
 
 ## 3. Threading klarstellen
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
-- Events optional auf UI-Thread marshallen (`SynchronizingObject`-ähnlich).
+- Über das optionale `SynchronizingObject` können alle Ereignisse auf dessen Thread zugestellt werden; bei erforderlichem Threadwechsel erfolgt dies asynchron.
 
-- Dokumentieren, auf welchem Thread Events ausgelöst werden.
+- Ohne Synchronisierungsobjekt bleiben Geräteereignisse auf dem Thread des Empfangsfensters. Ein Windows Forms-Ziel benötigt ein erstelltes Fensterhandle und eine Nachrichtenschleife.
+
+- Vorgemerkte, noch nicht begonnene Zustellungen werden bei `Dispose` verworfen; bereits laufende Rückrufe können noch beendet werden.
 
 **Nutzen:** Weniger Cross-Thread-Fehler in Host-Anwendungen.
 
@@ -66,7 +68,6 @@ Robustes und fehlertolerantes Laufwerks-Monitoring mit stabilen Events.
 
 ## 7. Empfohlene Reihenfolge
 
-1. Threading (3.)
-2. Fehlerpfade (4.)
-3. Deduplizierung (2.)
-4. Diagnoselogs (6.)
+1. Fehlerpfade (4.)
+2. Deduplizierung (2.)
+3. Diagnoselogs (6.)

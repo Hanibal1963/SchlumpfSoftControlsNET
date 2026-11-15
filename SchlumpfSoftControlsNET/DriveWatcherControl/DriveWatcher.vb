@@ -21,6 +21,8 @@ Namespace DriveWatcherControl
     ''' <see cref="DriveAdded"/> und <see cref="DriveRemoved"/> ausgelöst.<br/> Für Medienwechsel werden zusätzlich
     ''' <see cref="MediaInserted"/> und <see cref="MediaRemoved"/> bereitgestellt.<br/> Für Netzlaufwerke werden
     ''' zusätzlich <see cref="NetworkDriveAdded"/> und <see cref="NetworkDriveRemoved"/> bereitgestellt.
+    ''' Ohne <see cref="SynchronizingObject"/> werden Geräteereignisse auf dem Thread des Empfangsfensters ausgelöst.
+    ''' Mit einem Synchronisierungsobjekt können die Ereignisse auf dessen Thread zugestellt werden.
     ''' </remarks>
     <ToolboxItem(True)>
     <DesignTimeVisible(True)>
@@ -36,6 +38,10 @@ Namespace DriveWatcherControl
 
         ' Unsichtbares natives Fenster für den Empfang von WM_DEVICECHANGE.
         Private WithEvents NatForm As NativeForm
+
+        Private ReadOnly _notificationSyncRoot As New Object
+        Private _synchronizingObject As ISynchronizeInvoke
+        Private _notificationDisposed As Boolean
 
         ' Felder für eine kurze Entprellung direkt aufeinanderfolgender identischer Ereignisse.
         Private ReadOnly _DebounceSyncRoot As New Object
@@ -113,6 +119,44 @@ Namespace DriveWatcherControl
         ''' <param name="e">Informationen zum entfernten Netzlaufwerk im <see cref="DriveRemovedEventArgs"/>.</param>
         <Description("Wird ausgelöst wenn ein Netzlaufwerk entfernt wurde.")>
         Public Event NetworkDriveRemoved(sender As Object, e As DriveRemovedEventArgs)
+
+#End Region
+
+#Region "Öffentliche Eigenschaften"
+
+        ''' <summary>
+        ''' Ruft das optionale Objekt für die Zustellung der Ereignisse auf dessen Thread ab oder legt es fest.
+        ''' </summary>
+        ''' <value>Das Synchronisierungsobjekt oder <see langword="Nothing"/> für die direkte Zustellung.</value>
+        ''' <remarks>
+        ''' Ohne Synchronisierungsobjekt werden Geräteereignisse synchron auf dem Thread des Empfangsfensters
+        ''' ausgelöst. Ist <see cref="ISynchronizeInvoke.InvokeRequired"/> wahr, erfolgt die Zustellung asynchron
+        ''' über <see cref="ISynchronizeInvoke.BeginInvoke"/>. Ein Windows Forms-Steuerelement muss beim Auslösen
+        ''' bereits ein Fensterhandle besitzen und sein Thread muss Nachrichten verarbeiten. Eine Änderung gilt für
+        ''' nachfolgende Ereignisse; bereits vorgemerkte Zustellungen behalten ihr ursprüngliches Ziel.
+        ''' Beim Freigeben der Komponente werden noch nicht begonnene vorgemerkte Zustellungen verworfen; bereits
+        ''' laufende Rückrufe können noch beendet werden. Die Handlerliste wird bei der tatsächlichen Zustellung
+        ''' ausgewertet. Fehler des Synchronisierungsobjekts und der Handler werden nicht abgefangen.
+        ''' </remarks>
+        ''' <exception cref="ObjectDisposedException">Die Eigenschaft wird nach dem Freigeben der Komponente gesetzt.</exception>
+        <Browsable(False)>
+        <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+        <Description("Optionales Objekt zur Zustellung der Ereignisse auf dessen Thread.")>
+        Public Property SynchronizingObject As ISynchronizeInvoke
+            Get
+                SyncLock Me._notificationSyncRoot
+                    Return Me._synchronizingObject
+                End SyncLock
+            End Get
+            Set(value As ISynchronizeInvoke)
+                SyncLock Me._notificationSyncRoot
+#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
+                    If Me._notificationDisposed Then Throw New ObjectDisposedException(NameOf(DriveWatcher))
+#Enable Warning CA1513
+                    Me._synchronizingObject = value
+                End SyncLock
+            End Set
+        End Property
 
 #End Region
 
@@ -300,7 +344,7 @@ Namespace DriveWatcherControl
             ' Verhindert doppelte Signale bei schnellen Mehrfachmeldungen derselben Quelle.
             If Me.IsDebouncedEvent(e.DriveName, DriveEventType.Added) Then Return
 
-            RaiseEvent DriveAdded(Me, e)
+            Me.DispatchEvent(Sub() RaiseEvent DriveAdded(Me, e))
 
         End Sub
 
@@ -313,7 +357,7 @@ Namespace DriveWatcherControl
             ' Verhindert doppelte Signale bei schnellen Mehrfachmeldungen derselben Quelle.
             If Me.IsDebouncedEvent(e.DriveName, DriveEventType.Removed) Then Return
 
-            RaiseEvent DriveRemoved(Me, e)
+            Me.DispatchEvent(Sub() RaiseEvent DriveRemoved(Me, e))
 
         End Sub
 
@@ -325,7 +369,7 @@ Namespace DriveWatcherControl
 
             If Me.IsDebouncedEvent(e.DriveName, DriveEventType.MediaInserted) Then Return
 
-            RaiseEvent MediaInserted(Me, e)
+            Me.DispatchEvent(Sub() RaiseEvent MediaInserted(Me, e))
 
         End Sub
 
@@ -337,7 +381,7 @@ Namespace DriveWatcherControl
 
             If Me.IsDebouncedEvent(e.DriveName, DriveEventType.MediaRemoved) Then Return
 
-            RaiseEvent MediaRemoved(Me, e)
+            Me.DispatchEvent(Sub() RaiseEvent MediaRemoved(Me, e))
 
         End Sub
 
@@ -349,7 +393,7 @@ Namespace DriveWatcherControl
 
             If Me.IsDebouncedEvent(e.DriveName, DriveEventType.NetworkAdded) Then Return
 
-            RaiseEvent NetworkDriveAdded(Me, e)
+            Me.DispatchEvent(Sub() RaiseEvent NetworkDriveAdded(Me, e))
 
         End Sub
 
@@ -361,8 +405,56 @@ Namespace DriveWatcherControl
 
             If Me.IsDebouncedEvent(e.DriveName, DriveEventType.NetworkRemoved) Then Return
 
-            RaiseEvent NetworkDriveRemoved(Me, e)
+            Me.DispatchEvent(Sub() RaiseEvent NetworkDriveRemoved(Me, e))
 
+        End Sub
+
+        ''' <summary>
+        ''' Stellt ein Ereignis direkt oder über das konfigurierte Synchronisierungsobjekt zu.
+        ''' </summary>
+        ''' <param name="raiseEventAction">Die auszuführende Ereignisbenachrichtigung.</param>
+        Private Sub DispatchEvent(raiseEventAction As Action)
+            Dim target As ISynchronizeInvoke
+            SyncLock Me._notificationSyncRoot
+                If Me._notificationDisposed Then Return
+                target = Me._synchronizingObject
+            End SyncLock
+
+            If target IsNot Nothing Then
+                Dim targetControl As System.Windows.Forms.Control = TryCast(target, System.Windows.Forms.Control)
+                ' InvokeRequired kann ohne Fensterhandle fälschlich False zurückgeben.
+                If targetControl IsNot Nothing AndAlso Not targetControl.IsHandleCreated Then
+                    Throw New InvalidOperationException("Das Synchronisierungsobjekt muss ein erstelltes Fensterhandle besitzen.")
+                End If
+
+                If target.InvokeRequired Then
+                    target.BeginInvoke(New Action(Sub() Me.RaiseEventIfActive(raiseEventAction)), Nothing)
+                    Return
+                End If
+            End If
+
+            Me.RaiseEventIfActive(raiseEventAction)
+        End Sub
+
+        ''' <summary>
+        ''' Unterdrückt vorgemerkte Ereignisse, wenn die Komponente inzwischen freigegeben wurde.
+        ''' </summary>
+        ''' <param name="raiseEventAction">Die auszuführende Ereignisbenachrichtigung.</param>
+        Private Sub RaiseEventIfActive(raiseEventAction As Action)
+            SyncLock Me._notificationSyncRoot
+                If Me._notificationDisposed Then Return
+            End SyncLock
+            raiseEventAction()
+        End Sub
+
+        ''' <summary>
+        ''' Beendet die Ereigniszustellung und entfernt die Referenz auf das Synchronisierungsobjekt.
+        ''' </summary>
+        Private Sub StopEventDispatch()
+            SyncLock Me._notificationSyncRoot
+                Me._notificationDisposed = True
+                Me._synchronizingObject = Nothing
+            End SyncLock
         End Sub
 
         ''' <summary>

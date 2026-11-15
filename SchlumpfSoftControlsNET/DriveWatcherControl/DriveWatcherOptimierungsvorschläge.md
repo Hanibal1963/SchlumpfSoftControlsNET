@@ -42,13 +42,15 @@ Robustes und fehlertolerantes Laufwerks-Monitoring mit stabilen Events.
 
 ## 5. Lifecycle und Cleanup schärfen
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
-- Fensterhandle/Message-Hook sauber erstellen und in `Dispose` freigeben.
+- Pro Instanz wird genau ein Empfangsfenster erstellt; eine zusätzliche Anmeldung für die standardmäßigen Volume-Broadcasts ist nicht erforderlich.
 
-- Doppelte Registrierung verhindern.
+- Die Ereignishandler werden vor der Freigabe des Fensters abgemeldet. Ein vorhandenes Fensterhandle kann nicht doppelt erstellt und nach `Dispose` nicht erneut registriert werden.
+
+- Schlägt das Hinzufügen zu einem Komponentencontainer fehl, werden bereits angelegte Ressourcen freigegeben. Der Container kann eine erfolgreich hinzugefügte Instanz ebenfalls freigeben.
 
 **Nutzen:** Keine Handle-Leaks bei dynamischem Laden/Entladen.
 
@@ -64,8 +66,7 @@ Robustes und fehlertolerantes Laufwerks-Monitoring mit stabilen Events.
 
 ## 7. Empfohlene Reihenfolge
 
-1. Lifecycle/Cleanup
-2. Threading
-3. Fehlerpfade
-4. Deduplizierung
-5. Diagnoselogs
+1. Threading (3.)
+2. Fehlerpfade (4.)
+3. Deduplizierung (2.)
+4. Diagnoselogs (6.)

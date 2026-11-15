@@ -20,7 +20,8 @@ DriveWatcher Control wurde mit folgenden Geräten getestet:
 
 ## 1. Konstruktoren
 
-- `New()`: Initialisiert eine neue Instanz von `DriveWatcher` und richtet den internen Empfang von Geräteänderungen ein.
+- `New()`: Initialisiert eine neue Instanz von `DriveWatcher` und erstellt ein Fenster für den Empfang von Geräteänderungen. Falls das Fenster nicht erstellt werden kann, kann eine `Win32Exception` auftreten.
+- `New(container As IContainer)`: Initialisiert die Instanz und fügt sie dem angegebenen Komponentencontainer hinzu. `Nothing` ist zulässig und fügt die Instanz keinem Container hinzu. Fehler beim Hinzufügen werden weitergegeben; bereits angelegte Ressourcen werden dabei freigegeben. Auch bei diesem Konstruktor kann die Fenstererstellung eine `Win32Exception` auslösen.
 
 ## 2. Ereignisse
 
@@ -37,7 +38,7 @@ DriveWatcher Control wurde mit folgenden Geräten getestet:
 
 ## 4. Funktionen
 
-- Keine zusätzlichen öffentlichen Funktionen dokumentiert.
+- `Dispose()`: Meldet die internen Ereignishandler ab und gibt das Empfangsfenster sowie die verwalteten Komponenten frei. Ein mehrfacher Aufruf ist zulässig. Ein Komponentencontainer gibt die bei ihm angemeldete Instanz ebenfalls frei, wenn er selbst freigegeben wird.
 
 ## 5. Hilfstypen/Strukturen
 
@@ -46,6 +47,9 @@ DriveWatcher Control wurde mit folgenden Geräten getestet:
 ## 6. Hinweise
 
 - Das Control reagiert auf Laufwerksänderungen des Betriebssystems und meldet diese über die genannten Ereignisse.
+- Jede Instanz besitzt genau ein eigenes unsichtbares Empfangsfenster. Windows sendet die standardmäßigen Volume-Benachrichtigungen an dieses Fenster; eine zusätzliche Geräteanmeldung ist dafür nicht erforderlich.
+- Das Fenster wird auf dem Thread erstellt, der den Konstruktor aufruft. Für den automatischen Empfang muss dieser Thread eine Windows-Nachrichtenschleife betreiben. `Dispose()` sollte auf demselben Thread aufgerufen werden, damit das Fenster unmittelbar zerstört wird; bei einem Aufruf von einem anderen Thread kann sich die Zerstörung bis zur Verarbeitung einer Fensternachricht verzögern.
+- Die Komponente ist für Windows und Windows Forms vorgesehen.
 
 ## [7. Optimierungsvorschläge](DriveWatcherOptimierungsvorschläge.md)
 

@@ -30,7 +30,7 @@ Namespace DriveWatcherControl
 
 #Region "Variablen"
 
-        Private disposedValue As Boolean
+        Private _disposedValue As Boolean
 
 #End Region
 
@@ -177,6 +177,19 @@ Namespace DriveWatcherControl
         End Sub
 
         ''' <summary>
+        ''' Erstellt das Empfangsfenster, solange die Instanz nicht freigegeben wurde.
+        ''' </summary>
+        ''' <param name="cp">Die Parameter für das native Fenster.</param>
+        ''' <exception cref="ObjectDisposedException">Die Instanz wurde bereits freigegeben.</exception>
+        ''' <exception cref="InvalidOperationException">Für diese Instanz existiert bereits ein Fensterhandle.</exception>
+        Public Overrides Sub CreateHandle(cp As CreateParams)
+#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
+            If Me._disposedValue Then Throw New ObjectDisposedException(NameOf(NativeForm))
+#Enable Warning CA1513
+            MyBase.CreateHandle(cp)
+        End Sub
+
+        ''' <summary>
         ''' Gibt Ressourcen der Instanz frei.
         ''' </summary>
         Public Sub Dispose() Implements IDisposable.Dispose
@@ -192,14 +205,14 @@ Namespace DriveWatcherControl
         ''' <see langword="False"/>.
         ''' </param>
         Protected Overridable Sub Dispose(disposing As Boolean)
-            If Not Me.disposedValue Then
+            If Not Me._disposedValue Then
                 If disposing Then
                     ' Das von CreateHandle erzeugte Fensterhandle freigeben.
                     ' Danach werden keine weiteren Nachrichten mehr empfangen.
                     Me.DestroyHandle()
                 End If
 
-                Me.disposedValue = True
+                Me._disposedValue = True
             End If
         End Sub
 

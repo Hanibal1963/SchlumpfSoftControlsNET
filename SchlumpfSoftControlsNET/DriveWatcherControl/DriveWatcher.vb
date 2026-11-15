@@ -35,7 +35,7 @@ Namespace DriveWatcherControl
 #Region "Variablen"
 
         ' Unsichtbares natives Fenster für den Empfang von WM_DEVICECHANGE.
-        Private WithEvents NatForm As New NativeForm
+        Private WithEvents NatForm As NativeForm
 
         ' Felder für eine kurze Entprellung direkt aufeinanderfolgender identischer Ereignisse.
         Private ReadOnly _DebounceSyncRoot As New Object
@@ -121,10 +121,17 @@ Namespace DriveWatcherControl
         ''' <summary>
         ''' Initialisiert eine neue Instanz von <see cref="DriveWatcher"/>.
         ''' </summary>
+        ''' <remarks>
+        ''' Das Empfangsfenster wird auf dem aufrufenden Thread erstellt und sollte auf demselben Thread mit
+        ''' <see cref="Component.Dispose()"/> freigegeben werden.
+        ''' </remarks>
+        ''' <exception cref="Win32Exception">Das Empfangsfenster konnte nicht erstellt werden.</exception>
         Public Sub New()
 
             MyBase.New()
             Me.InitializeComponent()
+            ' WithEvents registriert die Handler einmalig für dieses Empfangsfenster.
+            Me.NatForm = New NativeForm()
 
         End Sub
 

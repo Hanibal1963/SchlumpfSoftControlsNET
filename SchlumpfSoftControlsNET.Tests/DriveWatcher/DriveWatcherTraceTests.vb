@@ -17,6 +17,7 @@ Imports Microsoft.VisualStudio.TestTools.UnitTesting
 Imports SchlumpfSoft.ControlsNET.DriveWatcherControl
 
 Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
+
     <STATestClass>
     <DoNotParallelize>
     Public NotInheritable Class DriveWatcherTraceTests

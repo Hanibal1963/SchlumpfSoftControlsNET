@@ -14,6 +14,7 @@ Imports SchlumpfSoft.ControlsNET.DriveWatcherControl
 Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
     <TestClass>
     Public NotInheritable Class DriveEventDebouncerTests
+
         <TestMethod>
         Public Sub IsDuplicate_InterleavedDrivesAndTypes_TracksEachIndependently()
             Dim now As Long = 1000
@@ -65,5 +66,6 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             cache.Clear()
             Assert.IsFalse(cache.IsDuplicate("E:\", DriveEventType.Added))
         End Sub
+
     End Class
 End Namespace

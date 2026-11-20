@@ -13,6 +13,7 @@ Imports Microsoft.VisualStudio.TestTools.UnitTesting
 Imports SchlumpfSoft.ControlsNET.DriveWatcherControl
 
 Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
+
     <TestClass>
     Public NotInheritable Class DriveWatcherSnapshotTests
         <TestMethod>
@@ -91,8 +92,8 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         Public Sub Read_FactoryFailure_RetainsNameAndReportsFailure()
             Dim failure As New ArgumentException("invalid drive")
             Dim factory As Func(Of String, IDriveInfoSource) = Function(name)
-                Throw failure
-            End Function
+                                                                   Throw failure
+                                                               End Function
             Dim result = DriveInfoSnapshotReader.Read("X:\", factory)
             Assert.AreEqual("X:\", result.DriveName)
             Assert.AreSame(failure, result.ReadErrors("DriveInfo"))

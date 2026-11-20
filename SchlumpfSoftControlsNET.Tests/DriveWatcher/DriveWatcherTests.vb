@@ -10,8 +10,10 @@ Imports Microsoft.VisualStudio.TestTools.UnitTesting
 Imports SchlumpfSoft.ControlsNET.DriveWatcherControl
 
 Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
+
     <TestClass>
     Public Class DriveWatcherTests
+
         <TestMethod>
         Public Sub DriveAddedEventArgs_DefaultConstructor_InitializesInstance()
             Dim args As New DriveAddedEventArgs()
@@ -160,5 +162,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 MyBase.OnNetworkDriveAdded(e)
             End Sub
         End Class
+
     End Class
+
 End Namespace

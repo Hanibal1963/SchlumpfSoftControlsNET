@@ -19,6 +19,38 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
     <STATestClass>
     Public Class ColorProgressBarTests
 
+        ''' <summary>Prüft Standardwerte, Formatvalidierung und die Zeichnung der optionalen Beschriftung.</summary>
+        <TestMethod>
+        Public Sub ProgressText_FormatsAndVisibilityChangeRendering()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(220, 40)
+                control.IsGlossy = False
+                control.Value = 5
+                Assert.IsFalse(control.ShowText)
+                Assert.AreEqual(ColorProgressBarTextFormat.Percentage, control.TextFormat)
+                Using withoutText As Bitmap = RenderControl(control)
+                    control.ShowText = True
+                    Using percentage As Bitmap = RenderControl(control)
+                        control.TextFormat = ColorProgressBarTextFormat.Value
+                        Using value As Bitmap = RenderControl(control)
+                            Dim visiblePixels As Integer = 0
+                            Dim differentPixels As Integer = 0
+                            For y As Integer = 1 To control.Height - 2
+                                For x As Integer = 1 To control.Width - 2
+                                    If withoutText.GetPixel(x, y) <> percentage.GetPixel(x, y) Then visiblePixels += 1
+                                    If percentage.GetPixel(x, y) <> value.GetPixel(x, y) Then differentPixels += 1
+                                Next
+                            Next
+                            Assert.IsGreaterThan(0, visiblePixels)
+                            Assert.IsGreaterThan(0, differentPixels)
+                        End Using
+                    End Using
+                End Using
+                Assert.ThrowsExactly(Of InvalidEnumArgumentException)(Sub() control.TextFormat = CType(-1, ColorProgressBarTextFormat))
+                Assert.AreEqual(ColorProgressBarTextFormat.Value, control.TextFormat)
+            End Using
+        End Sub
+
         <TestMethod>
         Public Sub Value_IsClampedToValidRange()
             Using control As New ColorProgressBar()

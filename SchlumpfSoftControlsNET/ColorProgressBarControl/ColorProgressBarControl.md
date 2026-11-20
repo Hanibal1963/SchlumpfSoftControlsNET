@@ -48,6 +48,10 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 - `IsGlossy`: Legt fest, ob ein Glanzeffekt über dem gefüllten und dem leeren Fortschrittsbereich angezeigt wird.
 
+- `ShowText` (`Boolean`, Standardwert `False`): Zeigt optional eine mittige Fortschrittsbeschriftung an.
+
+- `TextFormat` (`ProgressTextFormat`, Standardwert `Percentage`): Wählt Prozent (`Percentage`) oder aktuellen Wert und Maximum (`Value`). Nicht definierte Werte lösen `InvalidEnumArgumentException` aus.
+
 - `AccessibleName` (geerbt): Ein expliziter Name überschreibt die zugeordnete Beschriftung und den lokalisierten Standardnamen. Eine leere Zeichenfolge bleibt ein explizit leerer Name; `Nothing` aktiviert die Standardermittlung.
 
 - `AccessibleDescription` (geerbt): Eine explizite Beschreibung überschreibt die lokalisierte Standardbeschreibung. `Nothing` aktiviert die Standardbeschreibung.
@@ -74,7 +78,7 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 ## 5. Hilfstypen/Strukturen
 
-- Keine zusätzlichen öffentlichen Hilfstypen oder Strukturen dokumentiert.
+- `ColorProgressBarTextFormat`: Enumeration mit `Percentage` und `Value` für die sichtbare Beschriftung.
 
 ## 6. Hinweise
 
@@ -84,7 +88,9 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 - Ohne expliziten Namen wird eine zugeordnete WinForms-Beschriftung verwendet, falls vorhanden; ansonsten wird ein lokalisierter Standardname bereitgestellt. Die Standardbeschreibung wird unabhängig davon verwendet, wenn keine explizite Beschreibung gesetzt ist. Die Standardtexte richten sich nach `CurrentUICulture`: Deutsch und Englisch werden unterstützt, andere Sprachen verwenden Deutsch. Sie werden nicht als feste Eigenschaftswerte im Designer serialisiert.
 
-- Der Accessibility-Prozentwert wird anhand von `CurrentCulture` formatiert und auf ganze Prozent abgerundet; `100 %` wird erst beim Maximum ausgegeben. Die sichtbare Darstellung erhält kein Text-Overlay.
+- Der Accessibility-Prozentwert und die optionale sichtbare Prozentanzeige werden anhand von `CurrentCulture` formatiert und auf ganze Prozent abgerundet; `100 %` wird erst beim Maximum ausgegeben. Das Wertformat zeigt den aktuellen Wert und das Maximum als `Wert / Maximum`.
+
+- Die Beschriftung wird auf die Innenfläche begrenzt und bei Platzmangel gekürzt. Ihre Farbe wird für den gefüllten und den leeren Bereich separat als Schwarz oder Weiß anhand der Hintergrundhelligkeit gewählt. Bei transparenten Farben wird die Hintergrundfarbe des übergeordneten Controls berücksichtigt; Hintergrundbilder und der Glanzeffekt bleiben bei der Kontrastberechnung unberücksichtigt.
 
 - UI Automation bietet die schreibgeschützten Muster `RangeValue` (Minimum `0`, Maximum `ProgressMaximumValue`, aktueller `Value`) und `Value` (Prozenttext). Bei Änderungen werden MSAA- und UI-Automation-Clients benachrichtigt; ohne Fenster-Handle wird kein Handle allein für eine Benachrichtigung erzeugt.
 

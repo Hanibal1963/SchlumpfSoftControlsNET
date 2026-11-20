@@ -16,6 +16,7 @@ Imports System.Windows.Automation.Provider
 
 Namespace ColorProgressBarControl
 
+
     ''' <summary>Ein benutzerdefiniertes Windows Forms-Steuerelement zur Anzeige eines farbigen Fortschrittsbalkens mit
     ''' optionalem Rahmen und Glanzeffekt.</summary>
     <Description("Control zum Anzeigen eines farbigen Fortschrittbalkens.")>
@@ -47,6 +48,12 @@ Namespace ColorProgressBarControl
 
         ''' <summary>Gibt an, ob der Glanzeffekt angezeigt wird.</summary>
         Private _IsGlossy As Boolean = True
+
+        ''' <summary>Gibt an, ob der Fortschritt als Text angezeigt wird.</summary>
+        Private _showText As Boolean
+
+        ''' <summary>Bestimmt das Format der Fortschrittsbeschriftung.</summary>
+        Private _textFormat As ColorProgressBarTextFormat = ColorProgressBarTextFormat.Percentage
 
         ''' <summary>Farbe des gefüllten Bereichs.</summary>
         Private _BarColor As System.Drawing.Color = Color.Blue
@@ -99,6 +106,42 @@ Namespace ColorProgressBarControl
 #End Region
 
 #Region "öffentliche Eigenschaften"
+
+        ''' <summary>Gibt an, ob der Fortschritt mittig als Text angezeigt wird; standardmäßig ausgeschaltet.</summary>
+        <Browsable(True)>
+        <Category("Appearance")>
+        <DefaultValue(False)>
+        Public Property ShowText As Boolean
+            Get
+                Return Me._showText
+            End Get
+            Set(value As Boolean)
+                If Me._showText <> value Then
+                    Me._showText = value
+                    Me.Invalidate()
+                End If
+            End Set
+        End Property
+
+        ''' <summary>Gibt das Format der sichtbaren Fortschrittsbeschriftung an.</summary>
+        ''' <exception cref="InvalidEnumArgumentException">Das Format ist kein definierter Enumerationswert.</exception>
+        <Browsable(True)>
+        <Category("Appearance")>
+        <DefaultValue(ColorProgressBarTextFormat.Percentage)>
+        Public Property TextFormat As ColorProgressBarTextFormat
+            Get
+                Return Me._textFormat
+            End Get
+            Set(value As ColorProgressBarTextFormat)
+                If Not [Enum].IsDefined(GetType(ColorProgressBarTextFormat), value) Then
+                    Throw New InvalidEnumArgumentException(NameOf(value), CInt(value), GetType(ColorProgressBarTextFormat))
+                End If
+                If Me._textFormat <> value Then
+                    Me._textFormat = value
+                    Me.Invalidate()
+                End If
+            End Set
+        End Property
 
         ''' <summary>
         ''' Gibt den aktuellen Fortschrittswert zurück oder legt diesen fest (Bereich: 0 bis
@@ -554,6 +597,54 @@ Namespace ColorProgressBarControl
 
         End Function
 
+        ''' <summary>Zeichnet den zentrierten Text getrennt über beiden Fortschrittsbereichen.</summary>
+        ''' <param name="graphics">Die Zeichenfläche des Controls.</param>
+        Private Sub DrawProgressText(graphics As Graphics)
+            If Me._cachedContentBounds.Width <= 0 OrElse Me._cachedContentBounds.Height <= 0 Then Return
+
+            Dim text As String = If(Me._textFormat = ColorProgressBarTextFormat.Percentage,
+                FormatAccessibleProgress(Me._ProgressValue, Me._MaxValue),
+                String.Format(CultureInfo.CurrentCulture, "{0} / {1}", Me._ProgressValue, Me._MaxValue))
+            Dim flags As TextFormatFlags = TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter Or
+                TextFormatFlags.SingleLine Or TextFormatFlags.EndEllipsis Or TextFormatFlags.NoPadding Or
+                TextFormatFlags.PreserveGraphicsClipping
+            Me.DrawTextRegion(graphics, text, Me._cachedFillBounds, Me._BarColor, flags)
+            Me.DrawTextRegion(graphics, text, Me._cachedEmptyBounds, Me._EmptyColor, flags)
+        End Sub
+
+        ''' <summary>Zeichnet denselben zentrierten Text auf einen Bereich begrenzt mit passender Kontrastfarbe.</summary>
+        ''' <param name="graphics">Die Zeichenfläche des Controls.</param>
+        ''' <param name="text">Die Fortschrittsbeschriftung.</param>
+        ''' <param name="bounds">Der zu zeichnende Fortschrittsbereich.</param>
+        ''' <param name="background">Die Farbe des Fortschrittsbereichs.</param>
+        ''' <param name="flags">Die gemeinsame Textausrichtung.</param>
+        Private Sub DrawTextRegion(graphics As Graphics, text As String, bounds As Rectangle, background As Color, flags As TextFormatFlags)
+            If bounds.Width <= 0 OrElse bounds.Height <= 0 Then Return
+            Dim state As Drawing2D.GraphicsState = graphics.Save()
+            Try
+                graphics.SetClip(bounds, Drawing2D.CombineMode.Intersect)
+                TextRenderer.DrawText(graphics, text, Me.Font, Me._cachedContentBounds, Me.GetContrastColor(background), flags)
+            Finally
+                graphics.Restore(state)
+            End Try
+        End Sub
+
+        ''' <summary>Wählt Schwarz oder Weiß anhand der zusammengesetzten Hintergrundhelligkeit.</summary>
+        ''' <param name="background">Die Farbe des Fortschrittsbereichs.</param>
+        ''' <returns>Die kontrastreichere Textfarbe.</returns>
+        Private Function GetContrastColor(background As Color) As Color
+            Dim baseColor As Color = If(Me.Parent Is Nothing, SystemColors.Control, Me.Parent.BackColor)
+            Dim alpha As Double = background.A / 255.0
+            Dim red As Double = (background.R * alpha + baseColor.R * (1 - alpha)) / 255.0
+            Dim green As Double = (background.G * alpha + baseColor.G * (1 - alpha)) / 255.0
+            Dim blue As Double = (background.B * alpha + baseColor.B * (1 - alpha)) / 255.0
+            red = If(red <= 0.04045, red / 12.92, Math.Pow((red + 0.055) / 1.055, 2.4))
+            green = If(green <= 0.04045, green / 12.92, Math.Pow((green + 0.055) / 1.055, 2.4))
+            blue = If(blue <= 0.04045, blue / 12.92, Math.Pow((blue + 0.055) / 1.055, 2.4))
+            Dim luminance As Double = 0.2126 * red + 0.7152 * green + 0.0722 * blue
+            Return If(luminance > 0.179, Color.Black, Color.White)
+        End Function
+
         ''' <summary>
         ''' Liest einen lokalisierten Accessibility-Text aus den Control-Ressourcen.
         ''' </summary>
@@ -618,6 +709,8 @@ Namespace ColorProgressBarControl
                 End If
                 e.Graphics.FillRectangle(Me._glossBrush, Me._cachedGlossBounds)
             End If
+
+            If Me._showText Then Me.DrawProgressText(e.Graphics)
 
             MyBase.OnPaint(e)
         End Sub

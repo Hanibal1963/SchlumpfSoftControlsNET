@@ -10,7 +10,7 @@
 
 ## 2. Textanzeige integrieren
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; umgesetzt
 
 **Vorschlag:** Prozent-/Werttext im Balken (`ShowText`, `TextFormat`).
 

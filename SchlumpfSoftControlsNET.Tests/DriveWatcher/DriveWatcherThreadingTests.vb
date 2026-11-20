@@ -14,6 +14,7 @@ Imports Microsoft.VisualStudio.TestTools.UnitTesting
 Imports SchlumpfSoft.ControlsNET.DriveWatcherControl
 
 Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
+
     <STATestClass>
     Public Class DriveWatcherThreadingTests
 
@@ -21,13 +22,13 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         Public Sub WithoutSynchronizingObject_EventsRunSynchronouslyOnCallingThread()
             Using watcher As New TestDriveWatcher()
                 Assert.IsNull(watcher.SynchronizingObject)
-                Dim testThread As Integer = Thread.CurrentThread.ManagedThreadId
+                Dim testThread As Integer = Environment.CurrentManagedThreadId
                 Dim sourceThread As Integer = 0
                 Dim handlerThread As Integer = 0
-                AddHandler watcher.DriveRemoved, Sub(sender, e) handlerThread = Thread.CurrentThread.ManagedThreadId
+                AddHandler watcher.DriveRemoved, Sub(sender, e) handlerThread = Environment.CurrentManagedThreadId
 
                 Dim work As Task = Task.Run(Sub()
-                                                sourceThread = Thread.CurrentThread.ManagedThreadId
+                                                sourceThread = Environment.CurrentManagedThreadId
                                                 watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\"))
                                             End Sub)
                 Assert.IsTrue(work.Wait(TimeSpan.FromSeconds(5)))

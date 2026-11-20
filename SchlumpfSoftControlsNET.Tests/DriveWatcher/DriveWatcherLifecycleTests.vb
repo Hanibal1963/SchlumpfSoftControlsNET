@@ -18,6 +18,7 @@ Imports Microsoft.VisualStudio.TestTools.UnitTesting
 Imports SchlumpfSoft.ControlsNET.DriveWatcherControl
 
 Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
+
     <STATestClass>
     Public Class DriveWatcherLifecycleTests
 
@@ -255,7 +256,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         Public Sub NativeDeviceMessage_RaisesEventOnExpectedThread(useSynchronizingControl As Boolean)
             Using target As New Control(), ready As New ManualResetEventSlim(), stopWorker As New ManualResetEventSlim(), received As New ManualResetEventSlim()
                 Dim targetHandle As IntPtr = target.Handle
-                Dim targetThread As Integer = Thread.CurrentThread.ManagedThreadId
+                Dim targetThread As Integer = Environment.CurrentManagedThreadId
                 Dim sourceThread As Integer = 0
                 Dim handlerThread As Integer = 0
                 Dim sourceHandle As IntPtr = IntPtr.Zero
@@ -273,10 +274,10 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                                                          Sub(sender, e)
                                                              eventSender = sender
                                                              driveName = e.DriveName
-                                                             handlerThread = Thread.CurrentThread.ManagedThreadId
+                                                             handlerThread = Environment.CurrentManagedThreadId
                                                              received.Set()
                                                          End Sub
-                                                     sourceThread = Thread.CurrentThread.ManagedThreadId
+                                                     sourceThread = Environment.CurrentManagedThreadId
                                                      sourceHandle = GetNativeWindow(watcher).Handle
                                                      ready.Set()
                                                      While Not stopWorker.Wait(5)

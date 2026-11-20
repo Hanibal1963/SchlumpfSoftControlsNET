@@ -140,14 +140,14 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Using control As New ColorProgressBar()
                     control.Value = 8
                     Dim accessible As AccessibleObject = control.AccessibilityObject
-                    Assert.AreEqual((0.8R).ToString("P0", CultureInfo.CurrentCulture), accessible.Value)
+                    Assert.AreEqual(0.8R.ToString("P0", CultureInfo.CurrentCulture), accessible.Value)
 
                     control.ProgressMaximumValue = 20
-                    Assert.AreEqual((0.4R).ToString("P0", CultureInfo.CurrentCulture), accessible.Value)
+                    Assert.AreEqual(0.4R.ToString("P0", CultureInfo.CurrentCulture), accessible.Value)
 
                     control.ProgressMaximumValue = 4
-                    Assert.AreEqual((1.0R).ToString("P0", CultureInfo.CurrentCulture), accessible.Value)
-                    Assert.ThrowsExactly(Of InvalidOperationException)(Sub() accessible.Value = "50%")
+                    Assert.AreEqual(1.0R.ToString("P0", CultureInfo.CurrentCulture), accessible.Value)
+                    Dim unused = Assert.ThrowsExactly(Of InvalidOperationException)(Sub() accessible.Value = "50%")
                     Assert.AreEqual(4, control.Value)
                 End Using
             Finally
@@ -218,7 +218,9 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                         Assert.AreEqual(0, observed.Item2)
                     Next
                 Finally
-                    If Not UnhookWinEvent(hookHandle) Then Throw New Win32Exception(Marshal.GetLastWin32Error())
+                    If Not UnhookWinEvent(hookHandle) Then
+                        Throw New Win32Exception(Marshal.GetLastWin32Error())
+                    End If
                     GC.KeepAlive(callback)
                 End Try
             End Using
@@ -238,7 +240,9 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Dim state As AccessibleStates = CType(Convert.ToInt32(accessible.accState(0), CultureInfo.InvariantCulture), AccessibleStates)
                 Assert.AreEqual(AccessibleStates.ReadOnly, state And AccessibleStates.ReadOnly)
             Finally
-                If Marshal.IsComObject(native) Then Marshal.ReleaseComObject(native)
+                If Marshal.IsComObject(native) Then
+                    Dim unused = Marshal.ReleaseComObject(native)
+                End If
             End Try
         End Sub
 
@@ -286,8 +290,8 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                                                      Assert.IsTrue(Double.IsNaN(range.Current.SmallChange))
                                                      Assert.AreEqual("10%", text.Current.Value)
                                                      Assert.IsTrue(text.Current.IsReadOnly)
-                                                     Assert.ThrowsExactly(Of InvalidOperationException)(Sub() range.SetValue(5))
-                                                     Assert.ThrowsExactly(Of InvalidOperationException)(Sub() text.SetValue("50%"))
+                                                     Dim unused = Assert.ThrowsExactly(Of InvalidOperationException)(Sub() range.SetValue(5))
+                                                     Dim unused1 = Assert.ThrowsExactly(Of InvalidOperationException)(Sub() text.SetValue("50%"))
 
                                                      Automation.AddAutomationPropertyChangedEventHandler(element, TreeScope.Element, handler,
                                                          RangeValuePattern.ValueProperty, RangeValuePattern.MaximumProperty, ValuePattern.ValueProperty)
@@ -315,8 +319,9 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                                                      ready.Set()
                                                      completed.Set()
                                                  End Try
-                                             End Sub)
-                    client.IsBackground = True
+                                             End Sub) With {
+                        .IsBackground = True
+                                             }
                     client.SetApartmentState(ApartmentState.MTA)
                     client.Start()
 
@@ -383,6 +388,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
         End Sub
 
         <TestMethod>
+        <CodeAnalysis.SuppressMessage("Style", "IDE0058:Der Ausdruckswert wird niemals verwendet.", Justification:="<Ausstehend>")>
         Public Sub UiAutomation_RecreatesProviderAfterHandleRecreation()
             Using form As New Form(), control As New TestableColorProgressBar()
                 control.Value = 5
@@ -406,7 +412,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Assert.AreSame(control, ownerField.GetValue(originalProvider))
 
                 control.AccessibleRole = AccessibleRole.Slider
-                Assert.ThrowsExactly(Of ElementNotAvailableException)(
+                Dim unused = Assert.ThrowsExactly(Of ElementNotAvailableException)(
                     Sub() originalProvider.GetPatternProvider(RangeValuePatternIdentifiers.Pattern.Id))
                 RunAutomationClient(Sub()
                                         Dim element As AutomationElement = AutomationElement.FromHandle(originalHandle)
@@ -423,7 +429,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
 
                 control.RecreateHandleForTest()
                 Assert.IsTrue(control.IsHandleCreated)
-                Assert.ThrowsExactly(Of ElementNotAvailableException)(
+                Dim unused1 = Assert.ThrowsExactly(Of ElementNotAvailableException)(
                     Sub() originalProvider.GetPatternProvider(RangeValuePatternIdentifiers.Pattern.Id))
                 Assert.IsNull(providerField.GetValue(control))
                 Assert.IsNull(ownerField.GetValue(originalProvider))
@@ -459,8 +465,9 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                                              Finally
                                                  completed.Set()
                                              End Try
-                                         End Sub)
-                client.IsBackground = True
+                                         End Sub) With {
+                    .IsBackground = True
+                                         }
                 client.SetApartmentState(ApartmentState.MTA)
                 client.Start()
                 PumpUntil(Function() completed.IsSet, "UI-Automation-Client")

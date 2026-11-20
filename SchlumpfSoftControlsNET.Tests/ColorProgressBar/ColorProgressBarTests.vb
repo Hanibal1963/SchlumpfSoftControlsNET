@@ -685,7 +685,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Using image As New Bitmap(100, 20)
                     Using graphics As Graphics = Graphics.FromImage(image)
                         Using args As New PaintEventArgs(graphics, New Rectangle(Point.Empty, image.Size))
-                            Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() first.PaintForTest(args))
+                            Dim unused = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() first.PaintForTest(args))
                         End Using
                     End Using
                 End Using
@@ -754,7 +754,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                             Dim glossBrush As SolidBrush = CachedBrush(control, "_glossBrush")
                             Dim onDisposed As EventHandler = Sub(sender, e)
                                                                  disposedEventCount += 1
-                                                                 Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.PaintForTest(args))
+                                                                 Dim unused = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.PaintForTest(args))
                                                                  Assert.IsNull(CachedBrush(control, "_barBrush"))
                                                                  Assert.IsNull(CachedBrush(control, "_emptyBrush"))
                                                                  Assert.IsNull(CachedBrush(control, "_glossBrush"))
@@ -1236,7 +1236,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
             Assert.IsNotNull(brush)
             Using image As New Bitmap(1, 1)
                 Using graphics As Graphics = Graphics.FromImage(image)
-                    Assert.ThrowsExactly(Of ArgumentException)(Sub() graphics.FillRectangle(brush, 0, 0, 1, 1))
+                    Dim unused = Assert.ThrowsExactly(Of ArgumentException)(Sub() graphics.FillRectangle(brush, 0, 0, 1, 1))
                 End Using
             End Using
         End Sub

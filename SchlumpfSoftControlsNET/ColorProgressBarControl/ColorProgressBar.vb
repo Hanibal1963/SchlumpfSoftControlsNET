@@ -684,9 +684,7 @@ Namespace ColorProgressBarControl
 
             Dim provider As ProgressAutomationProvider = Me._uiaProvider
             Me._uiaProvider = Nothing
-            If provider IsNot Nothing Then
-                provider.Disconnect()
-            End If
+            provider?.Disconnect()
             MyBase.OnHandleDestroyed(e)
 
         End Sub

@@ -24,121 +24,6 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
     <TestClass>
     Partial Public Class AniGifTests
 
-        ''' <summary>Prüft Framewechsel beim Suchen, Timer und Segmentende einschließlich Ereignisreihenfolge.</summary>
-        <TestMethod>
-        Public Sub PlaybackEvents_ReportFrameChangesAndCompletion()
-            Using control As New AniGif()
-                Dim changes As New List(Of String)()
-                Dim events As New List(Of String)()
-                AddHandler control.FrameChanged, Sub(sender, e) changes.Add($"{e.PreviousFrame}:{e.CurrentFrame}")
-                AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
-                AddHandler control.PlaybackCompleted, Sub(sender, e) events.Add("completed")
-                control.SeekFrame(1)
-                control.SeekFrame(1)
-                control.PlayRangeStart = 1
-                control.PlayRangeEnd = 2
-                control.LoopCount = 1
-                control.StartAnimation()
-                InvokeTimerTick(control)
-                InvokeTimerTick(control)
-                InvokeTimerTick(control)
-                CollectionAssert.AreEqual(New String() {"0:1", "1:2"}, changes.ToArray())
-                CollectionAssert.AreEqual(New String() {"stopped", "completed"}, events.ToArray())
-                Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
-            End Using
-        End Sub
-
-        ''' <summary>Prüft, dass Handler beim Framewechsel die Wiedergabe sicher umsteuern dürfen.</summary>
-        <TestMethod>
-        Public Sub PlaybackEvents_FrameHandlerCanSeekAndDispose()
-            Using control As New AniGif()
-                Dim changes As New List(Of Integer)()
-                AddHandler control.FrameChanged, Sub(sender, e)
-                                                     changes.Add(e.CurrentFrame)
-                                                     If e.CurrentFrame = 1 Then
-                                                         control.SeekFrame(2)
-                                                     Else
-                                                         control.Dispose()
-                                                     End If
-                                                 End Sub
-                control.StartAnimation()
-                InvokeTimerTick(control)
-                CollectionAssert.AreEqual(New Integer() {1, 2}, changes.ToArray())
-                Assert.IsTrue(control.IsDisposed)
-            End Using
-        End Sub
-
-        ''' <summary>Prüft, dass Fehler der Frameauswahl gemeldet und unverändert weitergegeben werden.</summary>
-        <TestMethod>
-        Public Sub PlaybackEvents_ReportsFrameSelectionErrorWithoutHidingException()
-            Using control As New AniGif()
-                Dim reported As Exception = Nothing
-                Dim changes As Integer = 0
-                AddHandler control.PlaybackError, Sub(sender, e) reported = e.GetException()
-                AddHandler control.FrameChanged, Sub(sender, e) changes += 1
-                control.Gif.Dispose()
-                Dim actual As ArgumentException = Assert.ThrowsExactly(Of ArgumentException)(Sub() control.SeekFrame(1))
-                Assert.AreSame(reported, actual)
-                Assert.AreEqual(0, changes)
-                Assert.AreEqual(0, GetCurrentFrame(control))
-            End Using
-        End Sub
-
-        ''' <summary>Prüft das Ende zweier Bereichsdurchläufe, eine Pause dazwischen und den anschließenden Neustart am Bereichsanfang.</summary>
-        <TestMethod>
-        Public Sub PlaybackRange_FiniteLoopsStopAfterLastFrameAndRestartAtBeginning()
-            Using control As New AniGif()
-                control.PlayRangeStart = 1
-                control.PlayRangeEnd = 2
-                control.LoopCount = 2
-                control.StartAnimation()
-                Assert.AreEqual(1, GetCurrentFrame(control))
-                InvokeTimerTick(control)
-                Assert.AreEqual(2, GetCurrentFrame(control))
-                InvokeTimerTick(control)
-                Assert.AreEqual(1, GetCurrentFrame(control))
-                control.PauseAnimation()
-                control.ResumeAnimation()
-                InvokeTimerTick(control)
-                Assert.AreEqual(2, GetCurrentFrame(control))
-                InvokeTimerTick(control)
-                Assert.AreEqual(2, GetCurrentFrame(control))
-                Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
-                Assert.IsFalse(control.AutoPlay)
-                Assert.IsFalse(GetTimer(control).Enabled)
-                control.StartAnimation()
-                Assert.AreEqual(1, GetCurrentFrame(control))
-                Assert.IsTrue(GetTimer(control).Enabled)
-            End Using
-        End Sub
-
-        ''' <summary>Prüft ungültige Bereichswerte und das Ende eines Einzelbildbereichs sowie die spätere Wiedergabe mit offenem Ende.</summary>
-        <TestMethod>
-        Public Sub PlaybackRange_SingleFrameAndConfigurationChanges()
-            Using control As New AniGif()
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.LoopCount = -1)
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeStart = -1)
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeEnd = -2)
-                control.PlayRangeStart = 2
-                control.PlayRangeEnd = 2
-                control.LoopCount = 2
-                control.StartAnimation()
-                InvokeTimerTick(control)
-                Assert.AreEqual(2, GetCurrentFrame(control))
-                Assert.IsTrue(GetTimer(control).Enabled)
-                control.SeekFrame(2)
-                InvokeTimerTick(control)
-                Assert.IsTrue(GetTimer(control).Enabled)
-                InvokeTimerTick(control)
-                Assert.IsFalse(GetTimer(control).Enabled)
-                control.PlayRangeEnd = -1
-                control.LoopCount = 0
-                control.StartAnimation()
-                InvokeTimerTick(control)
-                Assert.AreEqual(3, GetCurrentFrame(control))
-            End Using
-        End Sub
-
         ''' <summary>Stellt geschützte Zeichen- und Handleoperationen für Invalidierungstests bereit.</summary>
         Private NotInheritable Class FrameInvalidationProbe
             Inherits AniGif
@@ -254,6 +139,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
             ''' <summary>Anzahl der Zuweisungen, die den Timer aktivieren.</summary>
             Private _startCalls As Integer
+
             ''' <summary>Anzahl der Zuweisungen, die den Timer deaktivieren.</summary>
             Private _stopCalls As Integer
 
@@ -2432,6 +2318,62 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Return New Bitmap(gifPath)
         End Function
 
+        ''' <summary>Prüft die drei GIF-Quellen und die Wiedergabe nach Freigabe beziehungsweise Änderung der Eingabe.</summary>
+        <TestMethod>
+        Public Sub LoadGif_AllSourcesKeepAnimatedFramesAfterInputIsReleased()
+            Dim gifPath As String = Path.Combine(FindSolutionRoot(AppContext.BaseDirectory), "SchlumpfSoftControlsNET", "AniGifControl", "AniGifControl.Standard.gif")
+            Dim bytes As Byte() = File.ReadAllBytes(gifPath)
+            Using control As New AniGif()
+                Using source As New MemoryStream()
+                    source.WriteByte(42)
+                    source.Write(bytes, 0, bytes.Length)
+                    source.Position = 1
+                    control.LoadGif(source)
+                    Assert.IsTrue(source.CanRead)
+                    Assert.AreEqual(source.Length, source.Position)
+                End Using
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                Assert.AreEqual(1, GetCurrentFrame(control))
+
+                control.LoadGif(bytes)
+                Array.Clear(bytes, 0, bytes.Length)
+                InvokeTimerTick(control)
+                Assert.AreEqual(1, GetCurrentFrame(control))
+
+                control.LoadGif(gifPath)
+                Using exclusive As New FileStream(gifPath, FileMode.Open, FileAccess.Read, FileShare.None)
+                    Assert.IsGreaterThan(0L, exclusive.Length)
+                End Using
+                InvokeTimerTick(control)
+                Assert.AreEqual(1, GetCurrentFrame(control))
+            End Using
+        End Sub
+
+        ''' <summary>Prüft fehlerhafte Quellen und stellt sicher, dass das bisherige Bild unverändert bleibt.</summary>
+        <TestMethod>
+        Public Sub LoadGif_InvalidInputsLeaveExistingImageIntact()
+            Using control As New AniGif()
+                Dim previous As Bitmap = control.Gif
+                Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadGif(DirectCast(Nothing, Stream)))
+                Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadGif(DirectCast(Nothing, Byte())))
+                Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadGif(DirectCast(Nothing, String)))
+                Assert.ThrowsExactly(Of ArgumentException)(Sub() control.LoadGif(" "))
+                Assert.ThrowsExactly(Of ArgumentException)(Sub() control.LoadGif(New Byte() {1, 2, 3}))
+                Using png As New MemoryStream()
+                    Using image As New Bitmap(2, 2)
+                        image.Save(png, ImageFormat.Png)
+                    End Using
+                    png.Position = 0
+                    Assert.ThrowsExactly(Of ArgumentException)(Sub() control.LoadGif(png))
+                    Assert.IsTrue(png.CanRead)
+                End Using
+                Assert.AreSame(previous, control.Gif)
+                control.Dispose()
+                Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.LoadGif(DirectCast(Nothing, Byte())))
+            End Using
+        End Sub
+
         <TestMethod>
         Public Sub NoAnimation_EquivalentFpsDoesNotNotifyButRealChangesDo()
             Using control As New AniGif()
@@ -3540,6 +3482,66 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Next
         End Sub
 
+        ''' <summary>Prüft, dass Handler beim Framewechsel die Wiedergabe sicher umsteuern dürfen.</summary>
+        <TestMethod>
+        Public Sub PlaybackEvents_FrameHandlerCanSeekAndDispose()
+            Using control As New AniGif()
+                Dim changes As New List(Of Integer)()
+                AddHandler control.FrameChanged, Sub(sender, e)
+                                                     changes.Add(e.CurrentFrame)
+                                                     If e.CurrentFrame = 1 Then
+                                                         control.SeekFrame(2)
+                                                     Else
+                                                         control.Dispose()
+                                                     End If
+                                                 End Sub
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                CollectionAssert.AreEqual(New Integer() {1, 2}, changes.ToArray())
+                Assert.IsTrue(control.IsDisposed)
+            End Using
+        End Sub
+
+        ''' <summary>Prüft Framewechsel beim Suchen, Timer und Segmentende einschließlich Ereignisreihenfolge.</summary>
+        <TestMethod>
+        Public Sub PlaybackEvents_ReportFrameChangesAndCompletion()
+            Using control As New AniGif()
+                Dim changes As New List(Of String)()
+                Dim events As New List(Of String)()
+                AddHandler control.FrameChanged, Sub(sender, e) changes.Add($"{e.PreviousFrame}:{e.CurrentFrame}")
+                AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                AddHandler control.PlaybackCompleted, Sub(sender, e) events.Add("completed")
+                control.SeekFrame(1)
+                control.SeekFrame(1)
+                control.PlayRangeStart = 1
+                control.PlayRangeEnd = 2
+                control.LoopCount = 1
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                InvokeTimerTick(control)
+                InvokeTimerTick(control)
+                CollectionAssert.AreEqual(New String() {"0:1", "1:2"}, changes.ToArray())
+                CollectionAssert.AreEqual(New String() {"stopped", "completed"}, events.ToArray())
+                Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
+            End Using
+        End Sub
+
+        ''' <summary>Prüft, dass Fehler der Frameauswahl gemeldet und unverändert weitergegeben werden.</summary>
+        <TestMethod>
+        Public Sub PlaybackEvents_ReportsFrameSelectionErrorWithoutHidingException()
+            Using control As New AniGif()
+                Dim reported As Exception = Nothing
+                Dim changes As Integer = 0
+                AddHandler control.PlaybackError, Sub(sender, e) reported = e.GetException()
+                AddHandler control.FrameChanged, Sub(sender, e) changes += 1
+                control.Gif.Dispose()
+                Dim actual As ArgumentException = Assert.ThrowsExactly(Of ArgumentException)(Sub() control.SeekFrame(1))
+                Assert.AreSame(reported, actual)
+                Assert.AreEqual(0, changes)
+                Assert.AreEqual(0, GetCurrentFrame(control))
+            End Using
+        End Sub
+
         <TestMethod>
         Public Sub PlaybackMethods_AreIdempotentAndStartCanResume()
             Using control As New AniGif()
@@ -3573,6 +3575,61 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 Assert.AreEqual(2, startedCount)
                 Assert.AreEqual(2, stoppedCount)
                 Assert.AreEqual(2, autoPlayCount)
+            End Using
+        End Sub
+
+        ''' <summary>Prüft das Ende zweier Bereichsdurchläufe, eine Pause dazwischen und den anschließenden Neustart am Bereichsanfang.</summary>
+        <TestMethod>
+        Public Sub PlaybackRange_FiniteLoopsStopAfterLastFrameAndRestartAtBeginning()
+            Using control As New AniGif()
+                control.PlayRangeStart = 1
+                control.PlayRangeEnd = 2
+                control.LoopCount = 2
+                control.StartAnimation()
+                Assert.AreEqual(1, GetCurrentFrame(control))
+                InvokeTimerTick(control)
+                Assert.AreEqual(2, GetCurrentFrame(control))
+                InvokeTimerTick(control)
+                Assert.AreEqual(1, GetCurrentFrame(control))
+                control.PauseAnimation()
+                control.ResumeAnimation()
+                InvokeTimerTick(control)
+                Assert.AreEqual(2, GetCurrentFrame(control))
+                InvokeTimerTick(control)
+                Assert.AreEqual(2, GetCurrentFrame(control))
+                Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
+                Assert.IsFalse(control.AutoPlay)
+                Assert.IsFalse(GetTimer(control).Enabled)
+                control.StartAnimation()
+                Assert.AreEqual(1, GetCurrentFrame(control))
+                Assert.IsTrue(GetTimer(control).Enabled)
+            End Using
+        End Sub
+
+        ''' <summary>Prüft ungültige Bereichswerte und das Ende eines Einzelbildbereichs sowie die spätere Wiedergabe mit offenem Ende.</summary>
+        <TestMethod>
+        Public Sub PlaybackRange_SingleFrameAndConfigurationChanges()
+            Using control As New AniGif()
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.LoopCount = -1)
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeStart = -1)
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeEnd = -2)
+                control.PlayRangeStart = 2
+                control.PlayRangeEnd = 2
+                control.LoopCount = 2
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                Assert.AreEqual(2, GetCurrentFrame(control))
+                Assert.IsTrue(GetTimer(control).Enabled)
+                control.SeekFrame(2)
+                InvokeTimerTick(control)
+                Assert.IsTrue(GetTimer(control).Enabled)
+                InvokeTimerTick(control)
+                Assert.IsFalse(GetTimer(control).Enabled)
+                control.PlayRangeEnd = -1
+                control.LoopCount = 0
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                Assert.AreEqual(3, GetCurrentFrame(control))
             End Using
         End Sub
 

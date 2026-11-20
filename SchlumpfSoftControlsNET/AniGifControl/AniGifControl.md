@@ -102,6 +102,14 @@ Weitere Infos unter:
 
 ## 4. Funktionen
 
+- `LoadGif(source As Stream)`: Liest GIF-Daten ab der aktuellen Position bis zum Streamende, auch aus nicht suchbaren Streams. Der Stream muss lesbar sein, bleibt geöffnet und kann nach dem Aufruf freigegeben werden. `Nothing` löst `ArgumentNullException`, ein nicht lesbarer Stream `ArgumentException` aus. Lesefehler werden weitergegeben.
+
+- `LoadGif(data As Byte())`: Lädt GIF-Daten aus einem Bytearray. Das Array wird weder verändert noch für die spätere Wiedergabe benötigt. `Nothing` löst `ArgumentNullException` aus.
+
+- `LoadGif(path As String)`: Lädt eine GIF-Datei und schließt sie nach dem Einlesen. `Nothing` löst `ArgumentNullException`, ein leerer oder nur aus Leerraum bestehender Pfad `ArgumentException` aus. Dateisystem- und Zugriffsfehler werden weitergegeben.
+
+  Alle drei Überladungen akzeptieren ausschließlich GIF-Daten, erstellen eine interne Datenkopie und verwenden die bestehende Bildwechsel- und Wiedergabesteuerung. Ungültige oder andere Bildformate lösen `ArgumentException` aus; je nach GDI+-Version können ungültige Bilddaten auch `OutOfMemoryException` auslösen. Bei Validierungs- oder Lesefehlern bleibt das bisherige Bild erhalten. Nach Beginn der Ressourcenfreigabe wird `ObjectDisposedException` ausgelöst. Die Methoden müssen auf dem UI-Thread aufgerufen werden. Der interne Datenstream wird bei Bildwechsel oder Ressourcenfreigabe nach der Bitmap freigegeben.
+
 - `StartAnimation()`: Setzt `AutoPlay` auf `True` und startet die Animation beziehungsweise setzt eine Pause beim aktuellen Frame fort. Ein bereits laufender Start ist wirkungslos.
 
 - `PauseAnimation()`: Hält eine laufende Wiedergabe beim aktuellen Frame an, ohne `AutoPlay` zu ändern. Bei bereits pausierter oder gestoppter Wiedergabe bleibt der Aufruf ohne Wirkung.

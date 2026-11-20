@@ -24,11 +24,11 @@
 
 ## 4 Quellenvielfalt erhöhen
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Vorschlag:** Laden aus Stream/ByteArray/Dateipfad.
 
-**Umsetzung:** Überladene `LoadGif(...)`-Methoden mit einheitlicher Validierung.
+**Umsetzung:** `LoadGif(...)` lädt GIF-Daten aus Stream, Bytearray oder Datei. Einzelheiten stehen in [AniGifControl.md](AniGifControl.md).
 
 ## 5 Design-Time-Unterstützung
 

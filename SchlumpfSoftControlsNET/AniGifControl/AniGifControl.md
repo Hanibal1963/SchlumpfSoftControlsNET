@@ -140,6 +140,10 @@ Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlay
 
 ## 6. Hinweise
 
+- Der Smart-Tag bietet die Einstellungen `AutoPlay`, `CustomDisplaySpeed`, `FramesPerSecond` und `GifSizeMode`. Änderungen erfolgen über die Property-Descriptoren des Controls, damit der Designer sie wie Änderungen im Eigenschaftenfenster behandeln kann. Die Bildrate wirkt unmittelbar nur bei aktivierter benutzerdefinierter Geschwindigkeit.
+
+- Der Smart-Tag verwendet im klassischen .NET-Framework-Designer die Framework-Designer-API und für .NET 8 bis .NET 10 die Out-of-Process-Designer-API des `Microsoft.WinForms.Designer.SDK`. Die Designerregistrierung wird zur Laufzeit als Typname bereitgestellt und erfordert keinen laufenden Designer-Host.
+
 - Gegenüber der früheren Darstellung berücksichtigen `Zoom` und `Fill` das Seitenverhältnis der Clientfläche. Die Zentrierung erfolgt auch bei `CenterImage` anhand der Clientfläche und nicht anhand der äußeren Control-Größe.
 
 - Skalierte Zielabmessungen werden auf ganze Pixel gerundet; Halbwerte werden aufgerundet und jede Dimension beträgt bei nicht leerer Clientfläche mindestens ein Pixel. Dadurch kann das Seitenverhältnis bei sehr kleinen Darstellungen geringfügig abweichen.
@@ -201,3 +205,5 @@ Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlay
 z.Zt. alle umgesetzt
 
 ## [8. Erweiterungsvorschläge](AniGifErweiterungsvorschläge.md)
+
+z.Zt. alle umgesetzt

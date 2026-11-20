@@ -32,8 +32,8 @@
 
 ## 5 Design-Time-Unterstützung
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Vorschlag:** Smart-Tag für AutoPlay/Speed/SizeMode.
 
-**Umsetzung:** DesignerActionList ergänzen.
+**Umsetzung:** Eine `DesignerActionList` stellt `AutoPlay`, `CustomDisplaySpeed`, `FramesPerSecond` und `GifSizeMode` im klassischen Designer und im Out-of-Process-Designer für .NET 8 bis .NET 10 bereit. Einzelheiten stehen in [AniGifControl.md](AniGifControl.md).

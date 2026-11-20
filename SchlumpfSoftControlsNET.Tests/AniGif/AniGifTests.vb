@@ -24,6 +24,18 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
     <TestClass>
     Partial Public Class AniGifTests
 
+        ''' <summary>Prüft die Designerregistrierung und den normalen Zugriff auf Control-Metadaten zur Laufzeit.</summary>
+        <TestMethod>
+        Public Sub DesignerMetadata_IsAvailableWithoutDesignerHost()
+            Using control As New AniGif()
+                Dim attributes As AttributeCollection = TypeDescriptor.GetAttributes(control)
+                Dim designer As DesignerAttribute = DirectCast(attributes(GetType(DesignerAttribute)), DesignerAttribute)
+                Assert.IsNotNull(designer)
+                StringAssert.Contains(designer.DesignerTypeName, "AniGifDesigner")
+                Assert.IsNotNull(TypeDescriptor.GetProperties(control)(NameOf(AniGif.AutoPlay)))
+            End Using
+        End Sub
+
         ''' <summary>Stellt geschützte Zeichen- und Handleoperationen für Invalidierungstests bereit.</summary>
         Private NotInheritable Class FrameInvalidationProbe
             Inherits AniGif

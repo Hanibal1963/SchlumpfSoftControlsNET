@@ -30,6 +30,12 @@ Weitere Infos unter:
 
 - `AnimationStopped`: Wird ausgelöst, wenn eine laufende Animation angehalten oder gestoppt wird, beispielsweise durch Pause oder Unsichtbarkeit. Reine Timingänderungen bei weiterlaufender Wiedergabe lösen das Ereignis nicht aus.
 
+- `FrameChanged(sender, e As FrameChangedEventArgs)`: Wird nach einem tatsächlichen Framewechsel durch den Timer oder `SeekFrame()` ausgelöst, auch bei indirekter Frameauswahl durch eine Bereichsänderung oder einen Neustart. `e.PreviousFrame` und `e.CurrentFrame` enthalten die nullbasierten Indizes. Eine Bildzuweisung, ein unveränderter Index und ein Einzelbildsegment ohne Framewechsel lösen das Ereignis nicht aus. Das Ereignis erfolgt nach der Frameauswahl und Timerkonfiguration, vor der Invalidierung; es bestätigt keine Bildschirmdarstellung.
+
+- `PlaybackCompleted(sender, e As EventArgs)`: Wird einmal nach dem regulären Abschluss einer begrenzten Wiedergabe ausgelöst, nach `AutoPlayChanged` und dem gegebenenfalls ausgelösten `AnimationStopped`. Pause, manuelles Stoppen, Fehler und unbegrenzte Wiedergabe lösen es nicht aus. Ein vorheriger Ereignishandler kann bereits eine neue Wiedergabe gestartet haben.
+
+- `PlaybackError(sender, e As System.IO.ErrorEventArgs)`: Meldet `ArgumentException`, `ObjectDisposedException` und `ExternalException` bei der Frameauswahl durch Timer oder `SeekFrame()`. `e.GetException()` liefert die ursprüngliche Ausnahme, die anschließend erneut ausgelöst wird; der Wiedergabezustand wird dadurch nicht automatisch geändert. Validierungsfehler, Bildinitialisierung, Zeichenfehler und Ausnahmen von Ereignishandlern werden nicht als `PlaybackError` gemeldet. Die Ereignisse werden synchron auf dem aufrufenden UI-Thread ausgelöst; Ausnahmen der Handler werden weitergegeben.
+
 ## 3. Eigenschaften
 
 - `AutoPlay`: Steuert, ob die GIF-Animation automatisch gestartet wird, sobald ein animierbares Bild vorhanden und das Control sichtbar ist. Eine explizite Pause verändert den Wert nicht.
@@ -113,6 +119,8 @@ Weitere Infos unter:
 Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlaybackState()` gibt weiterhin den gespeicherten Zustand zurück. Alle genannten Methoden sollen auf dem UI-Thread des Controls aufgerufen werden.
 
 ## 5. Hilfstypen/Strukturen
+
+- `FrameChangedEventArgs`: Unveränderliche Ereignisdaten mit `PreviousFrame` und `CurrentFrame` als `Int32`. Der öffentliche Konstruktor `New(previousFrame As Int32, currentFrame As Int32)` übernimmt die Werte unverändert und führt keine Validierung durch.
 
 - `ImageSizeMode`: Definiert die Modi `Normal`, `CenterImage`, `Zoom` und `Fill` zur Größenanpassung und Ausrichtung der GIF-Grafik.
 

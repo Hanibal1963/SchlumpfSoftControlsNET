@@ -16,11 +16,11 @@
 
 ## 3 Eventmodell ausbauen
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Vorschlag:** `FrameChanged`, `PlaybackCompleted`, `PlaybackError`.
 
-**Umsetzung:** Ereignisse nach erfolgreichem Framewechsel bzw. Fehlerpfad auslösen.
+**Umsetzung:** Ereignisse melden Framewechsel, den regulären Abschluss begrenzter Wiedergaben und Fehler bei der Frameauswahl. Einzelheiten stehen in [AniGifControl.md](AniGifControl.md).
 
 ## 4 Quellenvielfalt erhöhen
 

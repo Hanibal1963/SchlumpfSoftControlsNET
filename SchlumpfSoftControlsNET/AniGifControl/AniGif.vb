@@ -191,6 +191,27 @@ Namespace AniGifControl
         <Description("Wird ausgelöst wenn die laufende Animation angehalten oder gestoppt wurde.")>
         Public Event AnimationStopped(sender As Object, e As EventArgs)
 
+        ''' <summary>Wird nach einer erfolgreichen Änderung des aktuellen Frames ausgelöst.</summary>
+        ''' <param name="sender">Das auslösende Control.</param>
+        ''' <param name="e">Der vorherige und der neue nullbasierte Frameindex.</param>
+        ''' <remarks>Bildzuweisungen und unveränderte Frameindizes lösen das Ereignis nicht aus.</remarks>
+        <Browsable(True), Category("Behavior")>
+        Public Event FrameChanged(sender As Object, e As FrameChangedEventArgs)
+
+        ''' <summary>Wird nach dem regulären Abschluss einer begrenzten Wiedergabe ausgelöst.</summary>
+        ''' <param name="sender">Das auslösende Control.</param>
+        ''' <param name="e">Die Ereignisdaten.</param>
+        ''' <remarks>Manuelles Stoppen, Pause und unbegrenzte Wiedergabe lösen das Ereignis nicht aus.</remarks>
+        <Browsable(True), Category("Behavior")>
+        Public Event PlaybackCompleted(sender As Object, e As EventArgs)
+
+        ''' <summary>Wird bei einem Fehler der Frameauswahl während der Wiedergabe oder bei SeekFrame ausgelöst.</summary>
+        ''' <param name="sender">Das auslösende Control.</param>
+        ''' <param name="e">Enthält die ursprüngliche Ausnahme.</param>
+        ''' <remarks>Die Ausnahme wird nach dem Ereignis erneut ausgelöst. Fehler von Ereignishandlern werden nicht abgefangen.</remarks>
+        <Browsable(True), Category("Behavior")>
+        Public Event PlaybackError(sender As Object, e As System.IO.ErrorEventArgs)
+
 #End Region
 
 #Region "Interne Ereignisse"
@@ -236,7 +257,9 @@ Namespace AniGifControl
                 Return Me._loopCount
             End Get
             Set(value As Int32)
+#Disable Warning CA1512 ' ThrowIf-Hilfen fehlen unter .NET Framework und ändern die Ausnahmeinformationen.
                 If value < 0 Then Throw New ArgumentOutOfRangeException(NameOf(value))
+#Enable Warning CA1512
                 If Me._loopCount = value Then Return
                 Me._loopCount = value
                 Me._completedLoops = 0
@@ -252,7 +275,9 @@ Namespace AniGifControl
                 Return Me._playRangeStart
             End Get
             Set(value As Int32)
+#Disable Warning CA1512 ' ThrowIf-Hilfen fehlen unter .NET Framework und ändern die Ausnahmeinformationen.
                 If value < 0 Then Throw New ArgumentOutOfRangeException(NameOf(value))
+#Enable Warning CA1512
                 If Me._playRangeStart = value Then Return
                 Me._playRangeStart = value
                 Me.OnPlayRangeChanged()
@@ -268,7 +293,9 @@ Namespace AniGifControl
                 Return Me._playRangeEnd
             End Get
             Set(value As Int32)
+#Disable Warning CA1512 ' ThrowIf-Hilfen fehlen unter .NET Framework und ändern die Ausnahmeinformationen.
                 If value < -1 Then Throw New ArgumentOutOfRangeException(NameOf(value))
+#Enable Warning CA1512
                 If Me._playRangeEnd = value Then Return
                 Me._playRangeEnd = value
                 Me.OnPlayRangeChanged()
@@ -756,7 +783,9 @@ Namespace AniGifControl
             Me._playbackCompleted = False
             If index = Me._Frame Then Return
 
-            Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, index)
+            Dim image As Bitmap = Me._Gif
+            Dim previousFrame As Int32 = Me._Frame
+            Me.SelectPlaybackFrame(index)
             Me._Frame = index
             If Me._diagnosticsEnabled Then Me._diagnosticsCollector.CancelPendingFrame()
 
@@ -768,7 +797,10 @@ Namespace AniGifControl
                 Me.Timer.Start()
             End If
 
-            Me.InvalidateIfVisible()
+            RaiseEvent FrameChanged(Me, New FrameChangedEventArgs(previousFrame, index))
+            If Not Me._IsDisposed AndAlso Not Me.IsDisposed AndAlso Object.ReferenceEquals(image, Me._Gif) AndAlso Me._Frame = index Then
+                Me.InvalidateIfVisible()
+            End If
         End Sub
 
         ''' <summary>Gibt den aktuellen Wiedergabezustand zurück (Playing, Paused, Stopped).</summary>
@@ -1041,6 +1073,7 @@ Namespace AniGifControl
                     If Me._completedLoops >= Me._loopCount Then
                         Me._playbackCompleted = True
                         Me.AutoPlay = False
+                        RaiseEvent PlaybackCompleted(Me, EventArgs.Empty)
                         Return
                     End If
                 End If
@@ -1054,16 +1087,31 @@ Namespace AniGifControl
                 Return
             End If
 
-            Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, nextFrame)
+            Dim image As Bitmap = Me._Gif
+            Dim previousFrame As Int32 = Me._Frame
+            Me.SelectPlaybackFrame(nextFrame)
             Me._Frame = nextFrame
 
             Dim targetIntervalMs As Int32 = Me.GetFrameIntervalForIndex(Me._Frame)
             Dim adjustedIntervalMs As Int32 = Me.ApplyAdaptiveTiming(targetIntervalMs, elapsedMs, Me.Timer.Interval)
             Me.Timer.Interval = adjustedIntervalMs
 
-            ' Nur neu zeichnen wenn das Control sichtbar ist
-            Me.InvalidateIfVisible(True)
+            RaiseEvent FrameChanged(Me, New FrameChangedEventArgs(previousFrame, nextFrame))
+            If Not Me._IsDisposed AndAlso Not Me.IsDisposed AndAlso Object.ReferenceEquals(image, Me._Gif) AndAlso Me._Frame = nextFrame Then
+                Me.InvalidateIfVisible(True)
+            End If
 
+        End Sub
+
+        ''' <summary>Wählt einen Wiedergabeframe und meldet GDI+-Fehler, ohne die Ausnahme zu unterdrücken.</summary>
+        ''' <param name="index">Nullbasierter Index des auszuwählenden Frames.</param>
+        Private Sub SelectPlaybackFrame(index As Int32)
+            Try
+                Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, index)
+            Catch ex As Exception When TypeOf ex Is ArgumentException OrElse TypeOf ex Is System.Runtime.InteropServices.ExternalException OrElse TypeOf ex Is ObjectDisposedException
+                RaiseEvent PlaybackError(Me, New System.IO.ErrorEventArgs(ex))
+                Throw
+            End Try
         End Sub
 
         Private Function GetPlayRangeStart() As Int32

@@ -4,12 +4,12 @@
 ' Datum: 09.09.2026
 ' --------------------------------------------------------------------------------------------------------
 
-Imports SchlumpfSoft.ControlsNET
 Imports SchlumpfSoft.ControlsNET.AniGifControl
 
 Public Class FormAniGif
 
     Private _AniGifAnimationNumber As Int32
+    Private _AniName As String
 
     Public Sub New()
 
@@ -35,7 +35,8 @@ Public Class FormAniGif
 
     Private Sub AniGif_NoAnimation(sender As Object, e As EventArgs) Handles AniGif.NoAnimation
 
-        Dim msg As String = $"Das Bild {Me.GetAniResName(Me._AniGifAnimationNumber)} kann nicht animiert werden!"
+        Me._AniName = Me.GetAniResName(Me._AniGifAnimationNumber)
+        Dim msg As String = $"Das Bild {Me._AniName} kann nicht animiert werden!"
         Me.Label_EventMessage.Text = msg
 
     End Sub
@@ -145,21 +146,21 @@ Public Class FormAniGif
                 Select Case CType(sender, ComboBox).SelectedIndex
 
                     Case 0
-                        Me.AniGif.GifSizeMode = AniGifControl.ImageSizeMode.Normal
+                        Me.AniGif.GifSizeMode = ImageSizeMode.Normal
                         Me.ComboBox_ScalingQualityPreset.Enabled = False
 
                     Case 1
-                        Me.AniGif.GifSizeMode = AniGifControl.ImageSizeMode.CenterImage
+                        Me.AniGif.GifSizeMode = ImageSizeMode.CenterImage
                         Me.ComboBox_ScalingQualityPreset.Enabled = False
 
                     Case 2
-                        Me.AniGif.GifSizeMode = AniGifControl.ImageSizeMode.Zoom
+                        Me.AniGif.GifSizeMode = ImageSizeMode.Zoom
                         Me.ComboBox_ScalingQualityPreset.Enabled = True
                         Me.ComboBox_ScalingQualityPreset.SelectedIndex = 0
                         Me.NumericUpDown_ZoomFactor.Enabled = True
 
                     Case 3
-                        Me.AniGif.GifSizeMode = AniGifControl.ImageSizeMode.Fill
+                        Me.AniGif.GifSizeMode = ImageSizeMode.Fill
                         Me.ComboBox_ScalingQualityPreset.Enabled = False
                         Me.ComboBox_ScalingQualityPreset.SelectedIndex = 0
 
@@ -170,10 +171,10 @@ Public Class FormAniGif
                 Select Case CType(sender, ComboBox).SelectedIndex
 
                     Case 0
-                        Me.AniGif.ScalingQualityPreset = AniGifControl.GifScalingQualityPreset.Photo
+                        Me.AniGif.ScalingQualityPreset = GifScalingQualityPreset.Photo
 
                     Case 1
-                        Me.AniGif.ScalingQualityPreset = AniGifControl.GifScalingQualityPreset.PixelArt
+                        Me.AniGif.ScalingQualityPreset = GifScalingQualityPreset.PixelArt
 
                 End Select
 
@@ -188,7 +189,8 @@ Public Class FormAniGif
         Button_Pause.Click,
         Button_Resume.Click,
         Button_StopAnimation.Click,
-        Button_Diagnostics.Click
+        Button_Diagnostics.Click,
+        Button_OpenFile.Click
 
         Select Case True
 
@@ -213,9 +215,13 @@ Public Class FormAniGif
             Case sender Is Me.Button_Diagnostics
                 Me.ShowDiagnostics()
 
+            Case sender Is Me.Button_OpenFile
+                Me.LoadAniFromFile()
+
         End Select
 
     End Sub
+
 
     Private Sub ShowBackAni(sender As Object)
 
@@ -263,9 +269,38 @@ Public Class FormAniGif
 
     End Sub
 
+    Private Sub LoadAniFromFile()
+
+        Dim ofd As New OpenFileDialog With {
+            .Title = "Öffnen einer Gif-Datei",
+            .Filter = "AniGif-Dateien (*.gif)|*.gif",
+            .FilterIndex = 1,
+            .RestoreDirectory = True,
+            .InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
+        }
+        If ofd.ShowDialog(Me) = DialogResult.OK Then
+
+            Try
+
+                Dim bmp As New Bitmap(ofd.FileName)
+                Me._AniName = ofd.FileName
+                Me.AniGif.Gif = bmp
+                Me.Label_Animation.Text = $"Es wird ""{Me._AniName}"" angezeigt."
+
+            Catch ex As Exception
+
+                Dim unused = MessageBox.Show($"Fehler beim Laden der Datei {Me._AniName}: {ex.Message}",
+                                             $"Fehler",
+                                             MessageBoxButtons.OK,
+                                             MessageBoxIcon.Error)
+            End Try
+
+        End If
+
+    End Sub
+
     Private Function GetAniResName(AniNumber As Int32) As String
         Return $"AniGif_Anim{CStr(100 + AniNumber)}"
     End Function
-
 
 End Class

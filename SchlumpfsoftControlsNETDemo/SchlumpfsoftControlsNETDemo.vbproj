@@ -274,6 +274,7 @@
     <Content Include="Resources\AniGif_Back.png" />
     <Content Include="Resources\AniGif_Diagnostics.png" />
     <Content Include="Resources\AniGif_Forward.png" />
+    <Content Include="Resources\AniGif_OpenFile.png" />
     <Content Include="Resources\AniGif_Pause.png" />
     <Content Include="Resources\AniGif_Resume.png" />
     <Content Include="Resources\AniGif_Start.png" />

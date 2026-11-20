@@ -31,6 +31,8 @@ Partial Class FormColorProgressBar
         Me.LabelProgressValue = New System.Windows.Forms.Label()
         Me.ColorDialog = New System.Windows.Forms.ColorDialog()
         Me.ColorProgressBar = New SchlumpfSoft.ControlsNET.ColorProgressBarControl.ColorProgressBar()
+        Me.CheckBox_ShowText = New System.Windows.Forms.CheckBox()
+        Me.CheckBox_TextFormat = New System.Windows.Forms.CheckBox()
         CType(Me.NumericUpDown_ProgressValue, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -99,6 +101,7 @@ Partial Class FormColorProgressBar
         '
         'ColorProgressBar
         '
+        Me.ColorProgressBar.AccessibleRole = System.Windows.Forms.AccessibleRole.ProgressBar
         Me.ColorProgressBar.BackColor = System.Drawing.Color.Black
         Me.ColorProgressBar.Location = New System.Drawing.Point(23, 35)
         Me.ColorProgressBar.Name = "ColorProgressBar"
@@ -106,11 +109,33 @@ Partial Class FormColorProgressBar
         Me.ColorProgressBar.Size = New System.Drawing.Size(455, 23)
         Me.ColorProgressBar.TabIndex = 0
         '
+        'CheckBox_ShowText
+        '
+        Me.CheckBox_ShowText.AutoSize = True
+        Me.CheckBox_ShowText.Location = New System.Drawing.Point(23, 169)
+        Me.CheckBox_ShowText.Name = "CheckBox_ShowText"
+        Me.CheckBox_ShowText.Size = New System.Drawing.Size(95, 17)
+        Me.CheckBox_ShowText.TabIndex = 8
+        Me.CheckBox_ShowText.Text = "Wert anzeigen"
+        Me.CheckBox_ShowText.UseVisualStyleBackColor = True
+        '
+        'CheckBox_TextFormat
+        '
+        Me.CheckBox_TextFormat.AutoSize = True
+        Me.CheckBox_TextFormat.Location = New System.Drawing.Point(23, 204)
+        Me.CheckBox_TextFormat.Name = "CheckBox_TextFormat"
+        Me.CheckBox_TextFormat.Size = New System.Drawing.Size(170, 17)
+        Me.CheckBox_TextFormat.TabIndex = 9
+        Me.CheckBox_TextFormat.Text = "Prozentanzeige / Wertanzeige"
+        Me.CheckBox_TextFormat.UseVisualStyleBackColor = True
+        '
         'FormColorProgressBar
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(501, 176)
+        Me.ClientSize = New System.Drawing.Size(501, 241)
+        Me.Controls.Add(Me.CheckBox_TextFormat)
+        Me.Controls.Add(Me.CheckBox_ShowText)
         Me.Controls.Add(Me.LabelProgressValue)
         Me.Controls.Add(Me.Button_EmptyColorChange)
         Me.Controls.Add(Me.Button_BorderColorChange)
@@ -139,4 +164,6 @@ Partial Class FormColorProgressBar
     Private WithEvents Button_EmptyColorChange As Button
     Private WithEvents LabelProgressValue As Label
     Private WithEvents ColorDialog As ColorDialog
+    Private WithEvents CheckBox_ShowText As CheckBox
+    Private WithEvents CheckBox_TextFormat As CheckBox
 End Class

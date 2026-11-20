@@ -30,8 +30,8 @@
     <RepositoryUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/Hanibal1963/SchlumpfSoftControlsNET</PackageProjectUrl>
-    <AssemblyVersion>1.2026.1115.25</AssemblyVersion>
-    <FileVersion>1.2026.1115.25</FileVersion>
+    <AssemblyVersion>1.2026.1120.18</AssemblyVersion>
+    <FileVersion>1.2026.1120.18</FileVersion>
   </PropertyGroup>
 	
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -212,6 +212,16 @@
     </PackageReference>
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.13" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'">
+    <PackageReference Include="Microsoft.WinForms.Designer.SDK" Version="1.6.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <Target Name="PreserveExistingWinFormsDesignReferences" BeforeTargets="RemoveDesignAssemblyReferences" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'">
+    <PropertyGroup>
+      <IncludeWinFormsDesignReferences>true</IncludeWinFormsDesignReferences>
+    </PropertyGroup>
+  </Target>
 
   <ItemGroup>
     <Reference Include="System.Design">

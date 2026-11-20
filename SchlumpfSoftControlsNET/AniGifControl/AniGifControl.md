@@ -30,6 +30,12 @@ Weitere Infos unter:
 
 - `AnimationStopped`: Wird ausgelöst, wenn eine laufende Animation angehalten oder gestoppt wird, beispielsweise durch Pause oder Unsichtbarkeit. Reine Timingänderungen bei weiterlaufender Wiedergabe lösen das Ereignis nicht aus.
 
+- `FrameChanged(sender, e As FrameChangedEventArgs)`: Wird nach einem tatsächlichen Framewechsel durch den Timer oder `SeekFrame()` ausgelöst, auch bei indirekter Frameauswahl durch eine Bereichsänderung oder einen Neustart. `e.PreviousFrame` und `e.CurrentFrame` enthalten die nullbasierten Indizes. Eine Bildzuweisung, ein unveränderter Index und ein Einzelbildsegment ohne Framewechsel lösen das Ereignis nicht aus. Das Ereignis erfolgt nach der Frameauswahl und Timerkonfiguration, vor der Invalidierung; es bestätigt keine Bildschirmdarstellung.
+
+- `PlaybackCompleted(sender, e As EventArgs)`: Wird einmal nach dem regulären Abschluss einer begrenzten Wiedergabe ausgelöst, nach `AutoPlayChanged` und dem gegebenenfalls ausgelösten `AnimationStopped`. Pause, manuelles Stoppen, Fehler und unbegrenzte Wiedergabe lösen es nicht aus. Ein vorheriger Ereignishandler kann bereits eine neue Wiedergabe gestartet haben.
+
+- `PlaybackError(sender, e As System.IO.ErrorEventArgs)`: Meldet `ArgumentException`, `ObjectDisposedException` und `ExternalException` bei der Frameauswahl durch Timer oder `SeekFrame()`. `e.GetException()` liefert die ursprüngliche Ausnahme, die anschließend erneut ausgelöst wird; der Wiedergabezustand wird dadurch nicht automatisch geändert. Validierungsfehler, Bildinitialisierung, Zeichenfehler und Ausnahmen von Ereignishandlern werden nicht als `PlaybackError` gemeldet. Die Ereignisse werden synchron auf dem aufrufenden UI-Thread ausgelöst; Ausnahmen der Handler werden weitergegeben.
+
 ## 3. Eigenschaften
 
 - `AutoPlay`: Steuert, ob die GIF-Animation automatisch gestartet wird, sobald ein animierbares Bild vorhanden und das Control sichtbar ist. Eine explizite Pause verändert den Wert nicht.
@@ -96,6 +102,14 @@ Weitere Infos unter:
 
 ## 4. Funktionen
 
+- `LoadGif(source As Stream)`: Liest GIF-Daten ab der aktuellen Position bis zum Streamende, auch aus nicht suchbaren Streams. Der Stream muss lesbar sein, bleibt geöffnet und kann nach dem Aufruf freigegeben werden. `Nothing` löst `ArgumentNullException`, ein nicht lesbarer Stream `ArgumentException` aus. Lesefehler werden weitergegeben.
+
+- `LoadGif(data As Byte())`: Lädt GIF-Daten aus einem Bytearray. Das Array wird weder verändert noch für die spätere Wiedergabe benötigt. `Nothing` löst `ArgumentNullException` aus.
+
+- `LoadGif(path As String)`: Lädt eine GIF-Datei und schließt sie nach dem Einlesen. `Nothing` löst `ArgumentNullException`, ein leerer oder nur aus Leerraum bestehender Pfad `ArgumentException` aus. Dateisystem- und Zugriffsfehler werden weitergegeben.
+
+  Alle drei Überladungen akzeptieren ausschließlich GIF-Daten, erstellen eine interne Datenkopie und verwenden die bestehende Bildwechsel- und Wiedergabesteuerung. Ungültige oder andere Bildformate lösen `ArgumentException` aus; je nach GDI+-Version können ungültige Bilddaten auch `OutOfMemoryException` auslösen. Bei Validierungs- oder Lesefehlern bleibt das bisherige Bild erhalten. Nach Beginn der Ressourcenfreigabe wird `ObjectDisposedException` ausgelöst. Die Methoden müssen auf dem UI-Thread aufgerufen werden. Der interne Datenstream wird bei Bildwechsel oder Ressourcenfreigabe nach der Bitmap freigegeben.
+
 - `StartAnimation()`: Setzt `AutoPlay` auf `True` und startet die Animation beziehungsweise setzt eine Pause beim aktuellen Frame fort. Ein bereits laufender Start ist wirkungslos.
 
 - `PauseAnimation()`: Hält eine laufende Wiedergabe beim aktuellen Frame an, ohne `AutoPlay` zu ändern. Bei bereits pausierter oder gestoppter Wiedergabe bleibt der Aufruf ohne Wirkung.
@@ -114,6 +128,8 @@ Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlay
 
 ## 5. Hilfstypen/Strukturen
 
+- `FrameChangedEventArgs`: Unveränderliche Ereignisdaten mit `PreviousFrame` und `CurrentFrame` als `Int32`. Der öffentliche Konstruktor `New(previousFrame As Int32, currentFrame As Int32)` übernimmt die Werte unverändert und führt keine Validierung durch.
+
 - `ImageSizeMode`: Definiert die Modi `Normal`, `CenterImage`, `Zoom` und `Fill` zur Größenanpassung und Ausrichtung der GIF-Grafik.
 
 - `GifScalingQualityPreset`: `Photo` verwendet `HighQualityBicubic` für geglättete Bilder; `PixelArt` verwendet `NearestNeighbor` und `PixelOffsetMode.Half` für harte Pixelkanten.
@@ -123,6 +139,10 @@ Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlay
 - `AniGifDiagnostics`: Unveränderliche Momentaufnahme mit Aktivierungszustand, aktiver Messzeit, mittlerer Bildrate, gezeichneten und verworfenen Timer-Frames sowie Anzahl, mittlerer und maximaler Dauer der GIF-Zeichenaufrufe. Einzelheiten stehen in [AniGifDiagnostics.md](AniGifDiagnostics.md).
 
 ## 6. Hinweise
+
+- Der Smart-Tag bietet die Einstellungen `AutoPlay`, `CustomDisplaySpeed`, `FramesPerSecond` und `GifSizeMode`. Änderungen erfolgen über die Property-Descriptoren des Controls, damit der Designer sie wie Änderungen im Eigenschaftenfenster behandeln kann. Die Bildrate wirkt unmittelbar nur bei aktivierter benutzerdefinierter Geschwindigkeit.
+
+- Der Smart-Tag verwendet im klassischen .NET-Framework-Designer die Framework-Designer-API und für .NET 8 bis .NET 10 die Out-of-Process-Designer-API des `Microsoft.WinForms.Designer.SDK`. Die Designerregistrierung wird zur Laufzeit als Typname bereitgestellt und erfordert keinen laufenden Designer-Host.
 
 - Gegenüber der früheren Darstellung berücksichtigen `Zoom` und `Fill` das Seitenverhältnis der Clientfläche. Die Zentrierung erfolgt auch bei `CenterImage` anhand der Clientfläche und nicht anhand der äußeren Control-Größe.
 
@@ -185,3 +205,5 @@ Die Wiedergabesteuerungsmethoden bleiben nach `Dispose()` ohne Wirkung; `GetPlay
 z.Zt. alle umgesetzt
 
 ## [8. Erweiterungsvorschläge](AniGifErweiterungsvorschläge.md)
+
+z.Zt. alle umgesetzt

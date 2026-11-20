@@ -9,6 +9,7 @@ Imports System.ComponentModel
 Imports System.Diagnostics
 Imports System.Drawing
 Imports System.Drawing.Imaging
+Imports System.IO
 Imports System.Windows.Forms
 
 Namespace AniGifControl
@@ -111,6 +112,9 @@ Namespace AniGifControl
         ''' <summary>Aktuell angezeigtes Bild (intern immer als Bitmap gehalten).</summary>
         Private _Gif As Bitmap
 
+        ''' <summary>Hält die Daten eines geladenen GIFs bis zur Freigabe der zugehörigen Bitmap bereit.</summary>
+        Private _gifBackingStream As MemoryStream
+
         ''' <summary>Kennzeichnet, ob _Gif vom Control geklont/erstellt wurde und damit freigegeben werden muss.</summary>
         Private _OwnsGif As Boolean
 
@@ -191,6 +195,27 @@ Namespace AniGifControl
         <Description("Wird ausgelöst wenn die laufende Animation angehalten oder gestoppt wurde.")>
         Public Event AnimationStopped(sender As Object, e As EventArgs)
 
+        ''' <summary>Wird nach einer erfolgreichen Änderung des aktuellen Frames ausgelöst.</summary>
+        ''' <param name="sender">Das auslösende Control.</param>
+        ''' <param name="e">Der vorherige und der neue nullbasierte Frameindex.</param>
+        ''' <remarks>Bildzuweisungen und unveränderte Frameindizes lösen das Ereignis nicht aus.</remarks>
+        <Browsable(True), Category("Behavior")>
+        Public Event FrameChanged(sender As Object, e As FrameChangedEventArgs)
+
+        ''' <summary>Wird nach dem regulären Abschluss einer begrenzten Wiedergabe ausgelöst.</summary>
+        ''' <param name="sender">Das auslösende Control.</param>
+        ''' <param name="e">Die Ereignisdaten.</param>
+        ''' <remarks>Manuelles Stoppen, Pause und unbegrenzte Wiedergabe lösen das Ereignis nicht aus.</remarks>
+        <Browsable(True), Category("Behavior")>
+        Public Event PlaybackCompleted(sender As Object, e As EventArgs)
+
+        ''' <summary>Wird bei einem Fehler der Frameauswahl während der Wiedergabe oder bei SeekFrame ausgelöst.</summary>
+        ''' <param name="sender">Das auslösende Control.</param>
+        ''' <param name="e">Enthält die ursprüngliche Ausnahme.</param>
+        ''' <remarks>Die Ausnahme wird nach dem Ereignis erneut ausgelöst. Fehler von Ereignishandlern werden nicht abgefangen.</remarks>
+        <Browsable(True), Category("Behavior")>
+        Public Event PlaybackError(sender As Object, e As System.IO.ErrorEventArgs)
+
 #End Region
 
 #Region "Interne Ereignisse"
@@ -236,7 +261,9 @@ Namespace AniGifControl
                 Return Me._loopCount
             End Get
             Set(value As Int32)
+#Disable Warning CA1512 ' ThrowIf-Hilfen fehlen unter .NET Framework und ändern die Ausnahmeinformationen.
                 If value < 0 Then Throw New ArgumentOutOfRangeException(NameOf(value))
+#Enable Warning CA1512
                 If Me._loopCount = value Then Return
                 Me._loopCount = value
                 Me._completedLoops = 0
@@ -252,7 +279,9 @@ Namespace AniGifControl
                 Return Me._playRangeStart
             End Get
             Set(value As Int32)
+#Disable Warning CA1512 ' ThrowIf-Hilfen fehlen unter .NET Framework und ändern die Ausnahmeinformationen.
                 If value < 0 Then Throw New ArgumentOutOfRangeException(NameOf(value))
+#Enable Warning CA1512
                 If Me._playRangeStart = value Then Return
                 Me._playRangeStart = value
                 Me.OnPlayRangeChanged()
@@ -268,7 +297,9 @@ Namespace AniGifControl
                 Return Me._playRangeEnd
             End Get
             Set(value As Int32)
+#Disable Warning CA1512 ' ThrowIf-Hilfen fehlen unter .NET Framework und ändern die Ausnahmeinformationen.
                 If value < -1 Then Throw New ArgumentOutOfRangeException(NameOf(value))
+#Enable Warning CA1512
                 If Me._playRangeEnd = value Then Return
                 Me._playRangeEnd = value
                 Me.OnPlayRangeChanged()
@@ -694,6 +725,60 @@ Namespace AniGifControl
 
 #Region "Öffentliche Methoden"
 
+        ''' <summary>Lädt ein GIF aus einem lesbaren Stream ab dessen aktueller Position.</summary>
+        ''' <param name="source">Eingabestream; dieser bleibt geöffnet und wird bis zum Ende gelesen.</param>
+        ''' <exception cref="ArgumentNullException">Der Stream ist Nothing.</exception>
+        ''' <exception cref="ArgumentException">Der Stream ist nicht lesbar oder enthält kein gültiges GIF.</exception>
+        ''' <exception cref="ObjectDisposedException">Das Control wurde freigegeben.</exception>
+        ''' <remarks>Das Control hält eine eigene Kopie der Daten. Die Methode muss auf dem UI-Thread aufgerufen werden.</remarks>
+        Public Overloads Sub LoadGif(source As Stream)
+            Me.ThrowIfAnimationDisposed()
+            If source Is Nothing Then Throw New ArgumentNullException(NameOf(source))
+            If Not source.CanRead Then Throw New ArgumentException("Der Stream muss lesbar sein.", NameOf(source))
+
+            Dim buffer As New MemoryStream()
+            Dim image As Image = Nothing
+            Try
+                source.CopyTo(buffer)
+                buffer.Position = 0
+                image = Image.FromStream(buffer, True, True)
+                If image.RawFormat.Guid <> ImageFormat.Gif.Guid Then Throw New ArgumentException("Die Daten enthalten kein GIF.", NameOf(source))
+                Me.SetGifImage(DirectCast(image, Bitmap), buffer)
+            Finally
+                If image IsNot Nothing AndAlso Not Object.ReferenceEquals(Me._Gif, image) Then image.Dispose()
+                If Not Object.ReferenceEquals(Me._gifBackingStream, buffer) Then buffer.Dispose()
+            End Try
+        End Sub
+
+        ''' <summary>Lädt ein GIF aus einem Bytearray, ohne dieses zu verändern oder zu behalten.</summary>
+        ''' <param name="data">GIF-Daten.</param>
+        ''' <exception cref="ArgumentNullException">Das Bytearray ist Nothing.</exception>
+        ''' <exception cref="ArgumentException">Die Daten enthalten kein gültiges GIF.</exception>
+        ''' <exception cref="ObjectDisposedException">Das Control wurde freigegeben.</exception>
+        Public Overloads Sub LoadGif(data As Byte())
+            Me.ThrowIfAnimationDisposed()
+            If data Is Nothing Then Throw New ArgumentNullException(NameOf(data))
+            Using source As New MemoryStream(data, False)
+                Me.LoadGif(source)
+            End Using
+        End Sub
+
+        ''' <summary>Lädt ein GIF aus einer Datei und schließt die Datei nach dem Einlesen.</summary>
+        ''' <param name="path">Pfad zu einer GIF-Datei.</param>
+        ''' <exception cref="ArgumentNullException">Der Pfad ist Nothing.</exception>
+        ''' <exception cref="ArgumentException">Der Pfad ist leer oder die Datei enthält kein gültiges GIF.</exception>
+        ''' <exception cref="IOException">Die Datei kann nicht gelesen werden.</exception>
+        ''' <exception cref="UnauthorizedAccessException">Der Zugriff auf die Datei wurde verweigert.</exception>
+        ''' <exception cref="ObjectDisposedException">Das Control wurde freigegeben.</exception>
+        Public Overloads Sub LoadGif(path As String)
+            Me.ThrowIfAnimationDisposed()
+            If path Is Nothing Then Throw New ArgumentNullException(NameOf(path))
+            If String.IsNullOrWhiteSpace(path) Then Throw New ArgumentException("Der Pfad darf nicht leer sein.", NameOf(path))
+            Using source As FileStream = File.OpenRead(path)
+                Me.LoadGif(source)
+            End Using
+        End Sub
+
         ''' <summary>Initialisiert das Control mit dem Standardbild und den Standardwerten.</summary>
         Public Sub New()
             Me.InitializeComponent() 'Designer-Initialisierung
@@ -712,6 +797,7 @@ Namespace AniGifControl
                 Me._playbackState = PlaybackState.Playing
                 Me.UpdateTimerState()
             End If
+
         End Sub
 
         ''' <summary>Stoppt die Animation und hält den Timer an. Der aktuelle Frame bleibt erhalten.</summary>
@@ -756,7 +842,9 @@ Namespace AniGifControl
             Me._playbackCompleted = False
             If index = Me._Frame Then Return
 
-            Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, index)
+            Dim image As Bitmap = Me._Gif
+            Dim previousFrame As Int32 = Me._Frame
+            Me.SelectPlaybackFrame(index)
             Me._Frame = index
             If Me._diagnosticsEnabled Then Me._diagnosticsCollector.CancelPendingFrame()
 
@@ -768,7 +856,10 @@ Namespace AniGifControl
                 Me.Timer.Start()
             End If
 
-            Me.InvalidateIfVisible()
+            RaiseEvent FrameChanged(Me, New FrameChangedEventArgs(previousFrame, index))
+            If Not Me._IsDisposed AndAlso Not Me.IsDisposed AndAlso Object.ReferenceEquals(image, Me._Gif) AndAlso Me._Frame = index Then
+                Me.InvalidateIfVisible()
+            End If
         End Sub
 
         ''' <summary>Gibt den aktuellen Wiedergabezustand zurück (Playing, Paused, Stopped).</summary>
@@ -895,6 +986,11 @@ Namespace AniGifControl
                 Me._Gif = Nothing
                 Me._OwnsGif = False
 
+            End If
+
+            If Me._gifBackingStream IsNot Nothing Then
+                Me._gifBackingStream.Dispose()
+                Me._gifBackingStream = Nothing
             End If
 
             Me.ClearFrameDelayCache()
@@ -1041,6 +1137,7 @@ Namespace AniGifControl
                     If Me._completedLoops >= Me._loopCount Then
                         Me._playbackCompleted = True
                         Me.AutoPlay = False
+                        RaiseEvent PlaybackCompleted(Me, EventArgs.Empty)
                         Return
                     End If
                 End If
@@ -1054,16 +1151,31 @@ Namespace AniGifControl
                 Return
             End If
 
-            Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, nextFrame)
+            Dim image As Bitmap = Me._Gif
+            Dim previousFrame As Int32 = Me._Frame
+            Me.SelectPlaybackFrame(nextFrame)
             Me._Frame = nextFrame
 
             Dim targetIntervalMs As Int32 = Me.GetFrameIntervalForIndex(Me._Frame)
             Dim adjustedIntervalMs As Int32 = Me.ApplyAdaptiveTiming(targetIntervalMs, elapsedMs, Me.Timer.Interval)
             Me.Timer.Interval = adjustedIntervalMs
 
-            ' Nur neu zeichnen wenn das Control sichtbar ist
-            Me.InvalidateIfVisible(True)
+            RaiseEvent FrameChanged(Me, New FrameChangedEventArgs(previousFrame, nextFrame))
+            If Not Me._IsDisposed AndAlso Not Me.IsDisposed AndAlso Object.ReferenceEquals(image, Me._Gif) AndAlso Me._Frame = nextFrame Then
+                Me.InvalidateIfVisible(True)
+            End If
 
+        End Sub
+
+        ''' <summary>Wählt einen Wiedergabeframe und meldet GDI+-Fehler, ohne die Ausnahme zu unterdrücken.</summary>
+        ''' <param name="index">Nullbasierter Index des auszuwählenden Frames.</param>
+        Private Sub SelectPlaybackFrame(index As Int32)
+            Try
+                Dim unused = Me._Gif.SelectActiveFrame(Me._Dimension, index)
+            Catch ex As Exception When TypeOf ex Is ArgumentException OrElse TypeOf ex Is System.Runtime.InteropServices.ExternalException OrElse TypeOf ex Is ObjectDisposedException
+                RaiseEvent PlaybackError(Me, New System.IO.ErrorEventArgs(ex))
+                Throw
+            End Try
         End Sub
 
         Private Function GetPlayRangeStart() As Int32
@@ -1092,15 +1204,23 @@ Namespace AniGifControl
             Me._playbackCompleted = False
         End Sub
 
-        Private Sub SetGifImage(value As Bitmap)
+        ''' <summary>Prüft, ob die Bildressourcen des Controls noch verwendet werden dürfen.</summary>
+        Private Sub ThrowIfAnimationDisposed()
 
 #Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
             If Me._IsDisposed OrElse Me.IsDisposed Then Throw New ObjectDisposedException(NameOf(AniGif))
 #Enable Warning CA1513
+        End Sub
+
+        ''' <summary>Ersetzt das interne Bild und übernimmt bei geladenen GIFs dessen Datenstream und Bitmap.</summary>
+        ''' <param name="value">Bild oder Nothing für das Standardbild; ohne Datenstream wird es kopiert.</param>
+        ''' <param name="backingStream">Interner Datenstream des geladenen GIFs oder Nothing für eine Kopie.</param>
+        Private Sub SetGifImage(value As Bitmap, Optional backingStream As MemoryStream = Nothing)
+            Me.ThrowIfAnimationDisposed()
 
             ' Auch die Standardressource gehört jeder Instanz als eigene Bitmap-Kopie.
             Dim source As Bitmap = If(value, My.Resources.AniGifControl_Standard)
-            Dim imageCopy As Bitmap = DirectCast(source.Clone(), Bitmap)
+            Dim imageCopy As Bitmap = If(backingStream Is Nothing, DirectCast(source.Clone(), Bitmap), source)
 
             Me.ResetFrameInvalidationBounds()
             ' Vorherige Animation stoppen bevor neues Bild gesetzt wird
@@ -1113,11 +1233,14 @@ Namespace AniGifControl
 
             End If
 
+            If Me._gifBackingStream IsNot Nothing Then Me._gifBackingStream.Dispose()
+
             Me._gifWasExposed = False
             Me._partialFrameInvalidationIssued = False
             Me._rawFrameDelayCacheValid = False
             Me._Gif = imageCopy
             Me._OwnsGif = True
+            Me._gifBackingStream = backingStream
 
             RaiseEvent GifChanged()
 

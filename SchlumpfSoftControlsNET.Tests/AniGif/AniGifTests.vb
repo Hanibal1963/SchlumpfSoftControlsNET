@@ -20,69 +20,34 @@ Imports System.Windows.Forms
 
 Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
+    ''' <summary>Prüft Wiedergabe, Zeichnung und Diagnose des animierten GIF-Steuerelements.</summary>
     <TestClass>
     Partial Public Class AniGifTests
 
+        ''' <summary>Prüft die Designerregistrierung und den normalen Zugriff auf Control-Metadaten zur Laufzeit.</summary>
         <TestMethod>
-        Public Sub PlaybackRange_FiniteLoopsStopAfterLastFrameAndRestartAtBeginning()
+        Public Sub DesignerMetadata_IsAvailableWithoutDesignerHost()
             Using control As New AniGif()
-                control.PlayRangeStart = 1
-                control.PlayRangeEnd = 2
-                control.LoopCount = 2
-                control.StartAnimation()
-                Assert.AreEqual(1, GetCurrentFrame(control))
-                InvokeTimerTick(control)
-                Assert.AreEqual(2, GetCurrentFrame(control))
-                InvokeTimerTick(control)
-                Assert.AreEqual(1, GetCurrentFrame(control))
-                control.PauseAnimation()
-                control.ResumeAnimation()
-                InvokeTimerTick(control)
-                Assert.AreEqual(2, GetCurrentFrame(control))
-                InvokeTimerTick(control)
-                Assert.AreEqual(2, GetCurrentFrame(control))
-                Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
-                Assert.IsFalse(control.AutoPlay)
-                Assert.IsFalse(GetTimer(control).Enabled)
-                control.StartAnimation()
-                Assert.AreEqual(1, GetCurrentFrame(control))
-                Assert.IsTrue(GetTimer(control).Enabled)
+                Dim attributes As AttributeCollection = TypeDescriptor.GetAttributes(control)
+                Dim designer As DesignerAttribute = DirectCast(attributes(GetType(DesignerAttribute)), DesignerAttribute)
+                Assert.IsNotNull(designer)
+                StringAssert.Contains(designer.DesignerTypeName, "AniGifDesigner")
+                Assert.IsNotNull(TypeDescriptor.GetProperties(control)(NameOf(AniGif.AutoPlay)))
             End Using
         End Sub
 
-        <TestMethod>
-        Public Sub PlaybackRange_SingleFrameAndConfigurationChanges()
-            Using control As New AniGif()
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.LoopCount = -1)
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeStart = -1)
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeEnd = -2)
-                control.PlayRangeStart = 2
-                control.PlayRangeEnd = 2
-                control.LoopCount = 2
-                control.StartAnimation()
-                InvokeTimerTick(control)
-                Assert.AreEqual(2, GetCurrentFrame(control))
-                Assert.IsTrue(GetTimer(control).Enabled)
-                control.SeekFrame(2)
-                InvokeTimerTick(control)
-                Assert.IsTrue(GetTimer(control).Enabled)
-                InvokeTimerTick(control)
-                Assert.IsFalse(GetTimer(control).Enabled)
-                control.PlayRangeEnd = -1
-                control.LoopCount = 0
-                control.StartAnimation()
-                InvokeTimerTick(control)
-                Assert.AreEqual(3, GetCurrentFrame(control))
-            End Using
-        End Sub
-
+        ''' <summary>Stellt geschützte Zeichen- und Handleoperationen für Invalidierungstests bereit.</summary>
         Private NotInheritable Class FrameInvalidationProbe
             Inherits AniGif
 
+            ''' <summary>Gibt das Fensterhandle frei, damit der Test dessen Neuerstellung beobachten kann.</summary>
             Public Sub DestroyHandleForFrameTest()
                 Me.DestroyHandle()
             End Sub
 
+            ''' <summary>Zeichnet Hintergrund und Bild innerhalb des angegebenen Ausschnitts und stellt den Grafikzustand anschließend wieder her.</summary>
+            ''' <param name="graphics">Zeichenkontext der Testoberfläche.</param>
+            ''' <param name="clip">Für diesen Zeichendurchlauf zulässiger Bereich.</param>
             Public Overloads Sub PaintFrame(graphics As Graphics, clip As Rectangle)
                 Dim state As GraphicsState = graphics.Save()
                 Try
@@ -96,6 +61,9 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 End Try
             End Sub
 
+            ''' <summary>Zeichnet einen begrenzten Bereich auf eine Bitmap mit einem kurzlebigen Grafikobjekt.</summary>
+            ''' <param name="surface">Zielbitmap für die Zeichenoperation.</param>
+            ''' <param name="clip">Zu zeichnender Ausschnitt in Clientkoordinaten.</param>
             Public Overloads Sub PaintFrame(surface As Bitmap, clip As Rectangle)
                 Using graphics As Graphics = Graphics.FromImage(surface)
                     Me.PaintFrame(graphics, clip)
@@ -104,18 +72,22 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
         End Class
 
+        ''' <summary>Erlaubt Tests, eine Scrollbenachrichtigung eines übergeordneten Panels auszulösen.</summary>
         Private NotInheritable Class FrameInvalidationScrollPanel
             Inherits Panel
 
+            ''' <summary>Simuliert eine Änderung der Scrollposition, ohne Benutzereingaben zu benötigen.</summary>
             Public Sub RaiseScrollForFrameTest()
                 Me.OnScroll(New ScrollEventArgs(ScrollEventType.ThumbPosition, 5))
             End Sub
 
         End Class
 
+        ''' <summary>Beherbergt Tests mit echter Nachrichtenschleife, ohne beim Anzeigen den Fokus zu übernehmen.</summary>
         Private NotInheritable Class FrameInvalidationTestForm
             Inherits Form
 
+            ''' <summary>Verhindert die Aktivierung des Testfensters beim Anzeigen.</summary>
             Protected Overrides ReadOnly Property ShowWithoutActivation As Boolean
                 Get
                     Return True
@@ -124,13 +96,18 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
         End Class
 
+        ''' <summary>Macht die geschützte Bildzeichnung und Handlefreigabe für Diagnosetests zugänglich.</summary>
         Private NotInheritable Class PaintProbeAniGif
             Inherits AniGif
 
+            ''' <summary>Entfernt das Handle, um die Diagnose während der handlelosen Phase zu prüfen.</summary>
             Public Sub DestroyHandleForTest()
                 Me.DestroyHandle()
             End Sub
 
+            ''' <summary>Ruft die Bildzeichnung mit den angegebenen Zeichenargumenten direkt auf.</summary>
+            ''' <param name="graphics">Zeichenkontext der Zieloberfläche.</param>
+            ''' <param name="bounds">Als Zeichenbereich gemeldetes Rechteck.</param>
             Public Sub PaintTo(graphics As Graphics, bounds As Rectangle)
                 Using e As New PaintEventArgs(graphics, bounds)
                     Me.OnPaint(e)
@@ -139,13 +116,17 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
         End Class
 
+        ''' <summary>Ermöglicht eine einmalige Zustandsänderung während des Lesens des Timerzustands.</summary>
         Private NotInheritable Class ReentrantTimer
             Inherits System.Windows.Forms.Timer
 
+            ''' <summary>Beim nächsten Lesen von Enabled auszuführende, anschließend entfernte Aktion.</summary>
             Private _onEnabledRead As Action
 
+            ''' <summary>Führt beim Lesen die vorgemerkte Aktion einmalig aus und delegiert den Timerzustand an die Basisklasse.</summary>
             Public Overrides Property Enabled As Boolean
                 Get
+                    ' Vor dem Aufruf löschen, damit ein reentrantes Lesen die Aktion nicht erneut ausführt.
                     Dim callback As Action = Me._onEnabledRead
                     Me._onEnabledRead = Nothing
                     If callback IsNot Nothing Then callback.Invoke()
@@ -156,18 +137,25 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 End Set
             End Property
 
+            ''' <summary>Merkt eine Aktion für den nächsten Zugriff auf den Timerzustand vor.</summary>
+            ''' <param name="callback">Einmalig auszuführende Aktion.</param>
             Public Sub RunOnNextEnabledRead(callback As Action)
                 Me._onEnabledRead = callback
             End Sub
 
         End Class
 
+        ''' <summary>Zählt Zuweisungen an den Aktivierungszustand, um unnötige Timerneustarts zu erkennen.</summary>
         Private NotInheritable Class TrackingTimer
             Inherits System.Windows.Forms.Timer
 
+            ''' <summary>Anzahl der Zuweisungen, die den Timer aktivieren.</summary>
             Private _startCalls As Integer
+
+            ''' <summary>Anzahl der Zuweisungen, die den Timer deaktivieren.</summary>
             Private _stopCalls As Integer
 
+            ''' <summary>Zählt Aktivierungs- und Deaktivierungszuweisungen und übernimmt sie in den Basistimer.</summary>
             Public Overrides Property Enabled As Boolean
                 Get
                     Return MyBase.Enabled
@@ -182,18 +170,21 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 End Set
             End Property
 
+            ''' <summary>Gibt die seit dem letzten Zurücksetzen gezählten Aktivierungszuweisungen zurück.</summary>
             Public ReadOnly Property StartCalls As Integer
                 Get
                     Return Me._startCalls
                 End Get
             End Property
 
+            ''' <summary>Gibt die seit dem letzten Zurücksetzen gezählten Deaktivierungszuweisungen zurück.</summary>
             Public ReadOnly Property StopCalls As Integer
                 Get
                     Return Me._stopCalls
                 End Get
             End Property
 
+            ''' <summary>Setzt beide Zähler zurück, ohne den Timerzustand zu verändern.</summary>
             Public Sub ResetCounts()
                 Me._startCalls = 0
                 Me._stopCalls = 0
@@ -201,6 +192,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
         End Class
 
+        ''' <summary>Prüft die Driftkorrektur bei Verspätung und Vorsprung, ihre Intervallgrenzen und den deaktivierten Modus.</summary>
         <TestMethod>
         Public Sub AdaptiveTiming_DriftCorrectionUsesExistingBounds()
             Using control As New AniGif()
@@ -217,6 +209,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft Zeitstempel und Timerintervalle beim Umschalten adaptiver Zeitsteuerung für beide Geschwindigkeits- und Diagnosemodi.</summary>
         <TestMethod>
         <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub AdaptiveTiming_TimestampsFollowPlaybackAndDiagnosticsState()
@@ -263,6 +256,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
                             control.MinimumFrameIntervalMs = 20
                             Assert.AreEqual(100, timer.Interval)
+                            ' Ein künstlich alter Zeitstempel erzwingt die Korrektur auf das minimale Intervall.
                             SetLastFrameTimestamp(control, Math.Max(1L, Stopwatch.GetTimestamp() - Stopwatch.Frequency))
                             InvokeTimerTick(control)
                             Assert.AreEqual(20, timer.Interval)
@@ -284,6 +278,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Next
         End Sub
 
+        ''' <summary>Prüft, dass das Umschalten der adaptiven Steuerung den Timer nicht neu startet und das Intervall erst beim nächsten Tick ersetzt.</summary>
         <TestMethod>
         <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub AdaptiveTiming_TogglePreservesTheScheduledIntervalUntilTheNextTick()
@@ -316,6 +311,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Next
         End Sub
 
+        ''' <summary>Prüft das Zurücksetzen und Wiederaufnehmen der Zeitmessung bei Sichtbarkeitswechseln und expliziter Pause.</summary>
         <TestMethod>
         Public Sub AdaptiveTiming_VisibilityAndPausedTransitionsRestoreTheCorrectClockState()
             Using parent As New Panel()
@@ -358,6 +354,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft, dass ein Started-Handler die Bildrate ändern und sofort pausieren kann, ohne zusätzliche Timerwechsel zu verursachen.</summary>
         <TestMethod>
         <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub AnimationStarted_HandlerCanChangeTimingAndPause()
@@ -390,6 +387,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft die Startbenachrichtigung beim Abspielen eines animierten GIFs.</summary>
         <TestMethod>
         Public Sub AnimationStarted_IsRaisedWhenAnimatedGifStarts()
             Using control As New AniGif()
@@ -406,6 +404,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft die Freigabe im Stopped-Handler beim Ausblenden einschließlich Timerzustand und einmaliger Benachrichtigung.</summary>
         <TestMethod>
         Public Sub AnimationStopped_HandlerCanDisposeDuringVisibilityChange()
             Using control As New AniGif()
@@ -426,6 +425,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft den reentranten Neustart im Stopped-Handler und die Anzahl der Start- und Stoppereignisse.</summary>
         <TestMethod>
         Public Sub AnimationStopped_HandlerCanRestartWithoutDuplicateEvents()
             Using control As New AniGif()
@@ -446,6 +446,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft, dass Start und anschließender Stopp eines animierten GIFs jeweils ein Ereignis auslösen.</summary>
         <TestMethod>
         Public Sub AnimationStopped_IsRaisedWhenRunningAnimationStops()
             Using control As New AniGif()
@@ -466,6 +467,12 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft das berechnete Zeichenrechteck für die vorgegebenen Bild- und Anzeigeeinstellungen.</summary>
+        ''' <param name="imageSize">Größe des Ausgangsbilds.</param>
+        ''' <param name="clientSize">Größe des Clientbereichs.</param>
+        ''' <param name="sizeMode">Zu prüfender Größenmodus.</param>
+        ''' <param name="zoom">Zu verwendender Zoomfaktor.</param>
+        ''' <param name="expected">Erwartetes Zeichenrechteck.</param>
         Private Shared Sub AssertDrawingRectangle(imageSize As Size, clientSize As Size, sizeMode As ImageSizeMode, zoom As Decimal, expected As Rectangle)
             Using source As New Bitmap(imageSize.Width, imageSize.Height)
                 Using control As New AniGif()
@@ -478,6 +485,16 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Vergleicht über mehrere Frames die partielle Neuzeichnung pixelweise mit einer vollständigen Neuzeichnung.</summary>
+        ''' <param name="source">Animiertes Ausgangsbild.</param>
+        ''' <param name="clientSize">Größe der Zeichenfläche.</param>
+        ''' <param name="mode">Größenmodus des Bilds.</param>
+        ''' <param name="zoom">Zoomfaktor für beide Steuerelemente.</param>
+        ''' <param name="quality">Qualitätsvorgabe für die Skalierung.</param>
+        ''' <param name="transparentBackground">Gibt an, ob ein transparenter Hintergrund simuliert wird.</param>
+        ''' <param name="expectedInvalidation">Erwarteter partiell invalidierter Bereich.</param>
+        ''' <param name="backgroundImage">Optionales Hintergrundbild beider Steuerelemente.</param>
+        ''' <param name="backgroundLayout">Layout des optionalen Hintergrundbilds.</param>
         Private Shared Sub AssertFrameSequenceMatchesFull(source As Bitmap, clientSize As Size, mode As ImageSizeMode, zoom As Decimal,
             quality As GifScalingQualityPreset, transparentBackground As Boolean, expectedInvalidation As Rectangle,
             Optional backgroundImage As Image = Nothing, Optional backgroundLayout As ImageLayout = ImageLayout.Tile)
@@ -530,6 +547,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                                     baseline.PaintFrame(baselineSurface, baseline.ClientRectangle)
                                     optimized.PaintFrame(optimizedSurface, optimized.ClientRectangle)
                                     AssertSamePixels(baselineSurface, optimizedSurface)
+                                    ' Beide Flächen behalten ihren bisherigen Inhalt, damit unzureichend invalidierte Pixel sichtbar bleiben.
                                     For frame As Integer = 1 To 4
                                         baselineInvalidations.Clear()
                                         optimizedInvalidations.Clear()
@@ -555,11 +573,17 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft den zuletzt gemeldeten Invalidierungsbereich.</summary>
+        ''' <param name="invalidations">Aufgezeichnete Invalidierungsbereiche.</param>
+        ''' <param name="expected">Erwarteter letzter Bereich.</param>
         Private Shared Sub AssertLastFrameInvalidation(invalidations As List(Of Rectangle), expected As Rectangle)
             Assert.IsNotEmpty(invalidations)
             Assert.AreEqual(expected, invalidations(invalidations.Count - 1))
         End Sub
 
+        ''' <summary>Vergleicht Größe und Farbwerte zweier Bitmaps für jedes Pixel.</summary>
+        ''' <param name="expected">Bitmap mit den erwarteten Pixeln.</param>
+        ''' <param name="actual">Zu prüfende Bitmap.</param>
         Private Shared Sub AssertSamePixels(expected As Bitmap, actual As Bitmap)
             Assert.AreEqual(expected.Size, actual.Size)
             For y As Integer = 0 To expected.Height - 1
@@ -569,6 +593,13 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Next
         End Sub
 
+        ''' <summary>Prüft drei entlang der längeren Clientachse verteilte Bildpunkte.</summary>
+        ''' <param name="image">Zu prüfendes gerendertes Bild.</param>
+        ''' <param name="clientSize">Clientgröße zur Auswahl der Prüfpunkte.</param>
+        ''' <param name="first">Erwartete Farbe am ersten Punkt.</param>
+        ''' <param name="middle">Erwartete Farbe am mittleren Punkt.</param>
+        ''' <param name="last">Erwartete Farbe am letzten Punkt.</param>
+        ''' <param name="message">Zusätzlicher Kontext für eine fehlgeschlagene Prüfung.</param>
         Private Shared Sub AssertScaledPixels(image As Bitmap, clientSize As Size, first As Color, middle As Color, last As Color, message As String)
             Dim points As Point() = If(clientSize.Width > clientSize.Height,
                 New Point() {New Point(20, 20), New Point(80, 20), New Point(140, 20)},
@@ -579,6 +610,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Next
         End Sub
 
+        ''' <summary>Prüft die Änderung der Bildrate im AutoPlay-Handler und die Reihenfolge der Ereignisse ohne doppelten Timerstart.</summary>
         <TestMethod>
         <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub AutoPlayChanged_HandlerCanChangeTimingWithoutDuplicateStart()
@@ -607,6 +639,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft, dass gleichwertige AutoPlay-Zuweisungen kein zusätzliches Änderungsereignis auslösen.</summary>
         <TestMethod>
         Public Sub AutoPlayChanged_IsRaisedWhenValueChanges()
             Using control As New AniGif()
@@ -621,6 +654,9 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Erzeugt ein schwarz-weißes Schachbrett mit einzelnen Pixeln als Feldern.</summary>
+        ''' <param name="size">Breite und Höhe des quadratischen Bilds.</param>
+        ''' <returns>Die vom Aufrufer zu entsorgende Bitmap.</returns>
         Private Shared Function CreateCheckerboard(size As Integer) As Bitmap
             Dim image As New Bitmap(size, size)
             For y As Integer = 0 To size - 1
@@ -631,6 +667,9 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Return image
         End Function
 
+        ''' <summary>Codiert Frameverzögerungen als aufeinanderfolgende Vierbytewerte für GIF-Metadaten.</summary>
+        ''' <param name="delays">Zu codierende Verzögerungswerte.</param>
+        ''' <returns>Bytefolge der angegebenen Werte.</returns>
         Private Shared Function CreateDelayBytes(ParamArray delays As Integer()) As Byte()
             Dim bytes((delays.Length * 4) - 1) As Byte
             For i As Integer = 0 To delays.Length - 1
@@ -639,6 +678,9 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Return bytes
         End Function
 
+        ''' <summary>Erzeugt und entsorgt ein Kindsteuerelement und liefert eine schwache Referenz für den Abonnement-Lebensdauertest.</summary>
+        ''' <param name="parent">Übergeordnetes Steuerelement, das während der Speicherbereinigung bestehen bleibt.</param>
+        ''' <returns>Schwache Referenz auf das entsorgte Steuerelement.</returns>
         <MethodImpl(MethodImplOptions.NoInlining)>
         Private Shared Function CreateDisposedFrameControl(parent As Control) As WeakReference
             Dim control As New AniGif()
@@ -649,6 +691,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Return released
         End Function
 
+        ''' <summary>Prüft unabhängige Standardbilder und Framezustände auch nach dem Zurücksetzen.</summary>
         <TestMethod>
         Public Sub DefaultGif_IsIndependentForEachControlAndAfterReset()
             Using second As New AniGif()
@@ -672,6 +715,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft das initialisierte Standard-GIF und den Umlauf vom letzten zum ersten Frame.</summary>
         <TestMethod>
         Public Sub DefaultGif_IsInitializedAndWrapsFromTheLastFrame()
             Using control As New AniGif()
@@ -688,6 +732,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft Bildrate, ausgelassene Frames und Renderzeiten anhand aktiver Messintervalle.</summary>
         <TestMethod>
         Public Sub DiagnosticsCollector_CalculatesRatesDropsAndRenderTimesFromActiveIntervals()
             Dim collectorType As Type = GetType(AniGif).Assembly.GetType(GetType(AniGif).Namespace & ".DiagnosticsCollector")
@@ -728,6 +773,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Assert.AreEqual(TimeSpan.FromSeconds(1), snapshot.ActiveDuration)
         End Sub
 
+        ''' <summary>Prüft, dass veraltete, abgeschnittene oder abgebrochene Frames nicht gezählt werden.</summary>
         <TestMethod>
         Public Sub DiagnosticsCollector_DoesNotCountStaleClippedOrCancelledFrames()
             Dim collectorType As Type = GetType(AniGif).Assembly.GetType(GetType(AniGif).Namespace & ".DiagnosticsCollector")
@@ -769,6 +815,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Assert.IsFalse(reset.MaxRenderTimeMs.HasValue)
         End Sub
 
+        ''' <summary>Prüft den aktuellen Messzustand in Sichtbarkeitsereignissen übergeordneter Steuerelemente.</summary>
         <STATestMethod>
         Public Sub Diagnostics_AncestorVisibilityHandlersObserveCurrentStateBeforeDiagnosticsHandler()
             Using parent As New Panel()
@@ -820,6 +867,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft, dass der AutoPlay-Handler die beendete Messung unmittelbar beobachtet.</summary>
         <STATestMethod>
         Public Sub Diagnostics_AutoPlayChangedHandlerObservesStoppedMeasurementImmediately()
             Using control As New PaintProbeAniGif()
@@ -855,6 +903,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft die Zählung von Timerframes in beiden Geschwindigkeits- und Zeitsteuerungsmodi.</summary>
         <STATestMethod>
         <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub Diagnostics_CountsTimerFramesInBothSpeedAndAdaptiveModes()
@@ -900,6 +949,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Next
         End Sub
 
+        ''' <summary>Prüft Standardwerte und die Unabhängigkeit eingefrorener Diagnosemomentaufnahmen.</summary>
         <STATestMethod>
         Public Sub Diagnostics_DefaultsAndFrozenSnapshotsAreIndependent()
             Using control As New PaintProbeAniGif()
@@ -945,6 +995,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft, dass Diagnosemessungen Bildpunkte, Timer und Wiedergabeereignisse nicht verändern.</summary>
         <STATestMethod>
         <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub Diagnostics_DoesNotChangePixelsTimerOrPlaybackEvents()
@@ -1005,6 +1056,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Next
         End Sub
 
+        ''' <summary>Prüft den Ausschluss pausierter, unsichtbarer und leerer Clientintervalle aus der Messung.</summary>
         <STATestMethod>
         Public Sub Diagnostics_ExcludesPausedHiddenAndEmptyClientIntervals()
             Using parent As New Panel()
@@ -1058,6 +1110,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft den Messungsausschluss ohne Handle und die Fortsetzung nach dessen Neuerstellung.</summary>
         <STATestMethod>
         Public Sub Diagnostics_ExcludesTimeWithoutAHandleAndResumesAfterRecreation()
             Using control As New PaintProbeAniGif()
@@ -1088,6 +1141,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft die Beobachtung neuer Vorfahren nach Umhängen und das Abmelden beim Deaktivieren.</summary>
         <STATestMethod>
         Public Sub Diagnostics_FollowsReparentedAncestorsAndDetachesOnDisable()
             Using firstParent As New Panel()
@@ -1138,6 +1192,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft, dass ein HandleDestroyed-Handler die Messung nicht erneut aktivieren kann.</summary>
         <STATestMethod>
         Public Sub Diagnostics_HandleDestroyedHandlerCannotReactivateMeasurement()
             Using control As New PaintProbeAniGif()
@@ -1170,6 +1225,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft das Entsorgen des Steuerelements aus einem Paint-Handler bei aktiver Diagnose.</summary>
         <STATestMethod>
         Public Sub Diagnostics_PaintHandlerCanDisposeTheControl()
             Using control As New PaintProbeAniGif()
@@ -1193,6 +1249,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft die Erfassung echter Timerereignisse in einer WinForms-Nachrichtenschleife.</summary>
         <STATestMethod>
         Public Sub Diagnostics_RecordsRealTimerTicksInAWinFormsMessageLoop()
             Using control As New PaintProbeAniGif()
@@ -1237,6 +1294,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft die Framezuordnung bei wiedereintretenden Paint- und Invalidated-Handlern.</summary>
         <STATestMethod>
         Public Sub Diagnostics_ReentrantPaintAndInvalidatedHandlersDoNotMisattributeFrames()
             Using control As New PaintProbeAniGif()
@@ -1284,6 +1342,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft den erforderlichen Clip-Schnitt und die Framegenerationen über den Umlauf hinweg.</summary>
         <STATestMethod>
         Public Sub Diagnostics_RequiresAnIntersectingClipAndTracksFrameGenerationsAcrossWrap()
             Using control As New PaintProbeAniGif()
@@ -1323,6 +1382,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft, dass Diagnose-Reset und Zeitänderungen die laufende Wiedergabe erhalten.</summary>
         <STATestMethod>
         <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub Diagnostics_ResetWhilePlayingAndTimingChangesPreservePlayback()
@@ -1367,6 +1427,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft Diagnoseverhalten bei Framewahl, Bildwechsel, Reset und Entsorgung.</summary>
         <STATestMethod>
         <CodeAnalysis.SuppressMessage("Style", "IDE0058:Der Ausdruckswert wird niemals verwendet.", Justification:="<Ausstehend>")>
         Public Sub Diagnostics_SeekImageChangesResetAndDisposePreserveTheirContracts()
@@ -1427,6 +1488,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft Renderzeiten ohne Wiedergabebildrate bei einem statischen Bild.</summary>
         <STATestMethod>
         Public Sub Diagnostics_StaticImageHasRenderTimesButNoPlaybackRate()
             Using control As New PaintProbeAniGif()
@@ -1498,6 +1560,10 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Next
         End Sub
 
+        ''' <summary>Liefert den erwarteten Invalidierungsbereich für die festen Testabmessungen.</summary>
+        ''' <param name="mode">Zu prüfender Größenmodus.</param>
+        ''' <returns>Erwarteter Bereich im Clientkoordinatensystem.</returns>
+        ''' <exception cref="ArgumentOutOfRangeException">Der Größenmodus wird vom Test nicht unterstützt.</exception>
         Private Shared Function ExpectedFrameInvalidation(mode As ImageSizeMode) As Rectangle
             Select Case mode
                 Case ImageSizeMode.Normal
@@ -1513,6 +1579,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Select
         End Function
 
+        ''' <summary>Prüft, dass eine explizite Pause Sichtbarkeits- und Zeitänderungen überdauert.</summary>
         <TestMethod>
         Public Sub ExplicitPause_SurvivesVisibilityAndTimingChanges()
             Using parent As New Panel()
@@ -1540,6 +1607,10 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Stellt den Hintergrund eines Zeichenbereichs auf der Testbitmap wieder her.</summary>
+        ''' <param name="surface">Zu bearbeitende Zeichenfläche.</param>
+        ''' <param name="bounds">Aufzufüllender Bereich.</param>
+        ''' <param name="color">Hintergrundfarbe.</param>
         Private Shared Sub FillFrameBackground(surface As Bitmap, bounds As Rectangle, color As Color)
             Using graphics As Graphics = Graphics.FromImage(surface)
                 Using brush As New SolidBrush(color)
@@ -1548,6 +1619,9 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Durchsucht das Startverzeichnis und dessen Vorfahren nach der Solutiondatei.</summary>
+        ''' <param name="startDirectory">Ausgangsverzeichnis der Suche.</param>
+        ''' <returns>Verzeichnis der Solution; bei erfolgloser Suche schlägt der Test fehl.</returns>
         Private Shared Function FindSolutionRoot(startDirectory As String) As String
             Dim current As New DirectoryInfo(startDirectory)
 
@@ -1564,6 +1638,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Return String.Empty
         End Function
 
+        ''' <summary>Prüft das Zurücksetzen zwischengespeicherter Verzögerungen bei Bildwechsel und Entsorgung.</summary>
         <TestMethod>
         Public Sub FrameDelayCache_ImageReplacementAndDisposalResetCachedData()
             Using source As Bitmap = LoadAnimatedGif()
@@ -1600,6 +1675,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft die Erkennung geänderter Metadaten trotz unverändertem gerundeten Ersatzintervall.</summary>
         <TestMethod>
         Public Sub FrameDelayCache_MetadataChangeIsDetectedWhenRoundedFallbackIsUnchanged()
             Using control As New AniGif()
@@ -1611,6 +1687,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft die Erfassung des Bildzugriffs durch einen wiedereintretenden Getter nach Bildwechsel.</summary>
         <TestMethod>
         Public Sub FrameDelayCache_ReentrantGetterAfterImageReplacementTracksExposure()
             Using source As Bitmap = LoadAnimatedGif()
@@ -1633,6 +1710,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft die Wiederverwendung des Verzögerungsspeichers vor und nach öffentlichem Bildzugriff.</summary>
         <TestMethod>
         Public Sub FrameDelayCache_UnexposedAndExposedImagesReuseStorage()
             Using control As New AniGif()
@@ -1662,6 +1740,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft, dass externe Metadatenänderungen an den vorgesehenen Aktualisierungspunkten übernommen werden.</summary>
         <TestMethod>
         <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub FrameDelayMetadata_ExternalMutationsUseExistingRefreshPoints()
@@ -1721,6 +1800,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Next
         End Sub
 
+        ''' <summary>Prüft die Normalisierung von Rohwerten und ihre Wiederherstellung bei erweiterten Intervallgrenzen.</summary>
         <TestMethod>
         Public Sub FrameDelayMetadata_NormalizesRawValuesAndRestoresWidenedBounds()
             Using control As New AniGif()
@@ -1763,6 +1843,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft, dass ein Überlauf keine teilweise aktualisierten Verzögerungen veröffentlicht.</summary>
         <TestMethod>
         Public Sub FrameDelayMetadata_OverflowDoesNotPublishPartialValues()
             Using control As New AniGif()
@@ -1790,6 +1871,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft Ersatzwerte für kurze Metadatenblöcke und das Ignorieren überzähliger Werte.</summary>
         <TestMethod>
         <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub FrameDelayMetadata_ShortBlocksUseFallbackAndExtraValuesAreIgnored()
@@ -1819,6 +1901,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft, dass gleichwertige begrenzte Bildraten weder Aktualisierung noch Timerneustart bewirken.</summary>
         <TestMethod>
         <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         Public Sub FramesPerSecond_EquivalentValuesDoNotRefreshOrRestart()
@@ -1860,6 +1943,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Next
         End Sub
 
+        ''' <summary>Prüft die Begrenzung der Bildrate auf den gültigen Wertebereich.</summary>
         <TestMethod>
         Public Sub FramesPerSecond_IsClampedToValidRange()
             Using control As New AniGif()
@@ -1871,6 +1955,9 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Liest den aktuellen Frameindex über das private Zustandsfeld.</summary>
+        ''' <param name="control">Zu untersuchendes Steuerelement.</param>
+        ''' <returns>Aktueller Frameindex.</returns>
         Private Shared Function GetCurrentFrame(control As AniGif) As Integer
             Dim frameField As FieldInfo = GetType(AniGif).GetField("_Frame", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(frameField)
@@ -1878,12 +1965,20 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Return CInt(frameField.GetValue(control))
         End Function
 
+        ''' <summary>Erzeugt über Reflexion eine Momentaufnahme des internen Diagnosesammlers.</summary>
+        ''' <param name="collector">Interner Diagnosesammler.</param>
+        ''' <param name="isEnabled">Zu meldender Aktivierungszustand.</param>
+        ''' <param name="timestamp">Zeitstempel der Momentaufnahme.</param>
+        ''' <returns>Erzeugte Diagnosemomentaufnahme.</returns>
         Private Shared Function GetDiagnosticsCollectorSnapshot(collector As Object, isEnabled As Boolean, timestamp As Long) As AniGifDiagnostics
             Dim method As MethodInfo = collector.GetType().GetMethod("CreateSnapshot", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(method)
             Return DirectCast(method.Invoke(collector, New Object() {isEnabled, timestamp}), AniGifDiagnostics)
         End Function
 
+        ''' <summary>Berechnet das Zeichenrechteck mit den internen Geometriefunktionen.</summary>
+        ''' <param name="control">Steuerelement mit den zu prüfenden Einstellungen.</param>
+        ''' <returns>Berechnetes Zeichenrechteck.</returns>
         Private Shared Function GetDrawingRectangle(control As AniGif) As Rectangle
             Dim sizeMethod As MethodInfo = GetGeometryMethod("GetRectStartSize")
             Dim pointMethod As MethodInfo = GetGeometryMethod("GetRectStartPoint")
@@ -1892,12 +1987,18 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Return New Rectangle(point, size)
         End Function
 
+        ''' <summary>Liest die intern normalisierten Frameverzögerungen über Reflexion.</summary>
+        ''' <param name="control">Zu untersuchendes Steuerelement.</param>
+        ''' <returns>Internes Array der Verzögerungen in Millisekunden.</returns>
         Private Shared Function GetFrameDelays(control As AniGif) As Integer()
             Dim delayField As FieldInfo = GetType(AniGif).GetField("_NormalizedFrameDelaysMs", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(delayField)
             Return DirectCast(delayField.GetValue(control), Integer())
         End Function
 
+        ''' <summary>Sucht eine interne statische Geometriemethode für Reflexionsaufrufe.</summary>
+        ''' <param name="name">Name der gesuchten Methode.</param>
+        ''' <returns>Metadaten der gefundenen Methode.</returns>
         Private Shared Function GetGeometryMethod(name As String) As MethodInfo
             Dim helperType As Type = GetType(AniGif).Assembly.GetType(GetType(AniGif).Namespace & ".FunctionDefinitions")
             Assert.IsNotNull(helperType)
@@ -1906,24 +2007,34 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Return method
         End Function
 
+        ''' <summary>Liest das interne Bild, ohne den öffentlichen Getter und dessen Nebenwirkungen auszulösen.</summary>
+        ''' <param name="control">Zu untersuchendes Steuerelement.</param>
+        ''' <returns>Intern verwaltete Bitmap.</returns>
         Private Shared Function GetGifWithoutExposure(control As AniGif) As Bitmap
             Dim imageField As FieldInfo = GetType(AniGif).GetField("_Gif", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(imageField)
             Return DirectCast(imageField.GetValue(control), Bitmap)
         End Function
 
+        ''' <summary>Liest den internen Zeitstempel des letzten Frames.</summary>
+        ''' <param name="control">Zu untersuchendes Steuerelement.</param>
+        ''' <returns>Gespeicherter Zeitstempel.</returns>
         Private Shared Function GetLastFrameTimestamp(control As AniGif) As Long
             Dim timestampField As FieldInfo = GetType(AniGif).GetField("_LastFrameTickTimestamp", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(timestampField)
             Return CLng(timestampField.GetValue(control))
         End Function
 
+        ''' <summary>Liest die ausstehende Framegeneration des internen Diagnosesammlers.</summary>
+        ''' <param name="collector">Interner Diagnosesammler.</param>
+        ''' <returns>Nummer der ausstehenden Generation.</returns>
         Private Shared Function GetPendingDiagnosticsGeneration(collector As Object) As Long
             Dim propertyInfo As PropertyInfo = collector.GetType().GetProperty("PendingFrameGeneration", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(propertyInfo)
             Return CLng(propertyInfo.GetValue(collector))
         End Function
 
+        ''' <summary>Prüft die Wiedergabezustände beim Starten, Pausieren, Fortsetzen und Stoppen.</summary>
         <TestMethod>
         Public Sub GetPlaybackState_ReflectsPlaybackTransitions()
             Using control As New AniGif()
@@ -1943,6 +2054,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft, dass der gewünschte Wiedergabezustand bei unsichtbarem Steuerelement erhalten bleibt.</summary>
         <TestMethod>
         Public Sub GetPlaybackState_RemainsPlayingWhileHidden()
             Using control As New AniGif()
@@ -1959,6 +2071,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft den gestoppten Wiedergabezustand nach der Entsorgung.</summary>
         <TestMethod>
         Public Sub GetPlaybackState_ReturnsStoppedAfterDisposal()
             Using control As New AniGif()
@@ -1971,18 +2084,25 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Liest die intern gespeicherten rohen Frameverzögerungen über Reflexion.</summary>
+        ''' <param name="control">Zu untersuchendes Steuerelement.</param>
+        ''' <returns>Internes Array der Rohverzögerungen in Millisekunden.</returns>
         Private Shared Function GetRawFrameDelays(control As AniGif) As Integer()
             Dim delayField As FieldInfo = GetType(AniGif).GetField("_rawFrameDelaysMs", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(delayField)
             Return DirectCast(delayField.GetValue(control), Integer())
         End Function
 
+        ''' <summary>Liest den internen Wiedergabetimer über Reflexion.</summary>
+        ''' <param name="control">Zu untersuchendes Steuerelement.</param>
+        ''' <returns>Timer des Steuerelements.</returns>
         Private Shared Function GetTimer(control As AniGif) As System.Windows.Forms.Timer
             Dim timerProperty As PropertyInfo = GetType(AniGif).GetProperty("Timer", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(timerProperty)
             Return DirectCast(timerProperty.GetValue(control), System.Windows.Forms.Timer)
         End Function
 
+        ''' <summary>Prüft, dass ein Bildwechsel die Pause erhält und den Frame zurücksetzt.</summary>
         <TestMethod>
         Public Sub GifReplacement_PreservesPauseAndResetsTheFrame()
             Using source As Bitmap = LoadAnimatedGif()
@@ -2004,6 +2124,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft Wiedergabezustand und Bildfreigabe beim Ersetzen in beiden Geschwindigkeitsmodi.</summary>
         <TestMethod>
         <CodeAnalysis.SuppressMessage("Performance", "CA1861:Konstantenmatrizen als Argumente vermeiden", Justification:="<Ausstehend>")>
         <CodeAnalysis.SuppressMessage("Style", "IDE0058:Der Ausdruckswert wird niemals verwendet.", Justification:="<Ausstehend>")>
@@ -2052,6 +2173,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Next
         End Sub
 
+        ''' <summary>Prüft die Ablehnung von Bildzuweisungen nach der Entsorgung ohne Übernahme des Quellbilds.</summary>
         <TestMethod>
         Public Sub Gif_AfterDisposalRejectsAssignmentsWithoutTakingOwnership()
             Using source As New Bitmap(8, 8)
@@ -2094,6 +2216,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft die Ablehnung einer bereits entsorgten Bitmap vor einem Klonversuch.</summary>
         <TestMethod>
         Public Sub Gif_AfterDisposalRejectsDisposedBitmapBeforeCloning()
             Using source As New Bitmap(8, 8)
@@ -2108,6 +2231,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft die Ablehnung von Nothing nach der Entsorgung ohne erneute Erstellung des Standardbilds.</summary>
         <TestMethod>
         Public Sub Gif_AfterDisposalRejectsNothingWithoutRecreatingTheDefaultImage()
             Using control As New AniGif()
@@ -2126,6 +2250,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft, dass Bildzuweisungen bereits während der Entsorgung abgelehnt werden.</summary>
         <TestMethod>
         Public Sub Gif_WhileDisposingRejectsAssignmentsBeforeTheBaseControlIsDisposed()
             Using source As New Bitmap(8, 8)
@@ -2154,6 +2279,9 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Ersetzt den internen Timer durch einen Testtimer mit demselben Intervall.</summary>
+        ''' <param name="control">Steuerelement, dessen Timer ersetzt wird.</param>
+        ''' <param name="timer">Einzusetzender Testtimer.</param>
         Private Shared Sub InstallTrackingTimer(control As AniGif, timer As System.Windows.Forms.Timer)
             Dim timerProperty As PropertyInfo = GetType(AniGif).GetProperty("Timer", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(timerProperty)
@@ -2161,18 +2289,30 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             timerProperty.SetValue(control, timer)
         End Sub
 
+        ''' <summary>Ruft die interne Anpassung des Timerintervalls über Reflexion auf.</summary>
+        ''' <param name="control">Steuerelement mit der Zeitsteuerung.</param>
+        ''' <param name="target">Angestrebtes Intervall.</param>
+        ''' <param name="elapsed">Bereits verstrichene Zeit.</param>
+        ''' <param name="scheduled">Bisher geplantes Intervall.</param>
+        ''' <returns>Angepasstes Intervall.</returns>
         Private Shared Function InvokeAdaptiveTiming(control As AniGif, target As Integer, elapsed As Integer, scheduled As Integer) As Integer
             Dim method As MethodInfo = GetType(AniGif).GetMethod("ApplyAdaptiveTiming", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(method)
             Return CInt(method.Invoke(control, New Object() {target, elapsed, scheduled}))
         End Function
 
+        ''' <summary>Ruft eine nicht öffentliche Methode des Diagnosesammlers über Reflexion auf.</summary>
+        ''' <param name="collector">Interner Diagnosesammler.</param>
+        ''' <param name="name">Name der aufzurufenden Methode.</param>
+        ''' <param name="arguments">Argumente für den Methodenaufruf.</param>
         Private Shared Sub InvokeDiagnosticsCollector(collector As Object, name As String, ParamArray arguments As Object())
             Dim method As MethodInfo = collector.GetType().GetMethod(name, BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(method)
             Dim unused = method.Invoke(collector, arguments)
         End Sub
 
+        ''' <summary>Simuliert ein Timerereignis durch Aufruf des internen Tick-Handlers.</summary>
+        ''' <param name="control">Steuerelement, dessen Tick-Handler ausgeführt wird.</param>
         Private Shared Sub InvokeTimerTick(control As AniGif)
             Dim timerTickMethod As MethodInfo = GetType(AniGif).GetMethod("Timer_Tick", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(timerTickMethod)
@@ -2180,6 +2320,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Dim unused = timerTickMethod.Invoke(control, New Object() {control, EventArgs.Empty})
         End Sub
 
+        ''' <summary>Lädt das Standard-GIF aus dem Projektverzeichnis für Animationstests.</summary>
+        ''' <returns>Die vom Aufrufer zu entsorgende Bitmap.</returns>
         Private Shared Function LoadAnimatedGif() As Bitmap
             Dim solutionRoot As String = FindSolutionRoot(AppContext.BaseDirectory)
             Dim gifPath As String = Path.Combine(solutionRoot, "SchlumpfSoftControlsNET", "AniGifControl", "AniGifControl.Standard.gif")
@@ -2187,6 +2329,62 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Assert.IsTrue(File.Exists(gifPath), $"Die Testdatei wurde nicht gefunden: {gifPath}")
             Return New Bitmap(gifPath)
         End Function
+
+        ''' <summary>Prüft die drei GIF-Quellen und die Wiedergabe nach Freigabe beziehungsweise Änderung der Eingabe.</summary>
+        <TestMethod>
+        Public Sub LoadGif_AllSourcesKeepAnimatedFramesAfterInputIsReleased()
+            Dim gifPath As String = Path.Combine(FindSolutionRoot(AppContext.BaseDirectory), "SchlumpfSoftControlsNET", "AniGifControl", "AniGifControl.Standard.gif")
+            Dim bytes As Byte() = File.ReadAllBytes(gifPath)
+            Using control As New AniGif()
+                Using source As New MemoryStream()
+                    source.WriteByte(42)
+                    source.Write(bytes, 0, bytes.Length)
+                    source.Position = 1
+                    control.LoadGif(source)
+                    Assert.IsTrue(source.CanRead)
+                    Assert.AreEqual(source.Length, source.Position)
+                End Using
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                Assert.AreEqual(1, GetCurrentFrame(control))
+
+                control.LoadGif(bytes)
+                Array.Clear(bytes, 0, bytes.Length)
+                InvokeTimerTick(control)
+                Assert.AreEqual(1, GetCurrentFrame(control))
+
+                control.LoadGif(gifPath)
+                Using exclusive As New FileStream(gifPath, FileMode.Open, FileAccess.Read, FileShare.None)
+                    Assert.IsGreaterThan(0L, exclusive.Length)
+                End Using
+                InvokeTimerTick(control)
+                Assert.AreEqual(1, GetCurrentFrame(control))
+            End Using
+        End Sub
+
+        ''' <summary>Prüft fehlerhafte Quellen und stellt sicher, dass das bisherige Bild unverändert bleibt.</summary>
+        <TestMethod>
+        Public Sub LoadGif_InvalidInputsLeaveExistingImageIntact()
+            Using control As New AniGif()
+                Dim previous As Bitmap = control.Gif
+                Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadGif(DirectCast(Nothing, Stream)))
+                Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadGif(DirectCast(Nothing, Byte())))
+                Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadGif(DirectCast(Nothing, String)))
+                Assert.ThrowsExactly(Of ArgumentException)(Sub() control.LoadGif(" "))
+                Assert.ThrowsExactly(Of ArgumentException)(Sub() control.LoadGif(New Byte() {1, 2, 3}))
+                Using png As New MemoryStream()
+                    Using image As New Bitmap(2, 2)
+                        image.Save(png, ImageFormat.Png)
+                    End Using
+                    png.Position = 0
+                    Assert.ThrowsExactly(Of ArgumentException)(Sub() control.LoadGif(png))
+                    Assert.IsTrue(png.CanRead)
+                End Using
+                Assert.AreSame(previous, control.Gif)
+                control.Dispose()
+                Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.LoadGif(DirectCast(Nothing, Byte())))
+            End Using
+        End Sub
 
         <TestMethod>
         Public Sub NoAnimation_EquivalentFpsDoesNotNotifyButRealChangesDo()
@@ -2568,6 +2766,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         Public Sub PartialFrameInvalidation_DisposalDoesNotLeaveAncestorEventReferences()
             Using parent As New Panel()
                 Dim released As WeakReference = CreateDisposedFrameControl(parent)
+                ' Die nicht eingebettete Hilfsmethode verhindert, dass eine lokale starke Referenz den Test verfälscht.
                 GC.Collect()
                 GC.WaitForPendingFinalizers()
                 GC.Collect()
@@ -3295,6 +3494,66 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Next
         End Sub
 
+        ''' <summary>Prüft, dass Handler beim Framewechsel die Wiedergabe sicher umsteuern dürfen.</summary>
+        <TestMethod>
+        Public Sub PlaybackEvents_FrameHandlerCanSeekAndDispose()
+            Using control As New AniGif()
+                Dim changes As New List(Of Integer)()
+                AddHandler control.FrameChanged, Sub(sender, e)
+                                                     changes.Add(e.CurrentFrame)
+                                                     If e.CurrentFrame = 1 Then
+                                                         control.SeekFrame(2)
+                                                     Else
+                                                         control.Dispose()
+                                                     End If
+                                                 End Sub
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                CollectionAssert.AreEqual(New Integer() {1, 2}, changes.ToArray())
+                Assert.IsTrue(control.IsDisposed)
+            End Using
+        End Sub
+
+        ''' <summary>Prüft Framewechsel beim Suchen, Timer und Segmentende einschließlich Ereignisreihenfolge.</summary>
+        <TestMethod>
+        Public Sub PlaybackEvents_ReportFrameChangesAndCompletion()
+            Using control As New AniGif()
+                Dim changes As New List(Of String)()
+                Dim events As New List(Of String)()
+                AddHandler control.FrameChanged, Sub(sender, e) changes.Add($"{e.PreviousFrame}:{e.CurrentFrame}")
+                AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
+                AddHandler control.PlaybackCompleted, Sub(sender, e) events.Add("completed")
+                control.SeekFrame(1)
+                control.SeekFrame(1)
+                control.PlayRangeStart = 1
+                control.PlayRangeEnd = 2
+                control.LoopCount = 1
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                InvokeTimerTick(control)
+                InvokeTimerTick(control)
+                CollectionAssert.AreEqual(New String() {"0:1", "1:2"}, changes.ToArray())
+                CollectionAssert.AreEqual(New String() {"stopped", "completed"}, events.ToArray())
+                Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
+            End Using
+        End Sub
+
+        ''' <summary>Prüft, dass Fehler der Frameauswahl gemeldet und unverändert weitergegeben werden.</summary>
+        <TestMethod>
+        Public Sub PlaybackEvents_ReportsFrameSelectionErrorWithoutHidingException()
+            Using control As New AniGif()
+                Dim reported As Exception = Nothing
+                Dim changes As Integer = 0
+                AddHandler control.PlaybackError, Sub(sender, e) reported = e.GetException()
+                AddHandler control.FrameChanged, Sub(sender, e) changes += 1
+                control.Gif.Dispose()
+                Dim actual As ArgumentException = Assert.ThrowsExactly(Of ArgumentException)(Sub() control.SeekFrame(1))
+                Assert.AreSame(reported, actual)
+                Assert.AreEqual(0, changes)
+                Assert.AreEqual(0, GetCurrentFrame(control))
+            End Using
+        End Sub
+
         <TestMethod>
         Public Sub PlaybackMethods_AreIdempotentAndStartCanResume()
             Using control As New AniGif()
@@ -3331,6 +3590,63 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Using
         End Sub
 
+        ''' <summary>Prüft das Ende zweier Bereichsdurchläufe, eine Pause dazwischen und den anschließenden Neustart am Bereichsanfang.</summary>
+        <TestMethod>
+        Public Sub PlaybackRange_FiniteLoopsStopAfterLastFrameAndRestartAtBeginning()
+            Using control As New AniGif()
+                control.PlayRangeStart = 1
+                control.PlayRangeEnd = 2
+                control.LoopCount = 2
+                control.StartAnimation()
+                Assert.AreEqual(1, GetCurrentFrame(control))
+                InvokeTimerTick(control)
+                Assert.AreEqual(2, GetCurrentFrame(control))
+                InvokeTimerTick(control)
+                Assert.AreEqual(1, GetCurrentFrame(control))
+                control.PauseAnimation()
+                control.ResumeAnimation()
+                InvokeTimerTick(control)
+                Assert.AreEqual(2, GetCurrentFrame(control))
+                InvokeTimerTick(control)
+                Assert.AreEqual(2, GetCurrentFrame(control))
+                Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
+                Assert.IsFalse(control.AutoPlay)
+                Assert.IsFalse(GetTimer(control).Enabled)
+                control.StartAnimation()
+                Assert.AreEqual(1, GetCurrentFrame(control))
+                Assert.IsTrue(GetTimer(control).Enabled)
+            End Using
+        End Sub
+
+        ''' <summary>Prüft ungültige Bereichswerte und das Ende eines Einzelbildbereichs sowie die spätere Wiedergabe mit offenem Ende.</summary>
+        <TestMethod>
+        Public Sub PlaybackRange_SingleFrameAndConfigurationChanges()
+            Using control As New AniGif()
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.LoopCount = -1)
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeStart = -1)
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeEnd = -2)
+                control.PlayRangeStart = 2
+                control.PlayRangeEnd = 2
+                control.LoopCount = 2
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                Assert.AreEqual(2, GetCurrentFrame(control))
+                Assert.IsTrue(GetTimer(control).Enabled)
+                control.SeekFrame(2)
+                InvokeTimerTick(control)
+                Assert.IsTrue(GetTimer(control).Enabled)
+                InvokeTimerTick(control)
+                Assert.IsFalse(GetTimer(control).Enabled)
+                control.PlayRangeEnd = -1
+                control.LoopCount = 0
+                control.StartAnimation()
+                InvokeTimerTick(control)
+                Assert.AreEqual(3, GetCurrentFrame(control))
+            End Using
+        End Sub
+
+        ''' <summary>Startet die Animation und zeichnet den ersten Timerframe vollständig, damit spätere Teilinvalidierungen möglich sind.</summary>
+        ''' <param name="control">Für den Teilinvalidierungstest vorbereitetes Steuerelement.</param>
         Private Shared Sub PrimeFrameInvalidation(control As FrameInvalidationProbe)
             control.StartAnimation()
             InvokeTimerTick(control)

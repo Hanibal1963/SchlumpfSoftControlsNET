@@ -46,6 +46,7 @@ Partial Class FormAniGif
         Me.CheckBox_PartialFrameInvalidation = New System.Windows.Forms.CheckBox()
         Me.Button_Diagnostics = New System.Windows.Forms.Button()
         Me.AniGif = New SchlumpfSoft.ControlsNET.AniGifControl.AniGif()
+        Me.Button_OpenFile = New System.Windows.Forms.Button()
         CType(Me.NumericUpDown_CustomDisplaySpeed, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.NumericUpDown_ZoomFactor, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -261,11 +262,21 @@ Partial Class FormAniGif
         Me.AniGif.TabIndex = 0
         Me.AniGif.ZoomFactor = New Decimal(New Integer() {50, 0, 0, 0})
         '
+        'Button_OpenFile
+        '
+        Me.Button_OpenFile.Image = Global.SchlumpfsoftControlsNETDemo.My.Resources.Resources.AniGif_OpenFile
+        Me.Button_OpenFile.Location = New System.Drawing.Point(353, 285)
+        Me.Button_OpenFile.Name = "Button_OpenFile"
+        Me.Button_OpenFile.Size = New System.Drawing.Size(43, 24)
+        Me.Button_OpenFile.TabIndex = 23
+        Me.Button_OpenFile.UseVisualStyleBackColor = True
+        '
         'FormAniGif
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(519, 486)
+        Me.Controls.Add(Me.Button_OpenFile)
         Me.Controls.Add(Me.Button_Diagnostics)
         Me.Controls.Add(Me.CheckBox_PartialFrameInvalidation)
         Me.Controls.Add(Me.CheckBox_Diagnostics)
@@ -324,4 +335,5 @@ Partial Class FormAniGif
     Private WithEvents CheckBox_Diagnostics As CheckBox
     Private WithEvents CheckBox_PartialFrameInvalidation As CheckBox
     Friend WithEvents Button_Diagnostics As Button
+    Friend WithEvents Button_OpenFile As Button
 End Class

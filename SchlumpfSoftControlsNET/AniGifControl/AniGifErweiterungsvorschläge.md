@@ -16,24 +16,24 @@
 
 ## 3 Eventmodell ausbauen
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Vorschlag:** `FrameChanged`, `PlaybackCompleted`, `PlaybackError`.
 
-**Umsetzung:** Ereignisse nach erfolgreichem Framewechsel bzw. Fehlerpfad auslösen.
+**Umsetzung:** Ereignisse melden Framewechsel, den regulären Abschluss begrenzter Wiedergaben und Fehler bei der Frameauswahl. Einzelheiten stehen in [AniGifControl.md](AniGifControl.md).
 
 ## 4 Quellenvielfalt erhöhen
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Vorschlag:** Laden aus Stream/ByteArray/Dateipfad.
 
-**Umsetzung:** Überladene `LoadGif(...)`-Methoden mit einheitlicher Validierung.
+**Umsetzung:** `LoadGif(...)` lädt GIF-Daten aus Stream, Bytearray oder Datei. Einzelheiten stehen in [AniGifControl.md](AniGifControl.md).
 
 ## 5 Design-Time-Unterstützung
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Vorschlag:** Smart-Tag für AutoPlay/Speed/SizeMode.
 
-**Umsetzung:** DesignerActionList ergänzen.
+**Umsetzung:** Eine `DesignerActionList` stellt `AutoPlay`, `CustomDisplaySpeed`, `FramesPerSecond` und `GifSizeMode` im klassischen Designer und im Out-of-Process-Designer für .NET 8 bis .NET 10 bereit. Einzelheiten stehen in [AniGifControl.md](AniGifControl.md).

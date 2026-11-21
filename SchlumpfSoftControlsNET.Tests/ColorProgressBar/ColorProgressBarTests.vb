@@ -19,6 +19,29 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
     <STATestClass>
     Public Class ColorProgressBarTests
 
+        ''' <summary>Prüft einen deutlich sichtbaren Verlauf unterhalb des optionalen Glanzeffekts.</summary>
+        <TestMethod>
+        Public Sub Gradient_ShowsVisibleVerticalVariationWithAndWithoutGloss()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 23)
+                control.Value = control.ProgressMaximumValue
+                control.ProgressStyle = ColorProgressBarStyle.Gradient
+                For Each color As Color In {Color.Blue, Color.Black, Color.White}
+                    control.BarColor = color
+                    For Each glossy As Boolean In {False, True}
+                        control.IsGlossy = glossy
+                        Using image As Bitmap = RenderControl(control)
+                            Dim upper As Color = image.GetPixel(20, 9)
+                            Dim lower As Color = image.GetPixel(20, 20)
+                            Dim difference As Integer = Math.Max(Math.Abs(CInt(upper.R) - CInt(lower.R)),
+                                Math.Max(Math.Abs(CInt(upper.G) - CInt(lower.G)), Math.Abs(CInt(upper.B) - CInt(lower.B))))
+                            Assert.IsGreaterThan(45, difference, $"Farbe {color}, Glanz {glossy}")
+                        End Using
+                    Next
+                Next
+            End Using
+        End Sub
+
         ''' <summary>Prüft die Stilwahl und die unterschiedliche Darstellung innerhalb der Fortschrittsfläche.</summary>
         <TestMethod>
         Public Sub ProgressStyle_RendersDistinctStylesAndValidatesInput()

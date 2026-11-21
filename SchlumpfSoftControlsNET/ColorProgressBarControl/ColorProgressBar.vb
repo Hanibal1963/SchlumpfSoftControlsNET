@@ -16,7 +16,6 @@ Imports System.Windows.Automation.Provider
 
 Namespace ColorProgressBarControl
 
-
     ''' <summary>Ein benutzerdefiniertes Windows Forms-Steuerelement zur Anzeige eines farbigen Fortschrittsbalkens mit
     ''' optionalem Rahmen und Glanzeffekt.</summary>
     <Description("Control zum Anzeigen eines farbigen Fortschrittbalkens.")>
@@ -54,6 +53,15 @@ Namespace ColorProgressBarControl
 
         ''' <summary>Bestimmt das Format der Fortschrittsbeschriftung.</summary>
         Private _textFormat As ColorProgressBarTextFormat = ColorProgressBarTextFormat.Percentage
+
+        ''' <summary>Aktueller Darstellungsmodus; Solid bewahrt die bisherige Darstellung.</summary>
+        Private _progressStyle As ColorProgressBarStyle = ColorProgressBarStyle.Solid
+
+        ''' <summary>Timer für die Animation, der nur bei Bedarf erzeugt wird.</summary>
+        Private _marqueeTimer As Timer
+
+        ''' <summary>Animationsposition in Tausendsteln eines vollständigen Durchlaufs.</summary>
+        Private _marqueePhase As Integer = 250
 
         ''' <summary>Farbe des gefüllten Bereichs.</summary>
         Private _BarColor As System.Drawing.Color = Color.Blue
@@ -107,6 +115,29 @@ Namespace ColorProgressBarControl
 
 #Region "öffentliche Eigenschaften"
 
+        ''' <summary>Bestimmt die Darstellung des Fortschritts; Marquee animiert unabhängig vom Wert.</summary>
+        ''' <exception cref="InvalidEnumArgumentException">Der Darstellungsmodus ist nicht definiert.</exception>
+        <Browsable(True)>
+        <Category("Appearance")>
+        <DefaultValue(GetType(ColorProgressBarStyle), "Solid")>
+        Public Property ProgressStyle As ColorProgressBarStyle
+            Get
+                Return Me._progressStyle
+            End Get
+            Set(value As ColorProgressBarStyle)
+#Disable Warning CA2263 ' Die generische Überladung ist unter .NET Framework nicht verfügbar.
+                If Not [Enum].IsDefined(GetType(ColorProgressBarStyle), value) Then
+                    Throw New InvalidEnumArgumentException(NameOf(value), CInt(value), GetType(ColorProgressBarStyle))
+                End If
+#Enable Warning CA2263
+                If Me._progressStyle <> value Then
+                    Me._progressStyle = value
+                    Me.UpdateMarqueeTimer()
+                    Me.Invalidate()
+                End If
+            End Set
+        End Property
+
         ''' <summary>Gibt an, ob der Fortschritt mittig als Text angezeigt wird; standardmäßig ausgeschaltet.</summary>
         <Browsable(True)>
         <Category("Appearance")>
@@ -133,9 +164,15 @@ Namespace ColorProgressBarControl
                 Return Me._textFormat
             End Get
             Set(value As ColorProgressBarTextFormat)
+#If NETFRAMEWORK Then
                 If Not [Enum].IsDefined(GetType(ColorProgressBarTextFormat), value) Then
                     Throw New InvalidEnumArgumentException(NameOf(value), CInt(value), GetType(ColorProgressBarTextFormat))
                 End If
+#Else
+                If Not [Enum].IsDefined(Of ColorProgressBarTextFormat)(value) Then
+                    Throw New InvalidEnumArgumentException(NameOf(value), CInt(value), GetType(ColorProgressBarTextFormat))
+                End If
+#End If
                 If Me._textFormat <> value Then
                     Me._textFormat = value
                     Me.Invalidate()
@@ -526,12 +563,20 @@ Namespace ColorProgressBarControl
 
             ' Jeder Pinsel wird auch dann freigegeben, wenn ein vorheriges Dispose fehlschlägt.
             Try
-                DisposeCachedBrush(Me._barBrush)
+                If Me._marqueeTimer IsNot Nothing Then
+                    RemoveHandler Me._marqueeTimer.Tick, AddressOf Me.MarqueeTick
+                    Me._marqueeTimer.Dispose()
+                    Me._marqueeTimer = Nothing
+                End If
             Finally
                 Try
-                    DisposeCachedBrush(Me._emptyBrush)
+                    DisposeCachedBrush(Me._barBrush)
                 Finally
-                    DisposeCachedBrush(Me._glossBrush)
+                    Try
+                        DisposeCachedBrush(Me._emptyBrush)
+                    Finally
+                        DisposeCachedBrush(Me._glossBrush)
+                    End Try
                 End Try
             End Try
 
@@ -597,9 +642,83 @@ Namespace ColorProgressBarControl
 
         End Function
 
+        ''' <summary>Startet die Animation nur für ein sichtbares Laufzeit-Control mit Handle.</summary>
+        Private Sub UpdateMarqueeTimer()
+            Dim shouldRun As Boolean = Me._progressStyle = ColorProgressBarStyle.Marquee AndAlso
+                Me.IsHandleCreated AndAlso Me.Visible AndAlso Not Me.IsDisposed AndAlso Not Me.Disposing AndAlso
+                LicenseManager.UsageMode <> LicenseUsageMode.Designtime AndAlso Not Me.DesignMode
+            If shouldRun AndAlso Me._marqueeTimer Is Nothing Then
+                Me._marqueeTimer = New Timer With {.Interval = 50}
+                AddHandler Me._marqueeTimer.Tick, AddressOf Me.MarqueeTick
+            End If
+            If Me._marqueeTimer IsNot Nothing Then Me._marqueeTimer.Enabled = shouldRun
+        End Sub
+
+        ''' <summary>Verschiebt den animierten Balken und fordert eine Neuzeichnung an.</summary>
+        ''' <param name="sender">Der Animationstimer.</param>
+        ''' <param name="e">Die Ereignisdaten.</param>
+        Private Sub MarqueeTick(sender As Object, e As EventArgs)
+            Me._marqueePhase = (Me._marqueePhase + 16) Mod 1000
+            Me.Invalidate()
+        End Sub
+
+        ''' <summary>Aktualisiert den Timer nach dem Erstellen des Fensterhandles.</summary>
+        ''' <param name="e">Die Ereignisdaten.</param>
+        Protected Overrides Sub OnHandleCreated(e As EventArgs)
+            MyBase.OnHandleCreated(e)
+            Me.UpdateMarqueeTimer()
+        End Sub
+
+        ''' <summary>Aktualisiert den Animationstimer bei geänderter Sichtbarkeit.</summary>
+        ''' <param name="e">Die Ereignisdaten.</param>
+        Protected Overrides Sub OnVisibleChanged(e As EventArgs)
+            MyBase.OnVisibleChanged(e)
+            Me.UpdateMarqueeTimer()
+        End Sub
+
+        ''' <summary>Ermittelt den sichtbaren Ausschnitt des animierten Balkens.</summary>
+        ''' <returns>Der auf die Innenfläche begrenzte Balken.</returns>
+        Private Function GetMarqueeBounds() As Rectangle
+            Dim bounds As Rectangle = Me._cachedContentBounds
+            If bounds.Width <= 0 OrElse bounds.Height <= 0 Then Return New Rectangle(bounds.X, bounds.Y, 0, bounds.Height)
+            Dim blockWidth As Integer = Math.Max(1, bounds.Width \ 4)
+            Dim offset As Integer = CInt((CLng(Me._marqueePhase) * (CLng(bounds.Width) + blockWidth)) \ 1000) - blockWidth
+            Dim left As Integer = Math.Max(0, offset)
+            Dim right As Integer = CInt(Math.Min(CLng(bounds.Width), CLng(offset) + blockWidth))
+            Return New Rectangle(bounds.X + left, bounds.Y, Math.Max(0, right - left), bounds.Height)
+        End Function
+
+        ''' <summary>Zeichnet den gefüllten Bereich im gewählten Stil.</summary>
+        ''' <param name="graphics">Die Zeichenfläche.</param>
+        ''' <param name="bounds">Die Füllfläche innerhalb des Controls.</param>
+        Private Sub DrawStyledFill(graphics As Graphics, bounds As Rectangle)
+            If bounds.Width <= 0 OrElse bounds.Height <= 0 Then Return
+            If Me._barBrush Is Nothing Then Me._barBrush = New SolidBrush(Me._BarColor)
+            If Me._progressStyle = ColorProgressBarStyle.Gradient Then
+                Dim c As Color = Me._BarColor
+                Dim contrast As Color = Me.GetContrastColor(c)
+                Dim accent As Color = Color.FromArgb(c.A, (3 * CInt(c.R) + contrast.R) \ 4,
+                    (3 * CInt(c.G) + contrast.G) \ 4, (3 * CInt(c.B) + contrast.B) \ 4)
+                Using brush As New Drawing2D.LinearGradientBrush(bounds, accent, c, Drawing2D.LinearGradientMode.Vertical)
+                    graphics.FillRectangle(brush, bounds)
+                End Using
+            Else
+                graphics.FillRectangle(Me._barBrush, bounds)
+                If Me._progressStyle = ColorProgressBarStyle.Striped Then
+                    Dim c As Color = Me._BarColor
+                    Dim contrast As Color = Me.GetContrastColor(c)
+                    Dim stripe As Color = Color.FromArgb(c.A, (CInt(c.R) + contrast.R) \ 2,
+                        (CInt(c.G) + contrast.G) \ 2, (CInt(c.B) + contrast.B) \ 2)
+                    Using brush As New Drawing2D.HatchBrush(Drawing2D.HatchStyle.WideDownwardDiagonal, stripe, Color.Transparent)
+                        graphics.FillRectangle(brush, bounds)
+                    End Using
+                End If
+            End If
+        End Sub
+
         ''' <summary>Zeichnet den zentrierten Text getrennt über beiden Fortschrittsbereichen.</summary>
         ''' <param name="graphics">Die Zeichenfläche des Controls.</param>
-        Private Sub DrawProgressText(graphics As Graphics)
+        Private Sub DrawProgressText(graphics As Graphics, fillBounds As Rectangle)
             If Me._cachedContentBounds.Width <= 0 OrElse Me._cachedContentBounds.Height <= 0 Then Return
 
             Dim text As String = If(Me._textFormat = ColorProgressBarTextFormat.Percentage,
@@ -608,8 +727,14 @@ Namespace ColorProgressBarControl
             Dim flags As TextFormatFlags = TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter Or
                 TextFormatFlags.SingleLine Or TextFormatFlags.EndEllipsis Or TextFormatFlags.NoPadding Or
                 TextFormatFlags.PreserveGraphicsClipping
-            Me.DrawTextRegion(graphics, text, Me._cachedFillBounds, Me._BarColor, flags)
-            Me.DrawTextRegion(graphics, text, Me._cachedEmptyBounds, Me._EmptyColor, flags)
+            Me.DrawTextRegion(graphics, text, fillBounds, Me._BarColor, flags)
+            Dim content As Rectangle = Me._cachedContentBounds
+            If Me._progressStyle = ColorProgressBarStyle.Marquee Then
+                Me.DrawTextRegion(graphics, text, New Rectangle(content.X, content.Y, Math.Max(0, fillBounds.X - content.X), content.Height), Me._EmptyColor, flags)
+                Me.DrawTextRegion(graphics, text, New Rectangle(fillBounds.Right, content.Y, Math.Max(0, content.Right - fillBounds.Right), content.Height), Me._EmptyColor, flags)
+            Else
+                Me.DrawTextRegion(graphics, text, Me._cachedEmptyBounds, Me._EmptyColor, flags)
+            End If
         End Sub
 
         ''' <summary>Zeichnet denselben zentrierten Text auf einen Bereich begrenzt mit passender Kontrastfarbe.</summary>
@@ -688,20 +813,18 @@ Namespace ColorProgressBarControl
 
             Me.UpdateCachedGeometry()
 
-            ' Pinsel werden bei Bedarf erzeugt und bis zur Farbänderung wiederverwendet.
-            If Me._cachedFillBounds.Width > 0 AndAlso Me._cachedFillBounds.Height > 0 Then
-                If Me._barBrush Is Nothing Then
-                    Me._barBrush = New SolidBrush(Me._BarColor)
-                End If
-                e.Graphics.FillRectangle(Me._barBrush, Me._cachedFillBounds)
-            End If
+            Dim fillBounds As Rectangle = If(Me._progressStyle = ColorProgressBarStyle.Marquee,
+                Me.GetMarqueeBounds(), Me._cachedFillBounds)
 
-            If Me._cachedEmptyBounds.Width > 0 AndAlso Me._cachedEmptyBounds.Height > 0 Then
-                If Me._emptyBrush Is Nothing Then
-                    Me._emptyBrush = New SolidBrush(Me._EmptyColor)
-                End If
-                e.Graphics.FillRectangle(Me._emptyBrush, Me._cachedEmptyBounds)
+            ' Pinsel werden bei Bedarf erzeugt und bis zur Farbänderung wiederverwendet.
+            If Me._progressStyle = ColorProgressBarStyle.Marquee Then
+                Dim content As Rectangle = Me._cachedContentBounds
+                Me.DrawEmptyRegion(e.Graphics, New Rectangle(content.X, content.Y, Math.Max(0, fillBounds.X - content.X), content.Height))
+                Me.DrawEmptyRegion(e.Graphics, New Rectangle(fillBounds.Right, content.Y, Math.Max(0, content.Right - fillBounds.Right), content.Height))
+            Else
+                Me.DrawEmptyRegion(e.Graphics, Me._cachedEmptyBounds)
             End If
+            Me.DrawStyledFill(e.Graphics, fillBounds)
 
             If Me._IsGlossy AndAlso Me._cachedGlossBounds.Width > 0 AndAlso Me._cachedGlossBounds.Height > 0 Then
                 If Me._glossBrush Is Nothing Then
@@ -710,9 +833,21 @@ Namespace ColorProgressBarControl
                 e.Graphics.FillRectangle(Me._glossBrush, Me._cachedGlossBounds)
             End If
 
-            If Me._showText Then Me.DrawProgressText(e.Graphics)
+            If Me._showText Then Me.DrawProgressText(e.Graphics, fillBounds)
 
             MyBase.OnPaint(e)
+        End Sub
+
+        ''' <summary>Zeichnet einen leeren Teil der Innenfläche mit dem wiederverwendeten Pinsel.</summary>
+        ''' <param name="graphics">Die Zeichenfläche.</param>
+        ''' <param name="emptyBounds">Der leere Bereich.</param>
+        Private Sub DrawEmptyRegion(graphics As Graphics, emptyBounds As Rectangle)
+            If emptyBounds.Width > 0 AndAlso emptyBounds.Height > 0 Then
+                If Me._emptyBrush Is Nothing Then
+                    Me._emptyBrush = New SolidBrush(Me._EmptyColor)
+                End If
+                graphics.FillRectangle(Me._emptyBrush, emptyBounds)
+            End If
         End Sub
 
         ''' <summary>
@@ -775,6 +910,7 @@ Namespace ColorProgressBarControl
         ''' <param name="e">Stellt die Ereignisdaten bereit.</param>
         Protected Overrides Sub OnHandleDestroyed(e As EventArgs)
 
+            If Me._marqueeTimer IsNot Nothing Then Me._marqueeTimer.Stop()
             Dim provider As ProgressAutomationProvider = Me._uiaProvider
             Me._uiaProvider = Nothing
             provider?.Disconnect()
@@ -909,7 +1045,7 @@ Namespace ColorProgressBarControl
                 End Get
             End Property
 
-            ''' <summary>Stellt die unterstützten Bereichswert- und Textwertmuster bereit.</summary>
+            ''' <summary>Stellt die unterstützten Bereichswert- und Textwert-Muster bereit.</summary>
             ''' <param name="patternId">Kennung des angeforderten Musters.</param>
             ''' <returns>Dieser Provider für unterstützte Muster, andernfalls <see langword="Nothing"/>.</returns>
             Private Function GetPatternProvider(patternId As Int32) As Object Implements IRawElementProviderSimple.GetPatternProvider

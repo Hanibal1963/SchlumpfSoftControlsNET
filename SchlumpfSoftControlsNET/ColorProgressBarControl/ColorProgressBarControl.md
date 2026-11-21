@@ -48,9 +48,11 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 - `IsGlossy`: Legt fest, ob ein Glanzeffekt über dem gefüllten und dem leeren Fortschrittsbereich angezeigt wird.
 
+- `ProgressStyle` (`ColorProgressBarStyle`, Standardwert `Solid`): Wählt eine einfarbige, verlaufende, gestreifte oder animierte Darstellung. Nicht definierte Werte lösen `InvalidEnumArgumentException` aus.
+
 - `ShowText` (`Boolean`, Standardwert `False`): Zeigt optional eine mittige Fortschrittsbeschriftung an.
 
-- `TextFormat` (`ProgressTextFormat`, Standardwert `Percentage`): Wählt Prozent (`Percentage`) oder aktuellen Wert und Maximum (`Value`). Nicht definierte Werte lösen `InvalidEnumArgumentException` aus.
+- `TextFormat` (`ColorProgressBarTextFormat`, Standardwert `Percentage`): Wählt Prozent (`Percentage`) oder aktuellen Wert und Maximum (`Value`). Nicht definierte Werte lösen `InvalidEnumArgumentException` aus.
 
 - `AccessibleName` (geerbt): Ein expliziter Name überschreibt die zugeordnete Beschriftung und den lokalisierten Standardnamen. Eine leere Zeichenfolge bleibt ein explizit leerer Name; `Nothing` aktiviert die Standardermittlung.
 
@@ -80,6 +82,8 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 - `ColorProgressBarTextFormat`: Enumeration mit `Percentage` und `Value` für die sichtbare Beschriftung.
 
+- `ColorProgressBarStyle`: Enumeration mit `Solid`, `Gradient`, `Striped` und `Marquee`.
+
 ## 6. Hinweise
 
 - Das Minimum für `Value` ist fest `0`; `ProgressMaximumValue` liegt zwischen `1` und `Int32.MaxValue`. Werte außerhalb des gültigen Bereichs werden ohne Ausnahme auf die jeweiligen Grenzen begrenzt.
@@ -91,6 +95,8 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 - Der Accessibility-Prozentwert und die optionale sichtbare Prozentanzeige werden anhand von `CurrentCulture` formatiert und auf ganze Prozent abgerundet; `100 %` wird erst beim Maximum ausgegeben. Das Wertformat zeigt den aktuellen Wert und das Maximum als `Wert / Maximum`.
 
 - Die Beschriftung wird auf die Innenfläche begrenzt und bei Platzmangel gekürzt. Ihre Farbe wird für den gefüllten und den leeren Bereich separat als Schwarz oder Weiß anhand der Hintergrundhelligkeit gewählt. Bei transparenten Farben wird die Hintergrundfarbe des übergeordneten Controls berücksichtigt; Hintergrundbilder und der Glanzeffekt bleiben bei der Kontrastberechnung unberücksichtigt.
+
+- `Gradient` verändert `BarColor` nach oben in Richtung der Kontrastfarbe; `Striped` ergänzt diagonale Kontraststreifen. Die Textkontrastberechnung berücksichtigt diese Muster nicht. `Marquee` bewegt unabhängig von `Value` einen Balken durch die Innenfläche; optionaler Text und Accessibility melden weiterhin den tatsächlichen Wert. Die Animation läuft mit 50 ms Timerintervall nur zur Laufzeit, solange das Control sichtbar ist und ein Handle besitzt; nach Entsorgen wird der Timer freigegeben.
 
 - UI Automation bietet die schreibgeschützten Muster `RangeValue` (Minimum `0`, Maximum `ProgressMaximumValue`, aktueller `Value`) und `Value` (Prozenttext). Bei Änderungen werden MSAA- und UI-Automation-Clients benachrichtigt; ohne Fenster-Handle wird kein Handle allein für eine Benachrichtigung erzeugt.
 

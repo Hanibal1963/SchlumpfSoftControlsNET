@@ -2,7 +2,7 @@
 
 ## 1. Mehr Darstellungsmodi
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; umgesetzt
 
 **Vorschlag:** `ProgressStyle` mit `Solid`, `Gradient`, `Striped`, `Marquee`.
 

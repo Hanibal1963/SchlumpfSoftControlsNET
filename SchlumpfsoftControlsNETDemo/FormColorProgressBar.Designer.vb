@@ -33,6 +33,8 @@ Partial Class FormColorProgressBar
         Me.ColorProgressBar = New SchlumpfSoft.ControlsNET.ColorProgressBarControl.ColorProgressBar()
         Me.CheckBox_ShowText = New System.Windows.Forms.CheckBox()
         Me.CheckBox_TextFormat = New System.Windows.Forms.CheckBox()
+        Me.Label_Style = New System.Windows.Forms.Label()
+        Me.ComboBox_Style = New System.Windows.Forms.ComboBox()
         CType(Me.NumericUpDown_ProgressValue, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -65,7 +67,7 @@ Partial Class FormColorProgressBar
         '
         'Button_BarColorChange
         '
-        Me.Button_BarColorChange.Location = New System.Drawing.Point(333, 71)
+        Me.Button_BarColorChange.Location = New System.Drawing.Point(333, 136)
         Me.Button_BarColorChange.Name = "Button_BarColorChange"
         Me.Button_BarColorChange.Size = New System.Drawing.Size(145, 23)
         Me.Button_BarColorChange.TabIndex = 4
@@ -74,7 +76,7 @@ Partial Class FormColorProgressBar
         '
         'Button_BorderColorChange
         '
-        Me.Button_BorderColorChange.Location = New System.Drawing.Point(333, 103)
+        Me.Button_BorderColorChange.Location = New System.Drawing.Point(333, 168)
         Me.Button_BorderColorChange.Name = "Button_BorderColorChange"
         Me.Button_BorderColorChange.Size = New System.Drawing.Size(145, 23)
         Me.Button_BorderColorChange.TabIndex = 5
@@ -83,7 +85,7 @@ Partial Class FormColorProgressBar
         '
         'Button_EmptyColorChange
         '
-        Me.Button_EmptyColorChange.Location = New System.Drawing.Point(333, 132)
+        Me.Button_EmptyColorChange.Location = New System.Drawing.Point(333, 200)
         Me.Button_EmptyColorChange.Name = "Button_EmptyColorChange"
         Me.Button_EmptyColorChange.Size = New System.Drawing.Size(145, 23)
         Me.Button_EmptyColorChange.TabIndex = 6
@@ -129,11 +131,30 @@ Partial Class FormColorProgressBar
         Me.CheckBox_TextFormat.Text = "Prozentanzeige / Wertanzeige"
         Me.CheckBox_TextFormat.UseVisualStyleBackColor = True
         '
+        'Label_Style
+        '
+        Me.Label_Style.AutoSize = True
+        Me.Label_Style.Location = New System.Drawing.Point(294, 77)
+        Me.Label_Style.Name = "Label_Style"
+        Me.Label_Style.Size = New System.Drawing.Size(33, 13)
+        Me.Label_Style.TabIndex = 10
+        Me.Label_Style.Text = "Style:"
+        '
+        'ComboBox_Style
+        '
+        Me.ComboBox_Style.FormattingEnabled = True
+        Me.ComboBox_Style.Location = New System.Drawing.Point(333, 74)
+        Me.ComboBox_Style.Name = "ComboBox_Style"
+        Me.ComboBox_Style.Size = New System.Drawing.Size(145, 21)
+        Me.ComboBox_Style.TabIndex = 11
+        '
         'FormColorProgressBar
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(501, 241)
+        Me.Controls.Add(Me.ComboBox_Style)
+        Me.Controls.Add(Me.Label_Style)
         Me.Controls.Add(Me.CheckBox_TextFormat)
         Me.Controls.Add(Me.CheckBox_ShowText)
         Me.Controls.Add(Me.LabelProgressValue)
@@ -166,4 +187,6 @@ Partial Class FormColorProgressBar
     Private WithEvents ColorDialog As ColorDialog
     Private WithEvents CheckBox_ShowText As CheckBox
     Private WithEvents CheckBox_TextFormat As CheckBox
+    Private WithEvents Label_Style As Label
+    Private WithEvents ComboBox_Style As ComboBox
 End Class

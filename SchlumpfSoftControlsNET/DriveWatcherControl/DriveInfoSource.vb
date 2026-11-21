@@ -65,12 +65,13 @@ Namespace DriveWatcherControl
             End Get
         End Property
 
-		''' <summary>Ruft den Namen des Dateisystems ab.</summary>
+        ''' <summary>Ruft den Namen des Dateisystems ab.</summary>
         Public ReadOnly Property DriveFormat As String Implements IDriveInfoSource.DriveFormat
             Get
                 Return Me._drive.DriveFormat
             End Get
         End Property
+
     End Class
 
 End Namespace

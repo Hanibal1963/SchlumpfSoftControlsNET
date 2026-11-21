@@ -19,11 +19,14 @@ Namespace DriveWatcherControl
     ''' grundlegende Metadaten des erkannten Laufwerks<br/>
     ''' (z. B. Name, Volumebezeichnung, Dateisystem, Typ und Speichergrößen in Bytes).
     ''' </remarks>
-    Public Class DriveAddedEventArgs : Inherits EventArgs
+    Public Class DriveAddedEventArgs
 
-		''' <summary>Speichert Lesefehler nach Eigenschaftsnamen.</summary>
+        Inherits EventArgs
+
+        ''' <summary>Speichert Lesefehler nach Eigenschaftsnamen.</summary>
         Private ReadOnly _readErrors As New Dictionary(Of String, Exception)(StringComparer.Ordinal)
-		''' <summary>Stellt eine schreibgeschützte Sicht auf die Lesefehler bereit.</summary>
+
+        ''' <summary>Stellt eine schreibgeschützte Sicht auf die Lesefehler bereit.</summary>
         Private ReadOnly _readErrorsView As IReadOnlyDictionary(Of String, Exception)
 
 #Region "Öffentliche Eigenschaften"

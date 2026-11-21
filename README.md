@@ -42,6 +42,7 @@ Es wurden gegenüber der vorherigen Versionen einige Änderungen vorgenommen und
 ## geplante Änderungen und Erweiterungen
 
 - &#x1F525; Bisher vorhandene Controls auf Optimierungen und Erweiterungen prüfen und umsetzen.
+- &#x1F4A1; Neues Control zum anzeigen eines vertikalen Labels hinzufügen.
 - &#x1F4A1; Neues Control zum Auslesen und Bearbeiten der EXIF Tags von Bildern hinzufügen.
 - &#x1F4A1; Neues Control zum Auslesen und Bearbeiten von ID3 Tags von Musikdateien hinzufügen.
 - &#x1F4A1; Neues Control zum Auswählen einer Uhrzeit hinzufügen.

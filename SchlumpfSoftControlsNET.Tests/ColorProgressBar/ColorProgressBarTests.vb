@@ -19,6 +19,104 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
     <STATestClass>
     Public Class ColorProgressBarTests
 
+        ''' <summary>Prüft die Stilwahl und die unterschiedliche Darstellung innerhalb der Fortschrittsfläche.</summary>
+        <TestMethod>
+        Public Sub ProgressStyle_RendersDistinctStylesAndValidatesInput()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 30)
+                control.IsGlossy = False
+                control.Value = 5
+                Assert.AreEqual(ColorProgressBarStyle.Solid, control.ProgressStyle)
+                Dim descriptor As PropertyDescriptor = TypeDescriptor.GetProperties(control)(NameOf(ColorProgressBar.ProgressStyle))
+                Dim defaultValue As DefaultValueAttribute = DirectCast(descriptor.Attributes(GetType(DefaultValueAttribute)), DefaultValueAttribute)
+                Assert.AreEqual(ColorProgressBarStyle.Solid, defaultValue.Value)
+                Assert.IsFalse(descriptor.ShouldSerializeValue(control))
+                Using solid As Bitmap = RenderControl(control)
+                    For Each style As ColorProgressBarStyle In {ColorProgressBarStyle.Gradient, ColorProgressBarStyle.Striped}
+                        control.ProgressStyle = style
+                        Using styled As Bitmap = RenderControl(control)
+                            Dim differences As Integer = 0
+                            For y As Integer = 1 To 28
+                                For x As Integer = 1 To 50
+                                    If solid.GetPixel(x, y) <> styled.GetPixel(x, y) Then differences += 1
+                                Next
+                            Next
+                            Assert.IsGreaterThan(0, differences, style.ToString())
+                            AssertPixel(Color.Silver, styled, 80, 15)
+                        End Using
+                    Next
+                End Using
+                Assert.ThrowsExactly(Of InvalidEnumArgumentException)(Sub() control.ProgressStyle = CType(-1, ColorProgressBarStyle))
+                Assert.AreEqual(ColorProgressBarStyle.Striped, control.ProgressStyle)
+                Assert.IsTrue(descriptor.ShouldSerializeValue(control))
+            End Using
+        End Sub
+
+        ''' <summary>Prüft kleine Zeichenflächen und die Extremfarben in allen Darstellungsmodi.</summary>
+        <TestMethod>
+        Public Sub ProgressStyle_RendersSmallSizesAndExtremeColors()
+            Using control As New ColorProgressBar()
+                control.IsGlossy = False
+                control.ShowText = True
+                For Each style As ColorProgressBarStyle In {ColorProgressBarStyle.Solid, ColorProgressBarStyle.Gradient,
+                        ColorProgressBarStyle.Striped, ColorProgressBarStyle.Marquee}
+                    control.ProgressStyle = style
+                    For Each size As Size In {New Size(1, 1), New Size(3, 3), New Size(60, 20)}
+                        control.Size = size
+                        For Each color As Color In {Color.Black, Color.White, Color.Transparent}
+                            control.BarColor = color
+                            For Each value As Integer In {0, 10}
+                                control.Value = value
+                                Using image As Bitmap = RenderControl(control)
+                                    Assert.AreEqual(size, image.Size)
+                                End Using
+                            Next
+                        Next
+                    Next
+                Next
+            End Using
+        End Sub
+
+        ''' <summary>Prüft Animation, unveränderte Fortschrittswerte und den Lebenszyklus des Timers.</summary>
+        <TestMethod>
+        Public Sub Marquee_AnimatesAndStopsWhenNotVisibleOrNotSelected()
+            Using control As New TestableColorProgressBar()
+                control.Size = New Size(100, 30)
+                control.IsGlossy = False
+                control.Value = 5
+                control.ProgressStyle = ColorProgressBarStyle.Marquee
+                Dim timerField As FieldInfo = GetType(ColorProgressBar).GetField("_marqueeTimer", BindingFlags.Instance Or BindingFlags.NonPublic)
+                Assert.IsNotNull(timerField)
+                Assert.IsNull(timerField.GetValue(control))
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                Dim timer As Timer = DirectCast(timerField.GetValue(control), Timer)
+                Assert.IsNotNull(timer)
+                Assert.IsTrue(timer.Enabled)
+                Dim tick As MethodInfo = GetType(ColorProgressBar).GetMethod("MarqueeTick", BindingFlags.Instance Or BindingFlags.NonPublic)
+                Assert.IsNotNull(tick)
+                Using before As Bitmap = RenderControl(control)
+                    tick.Invoke(control, New Object() {timer, EventArgs.Empty})
+                    Using after As Bitmap = RenderControl(control)
+                        Assert.AreNotEqual(before.GetPixel(7, 15).ToArgb(), after.GetPixel(7, 15).ToArgb())
+                    End Using
+                End Using
+                Assert.AreEqual(5, control.Value)
+                control.Visible = False
+                Assert.IsFalse(timer.Enabled)
+                control.Visible = True
+                Assert.IsTrue(timer.Enabled)
+                control.RecreateHandleForTest()
+                Assert.IsTrue(timer.Enabled)
+                control.ProgressStyle = ColorProgressBarStyle.Solid
+                Assert.IsFalse(timer.Enabled)
+                control.ProgressStyle = ColorProgressBarStyle.Marquee
+                Assert.IsTrue(timer.Enabled)
+                control.Dispose()
+                Assert.IsFalse(timer.Enabled)
+            End Using
+        End Sub
+
         ''' <summary>Prüft Standardwerte, Formatvalidierung und die Zeichnung der optionalen Beschriftung.</summary>
         <TestMethod>
         Public Sub ProgressText_FormatsAndVisibilityChangeRendering()

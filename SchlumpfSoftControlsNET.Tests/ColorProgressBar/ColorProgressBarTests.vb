@@ -19,6 +19,127 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
     <STATestClass>
     Public Class ColorProgressBarTests
 
+        ''' <summary>Prüft Zwischenstand, Zielwert und Abschluss des zeitbasierten Übergangs.</summary>
+        <TestMethod>
+        Public Sub ValueAnimation_InterpolatesDrawingWithoutChangingTheReportedValue()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.IsGlossy = False
+                control.Value = 0
+                Assert.IsFalse(control.AnimateValueChanges)
+                control.AnimateValueChanges = True
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                control.Value = 10
+                Assert.AreEqual(10, control.Value)
+                Assert.AreEqual(1.0.ToString("P0", Globalization.CultureInfo.CurrentCulture), control.AccessibilityObject.Value)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Silver, image, 80, 10)
+                End Using
+                Dim advance As MethodInfo = GetType(ColorProgressBar).GetMethod("UpdateAnimatedValue", BindingFlags.Instance Or BindingFlags.NonPublic)
+                Assert.IsNotNull(advance)
+                Dim unused = advance.Invoke(control, New Object() {150.0})
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 80, 10)
+                    AssertPixel(Color.Silver, image, 95, 10)
+                End Using
+                unused = advance.Invoke(control, New Object() {300.0})
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 98, 10)
+                End Using
+                Assert.AreEqual(10, control.Value)
+                control.Value = 0
+                unused = advance.Invoke(control, New Object() {150.0})
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                    AssertPixel(Color.Silver, image, 20, 10)
+                End Using
+                unused = advance.Invoke(control, New Object() {300.0})
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Silver, image, 1, 10)
+                End Using
+            End Using
+        End Sub
+
+        ''' <summary>Prüft Timer-Lebensdauer, Richtungswechsel und Synchronisierung bei Zustandsänderungen.</summary>
+        <TestMethod>
+        Public Sub ValueAnimation_StopsAndSynchronizesAcrossLifecycleChanges()
+            Using control As New TestableColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.IsGlossy = False
+                control.Value = 0
+                control.AnimateValueChanges = True
+                Dim timerField As FieldInfo = GetType(ColorProgressBar).GetField("_valueAnimationTimer", BindingFlags.Instance Or BindingFlags.NonPublic)
+                Assert.IsNotNull(timerField)
+                control.Value = 5
+                Assert.IsNull(timerField.GetValue(control))
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                control.Value = 10
+                Dim timer As Timer = DirectCast(timerField.GetValue(control), Timer)
+                Assert.IsNotNull(timer)
+                Assert.IsTrue(timer.Enabled)
+                control.Value = 2
+                Assert.AreEqual(2, control.Value)
+                Assert.IsTrue(timer.Enabled)
+                control.Visible = False
+                Assert.IsFalse(timer.Enabled)
+                control.Visible = True
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Silver, image, 80, 10)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                End Using
+                control.Value = 8
+                Assert.IsTrue(timer.Enabled)
+                control.ProgressMaximumValue = 5
+                Assert.IsFalse(timer.Enabled)
+                Assert.AreEqual(5, control.Value)
+                control.Value = 2
+                Assert.IsTrue(timer.Enabled)
+                control.ProgressStyle = ColorProgressBarStyle.Marquee
+                Assert.IsFalse(timer.Enabled)
+                control.ProgressStyle = ColorProgressBarStyle.Solid
+                control.Value = 4
+                Assert.IsTrue(timer.Enabled)
+                control.RecreateHandleForTest()
+                Assert.IsFalse(timer.Enabled)
+                control.Value = 1
+                Assert.IsTrue(timer.Enabled)
+                control.AnimateValueChanges = False
+                Assert.IsFalse(timer.Enabled)
+                control.AnimateValueChanges = True
+                control.Value = 4
+                Assert.IsTrue(timer.Enabled)
+                control.Dispose()
+                Assert.IsFalse(timer.Enabled)
+            End Using
+        End Sub
+
+        ''' <summary>Prüft, dass der echte WinForms-Timer den Übergang in der Nachrichtenverarbeitung abschließt.</summary>
+        <TestMethod>
+        Public Sub ValueAnimation_TimerCompletesTransition()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.IsGlossy = False
+                control.Value = 0
+                control.AnimateValueChanges = True
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                control.Value = 10
+                Dim timerField As FieldInfo = GetType(ColorProgressBar).GetField("_valueAnimationTimer", BindingFlags.Instance Or BindingFlags.NonPublic)
+                Dim timer As Timer = DirectCast(timerField.GetValue(control), Timer)
+                Dim timeout As Diagnostics.Stopwatch = Diagnostics.Stopwatch.StartNew()
+                While timer.Enabled AndAlso timeout.ElapsedMilliseconds < 3000
+                    Application.DoEvents()
+                    Threading.Thread.Sleep(10)
+                End While
+                Assert.IsFalse(timer.Enabled, "Der Übergang wurde nicht rechtzeitig abgeschlossen.")
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 98, 10)
+                End Using
+            End Using
+        End Sub
+
         ''' <summary>Prüft einen deutlich sichtbaren Verlauf unterhalb des optionalen Glanzeffekts.</summary>
         <TestMethod>
         Public Sub Gradient_ShowsVisibleVerticalVariationWithAndWithoutGloss()
@@ -69,7 +190,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                         End Using
                     Next
                 End Using
-                Assert.ThrowsExactly(Of InvalidEnumArgumentException)(Sub() control.ProgressStyle = CType(-1, ColorProgressBarStyle))
+                Dim unused = Assert.ThrowsExactly(Of InvalidEnumArgumentException)(Sub() control.ProgressStyle = CType(-1, ColorProgressBarStyle))
                 Assert.AreEqual(ColorProgressBarStyle.Striped, control.ProgressStyle)
                 Assert.IsTrue(descriptor.ShouldSerializeValue(control))
             End Using
@@ -119,7 +240,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Dim tick As MethodInfo = GetType(ColorProgressBar).GetMethod("MarqueeTick", BindingFlags.Instance Or BindingFlags.NonPublic)
                 Assert.IsNotNull(tick)
                 Using before As Bitmap = RenderControl(control)
-                    tick.Invoke(control, New Object() {timer, EventArgs.Empty})
+                    Dim unused = tick.Invoke(control, New Object() {timer, EventArgs.Empty})
                     Using after As Bitmap = RenderControl(control)
                         Assert.AreNotEqual(before.GetPixel(7, 15).ToArgb(), after.GetPixel(7, 15).ToArgb())
                     End Using
@@ -167,7 +288,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                         End Using
                     End Using
                 End Using
-                Assert.ThrowsExactly(Of InvalidEnumArgumentException)(Sub() control.TextFormat = CType(-1, ColorProgressBarTextFormat))
+                Dim unused = Assert.ThrowsExactly(Of InvalidEnumArgumentException)(Sub() control.TextFormat = CType(-1, ColorProgressBarTextFormat))
                 Assert.AreEqual(ColorProgressBarTextFormat.Value, control.TextFormat)
             End Using
         End Sub
@@ -285,18 +406,25 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
 
         <TestMethod>
         Public Sub ProgressMaximumValue_ClampsBeforeReentrantInvalidation()
+
             Using control As New TestableColorProgressBar()
+
                 control.Size = New Size(100, 20)
                 control.IsGlossy = False
                 control.Value = 8
+
                 Dim handle As IntPtr = control.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
+
                 Dim observedValues As New List(Of Integer)()
                 Dim observedMaximums As New List(Of Integer)()
 
                 Using image As New Bitmap(100, 20)
+
                     Using graphics As Graphics = Graphics.FromImage(image)
+
                         Using args As New PaintEventArgs(graphics, New Rectangle(Point.Empty, image.Size))
+
                             control.PaintForTest(args)
                             Dim onInvalidated As InvalidateEventHandler = Sub(sender, e)
                                                                               observedValues.Add(control.Value)
@@ -310,20 +438,30 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                                                                               End If
                                                                           End Sub
                             AddHandler control.Invalidated, onInvalidated
+
                             Try
                                 control.ProgressMaximumValue = 4
                             Finally
                                 RemoveHandler control.Invalidated, onInvalidated
                             End Try
 
-                            CollectionAssert.AreEqual(New Integer() {4, 4, 7}, observedValues.ToArray())
-                            CollectionAssert.AreEqual(New Integer() {4, 20, 20}, observedMaximums.ToArray())
+                            Dim intvar1 As Integer() = New Integer() {4, 4, 7}
+                            CollectionAssert.AreEqual(intvar1, observedValues.ToArray())
+
+                            Dim intvar2 As Integer() = New Integer() {4, 20, 20}
+                            CollectionAssert.AreEqual(intvar2, observedMaximums.ToArray())
+
                             Assert.AreEqual(7, control.Value)
                             Assert.AreEqual(20, control.ProgressMaximumValue)
+
                         End Using
+
                     End Using
+
                 End Using
+
             End Using
+
         End Sub
 
         <TestMethod>

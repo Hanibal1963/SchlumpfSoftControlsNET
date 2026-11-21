@@ -63,6 +63,21 @@ Namespace ColorProgressBarControl
         ''' <summary>Animationsposition in Tausendsteln eines vollständigen Durchlaufs.</summary>
         Private _marqueePhase As Integer = 250
 
+        ''' <summary>Aktiviert die zeitbasierte Darstellung von Wertänderungen.</summary>
+        Private _animateValueChanges As Boolean
+
+        ''' <summary>Aktuell dargestellter, gegebenenfalls interpolierter Fortschrittswert.</summary>
+        Private _displayValue As Double = 1
+
+        ''' <summary>Ausgangswert des aktuellen Übergangs.</summary>
+        Private _animationStartValue As Double
+
+        ''' <summary>Misst die tatsächlich verstrichene Zeit des aktuellen Übergangs.</summary>
+        Private ReadOnly _valueAnimationClock As New Diagnostics.Stopwatch()
+
+        ''' <summary>Zeichentimer für wertabhängige Übergänge.</summary>
+        Private _valueAnimationTimer As Timer
+
         ''' <summary>Farbe des gefüllten Bereichs.</summary>
         Private _BarColor As System.Drawing.Color = Color.Blue
 
@@ -94,7 +109,7 @@ Namespace ColorProgressBarControl
         Private _cachedPadding As Padding
 
         ''' <summary>Fortschrittswert bei der letzten Berechnung der Bereichsrechtecke.</summary>
-        Private _cachedProgressValue As Int32
+        Private _cachedProgressValue As Double
 
         ''' <summary>Maximum bei der letzten Berechnung der Bereichsrechtecke.</summary>
         Private _cachedMaximumValue As Int32
@@ -115,8 +130,27 @@ Namespace ColorProgressBarControl
 
 #Region "öffentliche Eigenschaften"
 
+        ''' <summary>Aktiviert sanfte Übergänge bei Wertänderungen; standardmäßig ausgeschaltet.</summary>
+        <Description("Aktiviert sanfte Übergänge bei Wertänderungen; standardmäßig ausgeschaltet.")>
+        <Browsable(True)>
+        <Category("Behavior")>
+        <DefaultValue(False)>
+        Public Property AnimateValueChanges As Boolean
+            Get
+                Return Me._animateValueChanges
+            End Get
+            Set(value As Boolean)
+                If Me._animateValueChanges <> value Then
+                    Me._animateValueChanges = value
+                    If Not value Then Me.CompleteValueAnimation()
+                    Me.Invalidate()
+                End If
+            End Set
+        End Property
+
         ''' <summary>Bestimmt die Darstellung des Fortschritts; Marquee animiert unabhängig vom Wert.</summary>
         ''' <exception cref="InvalidEnumArgumentException">Der Darstellungsmodus ist nicht definiert.</exception>
+        <Description("Bestimmt die Darstellung des Fortschritts; Marquee animiert unabhängig vom Wert.")>
         <Browsable(True)>
         <Category("Appearance")>
         <DefaultValue(GetType(ColorProgressBarStyle), "Solid")>
@@ -136,6 +170,7 @@ Namespace ColorProgressBarControl
                 End If
                 If Me._progressStyle <> value Then
                     Me._progressStyle = value
+                    If value = ColorProgressBarStyle.Marquee Then Me.CompleteValueAnimation()
                     Me.UpdateMarqueeTimer()
                     Me.Invalidate()
                 End If
@@ -143,6 +178,7 @@ Namespace ColorProgressBarControl
         End Property
 
         ''' <summary>Gibt an, ob der Fortschritt mittig als Text angezeigt wird; standardmäßig ausgeschaltet.</summary>
+        <Description("Gibt an, ob der Fortschritt mittig als Text angezeigt wird; standardmäßig ausgeschaltet.")>
         <Browsable(True)>
         <Category("Appearance")>
         <DefaultValue(False)>
@@ -160,6 +196,7 @@ Namespace ColorProgressBarControl
 
         ''' <summary>Gibt das Format der sichtbaren Fortschrittsbeschriftung an.</summary>
         ''' <exception cref="InvalidEnumArgumentException">Das Format ist kein definierter Enumerationswert.</exception>
+        <Description("Gibt das Format der sichtbaren Fortschrittsbeschriftung an.")>
         <Browsable(True)>
         <Category("Appearance")>
         <DefaultValue(ColorProgressBarTextFormat.Percentage)>
@@ -189,9 +226,9 @@ Namespace ColorProgressBarControl
         ''' <see cref="ProgressMaximumValue"/>; Standardwert: 1). Werte außerhalb des Bereichs werden begrenzt.
         ''' Bei unverändertem begrenztem Wert wird keine erneute Invalidierung ausgelöst.
         ''' </summary>
+        <Description("Gibt den Gesamtfortschritt des Fortschrittsbalkens zurück oder legt diesen fest.")>
         <Browsable(True)>
         <Category("Behavior")>
-        <Description("Gibt den Gesamtfortschritt des Fortschrittsbalkens zurück oder legt diesen fest.")>
         <DefaultValue(1)>
         Public Property Value() As Int32
             Get
@@ -207,9 +244,9 @@ Namespace ColorProgressBarControl
         ''' Werte kleiner als 1 werden auf 1 begrenzt und ein darüber liegender Fortschrittswert wird angepasst.
         ''' Bei unverändertem begrenztem Maximum wird keine erneute Invalidierung ausgelöst.
         ''' </summary>
+        <Description("Gibt den Maximalwert des Fortschrittsbalkens zurück oder legt diesen fest.")>
         <Browsable(True)>
         <Category("Behavior")>
-        <Description("Gibt den Maximalwert des Fortschrittsbalkens zurück oder legt diesen fest.")>
         <DefaultValue(10)>
         Public Property ProgressMaximumValue() As Int32
             Get
@@ -224,9 +261,9 @@ Namespace ColorProgressBarControl
         ''' Gibt die Farbe des gefüllten Fortschrittsbereichs zurück oder legt diese fest.
         ''' Transparente Farben und Systemfarben werden unterstützt.
         ''' </summary>
+        <Description("Gibt die Farbe des Fortschrittsbalkens zurück oder legt diese fest.")>
         <Browsable(True)>
         <Category("Appearance")>
-        <Description("Gibt die Farbe des Fortschrittsbalkens zurück oder legt diese fest.")>
         <DefaultValue(GetType(Color), "Blue")>
         Public Property BarColor As Color
             Get
@@ -246,9 +283,9 @@ Namespace ColorProgressBarControl
         ''' Gibt die Farbe des leeren Fortschrittsbereichs zurück oder legt diese fest.
         ''' Transparente Farben und Systemfarben werden unterstützt.
         ''' </summary>
+        <Description("Gibt die Farbe des leeren Fortschrittsbalkens zurück oder legt diese fest.")>
         <Browsable(True)>
         <Category("Appearance")>
-        <Description("Gibt die Farbe des leeren Fortschrittsbalkens zurück oder legt diese fest.")>
         <DefaultValue(GetType(Color), "Silver")>
         Public Property EmptyColor As Color
             Get
@@ -267,9 +304,9 @@ Namespace ColorProgressBarControl
         ''' <summary>
         ''' Gibt die Farbe des Rahmens zurück oder legt diese fest.
         ''' </summary>
+        <Description("Gibt die Farbe des Rahmens zurück oder legt diese fest.")>
         <Browsable(True)>
         <Category("Appearance")>
-        <Description("Gibt die Farbe des Rahmens zurück oder legt diese fest.")>
         <DefaultValue(GetType(Color), "Black")>
         Public Property BorderColor As Color
             Get
@@ -285,9 +322,9 @@ Namespace ColorProgressBarControl
         ''' <summary>
         ''' Legt fest, ob ein Rahmen um die Fortschrittsanzeige angezeigt wird.
         ''' </summary>
+        <Description("Gibt an, ob der Rahmen auf der Fortschrittsanzeige aktiviert ist.")>
         <Browsable(True)>
         <Category("Appearance")>
-        <Description("Gibt an, ob der Rahmen auf der Fortschrittsanzeige aktiviert ist.")>
         <DefaultValue(True)>
         Public Property ShowBorder As Boolean
             Get
@@ -303,9 +340,9 @@ Namespace ColorProgressBarControl
         ''' <summary>
         ''' Legt fest, ob ein Glanzeffekt auf der Fortschrittsleiste angezeigt wird.
         ''' </summary>
+        <Description("Gibt an, ob der Glanz auf der Fortschrittsleiste angezeigt wird.")>
         <Browsable(True)>
         <Category("Appearance")>
-        <Description("Gibt an, ob der Glanz auf der Fortschrittsleiste angezeigt wird.")>
         <DefaultValue(True)>
         Public Property IsGlossy As Boolean
             Get
@@ -447,8 +484,14 @@ Namespace ColorProgressBarControl
             If boundedMaximum <> Me._MaxValue OrElse boundedValue <> Me._ProgressValue Then
                 Dim previousMaximum As Int32 = Me._MaxValue
                 Dim previousValue As Int32 = Me._ProgressValue
+                If Me._valueAnimationClock.IsRunning Then Me.UpdateAnimatedValue(Me._valueAnimationClock.Elapsed.TotalMilliseconds)
                 Me._MaxValue = boundedMaximum
                 Me._ProgressValue = boundedValue
+                If boundedMaximum = previousMaximum AndAlso boundedValue <> previousValue AndAlso Me.CanAnimateValue() Then
+                    Me.StartValueAnimation()
+                Else
+                    Me.CompleteValueAnimation()
+                End If
                 ' Auch bei einem Fehler der Accessibility-Benachrichtigung muss neu gezeichnet werden.
                 Try
                     Me.NotifyProgressAccessibility(previousValue, previousMaximum, boundedValue, boundedMaximum)
@@ -488,7 +531,7 @@ Namespace ColorProgressBarControl
                 Me._cachedPadding = currentPadding
             End If
 
-            If layoutChanged OrElse Me._cachedProgressValue <> Me._ProgressValue OrElse
+            If layoutChanged OrElse Me._cachedProgressValue <> Me._displayValue OrElse
                 Me._cachedMaximumValue <> Me._MaxValue Then
                 Dim fillWidth As Int32 = 0
                 Dim contentWidth As Int32 = Me._cachedContentBounds.Width
@@ -496,10 +539,10 @@ Namespace ColorProgressBarControl
 
                 If contentWidth > 0 AndAlso contentHeight > 0 Then
                     ' Zwischenwerte verwenden weiterhin die Außenbreite; bei Maximum wird die Innenfläche gefüllt.
-                    If Me._ProgressValue = Me._MaxValue Then
+                    If Me._displayValue >= Me._MaxValue Then
                         fillWidth = contentWidth
                     Else
-                        Dim ratio As Double = CDbl(Me._ProgressValue) / CDbl(Me._MaxValue)
+                        Dim ratio As Double = Me._displayValue / CDbl(Me._MaxValue)
                         fillWidth = CInt(Math.Round(ratio * CDbl(controlSize.Width)))
                         fillWidth = Math.Max(0, Math.Min(contentWidth, fillWidth))
                     End If
@@ -508,7 +551,7 @@ Namespace ColorProgressBarControl
                 Me._cachedFillBounds = New Rectangle(Me._cachedContentBounds.X, Me._cachedContentBounds.Y, fillWidth, contentHeight)
                 Me._cachedEmptyBounds = New Rectangle(Me._cachedContentBounds.X + fillWidth, Me._cachedContentBounds.Y,
                                                       contentWidth - fillWidth, contentHeight)
-                Me._cachedProgressValue = Me._ProgressValue
+                Me._cachedProgressValue = Me._displayValue
                 Me._cachedMaximumValue = Me._MaxValue
             End If
 
@@ -567,19 +610,28 @@ Namespace ColorProgressBarControl
 
             ' Jeder Pinsel wird auch dann freigegeben, wenn ein vorheriges Dispose fehlschlägt.
             Try
-                If Me._marqueeTimer IsNot Nothing Then
-                    RemoveHandler Me._marqueeTimer.Tick, AddressOf Me.MarqueeTick
-                    Me._marqueeTimer.Dispose()
-                    Me._marqueeTimer = Nothing
+                Me.CompleteValueAnimation()
+                If Me._valueAnimationTimer IsNot Nothing Then
+                    RemoveHandler Me._valueAnimationTimer.Tick, AddressOf Me.ValueAnimationTick
+                    Me._valueAnimationTimer.Dispose()
+                    Me._valueAnimationTimer = Nothing
                 End If
             Finally
                 Try
-                    DisposeCachedBrush(Me._barBrush)
+                    If Me._marqueeTimer IsNot Nothing Then
+                        RemoveHandler Me._marqueeTimer.Tick, AddressOf Me.MarqueeTick
+                        Me._marqueeTimer.Dispose()
+                        Me._marqueeTimer = Nothing
+                    End If
                 Finally
                     Try
-                        DisposeCachedBrush(Me._emptyBrush)
+                        DisposeCachedBrush(Me._barBrush)
                     Finally
-                        DisposeCachedBrush(Me._glossBrush)
+                        Try
+                            DisposeCachedBrush(Me._emptyBrush)
+                        Finally
+                            DisposeCachedBrush(Me._glossBrush)
+                        End Try
                     End Try
                 End Try
             End Try
@@ -646,6 +698,57 @@ Namespace ColorProgressBarControl
 
         End Function
 
+        ''' <summary>Prüft, ob ein sichtbarer wertabhängiger Übergang möglich ist.</summary>
+        ''' <returns>Ob eine Animation zur Laufzeit gestartet werden darf.</returns>
+        Private Function CanAnimateValue() As Boolean
+            Return Me._animateValueChanges AndAlso Me._progressStyle <> ColorProgressBarStyle.Marquee AndAlso
+                Me.IsHandleCreated AndAlso Me.Visible AndAlso Not Me.IsDisposed AndAlso Not Me.Disposing AndAlso
+                LicenseManager.UsageMode <> LicenseUsageMode.Designtime AndAlso Not Me.DesignMode
+        End Function
+
+        ''' <summary>Startet einen Übergang vom aktuellen Bild zum neuen Zielwert.</summary>
+        Private Sub StartValueAnimation()
+            Me._animationStartValue = Me._displayValue
+            If Me._displayValue = CDbl(Me._ProgressValue) Then
+                Me.CompleteValueAnimation()
+                Return
+            End If
+            If Me._valueAnimationTimer Is Nothing Then
+                Me._valueAnimationTimer = New Timer With {.Interval = 15}
+                AddHandler Me._valueAnimationTimer.Tick, AddressOf Me.ValueAnimationTick
+            End If
+            Me._valueAnimationClock.Restart()
+            Me._valueAnimationTimer.Start()
+        End Sub
+
+        ''' <summary>Aktualisiert den angezeigten Wert mit kubischem Ease-out über 300 Millisekunden.</summary>
+        ''' <param name="elapsedMilliseconds">Seit Beginn des Übergangs verstrichene Zeit.</param>
+        Private Sub UpdateAnimatedValue(elapsedMilliseconds As Double)
+            Dim fraction As Double = Math.Max(0, Math.Min(1, elapsedMilliseconds / 300.0))
+            Dim remaining As Double = 1 - fraction
+            Me._displayValue = Me._animationStartValue + (CDbl(Me._ProgressValue) - Me._animationStartValue) * (1 - remaining * remaining * remaining)
+            If fraction >= 1 Then Me.CompleteValueAnimation()
+        End Sub
+
+        ''' <summary>Beendet den Übergang und synchronisiert die Darstellung mit dem Zielwert.</summary>
+        Private Sub CompleteValueAnimation()
+            Me._valueAnimationClock.Stop()
+            If Me._valueAnimationTimer IsNot Nothing Then Me._valueAnimationTimer.Stop()
+            Me._displayValue = CDbl(Me._ProgressValue)
+        End Sub
+
+        ''' <summary>Aktualisiert den Übergang anhand der verstrichenen Zeit und zeichnet erneut.</summary>
+        ''' <param name="sender">Der Animationstimer.</param>
+        ''' <param name="e">Die Ereignisdaten.</param>
+        Private Sub ValueAnimationTick(sender As Object, e As EventArgs)
+            If Not Me.CanAnimateValue() Then
+                Me.CompleteValueAnimation()
+            Else
+                Me.UpdateAnimatedValue(Me._valueAnimationClock.Elapsed.TotalMilliseconds)
+            End If
+            Me.Invalidate()
+        End Sub
+
         ''' <summary>Startet die Animation nur für ein sichtbares Laufzeit-Control mit Handle.</summary>
         Private Sub UpdateMarqueeTimer()
             Dim shouldRun As Boolean = Me._progressStyle = ColorProgressBarStyle.Marquee AndAlso
@@ -677,6 +780,7 @@ Namespace ColorProgressBarControl
         ''' <param name="e">Die Ereignisdaten.</param>
         Protected Overrides Sub OnVisibleChanged(e As EventArgs)
             MyBase.OnVisibleChanged(e)
+            If Not Me.CanAnimateValue() Then Me.CompleteValueAnimation()
             Me.UpdateMarqueeTimer()
         End Sub
 
@@ -943,6 +1047,7 @@ Namespace ColorProgressBarControl
         ''' <param name="e">Stellt die Ereignisdaten bereit.</param>
         Protected Overrides Sub OnHandleDestroyed(e As EventArgs)
 
+            Me.CompleteValueAnimation()
             If Me._marqueeTimer IsNot Nothing Then Me._marqueeTimer.Stop()
             Dim provider As ProgressAutomationProvider = Me._uiaProvider
             Me._uiaProvider = Nothing

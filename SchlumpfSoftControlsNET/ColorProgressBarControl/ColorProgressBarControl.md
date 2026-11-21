@@ -50,6 +50,8 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 - `ProgressStyle` (`ColorProgressBarStyle`, Standardwert `Solid`): Wählt eine einfarbige, verlaufende, gestreifte oder animierte Darstellung. Nicht definierte Werte lösen `InvalidEnumArgumentException` aus.
 
+- `AnimateValueChanges` (`Boolean`, Standardwert `False`): Animiert Wertänderungen in den wertabhängigen Darstellungen; das Abschalten übernimmt den Zielwert sofort.
+
 - `ShowText` (`Boolean`, Standardwert `False`): Zeigt optional eine mittige Fortschrittsbeschriftung an.
 
 - `TextFormat` (`ColorProgressBarTextFormat`, Standardwert `Percentage`): Wählt Prozent (`Percentage`) oder aktuellen Wert und Maximum (`Value`). Nicht definierte Werte lösen `InvalidEnumArgumentException` aus.
@@ -97,6 +99,8 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 - Die Beschriftung wird auf die Innenfläche begrenzt und bei Platzmangel gekürzt. Ihre Farbe wird für den gefüllten und den leeren Bereich separat als Schwarz oder Weiß anhand der Hintergrundhelligkeit gewählt. Bei transparenten Farben wird die Hintergrundfarbe des übergeordneten Controls berücksichtigt; Hintergrundbilder und der Glanzeffekt bleiben bei der Kontrastberechnung unberücksichtigt.
 
 - `Gradient` zeigt innerhalb der Füllung einen vertikalen Verlauf: Oben liegt die Mischung aus `BarColor` und Schwarz beziehungsweise Weiß, unten `BarColor`. `Striped` ergänzt diagonale Kontraststreifen. Die Textkontrastberechnung berücksichtigt diese Muster nicht. `Marquee` bewegt unabhängig von `Value` einen Balken durch die Innenfläche; optionaler Text und Accessibility melden weiterhin den tatsächlichen Wert. Die Animation läuft mit 50 ms Timerintervall nur zur Laufzeit, solange das Control sichtbar ist und ein Handle besitzt; nach Entsorgen wird der Timer freigegeben.
+
+- Bei `AnimateValueChanges` interpoliert die Füllung über 300 ms mit kubischem Ease-out zum Zielwert. Weitere Wertänderungen starten beim aktuellen Zwischenstand; Text und Accessibility melden sofort den Zielwert. Änderungen des Maximums, ausgeblendete Controls, Handle-Verlust, Designer und `Marquee` übernehmen den Zielwert sofort. Der Timer läuft nur während eines sichtbaren Übergangs und wird beim Entsorgen freigegeben.
 
 - UI Automation bietet die schreibgeschützten Muster `RangeValue` (Minimum `0`, Maximum `ProgressMaximumValue`, aktueller `Value`) und `Value` (Prozenttext). Bei Änderungen werden MSAA- und UI-Automation-Clients benachrichtigt; ohne Fenster-Handle wird kein Handle allein für eine Benachrichtigung erzeugt.
 

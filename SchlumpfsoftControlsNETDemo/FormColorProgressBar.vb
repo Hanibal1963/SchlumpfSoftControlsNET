@@ -14,6 +14,7 @@ Public Class FormColorProgressBar
         Me.NumericUpDown_ProgressValue.Value = 10
         Me.ColorProgressBar.Value = CInt(Me.NumericUpDown_ProgressValue.Value)
         Me.ColorProgressBar.ProgressMaximumValue = CInt(Me.NumericUpDown_ProgressValue.Maximum)
+
         Me.InitializeCheckBoxes()
         Me.InitializeComboBoxes()
     End Sub
@@ -23,6 +24,7 @@ Public Class FormColorProgressBar
         Me.CheckBox_ShowBorder.Checked = Me.ColorProgressBar.ShowBorder
         Me.CheckBox_ShowText.Checked = Me.ColorProgressBar.ShowText
         Me.CheckBox_TextFormat.Checked = Me.ColorProgressBar.TextFormat = ColorProgressBarControl.ColorProgressBarTextFormat.Percentage
+        Me.CheckBox_AnimateValueChanges.Checked = Me.ColorProgressBar.AnimateValueChanges
     End Sub
 
     Private Sub InitializeComboBoxes()
@@ -37,7 +39,8 @@ Public Class FormColorProgressBar
             CheckBox_ShowGliss.CheckedChanged,
             CheckBox_ShowBorder.CheckedChanged,
             CheckBox_ShowText.CheckedChanged,
-            CheckBox_TextFormat.CheckedChanged
+            CheckBox_TextFormat.CheckedChanged,
+            CheckBox_AnimateValueChanges.CheckedChanged
 
         Select Case True
 
@@ -54,6 +57,9 @@ Public Class FormColorProgressBar
                 Me.ColorProgressBar.TextFormat = If(CType(sender, CheckBox).Checked,
                     ColorProgressBarControl.ColorProgressBarTextFormat.Percentage,
                     ColorProgressBarControl.ColorProgressBarTextFormat.Value)
+
+            Case sender Is Me.CheckBox_AnimateValueChanges
+                Me.ColorProgressBar.AnimateValueChanges = CType(sender, CheckBox).Checked
 
         End Select
 

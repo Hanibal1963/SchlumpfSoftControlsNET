@@ -29,12 +29,12 @@ Partial Class FormColorProgressBar
         Me.Button_BorderColorChange = New System.Windows.Forms.Button()
         Me.Button_EmptyColorChange = New System.Windows.Forms.Button()
         Me.LabelProgressValue = New System.Windows.Forms.Label()
-        Me.ColorDialog = New System.Windows.Forms.ColorDialog()
-        Me.ColorProgressBar = New SchlumpfSoft.ControlsNET.ColorProgressBarControl.ColorProgressBar()
         Me.CheckBox_ShowText = New System.Windows.Forms.CheckBox()
         Me.CheckBox_TextFormat = New System.Windows.Forms.CheckBox()
         Me.Label_Style = New System.Windows.Forms.Label()
         Me.ComboBox_Style = New System.Windows.Forms.ComboBox()
+        Me.ColorProgressBar = New SchlumpfSoft.ControlsNET.ColorProgressBarControl.ColorProgressBar()
+        Me.CheckBox_AnimateValueChanges = New System.Windows.Forms.CheckBox()
         CType(Me.NumericUpDown_ProgressValue, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -101,16 +101,6 @@ Partial Class FormColorProgressBar
         Me.LabelProgressValue.TabIndex = 7
         Me.LabelProgressValue.Text = "Wert des Balkens"
         '
-        'ColorProgressBar
-        '
-        Me.ColorProgressBar.AccessibleRole = System.Windows.Forms.AccessibleRole.ProgressBar
-        Me.ColorProgressBar.BackColor = System.Drawing.Color.Black
-        Me.ColorProgressBar.Location = New System.Drawing.Point(23, 35)
-        Me.ColorProgressBar.Name = "ColorProgressBar"
-        Me.ColorProgressBar.Padding = New System.Windows.Forms.Padding(1)
-        Me.ColorProgressBar.Size = New System.Drawing.Size(455, 23)
-        Me.ColorProgressBar.TabIndex = 0
-        '
         'CheckBox_ShowText
         '
         Me.CheckBox_ShowText.AutoSize = True
@@ -148,11 +138,33 @@ Partial Class FormColorProgressBar
         Me.ComboBox_Style.Size = New System.Drawing.Size(145, 21)
         Me.ComboBox_Style.TabIndex = 11
         '
+        'ColorProgressBar
+        '
+        Me.ColorProgressBar.AccessibleRole = System.Windows.Forms.AccessibleRole.ProgressBar
+        Me.ColorProgressBar.AnimateValueChanges = True
+        Me.ColorProgressBar.BackColor = System.Drawing.Color.Black
+        Me.ColorProgressBar.Location = New System.Drawing.Point(23, 35)
+        Me.ColorProgressBar.Name = "ColorProgressBar"
+        Me.ColorProgressBar.Padding = New System.Windows.Forms.Padding(1)
+        Me.ColorProgressBar.Size = New System.Drawing.Size(455, 23)
+        Me.ColorProgressBar.TabIndex = 0
+        '
+        'CheckBox_AnimateValueChanges
+        '
+        Me.CheckBox_AnimateValueChanges.AutoSize = True
+        Me.CheckBox_AnimateValueChanges.Location = New System.Drawing.Point(23, 238)
+        Me.CheckBox_AnimateValueChanges.Name = "CheckBox_AnimateValueChanges"
+        Me.CheckBox_AnimateValueChanges.Size = New System.Drawing.Size(146, 17)
+        Me.CheckBox_AnimateValueChanges.TabIndex = 12
+        Me.CheckBox_AnimateValueChanges.Text = "Animiert Wertänderungen"
+        Me.CheckBox_AnimateValueChanges.UseVisualStyleBackColor = True
+        '
         'FormColorProgressBar
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(501, 241)
+        Me.ClientSize = New System.Drawing.Size(501, 280)
+        Me.Controls.Add(Me.CheckBox_AnimateValueChanges)
         Me.Controls.Add(Me.ComboBox_Style)
         Me.Controls.Add(Me.Label_Style)
         Me.Controls.Add(Me.CheckBox_TextFormat)
@@ -184,9 +196,9 @@ Partial Class FormColorProgressBar
     Private WithEvents Button_BorderColorChange As Button
     Private WithEvents Button_EmptyColorChange As Button
     Private WithEvents LabelProgressValue As Label
-    Private WithEvents ColorDialog As ColorDialog
     Private WithEvents CheckBox_ShowText As CheckBox
     Private WithEvents CheckBox_TextFormat As CheckBox
     Private WithEvents Label_Style As Label
     Private WithEvents ComboBox_Style As ComboBox
+    Private WithEvents CheckBox_AnimateValueChanges As CheckBox
 End Class

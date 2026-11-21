@@ -18,7 +18,7 @@
 
 ## 3. Animierte Übergänge
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; umgesetzt
 
 **Vorschlag:** Weiches Interpolieren bei Sprüngen des `Value`.
 

@@ -733,7 +733,13 @@ Namespace AniGifControl
         ''' <remarks>Das Control hält eine eigene Kopie der Daten. Die Methode muss auf dem UI-Thread aufgerufen werden.</remarks>
         Public Overloads Sub LoadGif(source As Stream)
             Me.ThrowIfAnimationDisposed()
+#If NET6_0_OR_GREATER Then
+            ArgumentNullException.ThrowIfNull(source, NameOf(source))
+#Else
+#Disable Warning CA1510 ' ThrowIfNull ist unter .NET Framework nicht verfügbar.
             If source Is Nothing Then Throw New ArgumentNullException(NameOf(source))
+#Enable Warning CA1510
+#End If
             If Not source.CanRead Then Throw New ArgumentException("Der Stream muss lesbar sein.", NameOf(source))
 
             Dim buffer As New MemoryStream()
@@ -757,7 +763,13 @@ Namespace AniGifControl
         ''' <exception cref="ObjectDisposedException">Das Control wurde freigegeben.</exception>
         Public Overloads Sub LoadGif(data As Byte())
             Me.ThrowIfAnimationDisposed()
+#If NET6_0_OR_GREATER Then
+            ArgumentNullException.ThrowIfNull(data, NameOf(data))
+#Else
+#Disable Warning CA1510 ' ThrowIfNull ist unter .NET Framework nicht verfügbar.
             If data Is Nothing Then Throw New ArgumentNullException(NameOf(data))
+#Enable Warning CA1510
+#End If
             Using source As New MemoryStream(data, False)
                 Me.LoadGif(source)
             End Using
@@ -772,7 +784,13 @@ Namespace AniGifControl
         ''' <exception cref="ObjectDisposedException">Das Control wurde freigegeben.</exception>
         Public Overloads Sub LoadGif(path As String)
             Me.ThrowIfAnimationDisposed()
+#If NET6_0_OR_GREATER Then
+            ArgumentNullException.ThrowIfNull(path, NameOf(path))
+#Else
+#Disable Warning CA1510 ' ThrowIfNull ist unter .NET Framework nicht verfügbar.
             If path Is Nothing Then Throw New ArgumentNullException(NameOf(path))
+#Enable Warning CA1510
+#End If
             If String.IsNullOrWhiteSpace(path) Then Throw New ArgumentException("Der Pfad darf nicht leer sein.", NameOf(path))
             Using source As FileStream = File.OpenRead(path)
                 Me.LoadGif(source)

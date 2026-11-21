@@ -95,13 +95,14 @@ Namespace AniGifControl
         ''' <summary>Erstellt die im Smart-Tag angebotenen Einstellmöglichkeiten.</summary>
         ''' <returns>Die sortierte Liste der Eigenschaften.</returns>
         Public Overrides Function GetSortedActionItems() As DesignerActionItemCollection
-            Dim items As New DesignerActionItemCollection()
-            items.Add(New DesignerActionHeaderItem("Wiedergabe"))
-            items.Add(New DesignerActionPropertyItem(NameOf(AutoPlay), "Automatisch starten", "Wiedergabe", "Startet die Animation automatisch."))
-            items.Add(New DesignerActionPropertyItem(NameOf(CustomDisplaySpeed), "Benutzerdefinierte Geschwindigkeit", "Wiedergabe", "Verwendet die eingestellte Bildrate statt der GIF-Verzögerungen."))
-            items.Add(New DesignerActionPropertyItem(NameOf(FramesPerSecond), "Bilder pro Sekunde", "Wiedergabe", "Legt die benutzerdefinierte Bildrate fest."))
-            items.Add(New DesignerActionHeaderItem("Darstellung"))
-            items.Add(New DesignerActionPropertyItem(NameOf(GifSizeMode), "Anzeigemodus", "Darstellung", "Legt die Skalierung und Ausrichtung fest."))
+            Dim items As New DesignerActionItemCollection From {
+                New DesignerActionHeaderItem("Wiedergabe"),
+                New DesignerActionPropertyItem(NameOf(AutoPlay), "Automatisch starten", "Wiedergabe", "Startet die Animation automatisch."),
+                New DesignerActionPropertyItem(NameOf(CustomDisplaySpeed), "Benutzerdefinierte Geschwindigkeit", "Wiedergabe", "Verwendet die eingestellte Bildrate statt der GIF-Verzögerungen."),
+                New DesignerActionPropertyItem(NameOf(FramesPerSecond), "Bilder pro Sekunde", "Wiedergabe", "Legt die benutzerdefinierte Bildrate fest."),
+                New DesignerActionHeaderItem("Darstellung"),
+                New DesignerActionPropertyItem(NameOf(GifSizeMode), "Anzeigemodus", "Darstellung", "Legt die Skalierung und Ausrichtung fest.")
+            }
             Return items
         End Function
 

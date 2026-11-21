@@ -125,11 +125,15 @@ Namespace ColorProgressBarControl
                 Return Me._progressStyle
             End Get
             Set(value As ColorProgressBarStyle)
+#If NETFRAMEWORK Then
 #Disable Warning CA2263 ' Die generische Überladung ist unter .NET Framework nicht verfügbar.
                 If Not [Enum].IsDefined(GetType(ColorProgressBarStyle), value) Then
+#Enable Warning CA2263
+#Else
+                If Not [Enum].IsDefined(Of ColorProgressBarStyle)(value) Then
+#End If
                     Throw New InvalidEnumArgumentException(NameOf(value), CInt(value), GetType(ColorProgressBarStyle))
                 End If
-#Enable Warning CA2263
                 If Me._progressStyle <> value Then
                     Me._progressStyle = value
                     Me.UpdateMarqueeTimer()
@@ -692,28 +696,53 @@ Namespace ColorProgressBarControl
         ''' <param name="graphics">Die Zeichenfläche.</param>
         ''' <param name="bounds">Die Füllfläche innerhalb des Controls.</param>
         Private Sub DrawStyledFill(graphics As Graphics, bounds As Rectangle)
+
             If bounds.Width <= 0 OrElse bounds.Height <= 0 Then Return
             If Me._barBrush Is Nothing Then Me._barBrush = New SolidBrush(Me._BarColor)
+
             If Me._progressStyle = ColorProgressBarStyle.Gradient Then
+
+                'Der folgendeCode zeichnet den gefüllten Bereich des Fortschrittsbalkens als vertikalen Farbverlauf. Er wird In DrawStyledFill ausgeführt, wenn der Stil Gradient gewählt ist.
+                '1.	c übernimmt die eingestellte Balkenfarbe _BarColor.
+                '2.	GetContrastColor(c) bestimmt Schwarz oder Weiß anhand der Helligkeit. Dabei berücksichtigt die Methode die Transparenz der Balkenfarbe und die Hintergrundfarbe des übergeordneten Controls.
+                '3.	accent mischt für jeden RGB-Kanal die Balkenfarbe zu gleichen Teilen mit der Kontrastfarbe. CInt wandelt die Farbkanäle vor der Addition in Ganzzahlen um; \ 2 führt eine ganzzahlige Division aus. Der Alpha-Kanal c.A bleibt erhalten.
+                '4.	Der LinearGradientBrush erzeugt innerhalb von bounds einen Verlauf von accent oben nach c unten. FillRectangle füllt damit die Fläche.
+                '5.	Using gibt den temporären Pinsel nach dem Zeichnen automatisch frei.
+                'Beispielsweise wird ein vollständig deckendes Blau (0, 0, 255) bei weißer Kontrastfarbe zu einem Akzent von (127, 127, 255) gemischt. Der Balken verläuft dann von diesem helleren Blau zum ursprünglichen Blau.
                 Dim c As Color = Me._BarColor
                 Dim contrast As Color = Me.GetContrastColor(c)
-                Dim accent As Color = Color.FromArgb(c.A, (3 * CInt(c.R) + contrast.R) \ 4,
-                    (3 * CInt(c.G) + contrast.G) \ 4, (3 * CInt(c.B) + contrast.B) \ 4)
+
+                'NOTE: mit Kontrast experimentieren
+                '50 % Balkenfarbe und 50 % Kontrastfarbe
+                'Dim accent As Color = Color.FromArgb(c.A, (CInt(c.R) + contrast.R) \ 2, (CInt(c.G) + contrast.G) \ 2, (CInt(c.B) + contrast.B) \ 2)
+
+                '25 % Balkenfarbe und 75 % Kontrastfarbe
+                'Dim accent As Color = Color.FromArgb(c.A, (CInt(c.R) + 3 * CInt(contrast.R)) \ 4, (CInt(c.G) + 3 * CInt(contrast.G)) \ 4, (CInt(c.B) + 3 * CInt(contrast.B)) \ 4)
+
+                '10 % Balkenfarbe und 90 % Kontrastfarbe
+                Dim accent As Color = Color.FromArgb(c.A, (CInt(c.R) + 9 * CInt(contrast.R)) \ 10, (CInt(c.G) + 9 * CInt(contrast.G)) \ 10, (CInt(c.B) + 9 * CInt(contrast.B)) \ 10)
+
                 Using brush As New Drawing2D.LinearGradientBrush(bounds, accent, c, Drawing2D.LinearGradientMode.Vertical)
                     graphics.FillRectangle(brush, bounds)
                 End Using
+
             Else
+
                 graphics.FillRectangle(Me._barBrush, bounds)
                 If Me._progressStyle = ColorProgressBarStyle.Striped Then
+
                     Dim c As Color = Me._BarColor
                     Dim contrast As Color = Me.GetContrastColor(c)
-                    Dim stripe As Color = Color.FromArgb(c.A, (CInt(c.R) + contrast.R) \ 2,
-                        (CInt(c.G) + contrast.G) \ 2, (CInt(c.B) + contrast.B) \ 2)
+                    Dim stripe As Color = Color.FromArgb(c.A, (CInt(c.R) + contrast.R) \ 2, (CInt(c.G) + contrast.G) \ 2, (CInt(c.B) + contrast.B) \ 2)
+
                     Using brush As New Drawing2D.HatchBrush(Drawing2D.HatchStyle.WideDownwardDiagonal, stripe, Color.Transparent)
                         graphics.FillRectangle(brush, bounds)
                     End Using
+
                 End If
+
             End If
+
         End Sub
 
         ''' <summary>Zeichnet den zentrierten Text getrennt über beiden Fortschrittsbereichen.</summary>
@@ -805,11 +834,15 @@ Namespace ColorProgressBarControl
         ''' <exception cref="ObjectDisposedException">Das Steuerelement wird oder wurde bereits freigegeben.</exception>
         Protected Overrides Sub OnPaint(e As PaintEventArgs)
 
+#If NETFRAMEWORK Then
 #Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
             If Me.IsDisposed OrElse Me.Disposing Then
                 Throw New ObjectDisposedException(NameOf(ColorProgressBar))
             End If
 #Enable Warning CA1513
+#Else
+            ObjectDisposedException.ThrowIf(Me.IsDisposed OrElse Me.Disposing, GetType(ColorProgressBar))
+#End If
 
             Me.UpdateCachedGeometry()
 

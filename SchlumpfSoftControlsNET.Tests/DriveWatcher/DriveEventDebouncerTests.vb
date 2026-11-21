@@ -59,9 +59,11 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         Public Sub IsDuplicate_ConcurrentCalls_AdmitsOnlyOne()
             Dim cache As New DriveEventDebouncer(Function() 1000L, 1000)
             Dim admitted As Integer = 0
-            Parallel.For(0, 100, Sub(index)
-                                     If Not cache.IsDuplicate("E:\", DriveEventType.Added) Then Interlocked.Increment(admitted)
-                                 End Sub)
+            Dim unused = Parallel.For(0, 100, Sub(index)
+                                                  If Not cache.IsDuplicate("E:\", DriveEventType.Added) Then
+                                                      Dim unused1 = Interlocked.Increment(admitted)
+                                                  End If
+                                              End Sub)
             Assert.AreEqual(1, admitted)
             cache.Clear()
             Assert.IsFalse(cache.IsDuplicate("E:\", DriveEventType.Added))

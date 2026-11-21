@@ -16,13 +16,16 @@ Namespace DriveWatcherControl
 		''' <summary>Zeitfenster für Wiederholungen in Millisekunden.</summary>
         Private Const WindowMilliseconds As Integer = 200
 
-		''' <summary>Schützt den Ereignisspeicher vor gleichzeitigem Zugriff.</summary>
+        ''' <summary>Schützt den Ereignisspeicher vor gleichzeitigem Zugriff.</summary>
         Private ReadOnly _syncRoot As New Object()
-		''' <summary>Speichert Zeitstempel je Laufwerk und Ereignistyp.</summary>
+
+        ''' <summary>Speichert Zeitstempel je Laufwerk und Ereignistyp.</summary>
         Private ReadOnly _events As New Dictionary(Of String, Long?())(StringComparer.OrdinalIgnoreCase)
-		''' <summary>Liefert den aktuellen Zeitstempel.</summary>
+
+        ''' <summary>Liefert den aktuellen Zeitstempel.</summary>
         Private ReadOnly _clock As Func(Of Long)
-		''' <summary>Gibt die Zeitstempeltakte pro Sekunde an.</summary>
+
+        ''' <summary>Gibt die Zeitstempeltakte pro Sekunde an.</summary>
         Private ReadOnly _frequency As Long
 
 		''' <summary>Initialisiert die Entprellung mit der Stoppuhr als Zeitquelle.</summary>
@@ -32,13 +35,14 @@ Namespace DriveWatcherControl
 
         End Sub
 
-		''' <summary>Initialisiert die Entprellung mit einer vorgegebenen Zeitquelle.</summary>
-		''' <param name="clock">Funktion zum Abrufen des aktuellen Zeitstempels.</param>
-		''' <param name="frequency">Positive Anzahl der Zeitstempeltakte pro Sekunde.</param>
-		''' <exception cref="ArgumentNullException">Die Zeitquelle ist <see langword="Nothing"/>.</exception>
-		''' <exception cref="ArgumentOutOfRangeException">Die Frequenz ist nicht positiv.</exception>
+        ''' <summary>Initialisiert die Entprellung mit einer vorgegebenen Zeitquelle.</summary>
+        ''' <param name="clock">Funktion zum Abrufen des aktuellen Zeitstempels.</param>
+        ''' <param name="frequency">Positive Anzahl der Zeitstempeltakte pro Sekunde.</param>
+        ''' <exception cref="ArgumentNullException">Die Zeitquelle ist <see langword="Nothing"/>.</exception>
+        ''' <exception cref="ArgumentOutOfRangeException">Die Frequenz ist nicht positiv.</exception>
         Friend Sub New(clock As Func(Of Long), frequency As Long)
 
+            'NOTE: Vermeidung prüfen
 #Disable Warning CA1510, CA1512 ' Die ThrowIf-Hilfen sind unter .NET Framework nicht verfügbar.
             If clock Is Nothing Then Throw New ArgumentNullException(NameOf(clock))
             If frequency <= 0 Then Throw New ArgumentOutOfRangeException(NameOf(frequency))
@@ -48,10 +52,10 @@ Namespace DriveWatcherControl
 
         End Sub
 
-		''' <summary>Prüft ein Ereignis und merkt neue Ereignisse für das Zeitfenster vor.</summary>
-		''' <param name="driveName">Laufwerksname; <see langword="Nothing"/> gilt als leerer Name.</param>
-		''' <param name="eventType">Art des Ereignisses.</param>
-		''' <returns><see langword="True"/>, wenn das Ereignis noch als Duplikat gilt.</returns>
+        ''' <summary>Prüft ein Ereignis und merkt neue Ereignisse für das Zeitfenster vor.</summary>
+        ''' <param name="driveName">Laufwerksname; <see langword="Nothing"/> gilt als leerer Name.</param>
+        ''' <param name="eventType">Art des Ereignisses.</param>
+        ''' <returns><see langword="True"/>, wenn das Ereignis noch als Duplikat gilt.</returns>
         Friend Function IsDuplicate(driveName As String, eventType As DriveEventType) As Boolean
 
             SyncLock Me._syncRoot

@@ -23,6 +23,7 @@ Namespace DriveWatcherControl
     ''' Für Netzlaufwerke stehen zusätzlich <see cref="NetworkDriveAdded"/> und
     ''' <see cref="NetworkDriveRemoved"/> zur Verfügung.
     ''' </remarks>
+    ''' NOTE:Vermeidung prüfen
 #Disable Warning CA1852 ' Warnung: Interne Typen versiegeln
     Friend Class NativeForm
 #Enable Warning CA1852
@@ -207,6 +208,7 @@ Namespace DriveWatcherControl
         ''' <exception cref="ObjectDisposedException">Die Instanz wurde bereits freigegeben.</exception>
         ''' <exception cref="InvalidOperationException">Für diese Instanz existiert bereits ein Fensterhandle.</exception>
         Public Overrides Sub CreateHandle(cp As CreateParams)
+            'NOTE: Vermeidung prüfen
 #Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
             If Me._disposedValue Then Throw New ObjectDisposedException(NameOf(NativeForm))
 #Enable Warning CA1513
@@ -249,25 +251,38 @@ Namespace DriveWatcherControl
         ''' </summary>
         ''' <param name="m">Die empfangene Windows-Nachricht.</param>
         Private Sub HandleHeader(ByRef m As Message)
+
             Dim header As DEV_BROADCAST_HDR
+
             ' Vor dem Auslesen den Zeiger und die gemeldete Mindestgröße prüfen.
             If m.LParam = IntPtr.Zero Then
+
                 Trace.TraceWarning("WM_DEVICECHANGE enthält keinen Geräteheader.")
                 Return
+
             End If
+
             If Marshal.ReadInt32(m.LParam) < Marshal.SizeOf(Of DEV_BROADCAST_HDR)() Then
+
                 Trace.TraceWarning("WM_DEVICECHANGE enthält einen zu kurzen Geräteheader.")
                 Return
+
             End If
+
             header = DirectCast(m.GetLParam(header.GetType), DEV_BROADCAST_HDR)
+
             If header.dbch_devicetype = DBT_DEVTYP.VOLUME Then
+
                 ' Die Volume-Struktur benötigt mehr Platz als der gemeinsame Header.
                 If header.dbch_size < Marshal.SizeOf(Of DEV_BROADCAST_VOLUME)() Then
                     Trace.TraceWarning("WM_DEVICECHANGE enthält eine zu kurze Volume-Struktur.")
                     Return
                 End If
+
                 Me.HandleVolume(m)
+
             End If
+
         End Sub
 
         ''' <summary>

@@ -15,7 +15,9 @@ Namespace DriveWatcherControl
     ''' Diese Argumente werden typischerweise mit einem Ereignis wie <c>DriveWatcher.DriveRemoved</c> übergeben<br/>
     ''' und enthalten mindestens den Namen des entfernten Laufwerks.
     ''' </remarks>
-    Public Class DriveRemovedEventArgs : Inherits EventArgs
+    Public Class DriveRemovedEventArgs
+
+        Inherits EventArgs
 
 #Region "Öffentliche Eigenschaften"
 

@@ -56,7 +56,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Dim buffer As IntPtr = Marshal.AllocHGlobal(4)
                 Try
                     Marshal.WriteInt32(buffer, 4)
-                    SendMessage(GetNativeWindow(watcher).Handle, WM_DEVICECHANGE, New IntPtr(DBT_DEVICEARRIVAL), buffer)
+                    Dim unused = SendMessage(GetNativeWindow(watcher).Handle, WM_DEVICECHANGE, New IntPtr(DBT_DEVICEARRIVAL), buffer)
                     Assert.AreEqual(0, watcher.AdditionDispatches)
                 Finally
                     Marshal.FreeHGlobal(buffer)
@@ -99,7 +99,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Dim nativeWindow As NativeWindow = GetNativeWindow(watcher)
                 Dim originalHandle As IntPtr = nativeWindow.Handle
 
-                Assert.ThrowsExactly(Of InvalidOperationException)(Sub() nativeWindow.CreateHandle(New CreateParams()))
+                Dim unused = Assert.ThrowsExactly(Of InvalidOperationException)(Sub() nativeWindow.CreateHandle(New CreateParams()))
 
                 Assert.AreEqual(originalHandle, nativeWindow.Handle)
                 Assert.IsTrue(IsWindow(originalHandle))
@@ -114,7 +114,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             watcher.Dispose()
 
             Try
-                Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() nativeWindow.CreateHandle(New CreateParams()))
+                Dim unused = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() nativeWindow.CreateHandle(New CreateParams()))
                 Assert.AreEqual(IntPtr.Zero, nativeWindow.Handle)
             Finally
                 If nativeWindow.Handle <> IntPtr.Zero Then nativeWindow.DestroyHandle()
@@ -289,8 +289,9 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                                              Finally
                                                  ready.Set()
                                              End Try
-                                         End Sub)
-                worker.IsBackground = True
+                                         End Sub) With {
+                    .IsBackground = True
+                                         }
                 worker.SetApartmentState(ApartmentState.STA)
                 worker.Start()
 
@@ -308,7 +309,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                     Dim timer As Stopwatch = Stopwatch.StartNew()
                     While Not received.IsSet AndAlso timer.Elapsed < TimeSpan.FromSeconds(5)
                         Application.DoEvents()
-                        Thread.Yield()
+                        Dim unused = Thread.Yield()
                     End While
 
                     Assert.IsTrue(received.IsSet, "Das Ereignis wurde nicht auf dem Zielthread zugestellt.")
@@ -364,7 +365,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Dim buffer As IntPtr = Marshal.AllocHGlobal(Marshal.SizeOf(Of DeviceBroadcastVolume)())
                 Try
                     Marshal.StructureToPtr(volume, buffer, False)
-                    SendMessage(GetNativeWindow(watcher).Handle, WM_DEVICECHANGE, New IntPtr(DBT_DEVICEARRIVAL), buffer)
+                    Dim unused = SendMessage(GetNativeWindow(watcher).Handle, WM_DEVICECHANGE, New IntPtr(DBT_DEVICEARRIVAL), buffer)
                     Assert.AreEqual(0, watcher.AdditionDispatches)
                     Assert.AreEqual(0, watcher.RemovalDispatches)
                 Finally
@@ -377,8 +378,8 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         Public Sub NullOrUnrelatedBroadcast_DoesNotRaiseEvents()
             Using watcher As New CountingDriveWatcher()
                 Dim handle As IntPtr = GetNativeWindow(watcher).Handle
-                SendMessage(handle, WM_DEVICECHANGE, New IntPtr(DBT_DEVICEARRIVAL), IntPtr.Zero)
-                SendMessage(handle, WM_DEVICECHANGE, New IntPtr(7), IntPtr.Zero)
+                Dim unused = SendMessage(handle, WM_DEVICECHANGE, New IntPtr(DBT_DEVICEARRIVAL), IntPtr.Zero)
+                unused = SendMessage(handle, WM_DEVICECHANGE, New IntPtr(7), IntPtr.Zero)
                 Assert.AreEqual(0, watcher.AdditionDispatches)
                 Assert.AreEqual(0, watcher.RemovalDispatches)
             End Using
@@ -400,7 +401,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             Try
                 ' Eine echte Fensternachricht macht den Test unabhängig von angeschlossener Hardware.
                 Marshal.StructureToPtr(volume, buffer, False)
-                SendMessage(handle, WM_DEVICECHANGE, New IntPtr(eventType), buffer)
+                Dim unused = SendMessage(handle, WM_DEVICECHANGE, New IntPtr(eventType), buffer)
             Finally
                 Marshal.FreeHGlobal(buffer)
             End Try

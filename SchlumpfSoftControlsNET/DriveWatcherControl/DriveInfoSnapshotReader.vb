@@ -27,14 +27,15 @@ Namespace DriveWatcherControl
 
         End Function
 
-		''' <summary>Liest eine Momentaufnahme über eine vorgegebene Datenquellenfabrik.</summary>
-		''' <param name="name">Name des abzufragenden Laufwerks.</param>
-		''' <param name="factory">Erstellt die Datenquelle für den Laufwerksnamen.</param>
-		''' <returns>Die Laufwerksdaten und gegebenenfalls Lesefehler.</returns>
-		''' <exception cref="ArgumentNullException">Die Fabrik ist <see langword="Nothing"/>.</exception>
-		''' <exception cref="InvalidOperationException">Die Fabrik liefert ohne erfassten Lesefehler keine Datenquelle.</exception>
+        ''' <summary>Liest eine Momentaufnahme über eine vorgegebene Datenquellenfabrik.</summary>
+        ''' <param name="name">Name des abzufragenden Laufwerks.</param>
+        ''' <param name="factory">Erstellt die Datenquelle für den Laufwerksnamen.</param>
+        ''' <returns>Die Laufwerksdaten und gegebenenfalls Lesefehler.</returns>
+        ''' <exception cref="ArgumentNullException">Die Fabrik ist <see langword="Nothing"/>.</exception>
+        ''' <exception cref="InvalidOperationException">Die Fabrik liefert ohne erfassten Lesefehler keine Datenquelle.</exception>
         Friend Shared Function Read(name As String, factory As Func(Of String, IDriveInfoSource)) As DriveAddedEventArgs
 
+            'NOTE: Vermeidung prüfen
 #Disable Warning CA1510 ' ThrowIfNull ist unter .NET Framework nicht verfügbar.
             If factory Is Nothing Then Throw New ArgumentNullException(NameOf(factory))
 #Enable Warning CA1510

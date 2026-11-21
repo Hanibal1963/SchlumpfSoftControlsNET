@@ -70,7 +70,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             Assert.AreSame(win32, result.ReadErrors("DriveFormat"))
             Assert.AreEqual(11L, result.AvailableFreeSpace)
             Assert.AreEqual(22L, result.TotalFreeSpace)
-            Assert.ThrowsExactly(Of NotSupportedException)(Sub() DirectCast(result.ReadErrors, IDictionary(Of String, Exception)).Clear())
+            Dim unused = Assert.ThrowsExactly(Of NotSupportedException)(Sub() DirectCast(result.ReadErrors, IDictionary(Of String, Exception)).Clear())
         End Sub
 
         <TestMethod>
@@ -105,7 +105,10 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         Public Sub Read_UnexpectedFailure_Propagates()
             Dim source As New FakeSource()
             source.Failures.Add("VolumeLabel", New InvalidOperationException("unexpected"))
-            Assert.ThrowsExactly(Of InvalidOperationException)(Sub() DriveInfoSnapshotReader.Read("X:\", Function(name) source))
+            Dim unused = Assert.ThrowsExactly(Of InvalidOperationException)(
+                Sub()
+                    Dim unused1 = DriveInfoSnapshotReader.Read("X:\", Function(name) source)
+                End Sub)
         End Sub
 
         Private NotInheritable Class FakeSource

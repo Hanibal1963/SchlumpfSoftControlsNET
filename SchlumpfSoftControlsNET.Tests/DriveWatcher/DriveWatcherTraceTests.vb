@@ -25,17 +25,17 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         Public Sub TraceLevel_DefaultAndInvalidValues_AreHandledExplicitly()
             Using watcher As New TestWatcher()
                 Assert.AreEqual(TraceLevel.Off, watcher.TraceLevel)
-                Assert.ThrowsExactly(Of InvalidEnumArgumentException)(Sub() watcher.TraceLevel = CType(99, TraceLevel))
+                Dim unused = Assert.ThrowsExactly(Of InvalidEnumArgumentException)(Sub() watcher.TraceLevel = CType(99, TraceLevel))
                 Assert.AreEqual(TraceLevel.Off, watcher.TraceLevel)
                 watcher.Dispose()
-                Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() watcher.TraceLevel = TraceLevel.Info)
+                Dim unused1 = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() watcher.TraceLevel = TraceLevel.Info)
             End Using
         End Sub
 
         <TestMethod>
         Public Sub TraceLevel_Info_ReportsAllEventsAndSuppressedDuplicates()
             Using listener As New RecordingListener(), watcher As New TestWatcher(), other As New TestWatcher()
-                Trace.Listeners.Add(listener)
+                Dim unused = Trace.Listeners.Add(listener)
                 Try
                     watcher.EmitAll()
                     Assert.IsEmpty(listener.Lines)
@@ -66,7 +66,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <DataRow(2, True)>
         Public Sub TraceLevel_ReportsReadErrorsAccordingToThreshold(level As Integer, expected As Boolean)
             Using listener As New RecordingListener(), watcher As New TestWatcher()
-                Trace.Listeners.Add(listener)
+                Dim unused = Trace.Listeners.Add(listener)
                 Try
                     watcher.TraceLevel = CType(level, TraceLevel)
                     watcher.EmitAdded("E:\")
@@ -91,7 +91,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <TestMethod>
         Public Sub TraceLevel_Verbose_ReportsNativeRawFieldsBeforeEvents()
             Using listener As New RecordingListener(), watcher As New TestWatcher()
-                Trace.Listeners.Add(listener)
+                Dim unused = Trace.Listeners.Add(listener)
                 Try
                     watcher.TraceLevel = TraceLevel.Verbose
                     Dim nativeProperty = GetType(DriveWatcher).GetProperty("NatForm", BindingFlags.NonPublic Or BindingFlags.Instance)
@@ -100,7 +100,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                     Dim buffer As IntPtr = Marshal.AllocHGlobal(volume.Size)
                     Try
                         Marshal.StructureToPtr(volume, buffer, False)
-                        SendMessage(native.Handle, &H219, New IntPtr(&H8004), buffer)
+                        Dim unused1 = SendMessage(native.Handle, &H219, New IntPtr(&H8004), buffer)
                     Finally
                         Marshal.FreeHGlobal(buffer)
                     End Try

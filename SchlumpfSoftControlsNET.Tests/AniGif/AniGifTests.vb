@@ -31,7 +31,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 Dim attributes As AttributeCollection = TypeDescriptor.GetAttributes(control)
                 Dim designer As DesignerAttribute = DirectCast(attributes(GetType(DesignerAttribute)), DesignerAttribute)
                 Assert.IsNotNull(designer)
-                StringAssert.Contains(designer.DesignerTypeName, "AniGifDesigner")
+                Assert.Contains(designer.DesignerTypeName, "AniGifDesigner")
                 Assert.IsNotNull(TypeDescriptor.GetProperties(control)(NameOf(AniGif.AutoPlay)))
             End Using
         End Sub
@@ -2367,22 +2367,22 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         Public Sub LoadGif_InvalidInputsLeaveExistingImageIntact()
             Using control As New AniGif()
                 Dim previous As Bitmap = control.Gif
-                Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadGif(DirectCast(Nothing, Stream)))
-                Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadGif(DirectCast(Nothing, Byte())))
-                Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadGif(DirectCast(Nothing, String)))
-                Assert.ThrowsExactly(Of ArgumentException)(Sub() control.LoadGif(" "))
-                Assert.ThrowsExactly(Of ArgumentException)(Sub() control.LoadGif(New Byte() {1, 2, 3}))
+                Dim unused1 = Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadGif(DirectCast(Nothing, Stream)))
+                Dim unused2 = Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadGif(DirectCast(Nothing, Byte())))
+                Dim unused3 = Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadGif(DirectCast(Nothing, String)))
+                Dim unused4 = Assert.ThrowsExactly(Of ArgumentException)(Sub() control.LoadGif(" "))
+                Dim unused5 = Assert.ThrowsExactly(Of ArgumentException)(Sub() control.LoadGif(New Byte() {1, 2, 3}))
                 Using png As New MemoryStream()
                     Using image As New Bitmap(2, 2)
                         image.Save(png, ImageFormat.Png)
                     End Using
                     png.Position = 0
-                    Assert.ThrowsExactly(Of ArgumentException)(Sub() control.LoadGif(png))
+                    Dim unused6 = Assert.ThrowsExactly(Of ArgumentException)(Sub() control.LoadGif(png))
                     Assert.IsTrue(png.CanRead)
                 End Using
                 Assert.AreSame(previous, control.Gif)
                 control.Dispose()
-                Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.LoadGif(DirectCast(Nothing, Byte())))
+                Dim unused7 = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.LoadGif(DirectCast(Nothing, Byte())))
             End Using
         End Sub
 
@@ -2968,7 +2968,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     Dim unused = method.Invoke(control, New Object() {False})
                     Using surface As New Bitmap(1, 1)
                         Using graphics As Graphics = Graphics.FromImage(surface)
-                            Assert.ThrowsExactly(Of OverflowException)(Sub() control.PaintTo(graphics, New Rectangle(0, 0, 1, 1)))
+                            Dim unused8 = Assert.ThrowsExactly(Of OverflowException)(Sub() control.PaintTo(graphics, New Rectangle(0, 0, 1, 1)))
                         End Using
                     End Using
                 End Using
@@ -3622,9 +3622,9 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         <TestMethod>
         Public Sub PlaybackRange_SingleFrameAndConfigurationChanges()
             Using control As New AniGif()
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.LoopCount = -1)
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeStart = -1)
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeEnd = -2)
+                Dim unused1 = Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.LoopCount = -1)
+                Dim unused2 = Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeStart = -1)
+                Dim unused3 = Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.PlayRangeEnd = -2)
                 control.PlayRangeStart = 2
                 control.PlayRangeEnd = 2
                 control.LoopCount = 2

@@ -148,7 +148,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
             Assert.IsEmpty(received)
             Assert.IsNull(watcher.SynchronizingObject)
-            Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() watcher.SynchronizingObject = target)
+            Dim unused = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() watcher.SynchronizingObject = target)
         End Sub
 
         <TestMethod>
@@ -195,10 +195,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 watcher.SynchronizingObject = target
                 Dim calls As Integer = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
-
-                Assert.ThrowsExactly(Of InvalidOperationException)(
-                    Sub() watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\")))
-
+                Dim unused = Assert.ThrowsExactly(Of InvalidOperationException)(Sub() watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\")))
                 Assert.AreEqual(0, calls)
                 Assert.IsFalse(target.IsHandleCreated)
             End Using
@@ -213,9 +210,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Dim calls As Integer = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
                 target.Dispose()
-
-                Assert.ThrowsExactly(Of InvalidOperationException)(
-                    Sub() watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\")))
+                Dim unused = Assert.ThrowsExactly(Of InvalidOperationException)(Sub() watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\")))
                 Assert.AreEqual(0, calls)
             End Using
         End Sub
@@ -282,11 +277,10 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         Private NotInheritable Class QueuedSynchronizer
             Implements ISynchronizeInvoke
 
-            Private ReadOnly _requiresInvoke As Boolean
             Private ReadOnly _pending As New Queue(Of Action)()
 
             Public Sub New(requiresInvoke As Boolean)
-                Me._requiresInvoke = requiresInvoke
+                InvokeRequired = requiresInvoke
             End Sub
 
             Public Property BeginInvokeError As Exception
@@ -298,10 +292,6 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             End Property
 
             Public ReadOnly Property InvokeRequired As Boolean Implements ISynchronizeInvoke.InvokeRequired
-                Get
-                    Return Me._requiresInvoke
-                End Get
-            End Property
 
             Public Function BeginInvoke(method As [Delegate], args As Object()) As IAsyncResult Implements ISynchronizeInvoke.BeginInvoke
                 If Me.BeginInvokeError IsNot Nothing Then Throw Me.BeginInvokeError

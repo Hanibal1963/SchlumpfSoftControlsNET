@@ -82,7 +82,7 @@ Namespace WizardControl
         End Sub
 
         Private Sub AddGeneric(item As WizardPage) Implements ICollection(Of WizardPage).Add
-            Me.Add(item)
+            Dim unused = Me.Add(item)
         End Sub
 
         Private Function RemoveGeneric(item As WizardPage) As Boolean Implements ICollection(Of WizardPage).Remove

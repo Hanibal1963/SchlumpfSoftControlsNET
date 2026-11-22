@@ -428,7 +428,7 @@ Namespace DriveWatcherControl
 
                 If target.InvokeRequired Then
                     ' Die Freigabe wird beim späteren Ausführen erneut geprüft.
-                    target.BeginInvoke(New Action(Sub() Me.RaiseEventIfActive(raiseEventAction)), Nothing)
+                    Dim unused = target.BeginInvoke(New Action(Sub() Me.RaiseEventIfActive(raiseEventAction)), Nothing)
                     Return
                 End If
             End If

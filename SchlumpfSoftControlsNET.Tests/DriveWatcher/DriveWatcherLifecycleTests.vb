@@ -299,6 +299,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 worker.Start()
 
                 Dim senderTask As Task = Nothing
+                Dim workerStopped As Boolean = False
                 Try
                     Assert.AreNotEqual(IntPtr.Zero, targetHandle)
                     Assert.IsTrue(ready.Wait(TimeSpan.FromSeconds(5), Me.TestContext.CancellationToken))
@@ -322,9 +323,10 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Finally
                     stopWorker.Set()
                     If senderTask IsNot Nothing AndAlso Not senderTask.IsCompleted Then Application.DoEvents()
-                    If Not worker.Join(TimeSpan.FromSeconds(5)) Then Throw New TimeoutException("Der Empfangsthread wurde nicht beendet.")
+                    workerStopped = worker.Join(TimeSpan.FromSeconds(5))
                 End Try
 
+                If Not workerStopped Then Throw New TimeoutException("Der Empfangsthread wurde nicht beendet.")
                 If workerError IsNot Nothing Then ExceptionDispatchInfo.Capture(workerError).Throw()
             End Using
         End Sub
@@ -428,6 +430,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         End Function
 
         Private NotInheritable Class CountingDriveWatcher
+
             Inherits DriveWatcher
 
             Private _additionDispatches As Int32
@@ -462,9 +465,11 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Me._removalDispatches += 1
                 MyBase.OnDriveRemoved(e)
             End Sub
+
         End Class
 
         Private NotInheritable Class RejectingContainer
+
             Inherits Container
 
             Private ReadOnly _partiallyRegister As Boolean
@@ -474,7 +479,9 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             End Sub
 
             Public Property CapturedWatcher As DriveWatcher
+
             Public Property CapturedWindow As NativeWindow
+
             Public Property CapturedHandle As IntPtr
 
             Public Overrides Sub Add(component As IComponent)
@@ -484,12 +491,14 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 If Me._partiallyRegister Then MyBase.Add(component)
                 Throw New InvalidOperationException("Container registration failed.")
             End Sub
+
         End Class
 
         Private NotInheritable Class DerivedDriveWatcher
+
             Inherits DriveWatcher
 
-            Private _initialized As Boolean
+            Private ReadOnly _initialized As Boolean
             Private _disposeCalls As Int32
 
             Public Sub New(container As IContainer)
@@ -504,12 +513,17 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             End Property
 
             Protected Overrides Sub Dispose(disposing As Boolean)
+
                 If disposing AndAlso Not Me._initialized Then
                     Throw New InvalidOperationException("Derived component is not initialized.")
                 End If
                 Me._disposeCalls += 1
                 MyBase.Dispose(disposing)
+
             End Sub
+
         End Class
+
     End Class
+
 End Namespace

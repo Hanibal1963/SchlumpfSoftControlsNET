@@ -1136,7 +1136,7 @@ Namespace AniGifControl
 
                 If Me._LastFrameTickTimestamp > 0 Then
 
-                    elapsedMs = CInt(Math.Max(0, (currentTimestamp - Me._LastFrameTickTimestamp) * 1000L \ Stopwatch.Frequency))
+                    elapsedMs = CInt(Math.Max(0, ((currentTimestamp - Me._LastFrameTickTimestamp) * 1000L) \ Stopwatch.Frequency))
 
                 End If
 

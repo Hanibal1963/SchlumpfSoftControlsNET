@@ -122,14 +122,14 @@ Namespace NotifyFormControl
         ''' Führt den automatischen Schließvorgang nach Ablauf der eingestellten Zeit aus.
         ''' </summary>
         Private Async Sub StartAutoCloseAsync()
-            _autoCloseCts?.Cancel()
-            _autoCloseCts = New Threading.CancellationTokenSource()
-            Dim ct = _autoCloseCts.Token
+            Me._autoCloseCts?.Cancel()
+            Me._autoCloseCts = New Threading.CancellationTokenSource()
+            Dim ct = Me._autoCloseCts.Token
             If ShowTime > 0 Then
                 Try
                     Await Task.Delay(ShowTime, ct)
                     If Not ct.IsCancellationRequested Then
-                        BeginFadeOut()
+                        Me.BeginFadeOut()
                     End If
                 Catch ex As TaskCanceledException
                     ' Abbruch gewünscht -> nichts tun
@@ -147,8 +147,8 @@ Namespace NotifyFormControl
             ' Die Ausblendanimation wird über BeginFadeOut / _fadeOutTimer gesteuert.
             ' Falls Close manuell aufgerufen wird, die Timer beenden und aufräumen.
             Try
-                _slideTimer.Stop()
-                _fadeOutTimer.Stop()
+                Me._slideTimer.Stop()
+                Me._fadeOutTimer.Stop()
             Catch
             End Try
         End Sub
@@ -177,11 +177,11 @@ Namespace NotifyFormControl
             AddHandler Me.LabelClose.Click, AddressOf Me.Lbl_Close_Click
 
             ' Start nicht-blockierende Animationen
-            StartSlideIn()
-            StartFadeIn()
+            Me.StartSlideIn()
+            Me.StartFadeIn()
 
             ' Auto-Close asynchron starten
-            StartAutoCloseAsync()
+            Me.StartAutoCloseAsync()
         End Sub
 
         ''' <summary>
@@ -189,14 +189,14 @@ Namespace NotifyFormControl
         ''' </summary>
         Private Sub FormFadeIn()
             ' Backward compatible stub: startet den Timer-basierten Fade-In
-            StartFadeIn()
+            Me.StartFadeIn()
         End Sub
 
         Private Sub StartFadeIn()
             Me.Opacity = 0.1
-            _fadeInTimer.Interval = 40
-            AddHandler _fadeInTimer.Tick, AddressOf FadeInTimer_Tick
-            _fadeInTimer.Start()
+            Me._fadeInTimer.Interval = 40
+            AddHandler Me._fadeInTimer.Tick, AddressOf Me.FadeInTimer_Tick
+            Me._fadeInTimer.Start()
         End Sub
 
         Private Sub FadeInTimer_Tick(sender As Object, e As EventArgs)
@@ -204,28 +204,28 @@ Namespace NotifyFormControl
                 Dim newOpacity = Math.Min(1.0, Me.Opacity + 0.1)
                 Me.Opacity = newOpacity
                 If Me.Opacity >= 1.0 Then
-                    _fadeInTimer.Stop()
-                    RemoveHandler _fadeInTimer.Tick, AddressOf FadeInTimer_Tick
+                    Me._fadeInTimer.Stop()
+                    RemoveHandler Me._fadeInTimer.Tick, AddressOf Me.FadeInTimer_Tick
                 End If
             Catch
             End Try
         End Sub
 
         Private Sub StartSlideIn()
-            _slideTargetX = Screen.PrimaryScreen.WorkingArea.Width - Me.Width
-            _slideTimer.Interval = 8
-            AddHandler _slideTimer.Tick, AddressOf SlideTimer_Tick
-            _slideTimer.Start()
+            Me._slideTargetX = Screen.PrimaryScreen.WorkingArea.Width - Me.Width
+            Me._slideTimer.Interval = 8
+            AddHandler Me._slideTimer.Tick, AddressOf Me.SlideTimer_Tick
+            Me._slideTimer.Start()
         End Sub
 
         Private Sub SlideTimer_Tick(sender As Object, e As EventArgs)
             Try
                 Dim stepSize As Int32 = 20
                 Dim x As Int32 = Me.Location.X - stepSize
-                If x <= _slideTargetX Then
-                    x = _slideTargetX
-                    _slideTimer.Stop()
-                    RemoveHandler _slideTimer.Tick, AddressOf SlideTimer_Tick
+                If x <= Me._slideTargetX Then
+                    x = Me._slideTargetX
+                    Me._slideTimer.Stop()
+                    RemoveHandler Me._slideTimer.Tick, AddressOf Me.SlideTimer_Tick
                 End If
                 Me.Location = New Point(x, Me.Location.Y)
             Catch
@@ -233,9 +233,9 @@ Namespace NotifyFormControl
         End Sub
 
         Private Sub BeginFadeOut()
-            _fadeOutTimer.Interval = 60
-            AddHandler _fadeOutTimer.Tick, AddressOf FadeOutTimer_Tick
-            _fadeOutTimer.Start()
+            Me._fadeOutTimer.Interval = 60
+            AddHandler Me._fadeOutTimer.Tick, AddressOf Me.FadeOutTimer_Tick
+            Me._fadeOutTimer.Start()
         End Sub
 
         Private Sub FadeOutTimer_Tick(sender As Object, e As EventArgs)
@@ -243,8 +243,8 @@ Namespace NotifyFormControl
                 Dim newOpacity = Math.Max(0.0, Me.Opacity - 0.1)
                 Me.Opacity = newOpacity
                 If Me.Opacity <= 0.0 Then
-                    _fadeOutTimer.Stop()
-                    RemoveHandler _fadeOutTimer.Tick, AddressOf FadeOutTimer_Tick
+                    Me._fadeOutTimer.Stop()
+                    RemoveHandler Me._fadeOutTimer.Tick, AddressOf Me.FadeOutTimer_Tick
                     Me.Close()
                 End If
             Catch
@@ -259,10 +259,10 @@ Namespace NotifyFormControl
         Private Sub Lbl_Close_Click(sender As Object, e As EventArgs)
             ' Bei manuellem Schließen: AutoClose abbrechen und Fade-Out starten
             Try
-                _autoCloseCts?.Cancel()
+                Me._autoCloseCts?.Cancel()
             Catch
             End Try
-            BeginFadeOut()
+            Me.BeginFadeOut()
         End Sub
 
         ''' <summary>

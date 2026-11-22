@@ -33,7 +33,7 @@ Namespace DriveWatcherControl
         ''' <returns>Die Laufwerksdaten und gegebenenfalls Lesefehler.</returns>
         ''' <exception cref="ArgumentNullException">Die Fabrik ist <see langword="Nothing"/>.</exception>
         ''' <exception cref="InvalidOperationException">Die Fabrik liefert ohne erfassten Lesefehler keine Datenquelle.</exception>
-        Friend Shared Function Read(name As String, factory As Func(Of String, DriveWatcherIDriveInfoSource)) As DriveWatcherAddedEventArgs
+        Friend Shared Function Read(name As String, factory As Func(Of String, IDriveWatcherDriveInfoSource)) As DriveWatcherAddedEventArgs
 
 #If NET8_0_OR_GREATER Then
             ArgumentNullException.ThrowIfNull(factory, NameOf(factory))
@@ -42,7 +42,7 @@ Namespace DriveWatcherControl
 #End If
 
             Dim result As New DriveWatcherAddedEventArgs(name) With {.VolumeLabel = "", .DriveFormat = ""}
-            Dim source = ReadValue(result, NameOf(DriveInfo), Function() factory(name), DirectCast(Nothing, DriveWatcherIDriveInfoSource))
+            Dim source = ReadValue(result, NameOf(DriveInfo), Function() factory(name), DirectCast(Nothing, IDriveWatcherDriveInfoSource))
 
             If source Is Nothing Then
 

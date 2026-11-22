@@ -283,7 +283,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             Private ReadOnly _pending As New Queue(Of Action)()
 
             Public Sub New(requiresInvoke As Boolean)
-                InvokeRequired = requiresInvoke
+                Me.InvokeRequired = requiresInvoke
             End Sub
 
             Public Property BeginInvokeError As Exception

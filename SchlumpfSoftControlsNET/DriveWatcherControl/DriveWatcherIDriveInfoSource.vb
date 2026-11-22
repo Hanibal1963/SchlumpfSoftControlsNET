@@ -8,19 +8,19 @@ Imports System.IO
 
 Namespace DriveWatcherControl
 
-	''' <summary>Definiert die Datenquelle für eine Laufwerksmomentaufnahme.</summary>
-    Friend Interface DriveWatcherIDriveInfoSource
+    ''' <summary>Definiert die Datenquelle für eine Laufwerksmomentaufnahme.</summary>
+    Friend Interface IDriveWatcherDriveInfoSource
 
-		''' <summary>Ruft den Laufwerkstyp ab.</summary>
+        ''' <summary>Ruft den Laufwerkstyp ab.</summary>
         ReadOnly Property DriveType As DriveType
 
-		''' <summary>Ruft den Bereitschaftsstatus ab.</summary>
+        ''' <summary>Ruft den Bereitschaftsstatus ab.</summary>
         ReadOnly Property IsReady As Boolean
 
-		''' <summary>Ruft die Volumebezeichnung ab.</summary>
+        ''' <summary>Ruft die Volumebezeichnung ab.</summary>
         ReadOnly Property VolumeLabel As String
 
-		''' <summary>Ruft den für den aktuellen Benutzer verfügbaren freien Speicherplatz in Bytes ab.</summary>
+        ''' <summary>Ruft den für den aktuellen Benutzer verfügbaren freien Speicherplatz in Bytes ab.</summary>
         ReadOnly Property AvailableFreeSpace As Int64
 
         ''' <summary>Ruft den gesamten freien Speicherplatz in Bytes ab.</summary>

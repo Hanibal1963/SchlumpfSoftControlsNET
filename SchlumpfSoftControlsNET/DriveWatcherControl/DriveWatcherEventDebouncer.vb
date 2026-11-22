@@ -88,7 +88,7 @@ Namespace DriveWatcherControl
 				' Einträge erst nach dem Durchlaufen des Wörterbuchs entfernen.
                 For Each expiredDrive In expiredDrives
 
-                    Me._events.Remove(expiredDrive)
+                    Dim unused = Me._events.Remove(expiredDrive)
 
                 Next
 

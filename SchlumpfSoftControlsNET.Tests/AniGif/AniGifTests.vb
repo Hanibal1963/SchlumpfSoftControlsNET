@@ -31,7 +31,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 Dim attributes As AttributeCollection = TypeDescriptor.GetAttributes(control)
                 Dim designer As DesignerAttribute = DirectCast(attributes(GetType(DesignerAttribute)), DesignerAttribute)
                 Assert.IsNotNull(designer)
-                Assert.Contains(designer.DesignerTypeName, "AniGifDesigner")
+                Assert.Contains("AniGifDesigner", designer.DesignerTypeName)
                 Assert.IsNotNull(TypeDescriptor.GetProperties(control)(NameOf(AniGif.AutoPlay)))
             End Using
         End Sub

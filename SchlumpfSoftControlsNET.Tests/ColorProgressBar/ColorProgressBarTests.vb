@@ -48,9 +48,9 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Using image As Bitmap = RenderControl(control)
                     AssertPixel(Color.Blue, image, 10, 10)
                 End Using
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Function() New ColorProgressBarThreshold(-1, 5, Color.Red))
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Function() New ColorProgressBarThreshold(5, 4, Color.Red))
-                Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.Thresholds.Add(Nothing))
+                Dim unused2 = Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Function() New ColorProgressBarThreshold(-1, 5, Color.Red))
+                Dim unused1 = Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Function() New ColorProgressBarThreshold(5, 4, Color.Red))
+                Dim unused = Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.Thresholds.Add(Nothing))
             End Using
         End Sub
 
@@ -99,11 +99,11 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 control.Value = 10
                 Dim advance As MethodInfo = GetType(ColorProgressBar).GetMethod("UpdateAnimatedValue", BindingFlags.Instance Or BindingFlags.NonPublic)
                 Assert.IsNotNull(advance)
-                advance.Invoke(control, New Object() {150.0})
+                Dim unused1 = advance.Invoke(control, New Object() {150.0})
                 Using image As Bitmap = RenderControl(control)
                     AssertPixel(Color.Lime, image, 10, 10)
                 End Using
-                advance.Invoke(control, New Object() {300.0})
+                Dim unused = advance.Invoke(control, New Object() {300.0})
                 control.ShowSegments = True
                 control.ProgressStyle = ColorProgressBarStyle.Striped
                 Using image As Bitmap = RenderControl(control)
@@ -164,7 +164,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 control.Value = 10
                 Dim advance As MethodInfo = GetType(ColorProgressBar).GetMethod("UpdateAnimatedValue", BindingFlags.Instance Or BindingFlags.NonPublic)
                 Assert.IsNotNull(advance)
-                advance.Invoke(control, New Object() {150.0})
+                Dim unused = advance.Invoke(control, New Object() {150.0})
                 Using image As Bitmap = RenderControl(control)
                     AssertPixel(Color.Black, image, 23, 3)
                     AssertPixel(Color.Black, image, 49, 15)
@@ -223,10 +223,10 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 For Each name As String In {NameOf(ColorProgressBar.ShowSegments), NameOf(ColorProgressBar.SegmentCount), NameOf(ColorProgressBar.SegmentSpacing)}
                     Assert.IsFalse(properties(name).ShouldSerializeValue(control), name)
                 Next
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.SegmentCount = 0)
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.SegmentCount = 1001)
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.SegmentSpacing = -1)
-                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.SegmentSpacing = 1001)
+                Dim unused3 = Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.SegmentCount = 0)
+                Dim unused2 = Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.SegmentCount = 1001)
+                Dim unused1 = Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.SegmentSpacing = -1)
+                Dim unused = Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.SegmentSpacing = 1001)
                 Assert.AreEqual(10, control.SegmentCount)
                 Assert.AreEqual(2, control.SegmentSpacing)
                 control.SegmentSpacing = 0

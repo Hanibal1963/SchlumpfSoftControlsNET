@@ -8,6 +8,7 @@ Namespace AniGifControl
 
     ''' <summary>Enthält die nullbasierten Indizes eines erfolgreichen Framewechsels.</summary>
     Public NotInheritable Class FrameChangedEventArgs
+
         Inherits EventArgs
 
         ''' <summary>Erstellt Ereignisdaten für einen Framewechsel.</summary>

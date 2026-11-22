@@ -57,9 +57,6 @@ Namespace ColorProgressBarControl
         ''' <summary>Aktueller Darstellungsmodus; Solid bewahrt die bisherige Darstellung.</summary>
         Private _progressStyle As ColorProgressBarStyle = ColorProgressBarStyle.Solid
 
-        ''' <summary>Geordnete Farbbereiche für die Fortschrittsanzeige.</summary>
-        Private ReadOnly _thresholds As ColorProgressBarThresholdCollection
-
         ''' <summary>Aktiviert die Unterteilung der Zeichenfläche in Segmente.</summary>
         Private _showSegments As Boolean
 
@@ -150,10 +147,6 @@ Namespace ColorProgressBarControl
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         Public ReadOnly Property Thresholds As ColorProgressBarThresholdCollection
-            Get
-                Return Me._thresholds
-            End Get
-        End Property
 
         ''' <summary>Aktiviert die segmentierte Darstellung; standardmäßig ausgeschaltet.</summary>
         <Description("Aktiviert die segmentierte Darstellung.")>
@@ -533,7 +526,7 @@ Namespace ColorProgressBarControl
         ''' </summary>
         Public Sub New()
 
-            Me._thresholds = New ColorProgressBarThresholdCollection(AddressOf Me.ThresholdsChanged)
+            Me.Thresholds = New ColorProgressBarThresholdCollection(AddressOf Me.ThresholdsChanged)
             ' Dieser Aufruf ist für den Designer erforderlich.
             Me.InitializeComponent()
 
@@ -787,7 +780,7 @@ Namespace ColorProgressBarControl
         ''' <summary>Ermittelt die Farbe des dargestellten Fortschritts anhand der ersten passenden Schwelle.</summary>
         ''' <returns>Die Bereichsfarbe oder die reguläre Balkenfarbe.</returns>
         Private Function GetDisplayedBarColor() As Color
-            For Each threshold As ColorProgressBarThreshold In Me._thresholds
+            For Each threshold As ColorProgressBarThreshold In Me.Thresholds
                 If Me._displayValue >= threshold.Minimum AndAlso Me._displayValue <= threshold.Maximum Then Return threshold.Color
             Next
             Return Me._BarColor
@@ -800,12 +793,12 @@ Namespace ColorProgressBarControl
             If bounds.Width <= 0 OrElse bounds.Height <= 0 Then Return
             Dim count As Int32 = Math.Min(Me._segmentCount, bounds.Width)
             Dim spacing As Int32 = If(count > 1, Math.Min(Me._segmentSpacing, (bounds.Width - count) \ (count - 1)), 0)
-            Dim totalWidth As Int32 = bounds.Width - spacing * (count - 1)
+            Dim totalWidth As Int32 = bounds.Width - (spacing * (count - 1))
             Using segmentRegion As New Region(), gapBrush As New SolidBrush(Me.BackColor)
                 segmentRegion.MakeEmpty()
                 For index As Int32 = 0 To count - 1
-                    Dim left As Int32 = CInt(CLng(index) * totalWidth \ count) + index * spacing
-                    Dim right As Int32 = CInt(CLng(index + 1) * totalWidth \ count) + index * spacing
+                    Dim left As Int32 = CInt((CLng(index) * totalWidth) \ count) + (index * spacing)
+                    Dim right As Int32 = CInt((CLng(index + 1) * totalWidth) \ count) + (index * spacing)
                     segmentRegion.Union(New Rectangle(bounds.X + left, bounds.Y, right - left, bounds.Height))
                     If index < count - 1 AndAlso spacing > 0 Then
                         graphics.FillRectangle(gapBrush, bounds.X + right, bounds.Y, spacing, bounds.Height)
@@ -843,7 +836,7 @@ Namespace ColorProgressBarControl
         Private Sub UpdateAnimatedValue(elapsedMilliseconds As Double)
             Dim fraction As Double = Math.Max(0, Math.Min(1, elapsedMilliseconds / 300.0))
             Dim remaining As Double = 1 - fraction
-            Me._displayValue = Me._animationStartValue + (CDbl(Me._ProgressValue) - Me._animationStartValue) * (1 - remaining * remaining * remaining)
+            Me._displayValue = Me._animationStartValue + ((CDbl(Me._ProgressValue) - Me._animationStartValue) * (1 - (remaining * remaining * remaining)))
             If fraction >= 1 Then Me.CompleteValueAnimation()
         End Sub
 
@@ -945,7 +938,7 @@ Namespace ColorProgressBarControl
                 'Dim accent As Color = Color.FromArgb(c.A, (CInt(c.R) + 3 * CInt(contrast.R)) \ 4, (CInt(c.G) + 3 * CInt(contrast.G)) \ 4, (CInt(c.B) + 3 * CInt(contrast.B)) \ 4)
 
                 '10 % Balkenfarbe und 90 % Kontrastfarbe
-                Dim accent As Color = Color.FromArgb(c.A, (CInt(c.R) + 9 * CInt(contrast.R)) \ 10, (CInt(c.G) + 9 * CInt(contrast.G)) \ 10, (CInt(c.B) + 9 * CInt(contrast.B)) \ 10)
+                Dim accent As Color = Color.FromArgb(c.A, (CInt(c.R) + (9 * CInt(contrast.R))) \ 10, (CInt(c.G) + (9 * CInt(contrast.G))) \ 10, (CInt(c.B) + (9 * CInt(contrast.B))) \ 10)
 
                 Using brush As New Drawing2D.LinearGradientBrush(bounds, accent, c, Drawing2D.LinearGradientMode.Vertical)
                     graphics.FillRectangle(brush, bounds)
@@ -1016,13 +1009,13 @@ Namespace ColorProgressBarControl
         Private Function GetContrastColor(background As Color) As Color
             Dim baseColor As Color = If(Me.Parent Is Nothing, SystemColors.Control, Me.Parent.BackColor)
             Dim alpha As Double = background.A / 255.0
-            Dim red As Double = (background.R * alpha + baseColor.R * (1 - alpha)) / 255.0
-            Dim green As Double = (background.G * alpha + baseColor.G * (1 - alpha)) / 255.0
-            Dim blue As Double = (background.B * alpha + baseColor.B * (1 - alpha)) / 255.0
+            Dim red As Double = ((background.R * alpha) + (baseColor.R * (1 - alpha))) / 255.0
+            Dim green As Double = ((background.G * alpha) + (baseColor.G * (1 - alpha))) / 255.0
+            Dim blue As Double = ((background.B * alpha) + (baseColor.B * (1 - alpha))) / 255.0
             red = If(red <= 0.04045, red / 12.92, Math.Pow((red + 0.055) / 1.055, 2.4))
             green = If(green <= 0.04045, green / 12.92, Math.Pow((green + 0.055) / 1.055, 2.4))
             blue = If(blue <= 0.04045, blue / 12.92, Math.Pow((blue + 0.055) / 1.055, 2.4))
-            Dim luminance As Double = 0.2126 * red + 0.7152 * green + 0.0722 * blue
+            Dim luminance As Double = (0.2126 * red) + (0.7152 * green) + (0.0722 * blue)
             Return If(luminance > 0.179, Color.Black, Color.White)
         End Function
 
@@ -1128,7 +1121,7 @@ Namespace ColorProgressBarControl
         Protected Overrides Sub OnSystemColorsChanged(e As EventArgs)
 
             Dim usesSystemColor As Boolean = Me._BarColor.IsSystemColor OrElse Me._EmptyColor.IsSystemColor
-            For Each threshold As ColorProgressBarThreshold In Me._thresholds
+            For Each threshold As ColorProgressBarThreshold In Me.Thresholds
                 If threshold.Color.IsSystemColor Then usesSystemColor = True
             Next
 
@@ -1325,10 +1318,7 @@ Namespace ColorProgressBarControl
             ''' <returns>Dieser Provider für unterstützte Muster, andernfalls <see langword="Nothing"/>.</returns>
             Private Function GetPatternProvider(patternId As Int32) As Object Implements IRawElementProviderSimple.GetPatternProvider
                 Me.EnsureAvailable()
-                If patternId = RangeValuePatternIdentifiers.Pattern.Id OrElse patternId = ValuePatternIdentifiers.Pattern.Id Then
-                    Return Me
-                End If
-                Return Nothing
+                Return If(patternId = RangeValuePatternIdentifiers.Pattern.Id OrElse patternId = ValuePatternIdentifiers.Pattern.Id, Me, Nothing)
             End Function
 
             ''' <summary>Ermittelt den Wert einer unterstützten UI-Automation-Eigenschaft.</summary>

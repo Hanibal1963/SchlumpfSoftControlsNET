@@ -122,7 +122,8 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
             Private Function Value(Of T)(name As String, resultValue As T, Optional detail As Boolean = False) As T
                 If detail Then Me.DetailReads += 1
-                If Me.Failures.ContainsKey(name) Then Throw Me.Failures(name)
+                Dim failure As Exception = Nothing
+                If Me.Failures.TryGetValue(name, failure) Then Throw failure
                 Return resultValue
             End Function
 

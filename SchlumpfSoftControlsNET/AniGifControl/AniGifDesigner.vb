@@ -31,7 +31,9 @@ Namespace AniGifControl
             Get
                 If Me._actions Is Nothing Then
                     Me._actions = MyBase.ActionLists
+#Disable Warning IDE0058 ' Der Ausdruckswert wird niemals verwendet.
                     Me._actions.Add(New AniGifActionList(DirectCast(Me.Component, AniGif)))
+#Enable Warning IDE0058 ' Der Ausdruckswert wird niemals verwendet.
                 End If
                 Return Me._actions
             End Get

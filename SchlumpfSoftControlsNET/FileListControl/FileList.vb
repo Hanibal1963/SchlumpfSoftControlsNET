@@ -629,9 +629,11 @@ Namespace FileListControl
             If String.IsNullOrWhiteSpace(Me._startFolder) OrElse Not System.IO.Directory.Exists(Me._startFolder) Then
                 ' Leere UI auf UI-Thread
                 If Me.listViewEntries.InvokeRequired Then
-                    Me.listViewEntries.BeginInvoke(New MethodInvoker(Sub()
-                                                                         Me.listViewEntries.Items.Clear()
-                                                                     End Sub))
+                    Dim unused1 = Me.listViewEntries.BeginInvoke(
+                        New MethodInvoker(
+                        Sub()
+                            Me.listViewEntries.Items.Clear()
+                        End Sub))
                 Else
                     Me.listViewEntries.Items.Clear()
                 End If
@@ -659,22 +661,24 @@ Namespace FileListControl
 
                                       ' Marshal zurück auf UI-Thread und aktualisiere ListView
                                       If Me.InvokeRequired Then
-                                          Me.BeginInvoke(New MethodInvoker(Sub()
-                                                                               Me.listViewEntries.BeginUpdate()
-                                                                               Try
-                                                                                   Me.listViewEntries.Items.Clear()
-                                                                                   For Each d In dirData
-                                                                                       Me.AddItem(d.Name, d.Created, d.LastAccess, d.LastWrite, FormatSize(d.Size), "Ordner", FolderImageKey)
-                                                                                   Next
-                                                                                   For Each f In fileData
-                                                                                       Me.AddItem(f.Name, f.Created, f.LastAccess, f.LastWrite, FormatSize(f.Size), f.Type, f.ImageKey)
-                                                                                   Next
-                                                                                   Me.ApplyCurrentSort()
-                                                                                   If Me._autoResizeColumnsEnabled Then Me.AdjustColumnWidths()
-                                                                               Finally
-                                                                                   Me.listViewEntries.EndUpdate()
-                                                                               End Try
-                                                                           End Sub))
+                                          Dim unused2 = Me.BeginInvoke(
+                                          New MethodInvoker(
+                                          Sub()
+                                              Me.listViewEntries.BeginUpdate()
+                                              Try
+                                                  Me.listViewEntries.Items.Clear()
+                                                  For Each d In dirData
+                                                      Me.AddItem(d.Name, d.Created, d.LastAccess, d.LastWrite, FormatSize(d.Size), "Ordner", FolderImageKey)
+                                                  Next
+                                                  For Each f In fileData
+                                                      Me.AddItem(f.Name, f.Created, f.LastAccess, f.LastWrite, FormatSize(f.Size), f.Type, f.ImageKey)
+                                                  Next
+                                                  Me.ApplyCurrentSort()
+                                                  If Me._autoResizeColumnsEnabled Then Me.AdjustColumnWidths()
+                                              Finally
+                                                  Me.listViewEntries.EndUpdate()
+                                              End Try
+                                          End Sub))
                                       Else
                                           Me.listViewEntries.BeginUpdate()
                                           Try

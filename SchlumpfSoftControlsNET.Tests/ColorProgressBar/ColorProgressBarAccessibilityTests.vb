@@ -207,6 +207,8 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Dim hookHandle As IntPtr = SetWinEventHook(eventId, eventId, IntPtr.Zero, callback, CUInt(Environment.ProcessId), 0UI, 0UI)
                 If hookHandle = IntPtr.Zero Then Throw New Win32Exception(Marshal.GetLastWin32Error())
 
+                Dim unhookFailed As Boolean = False
+                Dim unhookError As Int32 = 0
                 Try
                     control.Value = 5
                     control.Value = 5
@@ -221,11 +223,12 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                         Assert.AreEqual(0, observed.Item2)
                     Next
                 Finally
-                    If Not UnhookWinEvent(hookHandle) Then
-                        Throw New Win32Exception(Marshal.GetLastWin32Error())
-                    End If
+                    unhookFailed = Not UnhookWinEvent(hookHandle)
+                    If unhookFailed Then unhookError = Marshal.GetLastWin32Error()
                     GC.KeepAlive(callback)
                 End Try
+
+                If unhookFailed Then Throw New Win32Exception(unhookError)
             End Using
         End Sub
 

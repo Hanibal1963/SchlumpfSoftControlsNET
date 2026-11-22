@@ -86,7 +86,7 @@ Namespace PasswordControl
         ''' </summary>
         Public Sub ClearPassword()
             Me.TB.Clear()
-            Me.TB.Focus()
+            Dim unused = Me.TB.Focus()
         End Sub
 
 #End Region

@@ -62,11 +62,13 @@ Namespace ExplorerTreeViewControl
                                        Try
                                            Dim dirs() As String = Directory.GetDirectories(folderPath)
                                            If Me.TreeView IsNot Nothing AndAlso Me.TreeView.InvokeRequired Then
-                                               Me.TreeView.BeginInvoke(New MethodInvoker(Sub()
-                                                                                             For Each dir As String In dirs
-                                                                                                 Dim unused = Me.Nodes.Add(New FolderNode(Path.GetFileName(dir), dir))
-                                                                                             Next
-                                                                                         End Sub))
+                                               Dim unused2 = Me.TreeView.BeginInvoke(
+                                               New MethodInvoker(
+                                               Sub()
+                                                   For Each dir As String In dirs
+                                                       Dim unused = Me.Nodes.Add(New FolderNode(Path.GetFileName(dir), dir))
+                                                   Next
+                                               End Sub))
                                            Else
                                                For Each dir As String In dirs
                                                    Dim unused = Me.Nodes.Add(New FolderNode(Path.GetFileName(dir), dir))

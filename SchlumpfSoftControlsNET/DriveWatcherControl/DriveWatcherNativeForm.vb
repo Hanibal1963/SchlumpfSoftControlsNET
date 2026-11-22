@@ -23,10 +23,7 @@ Namespace DriveWatcherControl
     ''' Für Netzlaufwerke stehen zusätzlich <see cref="NetworkDriveAdded"/> und
     ''' <see cref="NetworkDriveRemoved"/> zur Verfügung.
     ''' </remarks>
-    ''' NOTE:Vermeidung prüfen
-#Disable Warning CA1852 ' Warnung: Interne Typen versiegeln
-    Friend Class DriveWatcherNativeForm
-#Enable Warning CA1852
+    Friend NotInheritable Class DriveWatcherNativeForm
 
         Inherits NativeWindow
         Implements IDisposable
@@ -208,10 +205,11 @@ Namespace DriveWatcherControl
         ''' <exception cref="ObjectDisposedException">Die Instanz wurde bereits freigegeben.</exception>
         ''' <exception cref="InvalidOperationException">Für diese Instanz existiert bereits ein Fensterhandle.</exception>
         Public Overrides Sub CreateHandle(cp As CreateParams)
-            'NOTE: Vermeidung prüfen
-#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
+#If NET8_0_OR_GREATER Then
+            ObjectDisposedException.ThrowIf(Me._disposedValue, Me)
+#Else
             If Me._disposedValue Then Throw New ObjectDisposedException(NameOf(DriveWatcherNativeForm))
-#Enable Warning CA1513
+#End If
             MyBase.CreateHandle(cp)
         End Sub
 
@@ -230,7 +228,7 @@ Namespace DriveWatcherControl
         ''' <see langword="True"/>, wenn verwaltete Ressourcen freigegeben werden sollen; andernfalls
         ''' <see langword="False"/>.
         ''' </param>
-        Protected Overridable Sub Dispose(disposing As Boolean)
+        Protected Sub Dispose(disposing As Boolean)
             If Not Me._disposedValue Then
                 If disposing Then
                     ' Das von CreateHandle erzeugte Fensterhandle freigeben.

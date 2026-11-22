@@ -20,7 +20,7 @@
 
 **Status:** &#x1F4A1; offen
 
-**Vorschlag:** Seriennummer, Dateisystem, VolumeLabel, IsNetwork.
+**Vorschlag:** Seriennummer und IsNetwork. Dateisystem (`DriveFormat`) und `VolumeLabel` sind bereits in `DriveWatcherAddedEventArgs` enthalten.
 
 **Umsetzung:** EventArgs-Klassen erweitern und Abwärtskompatibilität sichern.
 

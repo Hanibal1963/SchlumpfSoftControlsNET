@@ -26,7 +26,7 @@
 
 ## 4. Segmentierter Fortschritt
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; umgesetzt
 
 **Vorschlag:** Optionale Segmentanzeige (z. B. 10 Blöcke).
 

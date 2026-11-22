@@ -35,7 +35,14 @@ Partial Class FormColorProgressBar
         Me.ComboBox_Style = New System.Windows.Forms.ComboBox()
         Me.ColorProgressBar = New SchlumpfSoft.ControlsNET.ColorProgressBarControl.ColorProgressBar()
         Me.CheckBox_AnimateValueChanges = New System.Windows.Forms.CheckBox()
+        Me.CheckBox_ShowSegments = New System.Windows.Forms.CheckBox()
+        Me.Label_SegmentCount = New System.Windows.Forms.Label()
+        Me.NumericUpDown_SegmentCount = New System.Windows.Forms.NumericUpDown()
+        Me.Label_SegmentSpacing = New System.Windows.Forms.Label()
+        Me.NumericUpDown_SegmentSpacing = New System.Windows.Forms.NumericUpDown()
         CType(Me.NumericUpDown_ProgressValue, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(Me.NumericUpDown_SegmentCount, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(Me.NumericUpDown_SegmentSpacing, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'NumericUpDown_ProgressValue
@@ -67,7 +74,7 @@ Partial Class FormColorProgressBar
         '
         'Button_BarColorChange
         '
-        Me.Button_BarColorChange.Location = New System.Drawing.Point(333, 136)
+        Me.Button_BarColorChange.Location = New System.Drawing.Point(333, 198)
         Me.Button_BarColorChange.Name = "Button_BarColorChange"
         Me.Button_BarColorChange.Size = New System.Drawing.Size(145, 23)
         Me.Button_BarColorChange.TabIndex = 4
@@ -76,7 +83,7 @@ Partial Class FormColorProgressBar
         '
         'Button_BorderColorChange
         '
-        Me.Button_BorderColorChange.Location = New System.Drawing.Point(333, 168)
+        Me.Button_BorderColorChange.Location = New System.Drawing.Point(333, 230)
         Me.Button_BorderColorChange.Name = "Button_BorderColorChange"
         Me.Button_BorderColorChange.Size = New System.Drawing.Size(145, 23)
         Me.Button_BorderColorChange.TabIndex = 5
@@ -85,7 +92,7 @@ Partial Class FormColorProgressBar
         '
         'Button_EmptyColorChange
         '
-        Me.Button_EmptyColorChange.Location = New System.Drawing.Point(333, 200)
+        Me.Button_EmptyColorChange.Location = New System.Drawing.Point(333, 262)
         Me.Button_EmptyColorChange.Name = "Button_EmptyColorChange"
         Me.Button_EmptyColorChange.Size = New System.Drawing.Size(145, 23)
         Me.Button_EmptyColorChange.TabIndex = 6
@@ -159,11 +166,64 @@ Partial Class FormColorProgressBar
         Me.CheckBox_AnimateValueChanges.Text = "Animiert Wertänderungen"
         Me.CheckBox_AnimateValueChanges.UseVisualStyleBackColor = True
         '
+        'CheckBox_ShowSegments
+        '
+        Me.CheckBox_ShowSegments.AutoSize = True
+        Me.CheckBox_ShowSegments.Location = New System.Drawing.Point(23, 270)
+        Me.CheckBox_ShowSegments.Name = "CheckBox_ShowSegments"
+        Me.CheckBox_ShowSegments.Size = New System.Drawing.Size(129, 17)
+        Me.CheckBox_ShowSegments.TabIndex = 13
+        Me.CheckBox_ShowSegments.Text = "Segmentierte Anzeige"
+        Me.CheckBox_ShowSegments.UseVisualStyleBackColor = True
+        '
+        'Label_SegmentCount
+        '
+        Me.Label_SegmentCount.AutoSize = True
+        Me.Label_SegmentCount.Location = New System.Drawing.Point(216, 108)
+        Me.Label_SegmentCount.Name = "Label_SegmentCount"
+        Me.Label_SegmentCount.Size = New System.Drawing.Size(111, 13)
+        Me.Label_SegmentCount.TabIndex = 14
+        Me.Label_SegmentCount.Text = "Anzahl der Segmente:"
+        '
+        'NumericUpDown_SegmentCount
+        '
+        Me.NumericUpDown_SegmentCount.Location = New System.Drawing.Point(430, 106)
+        Me.NumericUpDown_SegmentCount.Maximum = New Decimal(New Integer() {25, 0, 0, 0})
+        Me.NumericUpDown_SegmentCount.Minimum = New Decimal(New Integer() {2, 0, 0, 0})
+        Me.NumericUpDown_SegmentCount.Name = "NumericUpDown_SegmentCount"
+        Me.NumericUpDown_SegmentCount.Size = New System.Drawing.Size(48, 20)
+        Me.NumericUpDown_SegmentCount.TabIndex = 15
+        Me.NumericUpDown_SegmentCount.Value = New Decimal(New Integer() {10, 0, 0, 0})
+        '
+        'Label_SegmentSpacing
+        '
+        Me.Label_SegmentSpacing.AutoSize = True
+        Me.Label_SegmentSpacing.Location = New System.Drawing.Point(167, 140)
+        Me.Label_SegmentSpacing.Name = "Label_SegmentSpacing"
+        Me.Label_SegmentSpacing.Size = New System.Drawing.Size(160, 13)
+        Me.Label_SegmentSpacing.TabIndex = 16
+        Me.Label_SegmentSpacing.Text = "Abstand der Segmente in Pixeln:"
+        '
+        'NumericUpDown_SegmentSpacing
+        '
+        Me.NumericUpDown_SegmentSpacing.Location = New System.Drawing.Point(430, 135)
+        Me.NumericUpDown_SegmentSpacing.Maximum = New Decimal(New Integer() {25, 0, 0, 0})
+        Me.NumericUpDown_SegmentSpacing.Minimum = New Decimal(New Integer() {2, 0, 0, 0})
+        Me.NumericUpDown_SegmentSpacing.Name = "NumericUpDown_SegmentSpacing"
+        Me.NumericUpDown_SegmentSpacing.Size = New System.Drawing.Size(48, 20)
+        Me.NumericUpDown_SegmentSpacing.TabIndex = 17
+        Me.NumericUpDown_SegmentSpacing.Value = New Decimal(New Integer() {2, 0, 0, 0})
+        '
         'FormColorProgressBar
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(501, 280)
+        Me.ClientSize = New System.Drawing.Size(501, 307)
+        Me.Controls.Add(Me.NumericUpDown_SegmentSpacing)
+        Me.Controls.Add(Me.Label_SegmentSpacing)
+        Me.Controls.Add(Me.NumericUpDown_SegmentCount)
+        Me.Controls.Add(Me.Label_SegmentCount)
+        Me.Controls.Add(Me.CheckBox_ShowSegments)
         Me.Controls.Add(Me.CheckBox_AnimateValueChanges)
         Me.Controls.Add(Me.ComboBox_Style)
         Me.Controls.Add(Me.Label_Style)
@@ -184,6 +244,8 @@ Partial Class FormColorProgressBar
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
         Me.Text = "ColorProgressBar Demo"
         CType(Me.NumericUpDown_ProgressValue, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(Me.NumericUpDown_SegmentCount, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(Me.NumericUpDown_SegmentSpacing, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -201,4 +263,9 @@ Partial Class FormColorProgressBar
     Private WithEvents Label_Style As Label
     Private WithEvents ComboBox_Style As ComboBox
     Private WithEvents CheckBox_AnimateValueChanges As CheckBox
+    Private WithEvents CheckBox_ShowSegments As CheckBox
+    Private WithEvents Label_SegmentCount As Label
+    Private WithEvents NumericUpDown_SegmentCount As NumericUpDown
+    Private WithEvents Label_SegmentSpacing As Label
+    Private WithEvents NumericUpDown_SegmentSpacing As NumericUpDown
 End Class

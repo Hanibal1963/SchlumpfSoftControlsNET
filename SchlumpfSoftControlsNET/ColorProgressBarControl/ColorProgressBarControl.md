@@ -146,3 +146,5 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 z.Zt. alle umgesetzt
 
 ## [8. Erweiterungsvorschläge](ColorProgressBarErweiterungsvorschläge.md)
+
+z.Zt. alle umgesetzt

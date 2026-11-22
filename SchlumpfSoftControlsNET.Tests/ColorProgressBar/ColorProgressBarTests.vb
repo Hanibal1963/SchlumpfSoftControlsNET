@@ -19,6 +19,124 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
     <STATestClass>
     Public Class ColorProgressBarTests
 
+        ''' <summary>Prüft die gleichmäßige Aufteilung und kontinuierliche Füllung über Segmentgrenzen.</summary>
+        <TestMethod>
+        Public Sub Segments_RenderFillAndGapsWithoutChangingProgress()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.ShowBorder = False
+                control.IsGlossy = False
+                control.Value = 5
+                Assert.IsFalse(control.ShowSegments)
+                Assert.AreEqual(10, control.SegmentCount)
+                Assert.AreEqual(2, control.SegmentSpacing)
+                control.ShowSegments = True
+                control.SegmentCount = 4
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                    AssertPixel(Color.Black, image, 23, 10)
+                    AssertPixel(Color.Blue, image, 25, 10)
+                    AssertPixel(Color.Black, image, 49, 10)
+                    AssertPixel(Color.Silver, image, 51, 10)
+                    AssertPixel(Color.Black, image, 74, 10)
+                    AssertPixel(Color.Silver, image, 80, 10)
+                End Using
+                Assert.AreEqual(5, control.Value)
+                control.ShowSegments = False
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 23, 10)
+                    AssertPixel(Color.Silver, image, 74, 10)
+                End Using
+            End Using
+        End Sub
+
+        ''' <summary>Prüft Text, Glanz, Übergang und die Wiederherstellung der Zeichenbeschränkung für Paint-Handler.</summary>
+        <TestMethod>
+        Public Sub Segments_InteractWithAnimationTextGlossAndPaintEvent()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 30)
+                control.ShowBorder = False
+                control.ShowSegments = True
+                control.SegmentCount = 4
+                control.IsGlossy = True
+                control.ShowText = True
+                control.Value = 0
+                control.AnimateValueChanges = True
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                control.Value = 10
+                Dim advance As MethodInfo = GetType(ColorProgressBar).GetMethod("UpdateAnimatedValue", BindingFlags.Instance Or BindingFlags.NonPublic)
+                Assert.IsNotNull(advance)
+                advance.Invoke(control, New Object() {150.0})
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Black, image, 23, 3)
+                    AssertPixel(Color.Black, image, 49, 15)
+                    AssertPixel(Color.Blue, image, 80, 25)
+                    AssertPixel(Color.Silver, image, 95, 25)
+                End Using
+                AddHandler control.Paint, Sub(sender, e) e.Graphics.FillRectangle(Brushes.Red, 23, 15, 1, 1)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Red, image, 23, 15)
+                End Using
+            End Using
+        End Sub
+
+        ''' <summary>Prüft Segmentierung bei allen Stilen, Null und Maximum sowie engen Zeichenflächen.</summary>
+        <TestMethod>
+        Public Sub Segments_SupportStylesProgressAndNarrowSizes()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.ShowBorder = False
+                control.IsGlossy = False
+                control.ShowSegments = True
+                control.SegmentCount = 4
+                For Each style As ColorProgressBarStyle In {ColorProgressBarStyle.Solid, ColorProgressBarStyle.Gradient,
+                        ColorProgressBarStyle.Striped, ColorProgressBarStyle.Marquee}
+                    control.ProgressStyle = style
+                    For Each value As Integer In {0, 10}
+                        control.Value = value
+                        Using image As Bitmap = RenderControl(control)
+                            AssertPixel(Color.Black, image, 23, 10)
+                            AssertPixel(Color.Black, image, 49, 10)
+                            If style <> ColorProgressBarStyle.Marquee AndAlso value = 0 Then AssertPixel(Color.Silver, image, 10, 10)
+                            If style = ColorProgressBarStyle.Solid AndAlso value = 10 Then AssertPixel(Color.Blue, image, 80, 10)
+                        End Using
+                    Next
+                Next
+                control.ProgressStyle = ColorProgressBarStyle.Solid
+                control.SegmentCount = 1000
+                control.SegmentSpacing = 1000
+                control.Size = New Size(3, 5)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 0, 2)
+                    AssertPixel(Color.Blue, image, 2, 2)
+                End Using
+                control.SegmentCount = 1
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 1, 2)
+                End Using
+            End Using
+        End Sub
+
+        ''' <summary>Prüft die Grenzen und Designer-Standardwerte der Segmenteinstellungen.</summary>
+        <TestMethod>
+        Public Sub Segments_ValidatePropertiesAndDesignerDefaults()
+            Using control As New ColorProgressBar()
+                Dim properties As PropertyDescriptorCollection = TypeDescriptor.GetProperties(control)
+                For Each name As String In {NameOf(ColorProgressBar.ShowSegments), NameOf(ColorProgressBar.SegmentCount), NameOf(ColorProgressBar.SegmentSpacing)}
+                    Assert.IsFalse(properties(name).ShouldSerializeValue(control), name)
+                Next
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.SegmentCount = 0)
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.SegmentCount = 1001)
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.SegmentSpacing = -1)
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.SegmentSpacing = 1001)
+                Assert.AreEqual(10, control.SegmentCount)
+                Assert.AreEqual(2, control.SegmentSpacing)
+                control.SegmentSpacing = 0
+                Assert.IsTrue(properties(NameOf(ColorProgressBar.SegmentSpacing)).ShouldSerializeValue(control))
+            End Using
+        End Sub
+
         ''' <summary>Prüft Zwischenstand, Zielwert und Abschluss des zeitbasierten Übergangs.</summary>
         <TestMethod>
         Public Sub ValueAnimation_InterpolatesDrawingWithoutChangingTheReportedValue()

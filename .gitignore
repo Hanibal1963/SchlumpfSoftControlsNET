@@ -10,11 +10,9 @@
 *.userosscache
 *.sln.docstates
 *.env
-/Control-Vorschlaege.md
 /Links.md
 /Symole für Markdown.md
-/TODO Liste.md
-/VS-Marketplace-Vorlage.md
+/VS 2008 Beispiele.zip
 
 # Benutzerspezifische Dateien (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -431,6 +429,3 @@ FodyWeavers.xsd
 
 # Offizieller Ausschluss für die VS Code C# Dev Kit-Erweiterung
 #*.lscache
-
-#Eigene Ausschlüsse
-/VS 2008 Beispiele.zip

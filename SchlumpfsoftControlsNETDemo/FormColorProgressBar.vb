@@ -11,12 +11,30 @@ Public Class FormColorProgressBar
     Public Sub New()
 
         Me.InitializeComponent()
-        Me.NumericUpDown_ProgressValue.Value = 10
-        Me.ColorProgressBar.Value = CInt(Me.NumericUpDown_ProgressValue.Value)
-        Me.ColorProgressBar.ProgressMaximumValue = CInt(Me.NumericUpDown_ProgressValue.Maximum)
-
+        Me.InitializeNumericUpDowns()
+        Me.ColorProgressBar.SegmentSpacing = CInt(Me.NumericUpDown_SegmentSpacing.Value)
         Me.InitializeCheckBoxes()
         Me.InitializeComboBoxes()
+        Me.ColorProgressBar.Value = CInt(Me.NumericUpDown_ProgressValue.Value)
+        Me.ColorProgressBar.ProgressMaximumValue = CInt(Me.NumericUpDown_ProgressValue.Maximum)
+        Me.ColorProgressBar.SegmentCount = CInt(Me.NumericUpDown_SegmentCount.Value)
+
+    End Sub
+
+    Private Sub InitializeNumericUpDowns()
+
+        Me.NumericUpDown_ProgressValue.Value = 10
+        Me.NumericUpDown_ProgressValue.Maximum = 100
+        Me.NumericUpDown_ProgressValue.Minimum = 0
+
+        Me.NumericUpDown_SegmentCount.Value = 10
+        Me.NumericUpDown_SegmentCount.Maximum = 25
+        Me.NumericUpDown_SegmentCount.Minimum = 2
+
+        Me.NumericUpDown_SegmentSpacing.Value = 2
+        Me.NumericUpDown_SegmentSpacing.Maximum = 25
+        Me.NumericUpDown_SegmentSpacing.Minimum = 2
+
     End Sub
 
     Private Sub InitializeCheckBoxes()
@@ -25,6 +43,7 @@ Public Class FormColorProgressBar
         Me.CheckBox_ShowText.Checked = Me.ColorProgressBar.ShowText
         Me.CheckBox_TextFormat.Checked = Me.ColorProgressBar.TextFormat = ColorProgressBarControl.ColorProgressBarTextFormat.Percentage
         Me.CheckBox_AnimateValueChanges.Checked = Me.ColorProgressBar.AnimateValueChanges
+        Me.CheckBox_ShowSegments.Checked = Me.ColorProgressBar.ShowSegments
     End Sub
 
     Private Sub InitializeComboBoxes()
@@ -40,7 +59,8 @@ Public Class FormColorProgressBar
             CheckBox_ShowBorder.CheckedChanged,
             CheckBox_ShowText.CheckedChanged,
             CheckBox_TextFormat.CheckedChanged,
-            CheckBox_AnimateValueChanges.CheckedChanged
+            CheckBox_AnimateValueChanges.CheckedChanged,
+            CheckBox_ShowSegments.CheckedChanged
 
         Select Case True
 
@@ -61,16 +81,40 @@ Public Class FormColorProgressBar
             Case sender Is Me.CheckBox_AnimateValueChanges
                 Me.ColorProgressBar.AnimateValueChanges = CType(sender, CheckBox).Checked
 
+            Case sender Is Me.CheckBox_ShowSegments
+                Me.ColorProgressBar.ShowSegments = CType(sender, CheckBox).Checked
+                If CType(sender, CheckBox).Checked Then
+                    Me.NumericUpDown_SegmentCount.Enabled = True
+                    Me.NumericUpDown_SegmentSpacing.Enabled = True
+                Else
+                    Me.NumericUpDown_SegmentCount.Enabled = False
+                    Me.NumericUpDown_SegmentSpacing.Enabled = False
+                End If
+
         End Select
 
     End Sub
 
-    Private Sub NumericUpDown_ProgressValue_ValueChanged(sender As Object, e As EventArgs) Handles _
-        NumericUpDown_ProgressValue.ValueChanged
+    Private Sub NumericUpDown_ValueChanged(sender As Object, e As EventArgs) Handles _
+        NumericUpDown_ProgressValue.ValueChanged,
+        NumericUpDown_SegmentCount.ValueChanged,
+        NumericUpDown_SegmentSpacing.ValueChanged
 
-        Me.ColorProgressBar.Value = CInt(CType(sender, NumericUpDown).Value)
+        Select Case True
+
+            Case sender Is Me.NumericUpDown_ProgressValue
+                Me.ColorProgressBar.Value = CInt(CType(sender, NumericUpDown).Value)
+
+            Case sender Is Me.NumericUpDown_SegmentCount
+                Me.ColorProgressBar.SegmentCount = CInt(CType(sender, NumericUpDown).Value)
+
+            Case sender Is Me.NumericUpDown_SegmentSpacing
+                Me.ColorProgressBar.SegmentSpacing = CInt(CType(sender, NumericUpDown).Value)
+
+        End Select
 
     End Sub
+
     Private Sub Button_BarColorChange_Click(sender As Object, e As EventArgs) Handles _
         Button_BarColorChange.Click,
         Button_BorderColorChange.Click,

@@ -19,14 +19,14 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
 
         <TestInitialize>
         Public Sub CreateTemporaryDirectory()
-            _tempDirectory = Path.Combine(Path.GetTempPath(), $"IniFileTests_{Guid.NewGuid():N}")
-            Dim unused = Directory.CreateDirectory(_tempDirectory)
+            Me._tempDirectory = Path.Combine(Path.GetTempPath(), $"IniFileTests_{Guid.NewGuid():N}")
+            Dim unused = Directory.CreateDirectory(Me._tempDirectory)
         End Sub
 
         <TestCleanup>
         Public Sub DeleteTemporaryDirectory()
-            If Directory.Exists(_tempDirectory) Then
-                Directory.Delete(_tempDirectory, recursive:=True)
+            If Directory.Exists(Me._tempDirectory) Then
+                Directory.Delete(Me._tempDirectory, recursive:=True)
             End If
         End Sub
 
@@ -84,7 +84,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
 
         <TestMethod>
         Public Sub LoadFile_ParsesCommentsSectionsAndValuesIncludingEquals()
-            Dim filePath As String = Path.Combine(_tempDirectory, "sample.ini")
+            Dim filePath As String = Path.Combine(Me._tempDirectory, "sample.ini")
             File.WriteAllLines(filePath, New String() {
                 "; Header comment",
                 "; Second header line",
@@ -102,7 +102,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
                 ini.LoadFile(filePath)
 
                 Assert.IsTrue(ini.FileSaved)
-                Assert.AreEqual(_tempDirectory, ini.FilePath)
+                Assert.AreEqual(Me._tempDirectory, ini.FilePath)
                 Assert.AreEqual("sample.ini", ini.FileName)
 
 #Disable Warning CA1861 ' Konstantenmatrizen als Argumente vermeiden
@@ -123,7 +123,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
 
         <TestMethod>
         Public Sub LoadFile_ReplacesPreviouslyLoadedStateAndRaisesChangeEvent()
-            Dim filePath As String = Path.Combine(_tempDirectory, "replacement.ini")
+            Dim filePath As String = Path.Combine(Me._tempDirectory, "replacement.ini")
 
 #Disable Warning CA1861 ' Konstantenmatrizen als Argumente vermeiden
             File.WriteAllLines(filePath, New String() {"[Replacement]", "Key = new"})
@@ -152,7 +152,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
         Public Sub LoadFile_RejectsEmptyPathAndReportsMissingFile()
             Using ini As New IniFile()
                 Dim unused1 = Assert.ThrowsExactly(Of ArgumentException)(Sub() ini.LoadFile("  "))
-                Dim unused = Assert.ThrowsExactly(Of IOException)(Sub() ini.LoadFile(Path.Combine(_tempDirectory, "missing.ini")))
+                Dim unused = Assert.ThrowsExactly(Of IOException)(Sub() ini.LoadFile(Path.Combine(Me._tempDirectory, "missing.ini")))
             End Using
         End Sub
 
@@ -339,12 +339,12 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
                 AddHandler ini.FileContentChanged, Sub(sender, e)
                                                        changeCount += 1
                                                    End Sub
-                Dim filePath As String = Path.Combine(_tempDirectory, "saved.ini")
+                Dim filePath As String = Path.Combine(Me._tempDirectory, "saved.ini")
 
                 ini.SaveFileAs(filePath)
 
                 Assert.IsTrue(ini.FileSaved)
-                Assert.AreEqual(_tempDirectory, ini.FilePath)
+                Assert.AreEqual(Me._tempDirectory, ini.FilePath)
                 Assert.AreEqual("saved.ini", ini.FileName)
                 Assert.IsTrue(File.Exists(filePath))
                 Assert.Contains("AppName = MeineApp", File.ReadAllLines(filePath))
@@ -363,7 +363,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
         Public Sub AutoSave_PersistsChangesAndRaisesOneChangeEvent()
             Using ini As New IniFile()
                 ini.CreateNewFile()
-                ini.FilePath = _tempDirectory
+                ini.FilePath = Me._tempDirectory
                 ini.FileName = "autosave.ini"
                 ini.SaveFile()
                 ini.AutoSave = True
@@ -376,7 +376,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
 
                 Assert.IsTrue(ini.FileSaved)
                 Assert.AreEqual(1, changeCount)
-                Assert.Contains("AppName = AutoSaved", File.ReadAllLines(Path.Combine(_tempDirectory, "autosave.ini")))
+                Assert.Contains("AppName = AutoSaved", File.ReadAllLines(Path.Combine(Me._tempDirectory, "autosave.ini")))
             End Using
         End Sub
 
@@ -565,6 +565,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
         End Function
 
         Private Shared Function TryFindControl(Of T As Control)(root As Control, controlName As String) As T
+
             For Each child As Control In root.Controls
                 If TypeOf child Is T AndAlso String.Equals(child.Name, controlName, StringComparison.Ordinal) Then
                     Return DirectCast(child, T)
@@ -577,6 +578,9 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
             Next
 
             Return Nothing
+
         End Function
+
     End Class
+
 End Namespace

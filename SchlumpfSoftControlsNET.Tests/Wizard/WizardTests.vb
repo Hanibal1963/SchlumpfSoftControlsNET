@@ -211,8 +211,8 @@ Namespace SchlumpfSoftControlsNET.Tests.WizardControl
                 wizard.Pages.AddRange(New WizardPage() {page1, page2})
                 SetSelectedIndex(wizard, 0)
 
-                Dim observedOldIndex As Integer = -1
-                Dim observedNewIndex As Integer = -1
+                Dim observedOldIndex As Int32 = -1
+                Dim observedNewIndex As Int32 = -1
 
                 AddHandler wizard.AfterSwitchPages, Sub(s, e)
                                                         Dim args As AfterSwitchPagesEventArgs = TryCast(e, AfterSwitchPagesEventArgs)
@@ -280,13 +280,13 @@ Namespace SchlumpfSoftControlsNET.Tests.WizardControl
             End Using
         End Sub
 
-        Private Shared Function GetSelectedIndex(wizard As Wizard) As Integer
+        Private Shared Function GetSelectedIndex(wizard As Wizard) As Int32
             Dim prop = GetType(Wizard).GetProperty("SelectedIndex", Reflection.BindingFlags.Instance Or Reflection.BindingFlags.Public Or Reflection.BindingFlags.NonPublic)
             Assert.IsNotNull(prop, "Eigenschaft 'SelectedIndex' nicht gefunden.")
             Return CInt(prop.GetValue(wizard))
         End Function
 
-        Private Shared Sub SetSelectedIndex(wizard As Wizard, index As Integer)
+        Private Shared Sub SetSelectedIndex(wizard As Wizard, index As Int32)
             Dim prop = GetType(Wizard).GetProperty("SelectedIndex", Reflection.BindingFlags.Instance Or Reflection.BindingFlags.Public Or Reflection.BindingFlags.NonPublic)
             Assert.IsNotNull(prop, "Eigenschaft 'SelectedIndex' nicht gefunden.")
             prop.SetValue(wizard, index)

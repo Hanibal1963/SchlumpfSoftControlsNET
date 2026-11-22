@@ -25,9 +25,9 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <TestMethod>
         Public Sub Debounce_InterleavedEventsAndOppositeTransition_PreservesRealTransitions()
             Using watcher As New TestDriveWatcher()
-                Dim added As Integer = 0
-                Dim removed As Integer = 0
-                Dim media As Integer = 0
+                Dim added As Int32 = 0
+                Dim removed As Int32 = 0
+                Dim media As Int32 = 0
                 AddHandler watcher.DriveAdded, Sub(sender, e) added += 1
                 AddHandler watcher.DriveRemoved, Sub(sender, e) removed += 1
                 AddHandler watcher.MediaInserted, Sub(sender, e) media += 1
@@ -63,7 +63,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <TestMethod>
         Public Sub OnDriveAdded_RaisesDriveAddedEvent()
             Using watcher As New TestDriveWatcher()
-                Dim count As Integer = 0
+                Dim count As Int32 = 0
                 Dim raisedName As String = Nothing
                 AddHandler watcher.DriveAdded,
                     Sub(sender, e)
@@ -81,7 +81,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <TestMethod>
         Public Sub OnDriveRemoved_RaisesDriveRemovedEvent()
             Using watcher As New TestDriveWatcher()
-                Dim count As Integer = 0
+                Dim count As Int32 = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) count += 1
 
                 watcher.RaiseDriveRemoved(New DriveWatcherRemovedEventArgs("H:\\"))
@@ -93,7 +93,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <TestMethod>
         Public Sub OnMediaInserted_RaisesMediaInsertedEvent()
             Using watcher As New TestDriveWatcher()
-                Dim count As Integer = 0
+                Dim count As Int32 = 0
                 AddHandler watcher.MediaInserted, Sub(sender, e) count += 1
 
                 watcher.RaiseMediaInserted(New DriveWatcherAddedEventArgs("I:\\", DriveType.CDRom, True))
@@ -105,7 +105,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <TestMethod>
         Public Sub OnNetworkDriveAdded_RaisesNetworkDriveAddedEvent()
             Using watcher As New TestDriveWatcher()
-                Dim count As Integer = 0
+                Dim count As Int32 = 0
                 AddHandler watcher.NetworkDriveAdded, Sub(sender, e) count += 1
 
                 watcher.RaiseNetworkDriveAdded(New DriveWatcherAddedEventArgs("Z:\\", DriveType.Network, True))
@@ -117,7 +117,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <TestMethod>
         Public Sub DriveAdded_DebouncesSameEventTypeAndDriveName()
             Using watcher As New TestDriveWatcher()
-                Dim count As Integer = 0
+                Dim count As Int32 = 0
                 AddHandler watcher.DriveAdded, Sub(sender, e) count += 1
 
                 watcher.RaiseDriveAdded(New DriveWatcherAddedEventArgs("J:\\", DriveType.Removable, True))
@@ -130,8 +130,8 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <TestMethod>
         Public Sub Debounce_DoesNotSuppressDifferentEventType()
             Using watcher As New TestDriveWatcher()
-                Dim driveAddedCount As Integer = 0
-                Dim mediaInsertedCount As Integer = 0
+                Dim driveAddedCount As Int32 = 0
+                Dim mediaInsertedCount As Int32 = 0
                 AddHandler watcher.DriveAdded, Sub(sender, e) driveAddedCount += 1
                 AddHandler watcher.MediaInserted, Sub(sender, e) mediaInsertedCount += 1
 

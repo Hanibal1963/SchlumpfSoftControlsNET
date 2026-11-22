@@ -100,18 +100,18 @@ Namespace AniGifControl
                     Return imageSize
 
                 Case ImageSizeMode.Zoom, ImageSizeMode.Fill
-                    Dim widthRatio As Long = CLng(clientSize.Width) * imageSize.Height
-                    Dim heightRatio As Long = CLng(clientSize.Height) * imageSize.Width
+                    Dim widthRatio As Int64 = CLng(clientSize.Width) * imageSize.Height
+                    Dim heightRatio As Int64 = CLng(clientSize.Height) * imageSize.Width
                     Dim useWidth As Boolean = If(Mode = ImageSizeMode.Zoom, widthRatio <= heightRatio, widthRatio >= heightRatio)
-                    Dim clientBasis As Integer = If(useWidth, clientSize.Width, clientSize.Height)
-                    Dim imageBasis As Integer = If(useWidth, imageSize.Width, imageSize.Height)
+                    Dim clientBasis As Int32 = If(useWidth, clientSize.Width, clientSize.Height)
+                    Dim imageBasis As Int32 = If(useWidth, imageSize.Width, imageSize.Height)
                     Dim zoomScale As Decimal = If(Mode = ImageSizeMode.Zoom, Zoom, 1D)
 
                     ' Erst multiplizieren, damit ein periodischer Faktor Halbwerte nicht vorzeitig abrundet.
                     Dim scaledWidth As Decimal = CDec(imageSize.Width) * clientBasis * zoomScale / imageBasis
                     Dim scaledHeight As Decimal = CDec(imageSize.Height) * clientBasis * zoomScale / imageBasis
-                    Dim width As Integer = Math.Max(1, CInt(Math.Round(scaledWidth, MidpointRounding.AwayFromZero)))
-                    Dim height As Integer = Math.Max(1, CInt(Math.Round(scaledHeight, MidpointRounding.AwayFromZero)))
+                    Dim width As Int32 = Math.Max(1, CInt(Math.Round(scaledWidth, MidpointRounding.AwayFromZero)))
+                    Dim height As Int32 = Math.Max(1, CInt(Math.Round(scaledHeight, MidpointRounding.AwayFromZero)))
                     Return New Size(width, height)
 
                 Case Else

@@ -45,21 +45,21 @@ Namespace DriveWatcherControl
         End Property
 
 		''' <summary>Ruft den für den aktuellen Benutzer verfügbaren freien Speicherplatz in Bytes ab.</summary>
-        Public ReadOnly Property AvailableFreeSpace As Long Implements DriveWatcherIDriveInfoSource.AvailableFreeSpace
+        Public ReadOnly Property AvailableFreeSpace As Int64 Implements DriveWatcherIDriveInfoSource.AvailableFreeSpace
             Get
                 Return Me._drive.AvailableFreeSpace
             End Get
         End Property
 
 		''' <summary>Ruft den gesamten freien Speicherplatz in Bytes ab.</summary>
-        Public ReadOnly Property TotalFreeSpace As Long Implements DriveWatcherIDriveInfoSource.TotalFreeSpace
+        Public ReadOnly Property TotalFreeSpace As Int64 Implements DriveWatcherIDriveInfoSource.TotalFreeSpace
             Get
                 Return Me._drive.TotalFreeSpace
             End Get
         End Property
 
 		''' <summary>Ruft die Gesamtgröße in Bytes ab.</summary>
-        Public ReadOnly Property TotalSize As Long Implements DriveWatcherIDriveInfoSource.TotalSize
+        Public ReadOnly Property TotalSize As Int64 Implements DriveWatcherIDriveInfoSource.TotalSize
             Get
                 Return Me._drive.TotalSize
             End Get

@@ -16,6 +16,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
     <TestClass>
     Public NotInheritable Class DriveWatcherSnapshotTests
+
         <TestMethod>
         Public Sub Read_ReadyDrive_ReturnsAllValues()
             Dim source As New FakeSource()
@@ -92,8 +93,8 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         Public Sub Read_FactoryFailure_RetainsNameAndReportsFailure()
             Dim failure As New ArgumentException("invalid drive")
             Dim factory As Func(Of String, DriveWatcherIDriveInfoSource) = Function(name)
-                                                                   Throw failure
-                                                               End Function
+                                                                               Throw failure
+                                                                           End Function
             Dim result = DriveWatcherInfoSnapshotReader.Read("X:\", factory)
             Assert.AreEqual("X:\", result.DriveName)
             Assert.AreSame(failure, result.ReadErrors("DriveInfo"))
@@ -112,11 +113,12 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         End Sub
 
         Private NotInheritable Class FakeSource
+
             Implements DriveWatcherIDriveInfoSource
 
             Friend ReadOnly Failures As New Dictionary(Of String, Exception)()
             Friend Ready As Boolean = True
-            Friend DetailReads As Integer
+            Friend DetailReads As Int32
 
             Private Function Value(Of T)(name As String, resultValue As T, Optional detail As Boolean = False) As T
                 If detail Then Me.DetailReads += 1
@@ -129,36 +131,45 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                     Return Me.Value(NameOf(DriveType), IO.DriveType.Fixed)
                 End Get
             End Property
+
             Public ReadOnly Property IsReady As Boolean Implements DriveWatcherIDriveInfoSource.IsReady
                 Get
                     Return Me.Value(NameOf(IsReady), Me.Ready)
                 End Get
             End Property
+
             Public ReadOnly Property VolumeLabel As String Implements DriveWatcherIDriveInfoSource.VolumeLabel
                 Get
                     Return Me.Value(NameOf(VolumeLabel), "Data", True)
                 End Get
             End Property
-            Public ReadOnly Property AvailableFreeSpace As Long Implements DriveWatcherIDriveInfoSource.AvailableFreeSpace
+
+            Public ReadOnly Property AvailableFreeSpace As Int64 Implements DriveWatcherIDriveInfoSource.AvailableFreeSpace
                 Get
                     Return Me.Value(NameOf(AvailableFreeSpace), 11L, True)
                 End Get
             End Property
-            Public ReadOnly Property TotalFreeSpace As Long Implements DriveWatcherIDriveInfoSource.TotalFreeSpace
+
+            Public ReadOnly Property TotalFreeSpace As Int64 Implements DriveWatcherIDriveInfoSource.TotalFreeSpace
                 Get
                     Return Me.Value(NameOf(TotalFreeSpace), 22L, True)
                 End Get
             End Property
-            Public ReadOnly Property TotalSize As Long Implements DriveWatcherIDriveInfoSource.TotalSize
+
+            Public ReadOnly Property TotalSize As Int64 Implements DriveWatcherIDriveInfoSource.TotalSize
                 Get
                     Return Me.Value(NameOf(TotalSize), 33L, True)
                 End Get
             End Property
+
             Public ReadOnly Property DriveFormat As String Implements DriveWatcherIDriveInfoSource.DriveFormat
                 Get
                     Return Me.Value(NameOf(DriveFormat), "NTFS", True)
                 End Get
             End Property
+
         End Class
+
     End Class
+
 End Namespace

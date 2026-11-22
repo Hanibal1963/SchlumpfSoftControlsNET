@@ -79,7 +79,7 @@ Namespace ImageComboBoxControl
             End Set
         End Property
 
-        Public Shadows ReadOnly Property Count As Integer Implements ICollection(Of TComboBoxItem).Count, IReadOnlyCollection(Of TComboBoxItem).Count
+        Public Shadows ReadOnly Property Count As Int32 Implements ICollection(Of TComboBoxItem).Count, IReadOnlyCollection(Of TComboBoxItem).Count
             Get
                 Return Me.List.Count
             End Get

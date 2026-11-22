@@ -26,6 +26,9 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
     <STATestClass>
     Public Class ColorProgressBarAccessibilityTests
 
+        ''' <summary>Stellt das Abbruchtoken für wartende UI-Automationstests bereit.</summary>
+        Public Property TestContext As TestContext
+
         <TestMethod>
         <DataRow("de-DE", "Fortschrittsanzeige", "Zeigt den Fortschritt eines Vorgangs an.")>
         <DataRow("en-US", "Progress indicator", "Shows the progress of an operation.")>
@@ -113,9 +116,9 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
         <DataRow(0, 10, 0)>
         <DataRow(1, 3, 33)>
         <DataRow(2, 3, 66)>
-        <DataRow(Integer.MaxValue - 1, Integer.MaxValue, 99)>
-        <DataRow(Integer.MaxValue, Integer.MaxValue, 100)>
-        Public Sub AccessibleValue_ReportsBoundedPercentage(value As Integer, maximum As Integer, expectedPercentage As Integer)
+        <DataRow(Int32.MaxValue - 1, Int32.MaxValue, 99)>
+        <DataRow(Int32.MaxValue, Int32.MaxValue, 100)>
+        Public Sub AccessibleValue_ReportsBoundedPercentage(value As Int32, maximum As Int32, expectedPercentage As Int32)
             Dim previousCulture As CultureInfo = CultureInfo.CurrentCulture
             Try
                 CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("en-US")
@@ -196,11 +199,11 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
             Using control As New ColorProgressBar()
                 Dim handle As IntPtr = control.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
-                Dim events As New List(Of Tuple(Of Integer, Integer))()
+                Dim events As New List(Of Tuple(Of Int32, Int32))()
                 Dim callback As WinEventCallback = Sub(hook, eventType, window, objectId, childId, eventThread, eventTime)
                                                        If window = handle Then events.Add(Tuple.Create(objectId, childId))
                                                    End Sub
-                Dim eventId As UInteger = CUInt(AccessibleEvents.ValueChange)
+                Dim eventId As UInt32 = CUInt(AccessibleEvents.ValueChange)
                 Dim hookHandle As IntPtr = SetWinEventHook(eventId, eventId, IntPtr.Zero, callback, CUInt(Environment.ProcessId), 0UI, 0UI)
                 If hookHandle = IntPtr.Zero Then Throw New Win32Exception(Marshal.GetLastWin32Error())
 
@@ -213,7 +216,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                     Application.DoEvents()
 
                     Assert.HasCount(2, events)
-                    For Each observed As Tuple(Of Integer, Integer) In events
+                    For Each observed As Tuple(Of Int32, Int32) In events
                         Assert.AreEqual(-4, observed.Item1)
                         Assert.AreEqual(0, observed.Item2)
                     Next
@@ -261,7 +264,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                     Assert.AreNotEqual(IntPtr.Zero, handle)
 
                     Dim events As New ConcurrentQueue(Of AutomationPropertyChangedEventArgs)()
-                    Dim eventCount As Integer = 0
+                    Dim eventCount As Int32 = 0
                     Dim clientError As Exception = Nothing
                     Dim client As New Thread(Sub()
                                                  Dim element As AutomationElement = Nothing
@@ -297,8 +300,8 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                                                          RangeValuePattern.ValueProperty, RangeValuePattern.MaximumProperty, ValuePattern.ValueProperty)
                                                      registered = True
                                                      ready.Set()
-                                                     If Not changed.Wait(TimeSpan.FromSeconds(10)) Then Throw New TimeoutException("Fortschrittsänderungen fehlen.")
-                                                     If Not received.Wait(TimeSpan.FromSeconds(10)) Then Throw New TimeoutException("UI-Automation-Ereignisse fehlen.")
+                                                     If Not changed.Wait(TimeSpan.FromSeconds(10), Me.TestContext.CancellationToken) Then Throw New TimeoutException("Fortschrittsänderungen fehlen.")
+                                                     If Not received.Wait(TimeSpan.FromSeconds(10), Me.TestContext.CancellationToken) Then Throw New TimeoutException("UI-Automation-Ereignisse fehlen.")
 
                                                      Assert.AreEqual(4.0R, range.Current.Value)
                                                      Assert.AreEqual(4.0R, range.Current.Maximum)
@@ -478,7 +481,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
 
         Private Shared Sub AssertAutomationEvent(events As AutomationPropertyChangedEventArgs(), propertyId As AutomationProperty,
                                                  oldValue As Object, newValue As Object)
-            Dim matches As Integer = 0
+            Dim matches As Int32 = 0
             For Each observed As AutomationPropertyChangedEventArgs In events
                 If observed.Property.Id = propertyId.Id AndAlso Object.Equals(oldValue, observed.OldValue) AndAlso
                     Object.Equals(newValue, observed.NewValue) Then
@@ -498,13 +501,13 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
         End Sub
 
         <UnmanagedFunctionPointer(CallingConvention.Winapi)>
-        Private Delegate Sub WinEventCallback(hook As IntPtr, eventType As UInteger, window As IntPtr, objectId As Integer,
-                                              childId As Integer, eventThread As UInteger, eventTime As UInteger)
+        Private Delegate Sub WinEventCallback(hook As IntPtr, eventType As UInt32, window As IntPtr, objectId As Int32,
+                                              childId As Int32, eventThread As UInt32, eventTime As UInt32)
 
         <DllImport("user32.dll", SetLastError:=True)>
-        Private Shared Function SetWinEventHook(eventMin As UInteger, eventMax As UInteger, moduleHandle As IntPtr,
-                                                callback As WinEventCallback, processId As UInteger, threadId As UInteger,
-                                                flags As UInteger) As IntPtr
+        Private Shared Function SetWinEventHook(eventMin As UInt32, eventMax As UInt32, moduleHandle As IntPtr,
+                                                callback As WinEventCallback, processId As UInt32, threadId As UInt32,
+                                                flags As UInt32) As IntPtr
         End Function
 
         <DllImport("user32.dll", SetLastError:=True)>
@@ -512,8 +515,8 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
         End Function
 
         <DllImport("oleacc.dll")>
-        Private Shared Function AccessibleObjectFromWindow(handle As IntPtr, objectId As UInteger, ByRef interfaceId As Guid,
-                                                           <MarshalAs(UnmanagedType.Interface)> ByRef result As Object) As Integer
+        Private Shared Function AccessibleObjectFromWindow(handle As IntPtr, objectId As UInt32, ByRef interfaceId As Guid,
+                                                           <MarshalAs(UnmanagedType.Interface)> ByRef result As Object) As Int32
         End Function
 
         Private Class TestableColorProgressBar

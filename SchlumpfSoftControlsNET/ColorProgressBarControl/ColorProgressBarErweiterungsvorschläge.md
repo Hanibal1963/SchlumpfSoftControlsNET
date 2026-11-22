@@ -34,7 +34,7 @@
 
 ## 5. Schwellenwertfarben
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; umgesetzt
 
 **Vorschlag:** Dynamischer Farbwechsel bei Schwellwerten.
 

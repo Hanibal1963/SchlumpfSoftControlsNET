@@ -150,10 +150,10 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Inherits System.Windows.Forms.Timer
 
             ''' <summary>Anzahl der Zuweisungen, die den Timer aktivieren.</summary>
-            Private _startCalls As Integer
+            Private _startCalls As Int32
 
             ''' <summary>Anzahl der Zuweisungen, die den Timer deaktivieren.</summary>
-            Private _stopCalls As Integer
+            Private _stopCalls As Int32
 
             ''' <summary>Zählt Aktivierungs- und Deaktivierungszuweisungen und übernimmt sie in den Basistimer.</summary>
             Public Overrides Property Enabled As Boolean
@@ -171,14 +171,14 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             End Property
 
             ''' <summary>Gibt die seit dem letzten Zurücksetzen gezählten Aktivierungszuweisungen zurück.</summary>
-            Public ReadOnly Property StartCalls As Integer
+            Public ReadOnly Property StartCalls As Int32
                 Get
                     Return Me._startCalls
                 End Get
             End Property
 
             ''' <summary>Gibt die seit dem letzten Zurücksetzen gezählten Deaktivierungszuweisungen zurück.</summary>
-            Public ReadOnly Property StopCalls As Integer
+            Public ReadOnly Property StopCalls As Int32
                 Get
                     Return Me._stopCalls
                 End Get
@@ -409,7 +409,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         Public Sub AnimationStopped_HandlerCanDisposeDuringVisibilityChange()
             Using control As New AniGif()
                 Dim timer As System.Windows.Forms.Timer = GetTimer(control)
-                Dim stoppedCount As Integer = 0
+                Dim stoppedCount As Int32 = 0
                 control.StartAnimation()
                 AddHandler control.AnimationStopped, Sub(sender, e)
                                                          stoppedCount += 1
@@ -429,8 +429,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         <TestMethod>
         Public Sub AnimationStopped_HandlerCanRestartWithoutDuplicateEvents()
             Using control As New AniGif()
-                Dim startedCount As Integer = 0
-                Dim stoppedCount As Integer = 0
+                Dim startedCount As Int32 = 0
+                Dim stoppedCount As Int32 = 0
                 AddHandler control.AnimationStarted, Sub(sender, e) startedCount += 1
                 AddHandler control.AnimationStopped, Sub(sender, e)
                                                          stoppedCount += 1
@@ -453,8 +453,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 Using animatedGif As Bitmap = LoadAnimatedGif()
                     control.Gif = animatedGif
 
-                    Dim startedCount As Integer = 0
-                    Dim stoppedCount As Integer = 0
+                    Dim startedCount As Int32 = 0
+                    Dim stoppedCount As Int32 = 0
                     AddHandler control.AnimationStarted, Sub(sender, e) startedCount += 1
                     AddHandler control.AnimationStopped, Sub(sender, e) stoppedCount += 1
 
@@ -548,7 +548,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                                     optimized.PaintFrame(optimizedSurface, optimized.ClientRectangle)
                                     AssertSamePixels(baselineSurface, optimizedSurface)
                                     ' Beide Flächen behalten ihren bisherigen Inhalt, damit unzureichend invalidierte Pixel sichtbar bleiben.
-                                    For frame As Integer = 1 To 4
+                                    For frame As Int32 = 1 To 4
                                         baselineInvalidations.Clear()
                                         optimizedInvalidations.Clear()
                                         InvokeTimerTick(baseline)
@@ -586,8 +586,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         ''' <param name="actual">Zu prüfende Bitmap.</param>
         Private Shared Sub AssertSamePixels(expected As Bitmap, actual As Bitmap)
             Assert.AreEqual(expected.Size, actual.Size)
-            For y As Integer = 0 To expected.Height - 1
-                For x As Integer = 0 To expected.Width - 1
+            For y As Int32 = 0 To expected.Height - 1
+                For x As Int32 = 0 To expected.Width - 1
                     Assert.AreEqual(expected.GetPixel(x, y).ToArgb(), actual.GetPixel(x, y).ToArgb(), $"Pixel ({x}, {y})")
                 Next
             Next
@@ -605,7 +605,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 New Point() {New Point(20, 20), New Point(80, 20), New Point(140, 20)},
                 New Point() {New Point(20, 20), New Point(20, 80), New Point(20, 140)})
             Dim expected As Color() = {first, middle, last}
-            For index As Integer = 0 To points.Length - 1
+            For index As Int32 = 0 To points.Length - 1
                 Assert.AreEqual(expected(index).ToArgb(), image.GetPixel(points(index).X, points(index).Y).ToArgb(), $"{message}, {clientSize}, Pixel {points(index)}")
             Next
         End Sub
@@ -643,7 +643,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         <TestMethod>
         Public Sub AutoPlayChanged_IsRaisedWhenValueChanges()
             Using control As New AniGif()
-                Dim eventCount As Integer = 0
+                Dim eventCount As Int32 = 0
                 AddHandler control.AutoPlayChanged, Sub(sender, e) eventCount += 1
 
                 control.AutoPlay = True
@@ -657,10 +657,10 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         ''' <summary>Erzeugt ein schwarz-weißes Schachbrett mit einzelnen Pixeln als Feldern.</summary>
         ''' <param name="size">Breite und Höhe des quadratischen Bilds.</param>
         ''' <returns>Die vom Aufrufer zu entsorgende Bitmap.</returns>
-        Private Shared Function CreateCheckerboard(size As Integer) As Bitmap
+        Private Shared Function CreateCheckerboard(size As Int32) As Bitmap
             Dim image As New Bitmap(size, size)
-            For y As Integer = 0 To size - 1
-                For x As Integer = 0 To size - 1
+            For y As Int32 = 0 To size - 1
+                For x As Int32 = 0 To size - 1
                     image.SetPixel(x, y, If((x + y) Mod 2 = 0, Color.Black, Color.White))
                 Next
             Next
@@ -670,9 +670,9 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         ''' <summary>Codiert Frameverzögerungen als aufeinanderfolgende Vierbytewerte für GIF-Metadaten.</summary>
         ''' <param name="delays">Zu codierende Verzögerungswerte.</param>
         ''' <returns>Bytefolge der angegebenen Werte.</returns>
-        Private Shared Function CreateDelayBytes(ParamArray delays As Integer()) As Byte()
+        Private Shared Function CreateDelayBytes(ParamArray delays As Int32()) As Byte()
             Dim bytes((delays.Length * 4) - 1) As Byte
-            For i As Integer = 0 To delays.Length - 1
+            For i As Int32 = 0 To delays.Length - 1
                 Buffer.BlockCopy(BitConverter.GetBytes(delays(i)), 0, bytes, i * 4, 4)
             Next
             Return bytes
@@ -720,7 +720,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         Public Sub DefaultGif_IsInitializedAndWrapsFromTheLastFrame()
             Using control As New AniGif()
                 Dim dimension As New FrameDimension(control.Gif.FrameDimensionsList(0))
-                Dim lastFrame As Integer = control.Gif.GetFrameCount(dimension) - 1
+                Dim lastFrame As Int32 = control.Gif.GetFrameCount(dimension) - 1
                 Assert.IsGreaterThan(0, lastFrame)
 
                 control.SeekFrame(lastFrame)
@@ -739,16 +739,16 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Assert.IsNotNull(collectorType)
             Dim collector As Object = Activator.CreateInstance(collectorType, True)
             Assert.IsNotNull(collector)
-            Dim frequency As Long = Stopwatch.Frequency
+            Dim frequency As Int64 = Stopwatch.Frequency
 
             InvokeDiagnosticsCollector(collector, "Reset")
             InvokeDiagnosticsCollector(collector, "SetActive", True, 0L)
             InvokeDiagnosticsCollector(collector, "QueueTimerFrame")
             InvokeDiagnosticsCollector(collector, "QueueTimerFrame")
-            Dim secondGeneration As Long = GetPendingDiagnosticsGeneration(collector)
+            Dim secondGeneration As Int64 = GetPendingDiagnosticsGeneration(collector)
             InvokeDiagnosticsCollector(collector, "RecordDraw", frequency \ 10, secondGeneration, True)
             InvokeDiagnosticsCollector(collector, "QueueTimerFrame")
-            Dim thirdGeneration As Long = GetPendingDiagnosticsGeneration(collector)
+            Dim thirdGeneration As Int64 = GetPendingDiagnosticsGeneration(collector)
             InvokeDiagnosticsCollector(collector, "RecordDraw", frequency \ 5, thirdGeneration, True)
             InvokeDiagnosticsCollector(collector, "SetActive", False, frequency)
 
@@ -780,15 +780,15 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Assert.IsNotNull(collectorType)
             Dim collector As Object = Activator.CreateInstance(collectorType, True)
             Assert.IsNotNull(collector)
-            Dim frequency As Long = Stopwatch.Frequency
+            Dim frequency As Int64 = Stopwatch.Frequency
 
             InvokeDiagnosticsCollector(collector, "Reset")
             InvokeDiagnosticsCollector(collector, "SetActive", True, 0L)
             InvokeDiagnosticsCollector(collector, "QueueTimerFrame")
-            Dim firstGeneration As Long = GetPendingDiagnosticsGeneration(collector)
+            Dim firstGeneration As Int64 = GetPendingDiagnosticsGeneration(collector)
             InvokeDiagnosticsCollector(collector, "RecordDraw", 1L, firstGeneration, False)
             InvokeDiagnosticsCollector(collector, "QueueTimerFrame")
-            Dim secondGeneration As Long = GetPendingDiagnosticsGeneration(collector)
+            Dim secondGeneration As Int64 = GetPendingDiagnosticsGeneration(collector)
             InvokeDiagnosticsCollector(collector, "RecordDraw", 1L, firstGeneration, True)
             InvokeDiagnosticsCollector(collector, "RecordDraw", 1L, secondGeneration, True)
             InvokeDiagnosticsCollector(collector, "RecordDraw", 1L, secondGeneration, True)
@@ -1262,7 +1262,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 Using surface As New Bitmap(32, 32)
                     Using graphics As Graphics = Graphics.FromImage(surface)
                         Using watchdog As New System.Windows.Forms.Timer()
-                            Dim ticks As Integer = 0
+                            Dim ticks As Int32 = 0
                             Dim timedOut As Boolean = False
                             AddHandler GetTimer(control).Tick, Sub(sender, e)
                                                                    ticks += 1
@@ -1365,10 +1365,10 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
                         control.PaintTo(graphics, bounds)
                         Assert.AreEqual(1L, control.Diagnostics.RenderedFrames)
-                        Dim firstFrame As Integer = GetCurrentFrame(control)
+                        Dim firstFrame As Int32 = GetCurrentFrame(control)
                         Dim dimension As New FrameDimension(control.Gif.FrameDimensionsList(0))
-                        Dim frameCount As Integer = control.Gif.GetFrameCount(dimension)
-                        For index As Integer = 1 To frameCount
+                        Dim frameCount As Int32 = control.Gif.GetFrameCount(dimension)
+                        For index As Int32 = 1 To frameCount
                             InvokeTimerTick(control)
                         Next
                         Assert.AreEqual(firstFrame, GetCurrentFrame(control))
@@ -1498,7 +1498,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     control.DiagnosticsEnabled = True
                     Dim handle As IntPtr = control.Handle
                     Assert.AreNotEqual(IntPtr.Zero, handle)
-                    Dim notifications As Integer = 0
+                    Dim notifications As Int32 = 0
                     AddHandler control.NoAnimation, Sub(sender, e) notifications += 1
                     control.StartAnimation()
                     InvokeTimerTick(control)
@@ -1531,7 +1531,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     control.CustomDisplaySpeed = customSpeed
                     Dim ownedImage As Bitmap = control.Gif
                     Dim timer As System.Windows.Forms.Timer = GetTimer(control)
-                    Dim timerDisposedCount As Integer = 0
+                    Dim timerDisposedCount As Int32 = 0
                     Dim events As New List(Of String)()
                     AddHandler timer.Disposed, Sub(sender, e) timerDisposedCount += 1
                     AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
@@ -1660,16 +1660,16 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                         Assert.AreEqual(100, GetFrameDelays(control)(0))
 
                         control.Gif = stillImage
-                        CollectionAssert.AreEqual(Array.Empty(Of Integer)(), GetFrameDelays(control))
-                        CollectionAssert.AreEqual(Array.Empty(Of Integer)(), GetRawFrameDelays(control))
+                        CollectionAssert.AreEqual(Array.Empty(Of Int32)(), GetFrameDelays(control))
+                        CollectionAssert.AreEqual(Array.Empty(Of Int32)(), GetRawFrameDelays(control))
                         control.Gif = Nothing
                         Assert.AreEqual(100, GetFrameDelays(control)(0))
                         Assert.IsGreaterThan(0, GetRawFrameDelays(control).Length)
 
                         control.Dispose()
                         Assert.IsNull(control.Gif)
-                        CollectionAssert.AreEqual(Array.Empty(Of Integer)(), GetFrameDelays(control))
-                        CollectionAssert.AreEqual(Array.Empty(Of Integer)(), GetRawFrameDelays(control))
+                        CollectionAssert.AreEqual(Array.Empty(Of Int32)(), GetFrameDelays(control))
+                        CollectionAssert.AreEqual(Array.Empty(Of Int32)(), GetRawFrameDelays(control))
                     End Using
                 End Using
             End Using
@@ -1693,7 +1693,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Using source As Bitmap = LoadAnimatedGif()
                 Using control As New AniGif()
                     Dim handle As IntPtr = control.Handle
-                    Dim invalidationCount As Integer = 0
+                    Dim invalidationCount As Int32 = 0
                     AddHandler control.Invalidated, Sub(sender, e)
                                                         invalidationCount += 1
                                                         Dim image As Bitmap = control.Gif
@@ -1714,8 +1714,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         <TestMethod>
         Public Sub FrameDelayCache_UnexposedAndExposedImagesReuseStorage()
             Using control As New AniGif()
-                Dim normalizedDelays As Integer() = GetFrameDelays(control)
-                Dim rawDelays As Integer() = GetRawFrameDelays(control)
+                Dim normalizedDelays As Int32() = GetFrameDelays(control)
+                Dim rawDelays As Int32() = GetRawFrameDelays(control)
                 Dim internalImage As Bitmap = GetGifWithoutExposure(control)
                 ' Der private Zugriff simuliert eine Änderung, ohne den öffentlichen Getter auszulösen.
                 internalImage.RemovePropertyItem(&H5100)
@@ -1813,12 +1813,12 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 SetDelayBytes(image, delayProperty, delayBytes)
 
                 control.FramesPerSecond = 25D
-                Dim delays As Integer() = GetFrameDelays(control)
+                Dim delays As Int32() = GetFrameDelays(control)
                 Assert.IsGreaterThan(3, delays.Length)
                 Assert.AreEqual(100, delays(0))
                 Assert.AreEqual(40, delays(1))
                 Assert.AreEqual(500, delays(2))
-                For i As Integer = 3 To delays.Length - 1
+                For i As Int32 = 3 To delays.Length - 1
                     Assert.AreEqual(40, delays(i))
                 Next
 
@@ -1849,10 +1849,10 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Using control As New AniGif()
                 Dim image As Bitmap = control.Gif
                 Dim delayProperty As PropertyItem = image.GetPropertyItem(&H5100)
-                Dim oldDelays As Integer() = GetFrameDelays(control)
-                Dim oldValues As Integer() = DirectCast(oldDelays.Clone(), Integer())
+                Dim oldDelays As Int32() = GetFrameDelays(control)
+                Dim oldValues As Int32() = DirectCast(oldDelays.Clone(), Int32())
                 Buffer.BlockCopy(BitConverter.GetBytes(20), 0, delayProperty.Value, 0, 4)
-                Buffer.BlockCopy(BitConverter.GetBytes(Integer.MaxValue), 0, delayProperty.Value, 4, 4)
+                Buffer.BlockCopy(BitConverter.GetBytes(Int32.MaxValue), 0, delayProperty.Value, 4, 4)
                 image.SetPropertyItem(delayProperty)
 
                 Dim unused1 = Assert.ThrowsExactly(Of OverflowException)(Sub() control.FramesPerSecond = 20D)
@@ -1878,24 +1878,24 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Using control As New AniGif()
                 Dim image As Bitmap = control.Gif
                 Dim delayProperty As PropertyItem = image.GetPropertyItem(&H5100)
-                For length As Integer = 1 To 3
+                For length As Int32 = 1 To 3
                     SetDelayBytes(image, delayProperty, New Byte(length - 1) {})
                     control.FramesPerSecond = If(length = 2, 25D, 20D)
-                    Dim expected As Integer = If(length = 2, 40, 50)
-                    For Each delay As Integer In GetFrameDelays(control)
+                    Dim expected As Int32 = If(length = 2, 40, 50)
+                    For Each delay As Int32 In GetFrameDelays(control)
                         Assert.AreEqual(expected, delay)
                     Next
                 Next
 
-                Dim frameCount As Integer = GetFrameDelays(control).Length
-                Dim values(frameCount) As Integer
-                For i As Integer = 0 To frameCount - 1
+                Dim frameCount As Int32 = GetFrameDelays(control).Length
+                Dim values(frameCount) As Int32
+                For i As Int32 = 0 To frameCount - 1
                     values(i) = 10
                 Next
-                values(frameCount) = Integer.MaxValue
+                values(frameCount) = Int32.MaxValue
                 SetDelayBytes(image, delayProperty, CreateDelayBytes(values))
                 control.FramesPerSecond = 30D
-                For Each delay As Integer In GetFrameDelays(control)
+                For Each delay As Int32 In GetFrameDelays(control)
                     Assert.AreEqual(100, delay)
                 Next
             End Using
@@ -1918,9 +1918,9 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
                         For Each boundary As Decimal In New Decimal() {50D, 1D}
                             control.FramesPerSecond = boundary
-                            Dim delays As Integer() = GetFrameDelays(control)
-                            Dim interval As Integer = timer.Interval
-                            Dim frame As Integer = GetCurrentFrame(control)
+                            Dim delays As Int32() = GetFrameDelays(control)
+                            Dim interval As Int32 = timer.Interval
+                            Dim frame As Int32 = GetCurrentFrame(control)
                             SetLastFrameTimestamp(control, 123L)
                             timer.ResetCounts()
 
@@ -1958,7 +1958,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         ''' <summary>Liest den aktuellen Frameindex über das private Zustandsfeld.</summary>
         ''' <param name="control">Zu untersuchendes Steuerelement.</param>
         ''' <returns>Aktueller Frameindex.</returns>
-        Private Shared Function GetCurrentFrame(control As AniGif) As Integer
+        Private Shared Function GetCurrentFrame(control As AniGif) As Int32
             Dim frameField As FieldInfo = GetType(AniGif).GetField("_Frame", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(frameField)
 
@@ -1970,7 +1970,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         ''' <param name="isEnabled">Zu meldender Aktivierungszustand.</param>
         ''' <param name="timestamp">Zeitstempel der Momentaufnahme.</param>
         ''' <returns>Erzeugte Diagnosemomentaufnahme.</returns>
-        Private Shared Function GetDiagnosticsCollectorSnapshot(collector As Object, isEnabled As Boolean, timestamp As Long) As AniGifDiagnostics
+        Private Shared Function GetDiagnosticsCollectorSnapshot(collector As Object, isEnabled As Boolean, timestamp As Int64) As AniGifDiagnostics
             Dim method As MethodInfo = collector.GetType().GetMethod("CreateSnapshot", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(method)
             Return DirectCast(method.Invoke(collector, New Object() {isEnabled, timestamp}), AniGifDiagnostics)
@@ -1990,10 +1990,10 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         ''' <summary>Liest die intern normalisierten Frameverzögerungen über Reflexion.</summary>
         ''' <param name="control">Zu untersuchendes Steuerelement.</param>
         ''' <returns>Internes Array der Verzögerungen in Millisekunden.</returns>
-        Private Shared Function GetFrameDelays(control As AniGif) As Integer()
+        Private Shared Function GetFrameDelays(control As AniGif) As Int32()
             Dim delayField As FieldInfo = GetType(AniGif).GetField("_NormalizedFrameDelaysMs", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(delayField)
-            Return DirectCast(delayField.GetValue(control), Integer())
+            Return DirectCast(delayField.GetValue(control), Int32())
         End Function
 
         ''' <summary>Sucht eine interne statische Geometriemethode für Reflexionsaufrufe.</summary>
@@ -2019,7 +2019,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         ''' <summary>Liest den internen Zeitstempel des letzten Frames.</summary>
         ''' <param name="control">Zu untersuchendes Steuerelement.</param>
         ''' <returns>Gespeicherter Zeitstempel.</returns>
-        Private Shared Function GetLastFrameTimestamp(control As AniGif) As Long
+        Private Shared Function GetLastFrameTimestamp(control As AniGif) As Int64
             Dim timestampField As FieldInfo = GetType(AniGif).GetField("_LastFrameTickTimestamp", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(timestampField)
             Return CLng(timestampField.GetValue(control))
@@ -2028,7 +2028,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         ''' <summary>Liest die ausstehende Framegeneration des internen Diagnosesammlers.</summary>
         ''' <param name="collector">Interner Diagnosesammler.</param>
         ''' <returns>Nummer der ausstehenden Generation.</returns>
-        Private Shared Function GetPendingDiagnosticsGeneration(collector As Object) As Long
+        Private Shared Function GetPendingDiagnosticsGeneration(collector As Object) As Int64
             Dim propertyInfo As PropertyInfo = collector.GetType().GetProperty("PendingFrameGeneration", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(propertyInfo)
             Return CLng(propertyInfo.GetValue(collector))
@@ -2087,10 +2087,10 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         ''' <summary>Liest die intern gespeicherten rohen Frameverzögerungen über Reflexion.</summary>
         ''' <param name="control">Zu untersuchendes Steuerelement.</param>
         ''' <returns>Internes Array der Rohverzögerungen in Millisekunden.</returns>
-        Private Shared Function GetRawFrameDelays(control As AniGif) As Integer()
+        Private Shared Function GetRawFrameDelays(control As AniGif) As Int32()
             Dim delayField As FieldInfo = GetType(AniGif).GetField("_rawFrameDelaysMs", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(delayField)
-            Return DirectCast(delayField.GetValue(control), Integer())
+            Return DirectCast(delayField.GetValue(control), Int32())
         End Function
 
         ''' <summary>Liest den internen Wiedergabetimer über Reflexion.</summary>
@@ -2133,7 +2133,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 Using source As Bitmap = LoadAnimatedGif()
                     Using control As New AniGif()
                         control.CustomDisplaySpeed = customSpeed
-                        Dim sourceWidth As Integer = source.Width
+                        Dim sourceWidth As Int32 = source.Width
                         Dim previousImage As Bitmap = control.Gif
                         Dim timer As System.Windows.Forms.Timer = GetTimer(control)
                         Dim events As New List(Of String)()
@@ -2186,7 +2186,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     Assert.AreEqual(Color.Red.ToArgb(), control.Gif.GetPixel(0, 0).ToArgb())
 
                     Dim timer As System.Windows.Forms.Timer = GetTimer(control)
-                    Dim eventCount As Integer = 0
+                    Dim eventCount As Int32 = 0
                     AddHandler control.AnimationStarted, Sub(sender, e) eventCount += 1
                     AddHandler control.AnimationStopped, Sub(sender, e) eventCount += 1
                     AddHandler control.NoAnimation, Sub(sender, e) eventCount += 1
@@ -2196,9 +2196,9 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     control.Dispose()
                     Assert.IsTrue(control.IsDisposed)
                     Assert.IsNull(control.Gif)
-                    Dim eventCountAfterDispose As Integer = eventCount
+                    Dim eventCountAfterDispose As Int32 = eventCount
 
-                    For attempt As Integer = 1 To 2
+                    For attempt As Int32 = 1 To 2
                         Dim exception As ObjectDisposedException = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.Gif = source)
                         Assert.AreEqual(NameOf(AniGif), exception.ObjectName)
                         Assert.IsNull(control.Gif)
@@ -2238,7 +2238,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 control.Dispose()
                 Assert.IsNull(control.Gif)
 
-                For attempt As Integer = 1 To 2
+                For attempt As Int32 = 1 To 2
                     Dim exception As ObjectDisposedException = Assert.ThrowsExactly(Of ObjectDisposedException)(Sub() control.Gif = Nothing)
                     Assert.AreEqual(NameOf(AniGif), exception.ObjectName)
                     Assert.IsNull(control.Gif)
@@ -2256,7 +2256,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Using source As New Bitmap(8, 8)
                 Using control As New AniGif()
                     Dim timer As System.Windows.Forms.Timer = GetTimer(control)
-                    Dim timerDisposedCount As Integer = 0
+                    Dim timerDisposedCount As Int32 = 0
 
                     AddHandler timer.Disposed, Sub(sender, e)
                                                    timerDisposedCount += 1
@@ -2295,7 +2295,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         ''' <param name="elapsed">Bereits verstrichene Zeit.</param>
         ''' <param name="scheduled">Bisher geplantes Intervall.</param>
         ''' <returns>Angepasstes Intervall.</returns>
-        Private Shared Function InvokeAdaptiveTiming(control As AniGif, target As Integer, elapsed As Integer, scheduled As Integer) As Integer
+        Private Shared Function InvokeAdaptiveTiming(control As AniGif, target As Int32, elapsed As Int32, scheduled As Int32) As Int32
             Dim method As MethodInfo = GetType(AniGif).GetMethod("ApplyAdaptiveTiming", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(method)
             Return CInt(method.Invoke(control, New Object() {target, elapsed, scheduled}))
@@ -2391,7 +2391,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Using control As New AniGif()
                 Using stillImage As New Bitmap(8, 8)
                     control.Gif = stillImage
-                    Dim notifications As Integer = 0
+                    Dim notifications As Int32 = 0
                     AddHandler control.NoAnimation, Sub(sender, e) notifications += 1
                     control.StartAnimation()
                     Assert.AreEqual(1, notifications)
@@ -2420,7 +2420,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Using control As New AniGif()
                 Using stillImage As New Bitmap(8, 8)
                     control.Gif = stillImage
-                    Dim notifications As Integer = 0
+                    Dim notifications As Int32 = 0
                     AddHandler control.NoAnimation, Sub(sender, e)
                                                         notifications += 1
                                                         control.FramesPerSecond = 12D
@@ -2468,7 +2468,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 Using stillImage As New Bitmap(8, 8)
                     control.Gif = stillImage
 
-                    Dim noAnimationCount As Integer = 0
+                    Dim noAnimationCount As Int32 = 0
                     AddHandler control.NoAnimation, Sub(sender, e) noAnimationCount += 1
 
                     control.StartAnimation()
@@ -2615,8 +2615,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Dim client As New Rectangle(0, 0, 100, 100)
             Assert.AreEqual(New Rectangle(8, 18, 24, 34), DirectCast(method.Invoke(Nothing, New Object() {New Rectangle(10, 20, 20, 30), client}), Rectangle))
             Assert.AreEqual(Rectangle.Empty, DirectCast(method.Invoke(Nothing, New Object() {New Rectangle(10, 20, 0, 30), client}), Rectangle))
-            Assert.AreEqual(Rectangle.Empty, DirectCast(method.Invoke(Nothing, New Object() {New Rectangle(Integer.MaxValue - 1, 0, 10, 10), client}), Rectangle))
-            Assert.AreEqual(New Rectangle(0, 0, 1, 12), DirectCast(method.Invoke(Nothing, New Object() {New Rectangle(Integer.MinValue, 0, Integer.MaxValue, 10), client}), Rectangle))
+            Assert.AreEqual(Rectangle.Empty, DirectCast(method.Invoke(Nothing, New Object() {New Rectangle(Int32.MaxValue - 1, 0, 10, 10), client}), Rectangle))
+            Assert.AreEqual(New Rectangle(0, 0, 1, 12), DirectCast(method.Invoke(Nothing, New Object() {New Rectangle(Int32.MinValue, 0, Int32.MaxValue, 10), client}), Rectangle))
         End Sub
 
         <STATestMethod>
@@ -2650,8 +2650,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
                             Dim found As Boolean = False
                             Dim oldPixel As Point = Point.Empty
-                            For y As Integer = 0 To 31
-                                For x As Integer = 0 To 31
+                            For y As Int32 = 0 To 31
+                                For x As Int32 = 0 To 31
                                     If optimizedSurface.GetPixel(x, y).ToArgb() <> Color.Magenta.ToArgb() Then
                                         oldPixel = New Point(x, y)
                                         found = True
@@ -2819,7 +2819,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     Dim exposed As Bitmap = control.Gif
                     Assert.IsNotNull(exposed)
                     AssertLastFrameInvalidation(invalidations, control.ClientRectangle)
-                    Dim countAfterExposure As Integer = invalidations.Count
+                    Dim countAfterExposure As Int32 = invalidations.Count
                     Assert.AreSame(exposed, control.Gif)
                     Assert.HasCount(countAfterExposure, invalidations)
                     exposed.RotateFlip(RotateFlipType.Rotate90FlipNone)
@@ -3106,7 +3106,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                         control.DiagnosticsEnabled = True
                         Dim invalidations As New List(Of Rectangle)()
                         Dim clips As New List(Of Rectangle)()
-                        Dim ticks As Integer = 0
+                        Dim ticks As Int32 = 0
                         Dim timedOut As Boolean = False
                         Dim capturingTickPaint As Boolean = False
                         AddHandler control.Invalidated, Sub(sender, e) invalidations.Add(e.InvalidRect)
@@ -3400,8 +3400,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         <DataRow("AniGif_Anim103.gif", 60, 40, ImageSizeMode.Fill, 100, 0, 0, 60, 40)>
         <DataRow("AniGif_Anim105.gif", 160, 120, ImageSizeMode.CenterImage, 100, 0, 24, 160, 71)>
         <DataRow("AniGif_Anim108.gif", 160, 120, ImageSizeMode.Zoom, 100, 0, 8, 160, 105)>
-        Public Sub PartialFrameInvalidation_VariedSizesAndZoomsPreservePixels(fileName As String, width As Integer, height As Integer,
-            mode As ImageSizeMode, zoom As Integer, x As Integer, y As Integer, updateWidth As Integer, updateHeight As Integer)
+        Public Sub PartialFrameInvalidation_VariedSizesAndZoomsPreservePixels(fileName As String, width As Int32, height As Int32,
+            mode As ImageSizeMode, zoom As Int32, x As Int32, y As Int32, updateWidth As Int32, updateHeight As Int32)
             Dim root As String = FindSolutionRoot(AppContext.BaseDirectory)
             Dim gifPath As String = Path.Combine(root, "SchlumpfsoftControlsNETDemo", "Resources", fileName)
             Using source As New Bitmap(gifPath)
@@ -3424,8 +3424,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 AddHandler control.Invalidated, Sub(sender, e) invalidations.Add(e.InvalidRect)
                 PrimeFrameInvalidation(control)
                 control.Visible = False
-                Dim hiddenFrame As Integer = GetCurrentFrame(control)
-                Dim hiddenCount As Integer = invalidations.Count
+                Dim hiddenFrame As Int32 = GetCurrentFrame(control)
+                Dim hiddenCount As Int32 = invalidations.Count
                 InvokeTimerTick(control)
                 Assert.AreEqual(hiddenFrame, GetCurrentFrame(control))
                 Assert.HasCount(hiddenCount, invalidations)
@@ -3435,15 +3435,15 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 AssertLastFrameInvalidation(invalidations, control.ClientRectangle)
 
                 control.ClientSize = Size.Empty
-                Dim emptyFrame As Integer = GetCurrentFrame(control)
-                Dim emptyCount As Integer = invalidations.Count
+                Dim emptyFrame As Int32 = GetCurrentFrame(control)
+                Dim emptyCount As Int32 = invalidations.Count
                 InvokeTimerTick(control)
                 Assert.AreNotEqual(emptyFrame, GetCurrentFrame(control))
                 Assert.HasCount(emptyCount, invalidations)
                 control.ClientSize = New Size(160, 120)
                 control.DestroyHandleForFrameTest()
-                Dim frameWithoutHandle As Integer = GetCurrentFrame(control)
-                Dim countWithoutHandle As Integer = invalidations.Count
+                Dim frameWithoutHandle As Int32 = GetCurrentFrame(control)
+                Dim countWithoutHandle As Int32 = invalidations.Count
                 InvokeTimerTick(control)
                 Assert.AreNotEqual(frameWithoutHandle, GetCurrentFrame(control))
                 Assert.HasCount(countWithoutHandle, invalidations)
@@ -3463,9 +3463,9 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     control.FramesPerSecond = 10D
                     control.AdaptiveTiming = True
                     GetFrameDelays(control)(1) = 160
-                    Dim startedCount As Integer = 0
-                    Dim stoppedCount As Integer = 0
-                    Dim autoPlayCount As Integer = 0
+                    Dim startedCount As Int32 = 0
+                    Dim stoppedCount As Int32 = 0
+                    Dim autoPlayCount As Int32 = 0
                     AddHandler control.AnimationStarted, Sub(sender, e) startedCount += 1
                     AddHandler control.AnimationStopped, Sub(sender, e) stoppedCount += 1
                     AddHandler control.AutoPlayChanged, Sub(sender, e) autoPlayCount += 1
@@ -3498,7 +3498,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         <TestMethod>
         Public Sub PlaybackEvents_FrameHandlerCanSeekAndDispose()
             Using control As New AniGif()
-                Dim changes As New List(Of Integer)()
+                Dim changes As New List(Of Int32)()
                 AddHandler control.FrameChanged, Sub(sender, e)
                                                      changes.Add(e.CurrentFrame)
                                                      If e.CurrentFrame = 1 Then
@@ -3509,7 +3509,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                                                  End Sub
                 control.StartAnimation()
                 InvokeTimerTick(control)
-                CollectionAssert.AreEqual(New Integer() {1, 2}, changes.ToArray())
+                Dim intvar As Int32() = New Int32() {1, 2}
+                CollectionAssert.AreEqual(intvar, changes.ToArray())
                 Assert.IsTrue(control.IsDisposed)
             End Using
         End Sub
@@ -3532,8 +3533,10 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 InvokeTimerTick(control)
                 InvokeTimerTick(control)
                 InvokeTimerTick(control)
-                CollectionAssert.AreEqual(New String() {"0:1", "1:2"}, changes.ToArray())
-                CollectionAssert.AreEqual(New String() {"stopped", "completed"}, events.ToArray())
+                Dim strvar1 As String() = New String() {"0:1", "1:2"}
+                CollectionAssert.AreEqual(strvar1, changes.ToArray())
+                Dim strvar2 As String() = New String() {"stopped", "completed"}
+                CollectionAssert.AreEqual(strvar2, events.ToArray())
                 Assert.AreEqual(PlaybackState.Stopped, control.GetPlaybackState())
             End Using
         End Sub
@@ -3543,7 +3546,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         Public Sub PlaybackEvents_ReportsFrameSelectionErrorWithoutHidingException()
             Using control As New AniGif()
                 Dim reported As Exception = Nothing
-                Dim changes As Integer = 0
+                Dim changes As Int32 = 0
                 AddHandler control.PlaybackError, Sub(sender, e) reported = e.GetException()
                 AddHandler control.FrameChanged, Sub(sender, e) changes += 1
                 control.Gif.Dispose()
@@ -3557,9 +3560,9 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         <TestMethod>
         Public Sub PlaybackMethods_AreIdempotentAndStartCanResume()
             Using control As New AniGif()
-                Dim startedCount As Integer = 0
-                Dim stoppedCount As Integer = 0
-                Dim autoPlayCount As Integer = 0
+                Dim startedCount As Int32 = 0
+                Dim stoppedCount As Int32 = 0
+                Dim autoPlayCount As Int32 = 0
                 AddHandler control.AnimationStarted, Sub(sender, e) startedCount += 1
                 AddHandler control.AnimationStopped, Sub(sender, e) stoppedCount += 1
                 AddHandler control.AutoPlayChanged, Sub(sender, e) autoPlayCount += 1
@@ -3684,7 +3687,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
                 Using control As New PaintProbeAniGif()
                     control.Gif = source
-                    Dim paintCount As Integer = 0
+                    Dim paintCount As Int32 = 0
                     AddHandler control.Paint, Sub(sender, e) paintCount += 1
 
                     For Each clientSize As Size In New Size() {Size.Empty, New Size(0, 10), New Size(10, 0)}
@@ -3777,8 +3780,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                         For Each mode As ImageSizeMode In New ImageSizeMode() {ImageSizeMode.Zoom, ImageSizeMode.Fill}
                             control.GifSizeMode = mode
                             Using rendered As Bitmap = RenderControl(control)
-                                Dim left As Integer = If(mode = ImageSizeMode.Zoom, 65, 20)
-                                Dim right As Integer = If(mode = ImageSizeMode.Zoom, 95, 140)
+                                Dim left As Int32 = If(mode = ImageSizeMode.Zoom, 65, 20)
+                                Dim right As Int32 = If(mode = ImageSizeMode.Zoom, 95, 140)
                                 Assert.AreEqual(Color.Magenta.ToArgb(), rendered.GetPixel(left, 20).ToArgb(), $"{mode}, {quality}: transparente linke Seite")
                                 Assert.AreEqual(Color.Lime.ToArgb(), rendered.GetPixel(80, 20).ToArgb(), $"{mode}, {quality}: Bildmitte")
                                 Assert.AreEqual(Color.Magenta.ToArgb(), rendered.GetPixel(right, 20).ToArgb(), $"{mode}, {quality}: transparente rechte Seite")
@@ -3813,8 +3816,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                             control.GifSizeMode = ImageSizeMode.Fill
                             Using rendered As Bitmap = RenderControl(control)
                                 AssertScaledPixels(rendered, clientSize, Color.Lime, Color.Lime, Color.Lime, $"Fill, {quality}")
-                                For y As Integer = 0 To rendered.Height - 1
-                                    For x As Integer = 0 To rendered.Width - 1
+                                For y As Int32 = 0 To rendered.Height - 1
+                                    For x As Int32 = 0 To rendered.Width - 1
                                         Assert.AreNotEqual(Color.Magenta.ToArgb(), rendered.GetPixel(x, y).ToArgb(), $"Fill, {quality}, {clientSize}, Pixel ({x}, {y})")
                                     Next
                                 Next
@@ -3941,8 +3944,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                         Using photo As Bitmap = RenderControl(control)
                             control.ScalingQualityPreset = GifScalingQualityPreset.PixelArt
                             Using pixelArt As Bitmap = RenderControl(control)
-                                For y As Integer = 0 To control.Height - 1
-                                    For x As Integer = 0 To control.Width - 1
+                                For y As Int32 = 0 To control.Height - 1
+                                    For x As Int32 = 0 To control.Width - 1
                                         Assert.AreEqual(photo.GetPixel(x, y).ToArgb(), pixelArt.GetPixel(x, y).ToArgb(), $"{sizeMode}: Pixel ({x}, {y})")
                                     Next
                                 Next
@@ -3958,7 +3961,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Using control As New AniGif()
                 Dim handle As IntPtr = control.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
-                Dim invalidationCount As Integer = 0
+                Dim invalidationCount As Int32 = 0
                 AddHandler control.Invalidated, Sub(sender, e) invalidationCount += 1
 
                 control.ScalingQualityPreset = GifScalingQualityPreset.Photo
@@ -3985,7 +3988,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                         control.ScalingQualityPreset = GifScalingQualityPreset.PixelArt
                         Using pixelArt As Bitmap = RenderControl(control)
                             Dim color As Color = pixelArt.GetPixel(5, 5)
-                            Assert.Contains(color.ToArgb(), New Integer() {Color.Black.ToArgb(), Color.White.ToArgb()}, $"{sizeMode}: ungefilterter Pixel")
+                            Assert.Contains(color.ToArgb(), New Int32() {Color.Black.ToArgb(), Color.White.ToArgb()}, $"{sizeMode}: ungefilterter Pixel")
                         End Using
 
                         control.ScalingQualityPreset = GifScalingQualityPreset.Photo
@@ -4030,7 +4033,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 control.ScalingQualityPreset = GifScalingQualityPreset.PixelArt
 
                 For Each invalidValue As GifScalingQualityPreset In New GifScalingQualityPreset() {
-                    CType(-1, GifScalingQualityPreset), CType(2, GifScalingQualityPreset), CType(Integer.MaxValue, GifScalingQualityPreset)}
+                    CType(-1, GifScalingQualityPreset), CType(2, GifScalingQualityPreset), CType(Int32.MaxValue, GifScalingQualityPreset)}
                     Dim exception As InvalidEnumArgumentException = Assert.ThrowsExactly(Of InvalidEnumArgumentException)(Sub() control.ScalingQualityPreset = invalidValue)
                     Assert.AreEqual("value", exception.ParamName)
                     Assert.AreEqual(GifScalingQualityPreset.PixelArt, control.ScalingQualityPreset)
@@ -4066,14 +4069,14 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             Using control As New AniGif()
                 Dim handle As IntPtr = control.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
-                Dim invalidationCount As Integer = 0
+                Dim invalidationCount As Int32 = 0
                 AddHandler control.Invalidated, Sub(sender, e) invalidationCount += 1
 
                 control.SeekFrame(1)
                 control.SeekFrame(1)
                 Assert.AreEqual(1, invalidationCount)
                 control.Visible = False
-                Dim beforeHiddenSeek As Integer = invalidationCount
+                Dim beforeHiddenSeek As Int32 = invalidationCount
                 control.SeekFrame(2)
                 Assert.AreEqual(beforeHiddenSeek, invalidationCount)
                 control.Visible = True
@@ -4087,16 +4090,16 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 Using control As New AniGif()
                     control.Gif = source
                     Dim dimension As New FrameDimension(source.FrameDimensionsList(0))
-                    Dim lastFrame As Integer = source.GetFrameCount(dimension) - 1
+                    Dim lastFrame As Int32 = source.GetFrameCount(dimension) - 1
 
-                    For Each index As Integer In New Integer() {lastFrame, 0, 1}
+                    For Each index As Int32 In New Int32() {lastFrame, 0, 1}
                         Dim unused = source.SelectActiveFrame(dimension, index)
                         control.SeekFrame(index)
                         Assert.AreEqual(index, GetCurrentFrame(control))
                         AssertSamePixels(source, control.Gif)
                     Next
 
-                    For Each index As Integer In New Integer() {-1, lastFrame + 1, Integer.MaxValue}
+                    For Each index As Int32 In New Int32() {-1, lastFrame + 1, Int32.MaxValue}
                         Dim exception As ArgumentOutOfRangeException = Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Sub() control.SeekFrame(index))
                         Assert.AreEqual("index", exception.ParamName)
                         Assert.AreEqual(1, GetCurrentFrame(control))
@@ -4133,8 +4136,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     control.FramesPerSecond = 10D
                     control.AdaptiveTiming = True
                     GetFrameDelays(control)(2) = 320
-                    Dim startedCount As Integer = 0
-                    Dim stoppedCount As Integer = 0
+                    Dim startedCount As Int32 = 0
+                    Dim stoppedCount As Int32 = 0
                     AddHandler control.AnimationStarted, Sub(sender, e) startedCount += 1
                     AddHandler control.AnimationStopped, Sub(sender, e) stoppedCount += 1
 
@@ -4159,12 +4162,12 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
             image.SetPropertyItem(delayProperty)
         End Sub
 
-        Private Shared Sub SetFirstFrameDelay(image As Bitmap, delayProperty As PropertyItem, centiseconds As Integer)
+        Private Shared Sub SetFirstFrameDelay(image As Bitmap, delayProperty As PropertyItem, centiseconds As Int32)
             Buffer.BlockCopy(BitConverter.GetBytes(centiseconds), 0, delayProperty.Value, 0, 4)
             image.SetPropertyItem(delayProperty)
         End Sub
 
-        Private Shared Sub SetLastFrameTimestamp(control As AniGif, value As Long)
+        Private Shared Sub SetLastFrameTimestamp(control As AniGif, value As Int64)
             Dim timestampField As FieldInfo = GetType(AniGif).GetField("_LastFrameTickTimestamp", BindingFlags.Instance Or BindingFlags.NonPublic)
             Assert.IsNotNull(timestampField)
             timestampField.SetValue(control, value)
@@ -4243,8 +4246,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     Using watchdog As New System.Windows.Forms.Timer()
                         control.CustomDisplaySpeed = True
                         control.FramesPerSecond = 2D
-                        Dim tickCount As Integer = 0
-                        Dim assignmentCount As Integer = 0
+                        Dim tickCount As Int32 = 0
+                        Dim assignmentCount As Int32 = 0
                         Dim timedOut As Boolean = False
                         Dim events As New List(Of String)()
                         AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
@@ -4326,7 +4329,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                 Using control As New AniGif()
                     control.ClientSize = New Size(32, 32)
                     control.DiagnosticsEnabled = diagnosticsEnabled
-                    Dim invalidations As Integer = 0
+                    Dim invalidations As Int32 = 0
                     AddHandler control.Invalidated, Sub(sender, e) invalidations += 1
                     control.StartAnimation()
                     Assert.IsFalse(control.IsHandleCreated)
@@ -4338,7 +4341,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     Dim handle As IntPtr = control.Handle
                     Assert.AreNotEqual(IntPtr.Zero, handle)
                     control.ClientSize = Size.Empty
-                    Dim beforeTick As Integer = invalidations
+                    Dim beforeTick As Int32 = invalidations
                     Dim emptyDuration As TimeSpan = control.Diagnostics.ActiveDuration
                     InvokeTimerTick(control)
                     Assert.AreEqual(2, GetCurrentFrame(control))
@@ -4368,7 +4371,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     control.StartAnimation()
 
                     control.Visible = False
-                    Dim frameBeforeHiddenTick As Integer = GetCurrentFrame(control)
+                    Dim frameBeforeHiddenTick As Int32 = GetCurrentFrame(control)
                     InvokeTimerTick(control)
                     Assert.AreEqual(frameBeforeHiddenTick, GetCurrentFrame(control))
 
@@ -4391,7 +4394,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                         control.StartAnimation()
 
                         parentPanel.Visible = False
-                        Dim frameBeforeHiddenTick As Integer = GetCurrentFrame(control)
+                        Dim frameBeforeHiddenTick As Int32 = GetCurrentFrame(control)
                         InvokeTimerTick(control)
 
                         Assert.AreEqual(frameBeforeHiddenTick, GetCurrentFrame(control))
@@ -4417,20 +4420,20 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                                         control.CustomDisplaySpeed = customSpeed
                                         control.FramesPerSecond = 10D
                                         control.DiagnosticsEnabled = diagnosticsEnabled
-                                        Dim delays As Integer() = GetFrameDelays(control)
+                                        Dim delays As Int32() = GetFrameDelays(control)
                                         delays(0) = 100
                                         delays(1) = 200
                                         Dim handle As IntPtr = control.Handle
                                         Assert.AreNotEqual(IntPtr.Zero, handle)
                                         Dim events As New List(Of String)()
-                                        Dim invalidations As Integer = 0
+                                        Dim invalidations As Int32 = 0
                                         AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
                                         AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
                                         AddHandler control.Invalidated, Sub(sender, e) invalidations += 1
                                         control.StartAnimation()
                                         If customSpeed Then timer.Interval = 200
 
-                                        Dim invalidationsAfterTransition As Integer = -1
+                                        Dim invalidationsAfterTransition As Int32 = -1
                                         timer.RunOnNextEnabledRead(Sub()
                                                                        If reparent Then
                                                                            hiddenParent.Controls.Add(control)
@@ -4491,7 +4494,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                     Assert.AreEqual(33, timer.Interval)
                     timer.Interval = 25
                     SetLastFrameTimestamp(control, 123L)
-                    Dim delays As Integer() = GetFrameDelays(control)
+                    Dim delays As Int32() = GetFrameDelays(control)
                     timer.ResetCounts()
 
                     control.FramesPerSecond = 30.1D
@@ -4523,7 +4526,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
                     Dim image As Bitmap = control.Gif
                     Dim delayProperty As PropertyItem = image.GetPropertyItem(&H5100)
-                    Buffer.BlockCopy(BitConverter.GetBytes(Integer.MaxValue), 0, delayProperty.Value, 4, 4)
+                    Buffer.BlockCopy(BitConverter.GetBytes(Int32.MaxValue), 0, delayProperty.Value, 4, 4)
                     image.SetPropertyItem(delayProperty)
                     Dim unused2 = Assert.ThrowsExactly(Of OverflowException)(Sub() control.FramesPerSecond = 20D)
                     Assert.AreEqual(20D, control.FramesPerSecond)
@@ -4563,7 +4566,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
                     Dim image As Bitmap = control.Gif
                     Dim delayProperty As PropertyItem = image.GetPropertyItem(&H5100)
-                    Buffer.BlockCopy(BitConverter.GetBytes(Integer.MaxValue), 0, delayProperty.Value, 4, 4)
+                    Buffer.BlockCopy(BitConverter.GetBytes(Int32.MaxValue), 0, delayProperty.Value, 4, 4)
                     image.SetPropertyItem(delayProperty)
                     Dim unused2 = Assert.ThrowsExactly(Of OverflowException)(Sub() control.FramesPerSecond = 20D)
                     Assert.AreEqual(100, timer.Interval)
@@ -4609,8 +4612,8 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
 
                         Dim fpsValues As Decimal() = New Decimal() {30D, 30.1D, 1D, 50D, 0D, 80D}
                         Dim expectedFps As Decimal() = New Decimal() {30D, 30.1D, 1D, 50D, 1D, 50D}
-                        Dim expectedIntervals As Integer() = New Integer() {33, 33, 500, 20, 500, 20}
-                        For i As Integer = 0 To fpsValues.Length - 1
+                        Dim expectedIntervals As Int32() = New Int32() {33, 33, 500, 20, 500, 20}
+                        For i As Int32 = 0 To fpsValues.Length - 1
                             control.FramesPerSecond = fpsValues(i)
                             Assert.AreEqual(expectedFps(i), control.FramesPerSecond)
                             Assert.AreEqual(expectedIntervals(i), timer.Interval)
@@ -4862,7 +4865,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                         CollectionAssert.AreEqual(New String() {"started", "stopped"}, events.ToArray())
                         timer.ResetCounts()
 
-                        Dim hiddenDelays As Integer() = GetFrameDelays(control)
+                        Dim hiddenDelays As Int32() = GetFrameDelays(control)
                         control.FramesPerSecond = 20D
                         Assert.AreSame(hiddenDelays, GetFrameDelays(control))
                         control.MinimumFrameIntervalMs = 30
@@ -4895,7 +4898,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
         Private Shared Function UnionFrameInvalidations(invalidations As List(Of Rectangle)) As Rectangle
             Assert.IsNotEmpty(invalidations)
             Dim combined As Rectangle = invalidations(0)
-            For index As Integer = 1 To invalidations.Count - 1
+            For index As Int32 = 1 To invalidations.Count - 1
                 combined = Rectangle.Union(combined, invalidations(index))
             Next
             Return combined
@@ -4933,7 +4936,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                         parent.Visible = False
                         Assert.IsFalse(control.Visible)
                         Assert.AreEqual(PlaybackState.Playing, control.GetPlaybackState())
-                        Dim eventCountWhileHidden As Integer = events.Count
+                        Dim eventCountWhileHidden As Int32 = events.Count
                         InvokeTimerTick(control)
                         Assert.AreEqual(2, GetCurrentFrame(control))
                         Assert.HasCount(eventCountWhileHidden, events)
@@ -4967,13 +4970,13 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                                     Assert.AreNotEqual(IntPtr.Zero, handle)
                                     Dim timer As System.Windows.Forms.Timer = GetTimer(control)
                                     Dim events As New List(Of String)()
-                                    Dim invalidations As Integer = 0
+                                    Dim invalidations As Int32 = 0
                                     AddHandler control.AnimationStarted, Sub(sender, e) events.Add("started")
                                     AddHandler control.AnimationStopped, Sub(sender, e) events.Add("stopped")
                                     AddHandler control.Invalidated, Sub(sender, e) invalidations += 1
 
                                     control.StartAnimation()
-                                    Dim beforeTick As Integer = invalidations
+                                    Dim beforeTick As Int32 = invalidations
                                     InvokeTimerTick(control)
                                     Assert.AreEqual(1, GetCurrentFrame(control))
                                     Assert.AreEqual(beforeTick + 1, invalidations)
@@ -5046,13 +5049,13 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                                 Assert.AreNotEqual(IntPtr.Zero, handle)
                                 Dim timer As System.Windows.Forms.Timer = GetTimer(control)
                                 Dim events As New List(Of String)()
-                                Dim phase As Integer = 0
-                                Dim firstFrame As Integer = -1
-                                Dim hiddenFrame As Integer = -1
-                                Dim resumedFrame As Integer = -1
-                                Dim invalidations As Integer = 0
-                                Dim invalidationsAfterHide As Integer = -1
-                                Dim invalidationsBeforeShow As Integer = -1
+                                Dim phase As Int32 = 0
+                                Dim firstFrame As Int32 = -1
+                                Dim hiddenFrame As Int32 = -1
+                                Dim resumedFrame As Int32 = -1
+                                Dim invalidations As Int32 = 0
+                                Dim invalidationsAfterHide As Int32 = -1
+                                Dim invalidationsBeforeShow As Int32 = -1
                                 Dim hiddenTimerEnabled As Boolean = False
                                 Dim resumedTimerEnabled As Boolean = False
                                 Dim hiddenStart As TimeSpan = TimeSpan.Zero
@@ -5150,7 +5153,7 @@ Namespace SchlumpfSoftControlsNET.Tests.AniGifControl
                                     Assert.IsTrue(timer.Enabled)
                                     InvokeTimerTick(control)
                                     Assert.AreEqual(2, GetCurrentFrame(control))
-                                    Dim eventCount As Integer = events.Count
+                                    Dim eventCount As Int32 = events.Count
                                     firstParent.Visible = True
                                     firstParent.Visible = False
                                     Assert.HasCount(eventCount, events)

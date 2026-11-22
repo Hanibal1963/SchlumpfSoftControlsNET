@@ -457,14 +457,8 @@ Namespace ExtendedRTFControl
         ''' <summary>
         ''' Setzt die Schriftgröße der aktuellen Auswahl oder des Carets.
         ''' </summary>
-        ''' <param name="newSize"></param>
+        ''' <param name="newSize">Die bereits durch die Eigenschaft validierte Schriftgröße.</param>
         Private Sub SetSelectionFontSize(newSize As Single)
-
-            'NOTE: Umgehungsmöglichkeit prüfen
-#Disable Warning CA1512 ' Verwenden von ArgumentOutOfRangeException throw-Hilfsprogramm
-            If newSize <= 0 Then Throw New ArgumentOutOfRangeException(NameOf(newSize))
-#Enable Warning CA1512 ' Verwenden von ArgumentOutOfRangeException throw-Hilfsprogramm
-
             Me.ApplyFontTransformation(
                     Function(f)
                         Return New Font(f.FontFamily, newSize, f.Style, f.Unit, f.GdiCharSet, f.GdiVerticalFont)

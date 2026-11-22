@@ -18,20 +18,23 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
     <STATestClass>
     Public Class DriveWatcherThreadingTests
 
+        ''' <summary>Stellt das Abbruchtoken für die asynchronen Testoperationen bereit.</summary>
+        Public Property TestContext As TestContext
+
         <TestMethod>
         Public Sub WithoutSynchronizingObject_EventsRunSynchronouslyOnCallingThread()
             Using watcher As New TestDriveWatcher()
                 Assert.IsNull(watcher.SynchronizingObject)
-                Dim testThread As Integer = Environment.CurrentManagedThreadId
-                Dim sourceThread As Integer = 0
-                Dim handlerThread As Integer = 0
+                Dim testThread As Int32 = Environment.CurrentManagedThreadId
+                Dim sourceThread As Int32 = 0
+                Dim handlerThread As Int32 = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) handlerThread = Environment.CurrentManagedThreadId
 
                 Dim work As Task = Task.Run(Sub()
                                                 sourceThread = Environment.CurrentManagedThreadId
                                                 watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\"))
-                                            End Sub)
-                Assert.IsTrue(work.Wait(TimeSpan.FromSeconds(5)))
+                                            End Sub, Me.TestContext.CancellationToken)
+                Assert.IsTrue(work.Wait(TimeSpan.FromSeconds(5), Me.TestContext.CancellationToken))
                 Assert.AreNotEqual(testThread, sourceThread)
                 Assert.AreEqual(sourceThread, handlerThread)
             End Using
@@ -42,7 +45,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             Using watcher As New TestDriveWatcher()
                 Dim target As New QueuedSynchronizer(False)
                 watcher.SynchronizingObject = target
-                Dim calls As Integer = 0
+                Dim calls As Int32 = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
 
                 watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\"))
@@ -107,7 +110,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Dim target As New QueuedSynchronizer(True)
                 watcher.SynchronizingObject = target
                 watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\"))
-                Dim calls As Integer = 0
+                Dim calls As Int32 = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
 
                 target.ExecutePending()
@@ -121,7 +124,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             Using watcher As New TestDriveWatcher()
                 Dim target As New QueuedSynchronizer(True)
                 watcher.SynchronizingObject = target
-                Dim calls As Integer = 0
+                Dim calls As Int32 = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
 
                 watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\"))
@@ -193,7 +196,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         Public Sub SynchronizingControlWithoutHandle_ThrowsWithoutCallingHandler()
             Using watcher As New TestDriveWatcher(), target As New Control()
                 watcher.SynchronizingObject = target
-                Dim calls As Integer = 0
+                Dim calls As Int32 = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
                 Dim unused = Assert.ThrowsExactly(Of InvalidOperationException)(Sub() watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\")))
                 Assert.AreEqual(0, calls)
@@ -207,7 +210,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Dim handle As IntPtr = target.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
                 watcher.SynchronizingObject = target
-                Dim calls As Integer = 0
+                Dim calls As Int32 = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
                 target.Dispose()
                 Dim unused = Assert.ThrowsExactly(Of InvalidOperationException)(Sub() watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\")))
@@ -221,7 +224,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Dim expected As New InvalidOperationException("Scheduling failed.")
                 Dim target As New QueuedSynchronizer(True) With {.BeginInvokeError = expected}
                 watcher.SynchronizingObject = target
-                Dim calls As Integer = 0
+                Dim calls As Int32 = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
 
                 Dim actual As InvalidOperationException = Assert.ThrowsExactly(Of InvalidOperationException)(
@@ -285,7 +288,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
             Public Property BeginInvokeError As Exception
 
-            Public ReadOnly Property PendingCount As Integer
+            Public ReadOnly Property PendingCount As Int32
                 Get
                     Return Me._pending.Count
                 End Get

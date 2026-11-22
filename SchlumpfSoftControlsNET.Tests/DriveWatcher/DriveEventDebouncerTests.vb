@@ -17,7 +17,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
         <TestMethod>
         Public Sub IsDuplicate_InterleavedDrivesAndTypes_TracksEachIndependently()
-            Dim now As Long = 1000
+            Dim now As Int64 = 1000
             Dim cache As New DriveWatcherEventDebouncer(Function() now, 1000)
             Assert.IsFalse(cache.IsDuplicate("E:\", DriveWatcherEventType.Added))
             Assert.IsFalse(cache.IsDuplicate("F:\", DriveWatcherEventType.Added))
@@ -29,7 +29,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
         <TestMethod>
         Public Sub IsDuplicate_TimeBoundary_DoesNotExtendWindowForDuplicates()
-            Dim now As Long = 1000
+            Dim now As Int64 = 1000
             Dim cache As New DriveWatcherEventDebouncer(Function() now, 1000)
             Assert.IsFalse(cache.IsDuplicate("E:\", DriveWatcherEventType.Added))
             now = 1200
@@ -45,7 +45,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <DataRow(3, 2)>
         <DataRow(4, 5)>
         <DataRow(5, 4)>
-        Public Sub IsDuplicate_OppositeTransition_AllowsOriginalAgain(firstValue As Integer, oppositeValue As Integer)
+        Public Sub IsDuplicate_OppositeTransition_AllowsOriginalAgain(firstValue As Int32, oppositeValue As Int32)
             Dim first As DriveWatcherEventType = CType(firstValue, DriveWatcherEventType)
             Dim opposite As DriveWatcherEventType = CType(oppositeValue, DriveWatcherEventType)
             Dim cache As New DriveWatcherEventDebouncer(Function() 1000L, 1000)
@@ -58,7 +58,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <TestMethod>
         Public Sub IsDuplicate_ConcurrentCalls_AdmitsOnlyOne()
             Dim cache As New DriveWatcherEventDebouncer(Function() 1000L, 1000)
-            Dim admitted As Integer = 0
+            Dim admitted As Int32 = 0
             Dim unused = Parallel.For(0, 100, Sub(index)
                                                   If Not cache.IsDuplicate("E:\", DriveWatcherEventType.Added) Then
                                                       Dim unused1 = Interlocked.Increment(admitted)

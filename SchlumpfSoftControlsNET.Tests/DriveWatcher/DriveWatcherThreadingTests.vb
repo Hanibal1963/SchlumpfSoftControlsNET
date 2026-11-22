@@ -29,7 +29,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
                 Dim work As Task = Task.Run(Sub()
                                                 sourceThread = Environment.CurrentManagedThreadId
-                                                watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\"))
+                                                watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\"))
                                             End Sub)
                 Assert.IsTrue(work.Wait(TimeSpan.FromSeconds(5)))
                 Assert.AreNotEqual(testThread, sourceThread)
@@ -45,7 +45,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Dim calls As Integer = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
 
-                watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\"))
+                watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\"))
 
                 Assert.AreEqual(1, calls)
                 Assert.AreEqual(0, target.PendingCount)
@@ -60,8 +60,8 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             Using watcher As New TestDriveWatcher()
                 Dim target As New QueuedSynchronizer(True)
                 watcher.SynchronizingObject = target
-                Dim added As New DriveAddedEventArgs("C:\", DriveType.Fixed, True)
-                Dim removed As New DriveRemovedEventArgs("C:\")
+                Dim added As New DriveWatcherAddedEventArgs("C:\", DriveType.Fixed, True)
+                Dim removed As New DriveWatcherRemovedEventArgs("C:\")
                 Dim received As New List(Of String)()
                 AddHandler watcher.DriveAdded, Sub(sender, e) RecordEvent(received, "DriveAdded", watcher, sender, added, e)
                 AddHandler watcher.DriveRemoved, Sub(sender, e) RecordEvent(received, "DriveRemoved", watcher, sender, removed, e)
@@ -89,9 +89,9 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 AddHandler watcher.DriveRemoved, Sub(sender, e) received.Add("DriveRemoved")
                 AddHandler watcher.MediaRemoved, Sub(sender, e) received.Add("MediaRemoved")
                 watcher.SynchronizingObject = first
-                watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\"))
+                watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\"))
                 watcher.SynchronizingObject = second
-                watcher.EmitMediaRemoved(New DriveRemovedEventArgs("C:\"))
+                watcher.EmitMediaRemoved(New DriveWatcherRemovedEventArgs("C:\"))
 
                 Assert.AreEqual(1, first.PendingCount)
                 Assert.AreEqual(1, second.PendingCount)
@@ -106,7 +106,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             Using watcher As New TestDriveWatcher()
                 Dim target As New QueuedSynchronizer(True)
                 watcher.SynchronizingObject = target
-                watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\"))
+                watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\"))
                 Dim calls As Integer = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
 
@@ -124,8 +124,8 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Dim calls As Integer = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
 
-                watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\"))
-                watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\"))
+                watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\"))
+                watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\"))
 
                 Assert.AreEqual(1, target.PendingCount)
                 target.ExecutePending()
@@ -140,7 +140,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             watcher.SynchronizingObject = target
             Dim received As New List(Of String)()
             AddHandler watcher.DriveRemoved, Sub(sender, e) received.Add("DriveRemoved")
-            watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\"))
+            watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\"))
             Assert.AreEqual(1, target.PendingCount)
 
             watcher.Dispose()
@@ -179,8 +179,8 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                         watcher.Dispose()
                     End Sub
                 AddHandler watcher.MediaRemoved, Sub(sender, e) received.Add("MediaRemoved")
-                watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\"))
-                watcher.EmitMediaRemoved(New DriveRemovedEventArgs("C:\"))
+                watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\"))
+                watcher.EmitMediaRemoved(New DriveWatcherRemovedEventArgs("C:\"))
 
                 target.ExecutePending()
 
@@ -195,7 +195,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 watcher.SynchronizingObject = target
                 Dim calls As Integer = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
-                Dim unused = Assert.ThrowsExactly(Of InvalidOperationException)(Sub() watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\")))
+                Dim unused = Assert.ThrowsExactly(Of InvalidOperationException)(Sub() watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\")))
                 Assert.AreEqual(0, calls)
                 Assert.IsFalse(target.IsHandleCreated)
             End Using
@@ -210,7 +210,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Dim calls As Integer = 0
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
                 target.Dispose()
-                Dim unused = Assert.ThrowsExactly(Of InvalidOperationException)(Sub() watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\")))
+                Dim unused = Assert.ThrowsExactly(Of InvalidOperationException)(Sub() watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\")))
                 Assert.AreEqual(0, calls)
             End Using
         End Sub
@@ -225,7 +225,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 AddHandler watcher.DriveRemoved, Sub(sender, e) calls += 1
 
                 Dim actual As InvalidOperationException = Assert.ThrowsExactly(Of InvalidOperationException)(
-                    Sub() watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\")))
+                    Sub() watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\")))
 
                 Assert.AreSame(expected, actual)
                 Assert.AreEqual(0, calls)
@@ -240,7 +240,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 watcher.SynchronizingObject = target
                 Dim expected As New InvalidOperationException("Handler failed.")
                 AddHandler watcher.DriveRemoved, Sub(sender, e) Throw expected
-                watcher.EmitDriveRemoved(New DriveRemovedEventArgs("C:\"))
+                watcher.EmitDriveRemoved(New DriveWatcherRemovedEventArgs("C:\"))
 
                 Dim actual As InvalidOperationException = Assert.ThrowsExactly(Of InvalidOperationException)(Sub() target.ExecutePending())
                 Assert.AreSame(expected, actual)
@@ -256,15 +256,15 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         Private NotInheritable Class TestDriveWatcher
             Inherits DriveWatcher
 
-            Public Sub EmitDriveRemoved(e As DriveRemovedEventArgs)
+            Public Sub EmitDriveRemoved(e As DriveWatcherRemovedEventArgs)
                 Me.OnDriveRemoved(e)
             End Sub
 
-            Public Sub EmitMediaRemoved(e As DriveRemovedEventArgs)
+            Public Sub EmitMediaRemoved(e As DriveWatcherRemovedEventArgs)
                 Me.OnMediaRemoved(e)
             End Sub
 
-            Public Sub EmitAll(added As DriveAddedEventArgs, removed As DriveRemovedEventArgs)
+            Public Sub EmitAll(added As DriveWatcherAddedEventArgs, removed As DriveWatcherRemovedEventArgs)
                 Me.OnDriveAdded(added)
                 Me.OnDriveRemoved(removed)
                 Me.OnMediaInserted(added)

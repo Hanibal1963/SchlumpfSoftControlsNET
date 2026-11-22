@@ -18,24 +18,24 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <TestMethod>
         Public Sub IsDuplicate_InterleavedDrivesAndTypes_TracksEachIndependently()
             Dim now As Long = 1000
-            Dim cache As New DriveEventDebouncer(Function() now, 1000)
-            Assert.IsFalse(cache.IsDuplicate("E:\", DriveEventType.Added))
-            Assert.IsFalse(cache.IsDuplicate("F:\", DriveEventType.Added))
-            Assert.IsFalse(cache.IsDuplicate("E:\", DriveEventType.MediaInserted))
-            Assert.IsTrue(cache.IsDuplicate("e:\", DriveEventType.Added))
-            Assert.IsTrue(cache.IsDuplicate("F:\", DriveEventType.Added))
-            Assert.IsTrue(cache.IsDuplicate("E:\", DriveEventType.MediaInserted))
+            Dim cache As New DriveWatcherEventDebouncer(Function() now, 1000)
+            Assert.IsFalse(cache.IsDuplicate("E:\", DriveWatcherEventType.Added))
+            Assert.IsFalse(cache.IsDuplicate("F:\", DriveWatcherEventType.Added))
+            Assert.IsFalse(cache.IsDuplicate("E:\", DriveWatcherEventType.MediaInserted))
+            Assert.IsTrue(cache.IsDuplicate("e:\", DriveWatcherEventType.Added))
+            Assert.IsTrue(cache.IsDuplicate("F:\", DriveWatcherEventType.Added))
+            Assert.IsTrue(cache.IsDuplicate("E:\", DriveWatcherEventType.MediaInserted))
         End Sub
 
         <TestMethod>
         Public Sub IsDuplicate_TimeBoundary_DoesNotExtendWindowForDuplicates()
             Dim now As Long = 1000
-            Dim cache As New DriveEventDebouncer(Function() now, 1000)
-            Assert.IsFalse(cache.IsDuplicate("E:\", DriveEventType.Added))
+            Dim cache As New DriveWatcherEventDebouncer(Function() now, 1000)
+            Assert.IsFalse(cache.IsDuplicate("E:\", DriveWatcherEventType.Added))
             now = 1200
-            Assert.IsTrue(cache.IsDuplicate("E:\", DriveEventType.Added))
+            Assert.IsTrue(cache.IsDuplicate("E:\", DriveWatcherEventType.Added))
             now = 1201
-            Assert.IsFalse(cache.IsDuplicate("E:\", DriveEventType.Added))
+            Assert.IsFalse(cache.IsDuplicate("E:\", DriveWatcherEventType.Added))
         End Sub
 
         <TestMethod>
@@ -46,9 +46,9 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <DataRow(4, 5)>
         <DataRow(5, 4)>
         Public Sub IsDuplicate_OppositeTransition_AllowsOriginalAgain(firstValue As Integer, oppositeValue As Integer)
-            Dim first As DriveEventType = CType(firstValue, DriveEventType)
-            Dim opposite As DriveEventType = CType(oppositeValue, DriveEventType)
-            Dim cache As New DriveEventDebouncer(Function() 1000L, 1000)
+            Dim first As DriveWatcherEventType = CType(firstValue, DriveWatcherEventType)
+            Dim opposite As DriveWatcherEventType = CType(oppositeValue, DriveWatcherEventType)
+            Dim cache As New DriveWatcherEventDebouncer(Function() 1000L, 1000)
             Assert.IsFalse(cache.IsDuplicate("E:\", first))
             Assert.IsFalse(cache.IsDuplicate("E:\", opposite))
             Assert.IsFalse(cache.IsDuplicate("E:\", first))
@@ -57,16 +57,16 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
         <TestMethod>
         Public Sub IsDuplicate_ConcurrentCalls_AdmitsOnlyOne()
-            Dim cache As New DriveEventDebouncer(Function() 1000L, 1000)
+            Dim cache As New DriveWatcherEventDebouncer(Function() 1000L, 1000)
             Dim admitted As Integer = 0
             Dim unused = Parallel.For(0, 100, Sub(index)
-                                                  If Not cache.IsDuplicate("E:\", DriveEventType.Added) Then
+                                                  If Not cache.IsDuplicate("E:\", DriveWatcherEventType.Added) Then
                                                       Dim unused1 = Interlocked.Increment(admitted)
                                                   End If
                                               End Sub)
             Assert.AreEqual(1, admitted)
             cache.Clear()
-            Assert.IsFalse(cache.IsDuplicate("E:\", DriveEventType.Added))
+            Assert.IsFalse(cache.IsDuplicate("E:\", DriveWatcherEventType.Added))
         End Sub
 
     End Class

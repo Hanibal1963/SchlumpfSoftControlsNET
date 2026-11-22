@@ -9,7 +9,6 @@ Imports SchlumpfSoft.ControlsNET
 Public Class FormColorProgressBar
 
     Public Sub New()
-
         Me.InitializeComponent()
         Me.InitializeNumericUpDowns()
         Me.ColorProgressBar.SegmentSpacing = CInt(Me.NumericUpDown_SegmentSpacing.Value)
@@ -18,23 +17,18 @@ Public Class FormColorProgressBar
         Me.ColorProgressBar.Value = CInt(Me.NumericUpDown_ProgressValue.Value)
         Me.ColorProgressBar.ProgressMaximumValue = CInt(Me.NumericUpDown_ProgressValue.Maximum)
         Me.ColorProgressBar.SegmentCount = CInt(Me.NumericUpDown_SegmentCount.Value)
-
     End Sub
 
     Private Sub InitializeNumericUpDowns()
-
         Me.NumericUpDown_ProgressValue.Value = 10
         Me.NumericUpDown_ProgressValue.Maximum = 100
         Me.NumericUpDown_ProgressValue.Minimum = 0
-
         Me.NumericUpDown_SegmentCount.Value = 10
         Me.NumericUpDown_SegmentCount.Maximum = 25
         Me.NumericUpDown_SegmentCount.Minimum = 2
-
         Me.NumericUpDown_SegmentSpacing.Value = 2
         Me.NumericUpDown_SegmentSpacing.Maximum = 25
         Me.NumericUpDown_SegmentSpacing.Minimum = 2
-
     End Sub
 
     Private Sub InitializeCheckBoxes()
@@ -101,16 +95,9 @@ Public Class FormColorProgressBar
         NumericUpDown_SegmentSpacing.ValueChanged
 
         Select Case True
-
-            Case sender Is Me.NumericUpDown_ProgressValue
-                Me.ColorProgressBar.Value = CInt(CType(sender, NumericUpDown).Value)
-
-            Case sender Is Me.NumericUpDown_SegmentCount
-                Me.ColorProgressBar.SegmentCount = CInt(CType(sender, NumericUpDown).Value)
-
-            Case sender Is Me.NumericUpDown_SegmentSpacing
-                Me.ColorProgressBar.SegmentSpacing = CInt(CType(sender, NumericUpDown).Value)
-
+            Case sender Is Me.NumericUpDown_ProgressValue : Me.ColorProgressBar.Value = CInt(CType(sender, NumericUpDown).Value)
+            Case sender Is Me.NumericUpDown_SegmentCount : Me.ColorProgressBar.SegmentCount = CInt(CType(sender, NumericUpDown).Value)
+            Case sender Is Me.NumericUpDown_SegmentSpacing : Me.ColorProgressBar.SegmentSpacing = CInt(CType(sender, NumericUpDown).Value)
         End Select
 
     End Sub
@@ -162,12 +149,10 @@ Public Class FormColorProgressBar
         ComboBox_Style.SelectedIndexChanged
 
         Select Case CType(sender, ComboBox).SelectedIndex
-
             Case 0 : Me.ColorProgressBar.ProgressStyle = ColorProgressBarControl.ColorProgressBarStyle.Solid
             Case 1 : Me.ColorProgressBar.ProgressStyle = ColorProgressBarControl.ColorProgressBarStyle.Gradient
             Case 2 : Me.ColorProgressBar.ProgressStyle = ColorProgressBarControl.ColorProgressBarStyle.Striped
             Case 3 : Me.ColorProgressBar.ProgressStyle = ColorProgressBarControl.ColorProgressBarStyle.Marquee
-
         End Select
 
     End Sub

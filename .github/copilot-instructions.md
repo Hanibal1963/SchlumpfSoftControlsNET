@@ -16,6 +16,8 @@
 
 - Nach einem vom Agenten gestarteten Build darf die Versionsnummer nicht zurückgesetzt werden. Automatische Versionsänderungen durch den Build sind auch bei der Bereinigung des Arbeitsverzeichnisses zu erhalten; eine Rücksetzung ist nur auf ausdrückliche Anweisung des Nutzers zulässig.
 
+- Vermeide bei Codeänderungen neue Compiler- und Analyzerwarnungen. Prüfe die betroffenen Zielplattformen mit dem passenden Build und behebe durch die Änderung verursachte Warnungen an ihrer Ursache, ohne bestehendes Verhalten unnötig zu ändern. Unterdrücke Warnungen nicht pauschal; falls eine Unterdrückung wegen fehlender plattformspezifischer APIs oder aus anderen Gründen unvermeidbar ist, begründe und begrenze sie ausdrücklich. Melde verbleibende oder nicht überprüfbare Warnungen.
+
 - Vermeide MSTEST0037: Verwende `Assert.IsTrue` und `Assert.IsFalse` nur für echte boolesche Bedingungen. Nutze für Vergleiche `Assert.IsGreaterThan`, `Assert.IsLessThan` oder `Assert.IsInRange`, für Null-/String-Prüfungen die spezifischen `Assert`-Methoden und für Sammlungen `Assert.Contains`, `Assert.DoesNotContain`, `Assert.IsEmpty` oder `Assert.IsNotEmpty`, sofern sie die gleiche Bedingung ausdrücken.
 
 - Arbeite bei größeren Änderungen schrittweise und gib nach jedem Schritt explizit frei, bevor der nächste Schritt ausgeführt wird. **Im Guided-Modus vor jedem größeren Schritt Rückfrage/Freigabe einholen.**
@@ -78,4 +80,4 @@
 
 ## Übersetzungen
 
-- Bei der Auslagerung von Meldungstexten in Ressourcen gelten die deutschen Texte als maßgebliche Quelle für Übersetzungen; Englisch wird daraus abgeleitet.
+- Bei der Auslagerung von Meldungstexten in Ressourcen gelten die deutschen Texte als maßgebliche Quelle für Übersetzungen; Englisch (und eventuelle weitere Sprachen) wird daraus abgeleitet.

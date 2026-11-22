@@ -47,5 +47,3 @@ Es wurden gegenüber der vorherigen Versionen einige Änderungen vorgenommen und
 - &#x1F4A1; Neues Control zum Auslesen und Bearbeiten von ID3 Tags von Musikdateien hinzufügen.
 - &#x1F4A1; Neues Control zum Auswählen einer Uhrzeit hinzufügen.
 - &#x1F4A1; Neues Control zur Anzeige und Extraktion von Icons aus DLLs oder EXEs.
-- &#x2705; Neues Control zur Eingabe und zum Validieren von Passwörtern hinzufügen.
-- &#x2705; Neues Control zum Anzeigen einer Combobox mit Symbolen.

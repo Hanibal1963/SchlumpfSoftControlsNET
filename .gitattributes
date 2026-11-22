@@ -1,26 +1,28 @@
-###############################################################################
-# Set default behavior to automatically normalize line endings.
+﻿###############################################################################
+# Zeilenenden standardmäßig automatisch normalisieren.
 ###############################################################################
 * text=auto
 
 ###############################################################################
-# Set default behavior for command prompt diff.
+# Standardverhalten für den Diff in der Eingabeaufforderung festlegen.
 #
-# This is need for earlier builds of msysgit that does not have it on by
-# default for csharp files.
-# Note: This is only used by command line
+# Dies wird für ältere Versionen von msysgit benötigt, bei denen es für
+# C#-Dateien nicht standardmäßig aktiviert ist.
+# Hinweis: Dies wird nur auf der Kommandozeile verwendet.
 ###############################################################################
 #*.cs     diff=csharp
 
 ###############################################################################
-# Set the merge driver for project and solution files
+# Merge-Treiber für Projekt- und Projektmappendateien festlegen.
 #
-# Merging from the command prompt will add diff markers to the files if there
-# are conflicts (Merging from VS is not affected by the settings below, in VS
-# the diff markers are never inserted). Diff markers may cause the following 
-# file extensions to fail to load in VS. An alternative would be to treat
-# these files as binary and thus will always conflict and require user
-# intervention with every merge. To do so, just uncomment the entries below
+# Beim Zusammenführen über die Eingabeaufforderung werden bei Konflikten
+# Diff-Markierungen in die Dateien eingefügt. Das Zusammenführen in VS wird
+# von den folgenden Einstellungen nicht beeinflusst; dort werden niemals
+# Diff-Markierungen eingefügt. Diese Markierungen können verhindern, dass
+# Dateien mit den folgenden Erweiterungen in VS geladen werden. Alternativ
+# können diese Dateien als Binärdateien behandelt werden. Dadurch entsteht
+# immer ein Konflikt, der bei jedem Zusammenführen einen Benutzereingriff
+# erfordert. Dazu die folgenden Einträge auskommentieren.
 ###############################################################################
 #*.sln       merge=binary
 #*.csproj    merge=binary
@@ -36,20 +38,20 @@
 #*.wwaproj   merge=binary
 
 ###############################################################################
-# behavior for image files
+# Verhalten für Bilddateien
 #
-# image files are treated as binary by default.
+# Bilddateien werden standardmäßig als Binärdateien behandelt.
 ###############################################################################
 #*.jpg   binary
 #*.png   binary
 #*.gif   binary
 
 ###############################################################################
-# diff behavior for common document formats
-# 
-# Convert binary document formats to text before diffing them. This feature
-# is only available from the command line. Turn it on by uncommenting the 
-# entries below.
+# Diff-Verhalten für gängige Dokumentformate
+#
+# Binäre Dokumentformate vor dem Vergleich in Text umwandeln. Diese Funktion
+# ist nur auf der Kommandozeile verfügbar. Zum Aktivieren die folgenden
+# Einträge auskommentieren.
 ###############################################################################
 #*.doc   diff=astextplain
 #*.DOC   diff=astextplain

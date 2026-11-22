@@ -99,4 +99,6 @@ DriveWatcher1.SynchronizingObject = Me
 
 ## [7. Optimierungsvorschläge](DriveWatcherOptimierungsvorschläge.md)
 
+z.Zt. alle umgesetzt
+
 ## [8. Erweiterungsvorschläge](DriveWatcherErweiterungsvorschläge.md)

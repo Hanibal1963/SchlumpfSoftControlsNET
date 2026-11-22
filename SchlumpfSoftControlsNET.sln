@@ -9,6 +9,18 @@ Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "SchlumpfSoftControlsNET.Tes
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "SchlumpfsoftControlsNETDemo", "SchlumpfsoftControlsNETDemo\SchlumpfsoftControlsNETDemo.vbproj", "{24A877F2-F545-4167-AE5B-11D54950EB23}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projektmappenelemente", "Projektmappenelemente", "{EAD8E038-47F6-4CA5-AD6E-F4E35A462388}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		LICENSE.md = LICENSE.md
+		Links.md = Links.md
+		README.md = README.md
+		Symole für Markdown.md = Symole für Markdown.md
+		VS 2008 Beispiele.zip = VS 2008 Beispiele.zip
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

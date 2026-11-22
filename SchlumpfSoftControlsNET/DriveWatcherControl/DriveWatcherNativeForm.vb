@@ -23,10 +23,7 @@ Namespace DriveWatcherControl
     ''' Für Netzlaufwerke stehen zusätzlich <see cref="NetworkDriveAdded"/> und
     ''' <see cref="NetworkDriveRemoved"/> zur Verfügung.
     ''' </remarks>
-    ''' NOTE:Vermeidung prüfen
-#Disable Warning CA1852 ' Warnung: Interne Typen versiegeln
-    Friend Class NativeForm
-#Enable Warning CA1852
+    Friend NotInheritable Class DriveWatcherNativeForm
 
         Inherits NativeWindow
         Implements IDisposable
@@ -158,32 +155,32 @@ Namespace DriveWatcherControl
         Public Event VolumeObserved(sender As Object, eventCode As Integer, driveName As String, unitMask As Integer, flags As Short)
 
         ''' <summary>Wird ausgelöst, wenn ein logisches Volume vom Betriebssystem als hinzugefügt gemeldet wird. </summary>
-        ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
+        ''' <param name="sender">Die auslösende Instanz von <see cref="DriveWatcherNativeForm"/>.</param>
         ''' <param name="e">Der gemeldete Laufwerksname.</param>
         Public Event DriveAdded(sender As Object, e As String)
 
         ''' <summary>Wird ausgelöst, wenn ein logisches Volume vom Betriebssystem als entfernt gemeldet wird.</summary>
-        ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
+        ''' <param name="sender">Die auslösende Instanz von <see cref="DriveWatcherNativeForm"/>.</param>
         ''' <param name="e">Der gemeldete Laufwerksname.</param>
         Public Event DriveRemoved(sender As Object, e As String)
 
         ''' <summary>Wird ausgelöst, wenn ein Medium in einem bestehenden Wechsel-/CD-/DVD-Laufwerk eingelegt wurde.</summary>
-        ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
+        ''' <param name="sender">Die auslösende Instanz von <see cref="DriveWatcherNativeForm"/>.</param>
         ''' <param name="e">Der gemeldete Laufwerksname.</param>
         Public Event MediaInserted(sender As Object, e As String)
 
         ''' <summary>Wird ausgelöst, wenn ein Medium aus einem bestehenden Wechsel-/CD-/DVD-Laufwerk entfernt wurde.</summary>
-        ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
+        ''' <param name="sender">Die auslösende Instanz von <see cref="DriveWatcherNativeForm"/>.</param>
         ''' <param name="e">Der gemeldete Laufwerksname.</param>
         Public Event MediaRemoved(sender As Object, e As String)
 
         ''' <summary>Wird ausgelöst, wenn ein Netzlaufwerk vom Betriebssystem als hinzugefügt gemeldet wird.</summary>
-        ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
+        ''' <param name="sender">Die auslösende Instanz von <see cref="DriveWatcherNativeForm"/>.</param>
         ''' <param name="e">Der gemeldete Laufwerksname.</param>
         Public Event NetworkDriveAdded(sender As Object, e As String)
 
         ''' <summary>Wird ausgelöst, wenn ein Netzlaufwerk vom Betriebssystem als entfernt gemeldet wird.</summary>
-        ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
+        ''' <param name="sender">Die auslösende Instanz von <see cref="DriveWatcherNativeForm"/>.</param>
         ''' <param name="e">Der gemeldete Laufwerksname.</param>
         Public Event NetworkDriveRemoved(sender As Object, e As String)
 
@@ -192,7 +189,7 @@ Namespace DriveWatcherControl
 #Region "Öffentliche Methoden"
 
         ''' <summary>
-        ''' Initialisiert eine neue Instanz von <see cref="NativeForm"/> und erstellt ein eigenes Fensterhandle.
+        ''' Initialisiert eine neue Instanz von <see cref="DriveWatcherNativeForm"/> und erstellt ein eigenes Fensterhandle.
         ''' </summary>
         Public Sub New()
             ' NativeWindow besitzt anfangs kein eigenes Fensterhandle.
@@ -208,10 +205,11 @@ Namespace DriveWatcherControl
         ''' <exception cref="ObjectDisposedException">Die Instanz wurde bereits freigegeben.</exception>
         ''' <exception cref="InvalidOperationException">Für diese Instanz existiert bereits ein Fensterhandle.</exception>
         Public Overrides Sub CreateHandle(cp As CreateParams)
-            'NOTE: Vermeidung prüfen
-#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
-            If Me._disposedValue Then Throw New ObjectDisposedException(NameOf(NativeForm))
-#Enable Warning CA1513
+#If NET8_0_OR_GREATER Then
+            ObjectDisposedException.ThrowIf(Me._disposedValue, Me)
+#Else
+            If Me._disposedValue Then Throw New ObjectDisposedException(NameOf(DriveWatcherNativeForm))
+#End If
             MyBase.CreateHandle(cp)
         End Sub
 
@@ -230,7 +228,7 @@ Namespace DriveWatcherControl
         ''' <see langword="True"/>, wenn verwaltete Ressourcen freigegeben werden sollen; andernfalls
         ''' <see langword="False"/>.
         ''' </param>
-        Protected Overridable Sub Dispose(disposing As Boolean)
+        Protected Sub Dispose(disposing As Boolean)
             If Not Me._disposedValue Then
                 If disposing Then
                     ' Das von CreateHandle erzeugte Fensterhandle freigeben.

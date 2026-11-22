@@ -12,7 +12,7 @@ Imports System.Security
 Namespace DriveWatcherControl
 
 		''' <summary>Erstellt eine Momentaufnahme verfügbarer Laufwerksinformationen.</summary>
-    Friend NotInheritable Class DriveInfoSnapshotReader
+    Friend NotInheritable Class DriveWatcherInfoSnapshotReader
 
 		''' <summary>Verhindert die Instanziierung der Hilfsklasse.</summary>
         Private Sub New()
@@ -21,9 +21,9 @@ Namespace DriveWatcherControl
 		''' <summary>Liest eine Momentaufnahme über die reguläre Laufwerksdatenquelle.</summary>
 		''' <param name="name">Name des abzufragenden Laufwerks.</param>
 		''' <returns>Die Laufwerksdaten und gegebenenfalls Lesefehler.</returns>
-        Friend Shared Function Read(name As String) As DriveAddedEventArgs
+        Friend Shared Function Read(name As String) As DriveWatcherAddedEventArgs
 
-            Return Read(name, Function(driveName) New DriveInfoSource(driveName))
+            Return Read(name, Function(driveName) New DriveWatcherInfoSource(driveName))
 
         End Function
 
@@ -33,15 +33,16 @@ Namespace DriveWatcherControl
         ''' <returns>Die Laufwerksdaten und gegebenenfalls Lesefehler.</returns>
         ''' <exception cref="ArgumentNullException">Die Fabrik ist <see langword="Nothing"/>.</exception>
         ''' <exception cref="InvalidOperationException">Die Fabrik liefert ohne erfassten Lesefehler keine Datenquelle.</exception>
-        Friend Shared Function Read(name As String, factory As Func(Of String, IDriveInfoSource)) As DriveAddedEventArgs
+        Friend Shared Function Read(name As String, factory As Func(Of String, DriveWatcherIDriveInfoSource)) As DriveWatcherAddedEventArgs
 
-            'NOTE: Vermeidung prüfen
-#Disable Warning CA1510 ' ThrowIfNull ist unter .NET Framework nicht verfügbar.
+#If NET8_0_OR_GREATER Then
+            ArgumentNullException.ThrowIfNull(factory, NameOf(factory))
+#Else
             If factory Is Nothing Then Throw New ArgumentNullException(NameOf(factory))
-#Enable Warning CA1510
+#End If
 
-            Dim result As New DriveAddedEventArgs(name) With {.VolumeLabel = "", .DriveFormat = ""}
-            Dim source = ReadValue(result, NameOf(DriveInfo), Function() factory(name), DirectCast(Nothing, IDriveInfoSource))
+            Dim result As New DriveWatcherAddedEventArgs(name) With {.VolumeLabel = "", .DriveFormat = ""}
+            Dim source = ReadValue(result, NameOf(DriveInfo), Function() factory(name), DirectCast(Nothing, DriveWatcherIDriveInfoSource))
 
             If source Is Nothing Then
 
@@ -76,7 +77,7 @@ Namespace DriveWatcherControl
 		''' <param name="getter">Funktion zum Lesen des Werts.</param>
 		''' <param name="fallback">Ersatzwert bei einem erfassten Fehler.</param>
 		''' <returns>Der gelesene Wert oder der Ersatzwert.</returns>
-        Private Shared Function ReadValue(Of T)(result As DriveAddedEventArgs, propertyName As String, getter As Func(Of T), fallback As T) As T
+        Private Shared Function ReadValue(Of T)(result As DriveWatcherAddedEventArgs, propertyName As String, getter As Func(Of T), fallback As T) As T
 
             Try
 

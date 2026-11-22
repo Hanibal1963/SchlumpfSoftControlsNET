@@ -73,7 +73,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                     Assert.IsEmpty(listener.Lines)
                     Dim method = GetType(DriveWatcher).GetMethod("ReadDriveInfo", BindingFlags.NonPublic Or BindingFlags.Instance)
                     Assert.IsNotNull(method)
-                    Dim result = DirectCast(method.Invoke(watcher, New Object() {"", DriveEventType.Added}), DriveAddedEventArgs)
+                    Dim result = DirectCast(method.Invoke(watcher, New Object() {"", DriveWatcherEventType.Added}), DriveWatcherAddedEventArgs)
                     Assert.Contains("DriveInfo", result.ReadErrors.Keys)
                     If expected Then
                         Assert.HasCount(1, listener.Lines)
@@ -126,15 +126,15 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         Private NotInheritable Class TestWatcher
             Inherits DriveWatcher
             Friend Sub EmitAdded(name As String)
-                Me.OnDriveAdded(New DriveAddedEventArgs(name))
+                Me.OnDriveAdded(New DriveWatcherAddedEventArgs(name))
             End Sub
             Friend Sub EmitAll(Optional name As String = "E:\")
-                Me.OnDriveAdded(New DriveAddedEventArgs(name))
-                Me.OnDriveRemoved(New DriveRemovedEventArgs(name))
-                Me.OnMediaInserted(New DriveAddedEventArgs(name))
-                Me.OnMediaRemoved(New DriveRemovedEventArgs(name))
-                Me.OnNetworkDriveAdded(New DriveAddedEventArgs(name))
-                Me.OnNetworkDriveRemoved(New DriveRemovedEventArgs(name))
+                Me.OnDriveAdded(New DriveWatcherAddedEventArgs(name))
+                Me.OnDriveRemoved(New DriveWatcherRemovedEventArgs(name))
+                Me.OnMediaInserted(New DriveWatcherAddedEventArgs(name))
+                Me.OnMediaRemoved(New DriveWatcherRemovedEventArgs(name))
+                Me.OnNetworkDriveAdded(New DriveWatcherAddedEventArgs(name))
+                Me.OnNetworkDriveRemoved(New DriveWatcherRemovedEventArgs(name))
             End Sub
         End Class
 

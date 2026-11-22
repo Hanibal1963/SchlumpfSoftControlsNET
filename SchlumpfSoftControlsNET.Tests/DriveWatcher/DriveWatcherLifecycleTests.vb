@@ -450,12 +450,12 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 End Get
             End Property
 
-            Protected Overrides Sub OnDriveAdded(e As DriveAddedEventArgs)
+            Protected Overrides Sub OnDriveAdded(e As DriveWatcherAddedEventArgs)
                 Me._additionDispatches += 1
                 MyBase.OnDriveAdded(e)
             End Sub
 
-            Protected Overrides Sub OnDriveRemoved(e As DriveRemovedEventArgs)
+            Protected Overrides Sub OnDriveRemoved(e As DriveWatcherRemovedEventArgs)
                 Me._removalDispatches += 1
                 MyBase.OnDriveRemoved(e)
             End Sub

@@ -19,7 +19,7 @@ Namespace DriveWatcherControl
     ''' grundlegende Metadaten des erkannten Laufwerks<br/>
     ''' (z. B. Name, Volumebezeichnung, Dateisystem, Typ und Speichergrößen in Bytes).
     ''' </remarks>
-    Public Class DriveAddedEventArgs
+    Public Class DriveWatcherAddedEventArgs
 
         Inherits EventArgs
 
@@ -116,7 +116,7 @@ Namespace DriveWatcherControl
 #Region "Öffentliche Methoden"
 
         ''' <summary>
-        ''' Initialisiert eine leere Instanz von <see cref="DriveAddedEventArgs"/>.
+        ''' Initialisiert eine leere Instanz von <see cref="DriveWatcherAddedEventArgs"/>.
         ''' </summary>
         Public Sub New()
 

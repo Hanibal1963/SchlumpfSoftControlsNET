@@ -1,4 +1,4 @@
-## Ignoriere temporäre Visual Studio-Dateien, Build-Ergebnisse und
+﻿## Ignoriere temporäre Visual Studio-Dateien, Build-Ergebnisse und
 ## Dateien, die von beliebten Visual Studio-Add-ons erzeugt werden.
 ##
 ## Neueste Version: https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
@@ -431,3 +431,6 @@ FodyWeavers.xsd
 
 # Offizieller Ausschluss für die VS Code C# Dev Kit-Erweiterung
 #*.lscache
+
+#Eigene Ausschlüsse
+/VS 2008 Beispiele.zip

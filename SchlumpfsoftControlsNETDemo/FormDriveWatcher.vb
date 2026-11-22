@@ -15,7 +15,7 @@ Public Class FormDriveWatcher
 
     End Sub
 
-    Private Sub DW_DriveAdded(sender As Object, e As DriveAddedEventArgs) Handles _
+    Private Sub DW_DriveAdded(sender As Object, e As DriveWatcherAddedEventArgs) Handles _
         DW.DriveAdded,
         DW.NetworkDriveAdded
 
@@ -56,7 +56,7 @@ Public Class FormDriveWatcher
 
     End Sub
 
-    Private Sub DW_DriveRemoved(sender As Object, e As DriveRemovedEventArgs) Handles _
+    Private Sub DW_DriveRemoved(sender As Object, e As DriveWatcherRemovedEventArgs) Handles _
         DW.DriveRemoved,
         DW.NetworkDriveRemoved
 
@@ -66,7 +66,7 @@ Public Class FormDriveWatcher
 
     End Sub
 
-    Private Sub DW_MediaInserted(sender As Object, e As DriveAddedEventArgs) Handles _
+    Private Sub DW_MediaInserted(sender As Object, e As DriveWatcherAddedEventArgs) Handles _
         DW.MediaInserted
 
         Dim name As String = e.DriveName
@@ -75,7 +75,7 @@ Public Class FormDriveWatcher
 
     End Sub
 
-    Private Sub DW_MediaRemoved(sender As Object, e As DriveRemovedEventArgs) Handles _
+    Private Sub DW_MediaRemoved(sender As Object, e As DriveWatcherRemovedEventArgs) Handles _
         DW.MediaRemoved
 
         Dim name As String = e.DriveName

@@ -69,11 +69,11 @@ DriveWatcher1.SynchronizingObject = Me
 
 ## 5. Hilfstypen/Strukturen
 
-- `DriveAddedEventArgs`: Enthält `DriveName`, `DriveType`, `IsReady`, `VolumeLabel`, `DriveFormat`, `AvailableFreeSpace`, `TotalFreeSpace` und `TotalSize`. Die vorhandenen Konstruktoren akzeptieren den Laufwerksnamen und optional Typ und Bereitschaft. Sie führen keine Systemabfragen durch.
+- `DriveWatcherAddedEventArgs`: Enthält `DriveName`, `DriveType`, `IsReady`, `VolumeLabel`, `DriveFormat`, `AvailableFreeSpace`, `TotalFreeSpace` und `TotalSize`. Neben dem parameterlosen Konstruktor akzeptieren die weiteren Konstruktoren den Laufwerksnamen und optional Typ und Bereitschaft. Sie führen keine Systemabfragen durch.
 
-- `DriveAddedEventArgs.ReadErrors As IReadOnlyDictionary(Of String, Exception)`: Schreibgeschützte Fehlerzuordnung für Systemabfragen. Der Schlüssel ist der Name der betroffenen Eigenschaft; `DriveInfo` bezeichnet einen Fehler beim Erstellen der Abfrage. Bei selbst erstellten Ereignisdaten ist die Zuordnung leer. Fehlgeschlagene Felder behalten ihren neutralen Wert (`Unknown`, `False`, leere Zeichenfolge oder `0`). Bei nicht bereitem Laufwerk werden Detailfelder nicht abgefragt. Ein leeres Wörterbuch bedeutet dabei nicht, dass die Detailwerte gelesen wurden.
+- `DriveWatcherAddedEventArgs.ReadErrors As IReadOnlyDictionary(Of String, Exception)`: Schreibgeschützte Fehlerzuordnung für Systemabfragen. Der Schlüssel ist der Name der betroffenen Eigenschaft; `DriveInfo` bezeichnet einen Fehler beim Erstellen der Abfrage. Bei selbst erstellten Ereignisdaten ist die Zuordnung leer. Fehlgeschlagene Felder behalten ihren neutralen Wert (`Unknown`, `False`, leere Zeichenfolge oder `0`). Bei nicht bereitem Laufwerk werden Detailfelder nicht abgefragt. Ein leeres Wörterbuch bedeutet dabei nicht, dass die Detailwerte gelesen wurden.
 
-- `DriveRemovedEventArgs`: Enthält den gemeldeten Laufwerksnamen; beim Entfernen sind keine Metadatenabfragen erforderlich.
+- `DriveWatcherRemovedEventArgs`: Enthält den gemeldeten Laufwerksnamen; beim Entfernen sind keine Metadatenabfragen erforderlich.
 
 ## 6. Hinweise
 

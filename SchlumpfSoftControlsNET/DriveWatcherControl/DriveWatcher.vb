@@ -39,7 +39,7 @@ Namespace DriveWatcherControl
 #Region "Variablen"
 
         ''' <summary>Empfangsfenster für native Geräteänderungen und deren Ereignisse.</summary>
-        Private WithEvents NatForm As NativeForm ' Unsichtbares natives Fenster für den Empfang von WM_DEVICECHANGE.
+        Private WithEvents NatForm As DriveWatcherNativeForm ' Unsichtbares natives Fenster für den Empfang von WM_DEVICECHANGE.
 
         ''' <summary>Synchronisiert Zustellung, Freigabe und Diagnoseeinstellungen.</summary>
         Private ReadOnly _notificationSyncRoot As New Object
@@ -54,7 +54,7 @@ Namespace DriveWatcherControl
         Private _traceLevel As TraceLevel = TraceLevel.Off
 
         ''' <summary>Unterdrückt wiederholte Laufwerksereignisse innerhalb des Zeitfensters.</summary>
-        Private ReadOnly _debouncer As New DriveEventDebouncer()
+        Private ReadOnly _debouncer As New DriveWatcherEventDebouncer()
 
 #End Region
 
@@ -64,58 +64,58 @@ Namespace DriveWatcherControl
         ''' Wird ausgelöst, wenn ein logisches Laufwerk (Volume) hinzugefügt wurde.
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz des <see cref="DriveWatcher"/>.</param>
-        ''' <param name="e">Die Laufwerksinformationen im <see cref="DriveAddedEventArgs"/>.</param>
+        ''' <param name="e">Die Laufwerksinformationen im <see cref="DriveWatcherAddedEventArgs"/>.</param>
         ''' <remarks>
         ''' Das Ereignis wird typischerweise bei Anschluss eines Wechselmediums (z. B. USB-Stick) ausgelöst. Wenn das
-        ''' Volume noch nicht bereit ist (<see cref="DriveAddedEventArgs.IsReady"/> = False), sind Größen-/Formatfelder
+        ''' Volume noch nicht bereit ist (<see cref="DriveWatcherAddedEventArgs.IsReady"/> = False), sind Größen-/Formatfelder
         ''' neutral befüllt.
         ''' </remarks>
         <Description("Wird ausgelöst wenn ein Laufwerk hinzugefügt wurde.")>
-        Public Event DriveAdded(sender As Object, e As DriveAddedEventArgs)
+        Public Event DriveAdded(sender As Object, e As DriveWatcherAddedEventArgs)
 
         ''' <summary>
         ''' Wird ausgelöst, wenn ein logisches Laufwerk (Volume) entfernt wurde.
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz des <see cref="DriveWatcher"/>.</param>
-        ''' <param name="e">Informationen zum entfernten Laufwerk im <see cref="DriveRemovedEventArgs"/>.</param>
+        ''' <param name="e">Informationen zum entfernten Laufwerk im <see cref="DriveWatcherRemovedEventArgs"/>.</param>
         ''' <remarks>
         ''' Das Ereignis enthält mindestens den Laufwerksnamen (z. B. "E:\"). Nach dem Entfernen sind keine
         ''' Größen-/Formatinformationen verfügbar.
         ''' </remarks>
         <Description("Wird ausgelöst wenn ein Laufwerk entfernt wurde.")>
-        Public Event DriveRemoved(sender As Object, e As DriveRemovedEventArgs)
+        Public Event DriveRemoved(sender As Object, e As DriveWatcherRemovedEventArgs)
 
         ''' <summary>
         ''' Wird ausgelöst, wenn ein Medium in einem bestehenden Wechsel-/CD-/DVD-Laufwerk eingelegt wurde.
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz des <see cref="DriveWatcher"/>.</param>
-        ''' <param name="e">Die Laufwerksinformationen im <see cref="DriveAddedEventArgs"/>.</param>
+        ''' <param name="e">Die Laufwerksinformationen im <see cref="DriveWatcherAddedEventArgs"/>.</param>
         <Description("Wird ausgelöst wenn ein Medium eingelegt wurde.")>
-        Public Event MediaInserted(sender As Object, e As DriveAddedEventArgs)
+        Public Event MediaInserted(sender As Object, e As DriveWatcherAddedEventArgs)
 
         ''' <summary>
         ''' Wird ausgelöst, wenn ein Medium aus einem bestehenden Wechsel-/CD-/DVD-Laufwerk entfernt wurde.
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz des <see cref="DriveWatcher"/>.</param>
-        ''' <param name="e">Informationen zum Laufwerk im <see cref="DriveRemovedEventArgs"/>.</param>
+        ''' <param name="e">Informationen zum Laufwerk im <see cref="DriveWatcherRemovedEventArgs"/>.</param>
         <Description("Wird ausgelöst wenn ein Medium entfernt wurde.")>
-        Public Event MediaRemoved(sender As Object, e As DriveRemovedEventArgs)
+        Public Event MediaRemoved(sender As Object, e As DriveWatcherRemovedEventArgs)
 
         ''' <summary>
         ''' Wird ausgelöst, wenn ein Netzlaufwerk hinzugefügt wurde.
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz des <see cref="DriveWatcher"/>.</param>
-        ''' <param name="e">Die Laufwerksinformationen im <see cref="DriveAddedEventArgs"/>.</param>
+        ''' <param name="e">Die Laufwerksinformationen im <see cref="DriveWatcherAddedEventArgs"/>.</param>
         <Description("Wird ausgelöst wenn ein Netzlaufwerk hinzugefügt wurde.")>
-        Public Event NetworkDriveAdded(sender As Object, e As DriveAddedEventArgs)
+        Public Event NetworkDriveAdded(sender As Object, e As DriveWatcherAddedEventArgs)
 
         ''' <summary>
         ''' Wird ausgelöst, wenn ein Netzlaufwerk entfernt wurde.
         ''' </summary>
         ''' <param name="sender">Die auslösende Instanz des <see cref="DriveWatcher"/>.</param>
-        ''' <param name="e">Informationen zum entfernten Netzlaufwerk im <see cref="DriveRemovedEventArgs"/>.</param>
+        ''' <param name="e">Informationen zum entfernten Netzlaufwerk im <see cref="DriveWatcherRemovedEventArgs"/>.</param>
         <Description("Wird ausgelöst wenn ein Netzlaufwerk entfernt wurde.")>
-        Public Event NetworkDriveRemoved(sender As Object, e As DriveRemovedEventArgs)
+        Public Event NetworkDriveRemoved(sender As Object, e As DriveWatcherRemovedEventArgs)
 
 #End Region
 
@@ -205,7 +205,7 @@ Namespace DriveWatcherControl
             MyBase.New()
             Me.InitializeComponent()
             ' WithEvents registriert die Handler einmalig für dieses Empfangsfenster.
-            Me.NatForm = New NativeForm()
+            Me.NatForm = New DriveWatcherNativeForm()
 
         End Sub
 
@@ -223,7 +223,7 @@ Namespace DriveWatcherControl
         ''' <param name="sender">Das native Empfangsfenster.</param>
         ''' <param name="e">Der Name des hinzugefügten Laufwerks.</param>
         Private Sub NatForm_DriveAdded(sender As Object, e As String) Handles NatForm.DriveAdded
-            Me.OnDriveAdded(Me.ReadDriveInfo(e, DriveEventType.Added))
+            Me.OnDriveAdded(Me.ReadDriveInfo(e, DriveWatcherEventType.Added))
         End Sub
 
         ''' <summary>
@@ -234,7 +234,7 @@ Namespace DriveWatcherControl
         Private Sub NatForm_DriveRemoved(sender As Object, e As String) Handles NatForm.DriveRemoved
 
             ' Beim Entfernen ist typischerweise nur noch der Laufwerksname zuverlässig vorhanden.
-            Dim arg As New DriveRemovedEventArgs(e)
+            Dim arg As New DriveWatcherRemovedEventArgs(e)
             Me.OnDriveRemoved(arg)
 
         End Sub
@@ -243,11 +243,11 @@ Namespace DriveWatcherControl
         ''' Übernimmt das interne NativeForm-Ereignis für ein eingelegtes Medium in einem bestehenden
         ''' Wechsel-/CD-/DVD-Laufwerk.
         ''' </summary>
-        ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
+        ''' <param name="sender">Die auslösende Instanz von <see cref="DriveWatcherNativeForm"/>.</param>
         ''' <param name="e">Die Laufwerksinformationen des betroffenen Laufwerks.</param>
         Private Sub NatForm_MediaInserted(sender As Object, e As String) Handles NatForm.MediaInserted
 
-            Me.OnMediaInserted(Me.ReadDriveInfo(e, DriveEventType.MediaInserted))
+            Me.OnMediaInserted(Me.ReadDriveInfo(e, DriveWatcherEventType.MediaInserted))
 
         End Sub
 
@@ -255,11 +255,11 @@ Namespace DriveWatcherControl
         ''' Übernimmt das interne NativeForm-Ereignis für ein entferntes Medium aus einem bestehenden
         ''' Wechsel-/CD-/DVD-Laufwerk.
         ''' </summary>
-        ''' <param name="sender">Die auslösende Instanz von <see cref="NativeForm"/>.</param>
+        ''' <param name="sender">Die auslösende Instanz von <see cref="DriveWatcherNativeForm"/>.</param>
         ''' <param name="e">Die Laufwerksinformationen des betroffenen Laufwerks.</param>
         Private Sub NatForm_MediaRemoved(sender As Object, e As String) Handles NatForm.MediaRemoved
 
-            Dim arg As New DriveRemovedEventArgs(e)
+            Dim arg As New DriveWatcherRemovedEventArgs(e)
             Me.OnMediaRemoved(arg)
 
         End Sub
@@ -275,7 +275,7 @@ Namespace DriveWatcherControl
         ''' <param name="e">Der Name des hinzugefügten Netzlaufwerks.</param>
         Private Sub NatForm_NetworkDriveAdded(sender As Object, e As String) Handles NatForm.NetworkDriveAdded
 
-            Me.OnNetworkDriveAdded(Me.ReadDriveInfo(e, DriveEventType.NetworkAdded))
+            Me.OnNetworkDriveAdded(Me.ReadDriveInfo(e, DriveWatcherEventType.NetworkAdded))
 
         End Sub
 
@@ -295,8 +295,8 @@ Namespace DriveWatcherControl
         ''' <param name="driveName">Der Name des zu lesenden Laufwerks.</param>
         ''' <param name="eventType">Der Ereignistyp für die Diagnose.</param>
         ''' <returns>Die gelesenen Laufwerksinformationen einschließlich etwaiger Lesefehler.</returns>
-        Private Function ReadDriveInfo(driveName As String, eventType As DriveEventType) As DriveAddedEventArgs
-            Dim result As DriveAddedEventArgs = DriveInfoSnapshotReader.Read(driveName)
+        Private Function ReadDriveInfo(driveName As String, eventType As DriveWatcherEventType) As DriveWatcherAddedEventArgs
+            Dim result As DriveWatcherAddedEventArgs = DriveWatcherInfoSnapshotReader.Read(driveName)
             If Me.IsTraceEnabled(System.Diagnostics.TraceLevel.Error) Then
                 For Each entry In result.ReadErrors
                     WriteDiagnostic($"ReadError Event={eventType} Drive={driveName} Field={entry.Key} Exception={entry.Value.GetType().FullName} Message={entry.Value.Message}")
@@ -328,7 +328,7 @@ Namespace DriveWatcherControl
         ''' <param name="e">Der Name des entfernten Netzlaufwerks.</param>
         Private Sub NatForm_NetworkDriveRemoved(sender As Object, e As String) Handles NatForm.NetworkDriveRemoved
 
-            Dim arg As New DriveRemovedEventArgs(e)
+            Dim arg As New DriveWatcherRemovedEventArgs(e)
             Me.OnNetworkDriveRemoved(arg)
 
         End Sub
@@ -337,10 +337,10 @@ Namespace DriveWatcherControl
         ''' Löst das öffentliche Ereignis <see cref="DriveAdded"/> aus.
         ''' </summary>
         ''' <param name="e">Die Ereignisdaten des hinzugefügten Laufwerks.</param>
-        Protected Overridable Sub OnDriveAdded(e As DriveAddedEventArgs)
+        Protected Overridable Sub OnDriveAdded(e As DriveWatcherAddedEventArgs)
 
             ' Verhindert doppelte Signale bei schnellen Mehrfachmeldungen derselben Quelle.
-            If Me.IsDebouncedEvent(e.DriveName, DriveEventType.Added) Then Return
+            If Me.IsDebouncedEvent(e.DriveName, DriveWatcherEventType.Added) Then Return
 
             Me.DispatchEvent(Sub() RaiseEvent DriveAdded(Me, e))
 
@@ -350,10 +350,10 @@ Namespace DriveWatcherControl
         ''' Löst das öffentliche Ereignis <see cref="DriveRemoved"/> aus.
         ''' </summary>
         ''' <param name="e">Die Ereignisdaten des entfernten Laufwerks.</param>
-        Protected Overridable Sub OnDriveRemoved(e As DriveRemovedEventArgs)
+        Protected Overridable Sub OnDriveRemoved(e As DriveWatcherRemovedEventArgs)
 
             ' Verhindert doppelte Signale bei schnellen Mehrfachmeldungen derselben Quelle.
-            If Me.IsDebouncedEvent(e.DriveName, DriveEventType.Removed) Then Return
+            If Me.IsDebouncedEvent(e.DriveName, DriveWatcherEventType.Removed) Then Return
 
             Me.DispatchEvent(Sub() RaiseEvent DriveRemoved(Me, e))
 
@@ -363,9 +363,9 @@ Namespace DriveWatcherControl
         ''' Löst das öffentliche Ereignis <see cref="MediaInserted"/> aus.
         ''' </summary>
         ''' <param name="e">Die Ereignisdaten des eingelegten Mediums.</param>
-        Protected Overridable Sub OnMediaInserted(e As DriveAddedEventArgs)
+        Protected Overridable Sub OnMediaInserted(e As DriveWatcherAddedEventArgs)
 
-            If Me.IsDebouncedEvent(e.DriveName, DriveEventType.MediaInserted) Then Return
+            If Me.IsDebouncedEvent(e.DriveName, DriveWatcherEventType.MediaInserted) Then Return
 
             Me.DispatchEvent(Sub() RaiseEvent MediaInserted(Me, e))
 
@@ -375,9 +375,9 @@ Namespace DriveWatcherControl
         ''' Löst das öffentliche Ereignis <see cref="MediaRemoved"/> aus.
         ''' </summary>
         ''' <param name="e">Die Ereignisdaten des entfernten Mediums.</param>
-        Protected Overridable Sub OnMediaRemoved(e As DriveRemovedEventArgs)
+        Protected Overridable Sub OnMediaRemoved(e As DriveWatcherRemovedEventArgs)
 
-            If Me.IsDebouncedEvent(e.DriveName, DriveEventType.MediaRemoved) Then Return
+            If Me.IsDebouncedEvent(e.DriveName, DriveWatcherEventType.MediaRemoved) Then Return
 
             Me.DispatchEvent(Sub() RaiseEvent MediaRemoved(Me, e))
 
@@ -387,9 +387,9 @@ Namespace DriveWatcherControl
         ''' Löst das öffentliche Ereignis <see cref="NetworkDriveAdded"/> aus.
         ''' </summary>
         ''' <param name="e">Die Ereignisdaten des hinzugefügten Netzlaufwerks.</param>
-        Protected Overridable Sub OnNetworkDriveAdded(e As DriveAddedEventArgs)
+        Protected Overridable Sub OnNetworkDriveAdded(e As DriveWatcherAddedEventArgs)
 
-            If Me.IsDebouncedEvent(e.DriveName, DriveEventType.NetworkAdded) Then Return
+            If Me.IsDebouncedEvent(e.DriveName, DriveWatcherEventType.NetworkAdded) Then Return
 
             Me.DispatchEvent(Sub() RaiseEvent NetworkDriveAdded(Me, e))
 
@@ -399,9 +399,9 @@ Namespace DriveWatcherControl
         ''' Löst das öffentliche Ereignis <see cref="NetworkDriveRemoved"/> aus.
         ''' </summary>
         ''' <param name="e">Die Ereignisdaten des entfernten Netzlaufwerks.</param>
-        Protected Overridable Sub OnNetworkDriveRemoved(e As DriveRemovedEventArgs)
+        Protected Overridable Sub OnNetworkDriveRemoved(e As DriveWatcherRemovedEventArgs)
 
-            If Me.IsDebouncedEvent(e.DriveName, DriveEventType.NetworkRemoved) Then Return
+            If Me.IsDebouncedEvent(e.DriveName, DriveWatcherEventType.NetworkRemoved) Then Return
 
             Me.DispatchEvent(Sub() RaiseEvent NetworkDriveRemoved(Me, e))
 
@@ -467,7 +467,7 @@ Namespace DriveWatcherControl
         ''' <returns>
         ''' <see langword="True"/>, wenn das Ereignis unterdrückt werden soll; andernfalls <see langword="False"/>.
         ''' </returns>
-        Private Function IsDebouncedEvent(driveName As String, eventType As DriveEventType) As Boolean
+        Private Function IsDebouncedEvent(driveName As String, eventType As DriveWatcherEventType) As Boolean
 
             Dim duplicate As Boolean = Me._debouncer.IsDuplicate(driveName, eventType)
             If Me.IsTraceEnabled(System.Diagnostics.TraceLevel.Info) Then

@@ -9,7 +9,7 @@ Imports System.IO
 Namespace DriveWatcherControl
 
 	''' <summary>Definiert die Datenquelle für eine Laufwerksmomentaufnahme.</summary>
-    Friend Interface IDriveInfoSource
+    Friend Interface DriveWatcherIDriveInfoSource
 
 		''' <summary>Ruft den Laufwerkstyp ab.</summary>
         ReadOnly Property DriveType As DriveType

@@ -19,7 +19,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <TestMethod>
         Public Sub Read_ReadyDrive_ReturnsAllValues()
             Dim source As New FakeSource()
-            Dim result = DriveInfoSnapshotReader.Read("X:\", Function(name) source)
+            Dim result = DriveWatcherInfoSnapshotReader.Read("X:\", Function(name) source)
             Assert.AreEqual("X:\", result.DriveName)
             Assert.AreEqual(DriveType.Fixed, result.DriveType)
             Assert.IsTrue(result.IsReady)
@@ -42,7 +42,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             Dim source As New FakeSource()
             Dim failure As New IOException("read failed")
             source.Failures.Add(propertyName, failure)
-            Dim result = DriveInfoSnapshotReader.Read("X:\", Function(name) source)
+            Dim result = DriveWatcherInfoSnapshotReader.Read("X:\", Function(name) source)
             Assert.HasCount(1, result.ReadErrors)
             Assert.AreSame(failure, result.ReadErrors(propertyName))
             Assert.AreEqual(If(propertyName = "DriveType", DriveType.Unknown, DriveType.Fixed), result.DriveType)
@@ -63,7 +63,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             source.Failures.Add("VolumeLabel", denied)
             source.Failures.Add("TotalSize", security)
             source.Failures.Add("DriveFormat", win32)
-            Dim result = DriveInfoSnapshotReader.Read("X:\", Function(name) source)
+            Dim result = DriveWatcherInfoSnapshotReader.Read("X:\", Function(name) source)
             Assert.HasCount(3, result.ReadErrors)
             Assert.AreSame(denied, result.ReadErrors("VolumeLabel"))
             Assert.AreSame(security, result.ReadErrors("TotalSize"))
@@ -76,13 +76,13 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <TestMethod>
         Public Sub Read_NotReadyOrReadinessFailure_DoesNotReadDetails()
             Dim source As New FakeSource With {.Ready = False}
-            Dim result = DriveInfoSnapshotReader.Read("X:\", Function(name) source)
+            Dim result = DriveWatcherInfoSnapshotReader.Read("X:\", Function(name) source)
             Assert.IsFalse(result.IsReady)
             Assert.IsEmpty(result.ReadErrors)
             Assert.AreEqual(0, source.DetailReads)
             Dim failure As New IOException()
             source.Failures.Add("IsReady", failure)
-            result = DriveInfoSnapshotReader.Read("X:\", Function(name) source)
+            result = DriveWatcherInfoSnapshotReader.Read("X:\", Function(name) source)
             Assert.IsFalse(result.IsReady)
             Assert.AreSame(failure, result.ReadErrors("IsReady"))
             Assert.AreEqual(0, source.DetailReads)
@@ -91,10 +91,10 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <TestMethod>
         Public Sub Read_FactoryFailure_RetainsNameAndReportsFailure()
             Dim failure As New ArgumentException("invalid drive")
-            Dim factory As Func(Of String, IDriveInfoSource) = Function(name)
+            Dim factory As Func(Of String, DriveWatcherIDriveInfoSource) = Function(name)
                                                                    Throw failure
                                                                End Function
-            Dim result = DriveInfoSnapshotReader.Read("X:\", factory)
+            Dim result = DriveWatcherInfoSnapshotReader.Read("X:\", factory)
             Assert.AreEqual("X:\", result.DriveName)
             Assert.AreSame(failure, result.ReadErrors("DriveInfo"))
             Assert.AreEqual(DriveType.Unknown, result.DriveType)
@@ -107,12 +107,12 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             source.Failures.Add("VolumeLabel", New InvalidOperationException("unexpected"))
             Dim unused = Assert.ThrowsExactly(Of InvalidOperationException)(
                 Sub()
-                    Dim unused1 = DriveInfoSnapshotReader.Read("X:\", Function(name) source)
+                    Dim unused1 = DriveWatcherInfoSnapshotReader.Read("X:\", Function(name) source)
                 End Sub)
         End Sub
 
         Private NotInheritable Class FakeSource
-            Implements IDriveInfoSource
+            Implements DriveWatcherIDriveInfoSource
 
             Friend ReadOnly Failures As New Dictionary(Of String, Exception)()
             Friend Ready As Boolean = True
@@ -124,37 +124,37 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Return resultValue
             End Function
 
-            Public ReadOnly Property DriveType As DriveType Implements IDriveInfoSource.DriveType
+            Public ReadOnly Property DriveType As DriveType Implements DriveWatcherIDriveInfoSource.DriveType
                 Get
                     Return Me.Value(NameOf(DriveType), IO.DriveType.Fixed)
                 End Get
             End Property
-            Public ReadOnly Property IsReady As Boolean Implements IDriveInfoSource.IsReady
+            Public ReadOnly Property IsReady As Boolean Implements DriveWatcherIDriveInfoSource.IsReady
                 Get
                     Return Me.Value(NameOf(IsReady), Me.Ready)
                 End Get
             End Property
-            Public ReadOnly Property VolumeLabel As String Implements IDriveInfoSource.VolumeLabel
+            Public ReadOnly Property VolumeLabel As String Implements DriveWatcherIDriveInfoSource.VolumeLabel
                 Get
                     Return Me.Value(NameOf(VolumeLabel), "Data", True)
                 End Get
             End Property
-            Public ReadOnly Property AvailableFreeSpace As Long Implements IDriveInfoSource.AvailableFreeSpace
+            Public ReadOnly Property AvailableFreeSpace As Long Implements DriveWatcherIDriveInfoSource.AvailableFreeSpace
                 Get
                     Return Me.Value(NameOf(AvailableFreeSpace), 11L, True)
                 End Get
             End Property
-            Public ReadOnly Property TotalFreeSpace As Long Implements IDriveInfoSource.TotalFreeSpace
+            Public ReadOnly Property TotalFreeSpace As Long Implements DriveWatcherIDriveInfoSource.TotalFreeSpace
                 Get
                     Return Me.Value(NameOf(TotalFreeSpace), 22L, True)
                 End Get
             End Property
-            Public ReadOnly Property TotalSize As Long Implements IDriveInfoSource.TotalSize
+            Public ReadOnly Property TotalSize As Long Implements DriveWatcherIDriveInfoSource.TotalSize
                 Get
                     Return Me.Value(NameOf(TotalSize), 33L, True)
                 End Get
             End Property
-            Public ReadOnly Property DriveFormat As String Implements IDriveInfoSource.DriveFormat
+            Public ReadOnly Property DriveFormat As String Implements DriveWatcherIDriveInfoSource.DriveFormat
                 Get
                     Return Me.Value(NameOf(DriveFormat), "NTFS", True)
                 End Get

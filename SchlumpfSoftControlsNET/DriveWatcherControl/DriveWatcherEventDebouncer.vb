@@ -11,7 +11,7 @@ Imports System.Diagnostics
 Namespace DriveWatcherControl
 
 		''' <summary>Unterdrückt kurzzeitig wiederholte Laufwerksereignisse gleichen Typs.</summary>
-    Friend NotInheritable Class DriveEventDebouncer
+    Friend NotInheritable Class DriveWatcherEventDebouncer
 
 		''' <summary>Zeitfenster für Wiederholungen in Millisekunden.</summary>
         Private Const WindowMilliseconds As Integer = 200
@@ -42,11 +42,13 @@ Namespace DriveWatcherControl
         ''' <exception cref="ArgumentOutOfRangeException">Die Frequenz ist nicht positiv.</exception>
         Friend Sub New(clock As Func(Of Long), frequency As Long)
 
-            'NOTE: Vermeidung prüfen
-#Disable Warning CA1510, CA1512 ' Die ThrowIf-Hilfen sind unter .NET Framework nicht verfügbar.
+#If NET8_0_OR_GREATER Then
+            ArgumentNullException.ThrowIfNull(clock, NameOf(clock))
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(frequency, NameOf(frequency))
+#Else
             If clock Is Nothing Then Throw New ArgumentNullException(NameOf(clock))
             If frequency <= 0 Then Throw New ArgumentOutOfRangeException(NameOf(frequency))
-#Enable Warning CA1510, CA1512
+#End If
             Me._clock = clock
             Me._frequency = frequency
 
@@ -56,7 +58,7 @@ Namespace DriveWatcherControl
         ''' <param name="driveName">Laufwerksname; <see langword="Nothing"/> gilt als leerer Name.</param>
         ''' <param name="eventType">Art des Ereignisses.</param>
         ''' <returns><see langword="True"/>, wenn das Ereignis noch als Duplikat gilt.</returns>
-        Friend Function IsDuplicate(driveName As String, eventType As DriveEventType) As Boolean
+        Friend Function IsDuplicate(driveName As String, eventType As DriveWatcherEventType) As Boolean
 
             SyncLock Me._syncRoot
 

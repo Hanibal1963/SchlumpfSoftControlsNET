@@ -57,6 +57,15 @@ Namespace ColorProgressBarControl
         ''' <summary>Aktueller Darstellungsmodus; Solid bewahrt die bisherige Darstellung.</summary>
         Private _progressStyle As ColorProgressBarStyle = ColorProgressBarStyle.Solid
 
+        ''' <summary>Aktiviert die Unterteilung der Zeichenfläche in Segmente.</summary>
+        Private _showSegments As Boolean
+
+        ''' <summary>Gewünschte Anzahl der Segmente.</summary>
+        Private _segmentCount As Integer = 10
+
+        ''' <summary>Gewünschter Abstand zwischen Segmenten in Pixeln.</summary>
+        Private _segmentSpacing As Integer = 2
+
         ''' <summary>Timer für die Animation, der nur bei Bedarf erzeugt wird.</summary>
         Private _marqueeTimer As Timer
 
@@ -129,6 +138,61 @@ Namespace ColorProgressBarControl
 #End Region
 
 #Region "öffentliche Eigenschaften"
+
+        ''' <summary>Aktiviert die segmentierte Darstellung; standardmäßig ausgeschaltet.</summary>
+        <Description("Aktiviert die segmentierte Darstellung.")>
+        <Browsable(True)>
+        <Category("Appearance")>
+        <DefaultValue(False)>
+        Public Property ShowSegments As Boolean
+            Get
+                Return Me._showSegments
+            End Get
+            Set(value As Boolean)
+                If Me._showSegments <> value Then
+                    Me._showSegments = value
+                    Me.Invalidate()
+                End If
+            End Set
+        End Property
+
+        ''' <summary>Bestimmt die gewünschte Segmentanzahl im Bereich 1 bis 1000.</summary>
+        ''' <exception cref="ArgumentOutOfRangeException">Die Anzahl liegt außerhalb des gültigen Bereichs.</exception>
+        <Description("Bestimmt die Anzahl der Segmente.")>
+        <Browsable(True)>
+        <Category("Appearance")>
+        <DefaultValue(10)>
+        Public Property SegmentCount As Integer
+            Get
+                Return Me._segmentCount
+            End Get
+            Set(value As Integer)
+                If value < 1 OrElse value > 1000 Then Throw New ArgumentOutOfRangeException(NameOf(value))
+                If Me._segmentCount <> value Then
+                    Me._segmentCount = value
+                    Me.Invalidate()
+                End If
+            End Set
+        End Property
+
+        ''' <summary>Bestimmt den gewünschten Segmentabstand in Pixeln im Bereich 0 bis 1000.</summary>
+        ''' <exception cref="ArgumentOutOfRangeException">Der Abstand liegt außerhalb des gültigen Bereichs.</exception>
+        <Description("Bestimmt den Abstand zwischen Segmenten in Pixeln.")>
+        <Browsable(True)>
+        <Category("Appearance")>
+        <DefaultValue(2)>
+        Public Property SegmentSpacing As Integer
+            Get
+                Return Me._segmentSpacing
+            End Get
+            Set(value As Integer)
+                If value < 0 OrElse value > 1000 Then Throw New ArgumentOutOfRangeException(NameOf(value))
+                If Me._segmentSpacing <> value Then
+                    Me._segmentSpacing = value
+                    Me.Invalidate()
+                End If
+            End Set
+        End Property
 
         ''' <summary>Aktiviert sanfte Übergänge bei Wertänderungen; standardmäßig ausgeschaltet.</summary>
         <Description("Aktiviert sanfte Übergänge bei Wertänderungen; standardmäßig ausgeschaltet.")>
@@ -698,6 +762,28 @@ Namespace ColorProgressBarControl
 
         End Function
 
+        ''' <summary>Begrenzt die Zeichnung auf gleichmäßig verteilte Segmente und zeichnet die Zwischenräume.</summary>
+        ''' <param name="graphics">Die Zeichenfläche mit bereits vorhandener Beschränkung.</param>
+        Private Sub ApplySegmentClip(graphics As Graphics)
+            Dim bounds As Rectangle = Me._cachedContentBounds
+            If bounds.Width <= 0 OrElse bounds.Height <= 0 Then Return
+            Dim count As Integer = Math.Min(Me._segmentCount, bounds.Width)
+            Dim spacing As Integer = If(count > 1, Math.Min(Me._segmentSpacing, (bounds.Width - count) \ (count - 1)), 0)
+            Dim totalWidth As Integer = bounds.Width - spacing * (count - 1)
+            Using segmentRegion As New Region(), gapBrush As New SolidBrush(Me.BackColor)
+                segmentRegion.MakeEmpty()
+                For index As Integer = 0 To count - 1
+                    Dim left As Integer = CInt(CLng(index) * totalWidth \ count) + index * spacing
+                    Dim right As Integer = CInt(CLng(index + 1) * totalWidth \ count) + index * spacing
+                    segmentRegion.Union(New Rectangle(bounds.X + left, bounds.Y, right - left, bounds.Height))
+                    If index < count - 1 AndAlso spacing > 0 Then
+                        graphics.FillRectangle(gapBrush, bounds.X + right, bounds.Y, spacing, bounds.Height)
+                    End If
+                Next
+                graphics.SetClip(segmentRegion, Drawing2D.CombineMode.Intersect)
+            End Using
+        End Sub
+
         ''' <summary>Prüft, ob ein sichtbarer wertabhängiger Übergang möglich ist.</summary>
         ''' <returns>Ob eine Animation zur Laufzeit gestartet werden darf.</returns>
         Private Function CanAnimateValue() As Boolean
@@ -953,24 +1039,34 @@ Namespace ColorProgressBarControl
             Dim fillBounds As Rectangle = If(Me._progressStyle = ColorProgressBarStyle.Marquee,
                 Me.GetMarqueeBounds(), Me._cachedFillBounds)
 
-            ' Pinsel werden bei Bedarf erzeugt und bis zur Farbänderung wiederverwendet.
-            If Me._progressStyle = ColorProgressBarStyle.Marquee Then
-                Dim content As Rectangle = Me._cachedContentBounds
-                Me.DrawEmptyRegion(e.Graphics, New Rectangle(content.X, content.Y, Math.Max(0, fillBounds.X - content.X), content.Height))
-                Me.DrawEmptyRegion(e.Graphics, New Rectangle(fillBounds.Right, content.Y, Math.Max(0, content.Right - fillBounds.Right), content.Height))
-            Else
-                Me.DrawEmptyRegion(e.Graphics, Me._cachedEmptyBounds)
+            Dim segmentState As Drawing2D.GraphicsState = Nothing
+            If Me._showSegments Then
+                segmentState = e.Graphics.Save()
             End If
-            Me.DrawStyledFill(e.Graphics, fillBounds)
+            Try
+                If Me._showSegments Then Me.ApplySegmentClip(e.Graphics)
 
-            If Me._IsGlossy AndAlso Me._cachedGlossBounds.Width > 0 AndAlso Me._cachedGlossBounds.Height > 0 Then
-                If Me._glossBrush Is Nothing Then
-                    Me._glossBrush = New SolidBrush(Color.FromArgb(100, 255, 255, 255))
+                ' Pinsel werden bei Bedarf erzeugt und bis zur Farbänderung wiederverwendet.
+                If Me._progressStyle = ColorProgressBarStyle.Marquee Then
+                    Dim content As Rectangle = Me._cachedContentBounds
+                    Me.DrawEmptyRegion(e.Graphics, New Rectangle(content.X, content.Y, Math.Max(0, fillBounds.X - content.X), content.Height))
+                    Me.DrawEmptyRegion(e.Graphics, New Rectangle(fillBounds.Right, content.Y, Math.Max(0, content.Right - fillBounds.Right), content.Height))
+                Else
+                    Me.DrawEmptyRegion(e.Graphics, Me._cachedEmptyBounds)
                 End If
-                e.Graphics.FillRectangle(Me._glossBrush, Me._cachedGlossBounds)
-            End If
+                Me.DrawStyledFill(e.Graphics, fillBounds)
 
-            If Me._showText Then Me.DrawProgressText(e.Graphics, fillBounds)
+                If Me._IsGlossy AndAlso Me._cachedGlossBounds.Width > 0 AndAlso Me._cachedGlossBounds.Height > 0 Then
+                    If Me._glossBrush Is Nothing Then
+                        Me._glossBrush = New SolidBrush(Color.FromArgb(100, 255, 255, 255))
+                    End If
+                    e.Graphics.FillRectangle(Me._glossBrush, Me._cachedGlossBounds)
+                End If
+
+                If Me._showText Then Me.DrawProgressText(e.Graphics, fillBounds)
+            Finally
+                If segmentState IsNot Nothing Then e.Graphics.Restore(segmentState)
+            End Try
 
             MyBase.OnPaint(e)
         End Sub

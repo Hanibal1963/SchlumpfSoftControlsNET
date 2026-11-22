@@ -21,15 +21,15 @@ Namespace DriveWatcherControl
         ReadOnly Property VolumeLabel As String
 
 		''' <summary>Ruft den für den aktuellen Benutzer verfügbaren freien Speicherplatz in Bytes ab.</summary>
-        ReadOnly Property AvailableFreeSpace As Long
+        ReadOnly Property AvailableFreeSpace As Int64
 
-		''' <summary>Ruft den gesamten freien Speicherplatz in Bytes ab.</summary>
-        ReadOnly Property TotalFreeSpace As Long
+        ''' <summary>Ruft den gesamten freien Speicherplatz in Bytes ab.</summary>
+        ReadOnly Property TotalFreeSpace As Int64
 
-		''' <summary>Ruft die Gesamtgröße in Bytes ab.</summary>
-        ReadOnly Property TotalSize As Long
+        ''' <summary>Ruft die Gesamtgröße in Bytes ab.</summary>
+        ReadOnly Property TotalSize As Int64
 
-		''' <summary>Ruft den Namen des Dateisystems ab.</summary>
+        ''' <summary>Ruft den Namen des Dateisystems ab.</summary>
         ReadOnly Property DriveFormat As String
 
     End Interface

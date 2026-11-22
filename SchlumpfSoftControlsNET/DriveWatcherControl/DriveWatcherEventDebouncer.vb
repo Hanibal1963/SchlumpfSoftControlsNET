@@ -14,21 +14,21 @@ Namespace DriveWatcherControl
     Friend NotInheritable Class DriveWatcherEventDebouncer
 
 		''' <summary>Zeitfenster für Wiederholungen in Millisekunden.</summary>
-        Private Const WindowMilliseconds As Integer = 200
+        Private Const WindowMilliseconds As Int32 = 200
 
         ''' <summary>Schützt den Ereignisspeicher vor gleichzeitigem Zugriff.</summary>
         Private ReadOnly _syncRoot As New Object()
 
         ''' <summary>Speichert Zeitstempel je Laufwerk und Ereignistyp.</summary>
-        Private ReadOnly _events As New Dictionary(Of String, Long?())(StringComparer.OrdinalIgnoreCase)
+        Private ReadOnly _events As New Dictionary(Of String, Int64?())(StringComparer.OrdinalIgnoreCase)
 
         ''' <summary>Liefert den aktuellen Zeitstempel.</summary>
-        Private ReadOnly _clock As Func(Of Long)
+        Private ReadOnly _clock As Func(Of Int64)
 
         ''' <summary>Gibt die Zeitstempeltakte pro Sekunde an.</summary>
-        Private ReadOnly _frequency As Long
+        Private ReadOnly _frequency As Int64
 
-		''' <summary>Initialisiert die Entprellung mit der Stoppuhr als Zeitquelle.</summary>
+        ''' <summary>Initialisiert die Entprellung mit der Stoppuhr als Zeitquelle.</summary>
         Friend Sub New()
 
             Me.New(AddressOf Stopwatch.GetTimestamp, Stopwatch.Frequency)
@@ -40,7 +40,7 @@ Namespace DriveWatcherControl
         ''' <param name="frequency">Positive Anzahl der Zeitstempeltakte pro Sekunde.</param>
         ''' <exception cref="ArgumentNullException">Die Zeitquelle ist <see langword="Nothing"/>.</exception>
         ''' <exception cref="ArgumentOutOfRangeException">Die Frequenz ist nicht positiv.</exception>
-        Friend Sub New(clock As Func(Of Long), frequency As Long)
+        Friend Sub New(clock As Func(Of Int64), frequency As Int64)
 
 #If NET8_0_OR_GREATER Then
             ArgumentNullException.ThrowIfNull(clock, NameOf(clock))
@@ -62,7 +62,7 @@ Namespace DriveWatcherControl
 
             SyncLock Me._syncRoot
 
-                Dim now As Long = Me._clock()
+                Dim now As Int64 = Me._clock()
                 Dim expiredDrives As New List(Of String)()
 
 				' Abgelaufene Zeitstempel entfernen und leere Laufwerkseinträge sammeln.
@@ -70,7 +70,7 @@ Namespace DriveWatcherControl
 
                     Dim hasActiveEvent As Boolean = False
 
-                    For index As Integer = 0 To entry.Value.Length - 1
+                    For index As Int32 = 0 To entry.Value.Length - 1
 
                         If entry.Value(index).HasValue Then
 
@@ -93,16 +93,16 @@ Namespace DriveWatcherControl
                 Next
 
                 Dim key As String = If(driveName, "")
-                Dim events As Long?() = Nothing
+                Dim events As Int64?() = Nothing
 
                 If Not Me._events.TryGetValue(key, events) Then
 
-                    events = New Long?(5) {}
+                    events = New Int64?(5) {}
                     Me._events.Add(key, events)
 
                 End If
 
-                Dim eventIndex As Integer = CInt(eventType)
+                Dim eventIndex As Int32 = CInt(eventType)
                 If events(eventIndex).HasValue Then Return True
 
                 ' Ein entgegengesetzter Zustandswechsel macht die frühere Meldung erneut möglich.
@@ -120,7 +120,7 @@ Namespace DriveWatcherControl
 		''' <param name="now">Aktueller Zeitstempel.</param>
 		''' <param name="previous">Zeitstempel des früheren Ereignisses.</param>
 		''' <returns><see langword="True"/>, wenn das Zeitfenster überschritten ist.</returns>
-        Private Function IsExpired(now As Long, previous As Long) As Boolean
+        Private Function IsExpired(now As Int64, previous As Int64) As Boolean
 
             Return CDbl(now - previous) * 1000.0 / Me._frequency > WindowMilliseconds
 

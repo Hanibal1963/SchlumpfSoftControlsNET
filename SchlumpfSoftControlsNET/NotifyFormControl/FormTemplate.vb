@@ -40,7 +40,7 @@ Namespace NotifyFormControl
         Private ReadOnly _slideTimer As New System.Windows.Forms.Timer()
         Private ReadOnly _fadeOutTimer As New System.Windows.Forms.Timer()
         Private ReadOnly _fadeInTimer As New System.Windows.Forms.Timer()
-        Private _slideTargetX As Integer
+        Private _slideTargetX As Int32
         Private _autoCloseCts As Threading.CancellationTokenSource
 
 #End Region
@@ -220,8 +220,8 @@ Namespace NotifyFormControl
 
         Private Sub SlideTimer_Tick(sender As Object, e As EventArgs)
             Try
-                Dim stepSize As Integer = 20
-                Dim x As Integer = Me.Location.X - stepSize
+                Dim stepSize As Int32 = 20
+                Dim x As Int32 = Me.Location.X - stepSize
                 If x <= _slideTargetX Then
                     x = _slideTargetX
                     _slideTimer.Stop()

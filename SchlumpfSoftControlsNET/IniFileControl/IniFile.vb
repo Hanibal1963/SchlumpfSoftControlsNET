@@ -775,7 +775,7 @@ Namespace IniFileControl
         Private Sub AddEntryLine(LineContent As String)
 
             ' Zeile im Format "Name = Wert" aufteilen und in den aktuellen Abschnitt schreiben.
-            Dim separatorIndex As Integer = LineContent.IndexOf("="c)
+            Dim separatorIndex As Int32 = LineContent.IndexOf("="c)
             Dim name As String = LineContent.Substring(0, separatorIndex).Trim
             Dim value As String = LineContent.Substring(separatorIndex + 1).Trim
             Me._Sections.Item(Me._CurrentSectionName).Add(name, value)

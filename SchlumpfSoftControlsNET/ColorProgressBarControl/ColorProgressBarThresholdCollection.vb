@@ -27,7 +27,7 @@ Namespace ColorProgressBarControl
         ''' <param name="index">Position des neuen Bereichs.</param>
         ''' <param name="item">Einzufügender Bereich.</param>
         ''' <exception cref="ArgumentNullException">Der Bereich ist Nothing.</exception>
-        Protected Overrides Sub InsertItem(index As Integer, item As ColorProgressBarThreshold)
+        Protected Overrides Sub InsertItem(index As Int32, item As ColorProgressBarThreshold)
 #If NETFRAMEWORK Then
             If item Is Nothing Then Throw New ArgumentNullException(NameOf(item))
 #Else
@@ -41,7 +41,7 @@ Namespace ColorProgressBarControl
         ''' <param name="index">Position des zu ersetzenden Bereichs.</param>
         ''' <param name="item">Neuer Bereich.</param>
         ''' <exception cref="ArgumentNullException">Der Bereich ist Nothing.</exception>
-        Protected Overrides Sub SetItem(index As Integer, item As ColorProgressBarThreshold)
+        Protected Overrides Sub SetItem(index As Int32, item As ColorProgressBarThreshold)
 #If NETFRAMEWORK Then
             If item Is Nothing Then Throw New ArgumentNullException(NameOf(item))
 #Else
@@ -53,7 +53,7 @@ Namespace ColorProgressBarControl
 
         ''' <summary>Entfernt einen Bereich und aktualisiert das Control.</summary>
         ''' <param name="index">Position des zu entfernenden Bereichs.</param>
-        Protected Overrides Sub RemoveItem(index As Integer)
+        Protected Overrides Sub RemoveItem(index As Int32)
             MyBase.RemoveItem(index)
             Me._changed()
         End Sub

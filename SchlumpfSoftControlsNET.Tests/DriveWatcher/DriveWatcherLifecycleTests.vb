@@ -22,12 +22,15 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
     <STATestClass>
     Public Class DriveWatcherLifecycleTests
 
-        Private Const WM_DEVICECHANGE As Integer = &H219
-        Private Const DBT_DEVICEARRIVAL As Integer = &H8000
-        Private Const DBT_DEVICEREMOVECOMPLETE As Integer = &H8004
-        Private Const DBT_DEVTYP_VOLUME As Integer = 2
-        Private Const DBTF_MEDIA As Short = 1
-        Private Const DBTF_NET As Short = 2
+        ''' <summary>Stellt das Abbruchtoken für wartende Testoperationen bereit.</summary>
+        Public Property TestContext As TestContext
+
+        Private Const WM_DEVICECHANGE As Int32 = &H219
+        Private Const DBT_DEVICEARRIVAL As Int32 = &H8000
+        Private Const DBT_DEVICEREMOVECOMPLETE As Int32 = &H8004
+        Private Const DBT_DEVTYP_VOLUME As Int32 = 2
+        Private Const DBTF_MEDIA As Int16 = 1
+        Private Const DBTF_NET As Int16 = 2
 
         <TestMethod>
         Public Sub Dispose_ReleasesTheOwnedWindowAndCanBeRepeated()
@@ -170,16 +173,16 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <DataRow(0, 0, 0)>
         <DataRow(1, 1, 0)>
         <DataRow(2, 0, 1)>
-        Public Sub VolumeArrival_ForwardsEachApplicableEventOnce(flags As Integer, expectedMedia As Integer, expectedNetwork As Integer)
+        Public Sub VolumeArrival_ForwardsEachApplicableEventOnce(flags As Int32, expectedMedia As Int32, expectedNetwork As Int32)
             Using watcher As New CountingDriveWatcher()
                 Dim nativeWindow As NativeWindow = GetNativeWindow(watcher)
                 Dim systemRoot As String = IO.Path.GetPathRoot(Environment.SystemDirectory)
                 Assert.IsNotNull(systemRoot)
-                Dim driveIndex As Integer = AscW(Char.ToUpperInvariant(systemRoot(0))) - AscW("A"c)
+                Dim driveIndex As Int32 = AscW(Char.ToUpperInvariant(systemRoot(0))) - AscW("A"c)
                 Assert.IsInRange(0, 25, driveIndex)
-                Dim driveEvents As Integer = 0
-                Dim mediaEvents As Integer = 0
-                Dim networkEvents As Integer = 0
+                Dim driveEvents As Int32 = 0
+                Dim mediaEvents As Int32 = 0
+                Dim networkEvents As Int32 = 0
                 AddHandler watcher.DriveAdded, Sub(sender, e) driveEvents += 1
                 AddHandler watcher.MediaInserted, Sub(sender, e) mediaEvents += 1
                 AddHandler watcher.NetworkDriveAdded, Sub(sender, e) networkEvents += 1
@@ -201,8 +204,8 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Dim otherWindow As NativeWindow = GetNativeWindow(otherWatcher)
                 Dim ownedHandle As IntPtr = ownedWindow.Handle
                 Dim otherHandle As IntPtr = otherWindow.Handle
-                Dim ownedMediaEvents As Integer = 0
-                Dim otherNetworkEvents As Integer = 0
+                Dim ownedMediaEvents As Int32 = 0
+                Dim otherNetworkEvents As Int32 = 0
                 AddHandler ownedWatcher.MediaRemoved, Sub(sender, e) ownedMediaEvents += 1
                 AddHandler otherWatcher.NetworkDriveRemoved, Sub(sender, e) otherNetworkEvents += 1
 
@@ -231,8 +234,8 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             Using watcher As New CountingDriveWatcher()
                 Dim nativeWindow As NativeWindow = GetNativeWindow(watcher)
                 Dim handle As IntPtr = nativeWindow.Handle
-                Dim removedEvents As Integer = 0
-                Dim mediaEvents As Integer = 0
+                Dim removedEvents As Int32 = 0
+                Dim mediaEvents As Int32 = 0
                 AddHandler watcher.DriveRemoved,
                     Sub(sender, e)
                         removedEvents += 1
@@ -256,9 +259,9 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         Public Sub NativeDeviceMessage_RaisesEventOnExpectedThread(useSynchronizingControl As Boolean)
             Using target As New Control(), ready As New ManualResetEventSlim(), stopWorker As New ManualResetEventSlim(), received As New ManualResetEventSlim()
                 Dim targetHandle As IntPtr = target.Handle
-                Dim targetThread As Integer = Environment.CurrentManagedThreadId
-                Dim sourceThread As Integer = 0
-                Dim handlerThread As Integer = 0
+                Dim targetThread As Int32 = Environment.CurrentManagedThreadId
+                Dim sourceThread As Int32 = 0
+                Dim handlerThread As Int32 = 0
                 Dim sourceHandle As IntPtr = IntPtr.Zero
                 Dim eventSender As Object = Nothing
                 Dim expectedSender As DriveWatcher = Nothing
@@ -280,7 +283,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                                                      sourceThread = Environment.CurrentManagedThreadId
                                                      sourceHandle = GetNativeWindow(watcher).Handle
                                                      ready.Set()
-                                                     While Not stopWorker.Wait(5)
+                                                     While Not stopWorker.Wait(5, Me.TestContext.CancellationToken)
                                                          Application.DoEvents()
                                                      End While
                                                  End Using
@@ -298,13 +301,13 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Dim senderTask As Task = Nothing
                 Try
                     Assert.AreNotEqual(IntPtr.Zero, targetHandle)
-                    Assert.IsTrue(ready.Wait(TimeSpan.FromSeconds(5)))
+                    Assert.IsTrue(ready.Wait(TimeSpan.FromSeconds(5), Me.TestContext.CancellationToken))
                     If workerError IsNot Nothing Then ExceptionDispatchInfo.Capture(workerError).Throw()
                     Assert.AreNotEqual(IntPtr.Zero, sourceHandle)
                     Assert.AreNotEqual(targetThread, sourceThread)
 
-                    senderTask = Task.Run(Sub() SendVolumeRemoval(sourceHandle, 4, DBTF_MEDIA))
-                    Assert.IsTrue(senderTask.Wait(TimeSpan.FromSeconds(5)), "Die native Nachricht muss ohne Warten auf den Zielthread zurückkehren.")
+                    senderTask = Task.Run(Sub() SendVolumeRemoval(sourceHandle, 4, DBTF_MEDIA), Me.TestContext.CancellationToken)
+                    Assert.IsTrue(senderTask.Wait(TimeSpan.FromSeconds(5), Me.TestContext.CancellationToken), "Die native Nachricht muss ohne Warten auf den Zielthread zurückkehren.")
 
                     Dim timer As Stopwatch = Stopwatch.StartNew()
                     While Not received.IsSet AndAlso timer.Elapsed < TimeSpan.FromSeconds(5)
@@ -328,7 +331,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
         <TestMethod>
         Public Sub RepeatedCreationAndDisposal_DoesNotLeaveWindowsBehind()
-            For iteration As Integer = 1 To 32
+            For iteration As Int32 = 1 To 32
                 Dim watcher As New DriveWatcher()
                 Dim nativeWindow As NativeWindow = GetNativeWindow(watcher)
                 Dim handle As IntPtr = nativeWindow.Handle
@@ -359,7 +362,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <DataRow(12, 2, 1)>
         <DataRow(20, 0, 1)>
         <DataRow(20, 2, 0)>
-        Public Sub InvalidBroadcast_DoesNotRaiseEvents(size As Integer, deviceType As Integer, mask As Integer)
+        Public Sub InvalidBroadcast_DoesNotRaiseEvents(size As Int32, deviceType As Int32, mask As Int32)
             Using watcher As New CountingDriveWatcher()
                 Dim volume As New DeviceBroadcastVolume With {.Size = size, .DeviceType = deviceType, .UnitMask = mask}
                 Dim buffer As IntPtr = Marshal.AllocHGlobal(Marshal.SizeOf(Of DeviceBroadcastVolume)())
@@ -385,11 +388,11 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             End Using
         End Sub
 
-        Private Shared Sub SendVolumeRemoval(handle As IntPtr, unitMask As Integer, flags As Short)
+        Private Shared Sub SendVolumeRemoval(handle As IntPtr, unitMask As Int32, flags As Int16)
             SendVolumeChange(handle, DBT_DEVICEREMOVECOMPLETE, unitMask, flags)
         End Sub
 
-        Private Shared Sub SendVolumeChange(handle As IntPtr, eventType As Integer, unitMask As Integer, flags As Short)
+        Private Shared Sub SendVolumeChange(handle As IntPtr, eventType As Int32, unitMask As Int32, flags As Int16)
             Dim volume As New DeviceBroadcastVolume With {
                 .Size = Marshal.SizeOf(Of DeviceBroadcastVolume)(),
                 .DeviceType = DBT_DEVTYP_VOLUME,
@@ -409,11 +412,11 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
         <StructLayout(LayoutKind.Sequential)>
         Private Structure DeviceBroadcastVolume
-            Public Size As Integer
-            Public DeviceType As Integer
-            Public Reserved As Integer
-            Public UnitMask As Integer
-            Public Flags As Short
+            Public Size As Int32
+            Public DeviceType As Int32
+            Public Reserved As Int32
+            Public UnitMask As Int32
+            Public Flags As Int16
         End Structure
 
         <DllImport("user32.dll", SetLastError:=True)>
@@ -421,14 +424,14 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         End Function
 
         <DllImport("user32.dll", CharSet:=CharSet.Auto)>
-        Private Shared Function SendMessage(handle As IntPtr, message As Integer, wParam As IntPtr, lParam As IntPtr) As IntPtr
+        Private Shared Function SendMessage(handle As IntPtr, message As Int32, wParam As IntPtr, lParam As IntPtr) As IntPtr
         End Function
 
         Private NotInheritable Class CountingDriveWatcher
             Inherits DriveWatcher
 
-            Private _additionDispatches As Integer
-            Private _removalDispatches As Integer
+            Private _additionDispatches As Int32
+            Private _removalDispatches As Int32
 
             Public Sub New()
                 MyBase.New()
@@ -438,13 +441,13 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 MyBase.New(container)
             End Sub
 
-            Friend ReadOnly Property AdditionDispatches As Integer
+            Friend ReadOnly Property AdditionDispatches As Int32
                 Get
                     Return Me._additionDispatches
                 End Get
             End Property
 
-            Friend ReadOnly Property RemovalDispatches As Integer
+            Friend ReadOnly Property RemovalDispatches As Int32
                 Get
                     Return Me._removalDispatches
                 End Get
@@ -487,14 +490,14 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             Inherits DriveWatcher
 
             Private _initialized As Boolean
-            Private _disposeCalls As Integer
+            Private _disposeCalls As Int32
 
             Public Sub New(container As IContainer)
                 MyBase.New(container)
                 Me._initialized = True
             End Sub
 
-            Friend ReadOnly Property DisposeCalls As Integer
+            Friend ReadOnly Property DisposeCalls As Int32
                 Get
                     Return Me._disposeCalls
                 End Get

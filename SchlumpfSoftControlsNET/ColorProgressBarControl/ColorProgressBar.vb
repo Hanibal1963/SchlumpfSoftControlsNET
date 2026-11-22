@@ -28,7 +28,7 @@ Namespace ColorProgressBarControl
 #Region "Variablen"
 
         ''' <summary>Vorgesehene Fortschrittseinheit des Steuerelements.</summary>
-        Private ReadOnly _ProgressUnit As Integer = 20
+        Private ReadOnly _ProgressUnit As Int32 = 20
 
         ''' <summary>Verwaltet die lokalisierten Accessibility-Ressourcen.</summary>
         Private Shared ReadOnly _accessibilityResources As New ResourceManager("SchlumpfSoft.ControlsNET.ColorProgressBarAccessibility", GetType(ColorProgressBar).Assembly)
@@ -37,10 +37,10 @@ Namespace ColorProgressBarControl
         Private _uiaProvider As ProgressAutomationProvider
 
         ''' <summary>Aktueller begrenzter Fortschrittswert.</summary>
-        Private _ProgressValue As Integer = 1
+        Private _ProgressValue As Int32 = 1
 
         ''' <summary>Aktueller Maximalwert des Fortschritts.</summary>
-        Private _MaxValue As Integer = 10
+        Private _MaxValue As Int32 = 10
 
         ''' <summary>Gibt an, ob der Rahmen angezeigt wird.</summary>
         Private _ShowBorder As Boolean = True
@@ -64,16 +64,16 @@ Namespace ColorProgressBarControl
         Private _showSegments As Boolean
 
         ''' <summary>Gewünschte Anzahl der Segmente.</summary>
-        Private _segmentCount As Integer = 10
+        Private _segmentCount As Int32 = 10
 
         ''' <summary>Gewünschter Abstand zwischen Segmenten in Pixeln.</summary>
-        Private _segmentSpacing As Integer = 2
+        Private _segmentSpacing As Int32 = 2
 
         ''' <summary>Timer für die Animation, der nur bei Bedarf erzeugt wird.</summary>
         Private _marqueeTimer As Timer
 
         ''' <summary>Animationsposition in Tausendsteln eines vollständigen Durchlaufs.</summary>
-        Private _marqueePhase As Integer = 250
+        Private _marqueePhase As Int32 = 250
 
         ''' <summary>Aktiviert die zeitbasierte Darstellung von Wertänderungen.</summary>
         Private _animateValueChanges As Boolean
@@ -178,11 +178,11 @@ Namespace ColorProgressBarControl
         <Browsable(True)>
         <Category("Appearance")>
         <DefaultValue(10)>
-        Public Property SegmentCount As Integer
+        Public Property SegmentCount As Int32
             Get
                 Return Me._segmentCount
             End Get
-            Set(value As Integer)
+            Set(value As Int32)
                 If value < 1 OrElse value > 1000 Then Throw New ArgumentOutOfRangeException(NameOf(value))
                 If Me._segmentCount <> value Then
                     Me._segmentCount = value
@@ -197,11 +197,11 @@ Namespace ColorProgressBarControl
         <Browsable(True)>
         <Category("Appearance")>
         <DefaultValue(2)>
-        Public Property SegmentSpacing As Integer
+        Public Property SegmentSpacing As Int32
             Get
                 Return Me._segmentSpacing
             End Get
-            Set(value As Integer)
+            Set(value As Int32)
                 If value < 0 OrElse value > 1000 Then Throw New ArgumentOutOfRangeException(NameOf(value))
                 If Me._segmentSpacing <> value Then
                     Me._segmentSpacing = value
@@ -798,14 +798,14 @@ Namespace ColorProgressBarControl
         Private Sub ApplySegmentClip(graphics As Graphics)
             Dim bounds As Rectangle = Me._cachedContentBounds
             If bounds.Width <= 0 OrElse bounds.Height <= 0 Then Return
-            Dim count As Integer = Math.Min(Me._segmentCount, bounds.Width)
-            Dim spacing As Integer = If(count > 1, Math.Min(Me._segmentSpacing, (bounds.Width - count) \ (count - 1)), 0)
-            Dim totalWidth As Integer = bounds.Width - spacing * (count - 1)
+            Dim count As Int32 = Math.Min(Me._segmentCount, bounds.Width)
+            Dim spacing As Int32 = If(count > 1, Math.Min(Me._segmentSpacing, (bounds.Width - count) \ (count - 1)), 0)
+            Dim totalWidth As Int32 = bounds.Width - spacing * (count - 1)
             Using segmentRegion As New Region(), gapBrush As New SolidBrush(Me.BackColor)
                 segmentRegion.MakeEmpty()
-                For index As Integer = 0 To count - 1
-                    Dim left As Integer = CInt(CLng(index) * totalWidth \ count) + index * spacing
-                    Dim right As Integer = CInt(CLng(index + 1) * totalWidth \ count) + index * spacing
+                For index As Int32 = 0 To count - 1
+                    Dim left As Int32 = CInt(CLng(index) * totalWidth \ count) + index * spacing
+                    Dim right As Int32 = CInt(CLng(index + 1) * totalWidth \ count) + index * spacing
                     segmentRegion.Union(New Rectangle(bounds.X + left, bounds.Y, right - left, bounds.Height))
                     If index < count - 1 AndAlso spacing > 0 Then
                         graphics.FillRectangle(gapBrush, bounds.X + right, bounds.Y, spacing, bounds.Height)
@@ -906,10 +906,10 @@ Namespace ColorProgressBarControl
         Private Function GetMarqueeBounds() As Rectangle
             Dim bounds As Rectangle = Me._cachedContentBounds
             If bounds.Width <= 0 OrElse bounds.Height <= 0 Then Return New Rectangle(bounds.X, bounds.Y, 0, bounds.Height)
-            Dim blockWidth As Integer = Math.Max(1, bounds.Width \ 4)
-            Dim offset As Integer = CInt((CLng(Me._marqueePhase) * (CLng(bounds.Width) + blockWidth)) \ 1000) - blockWidth
-            Dim left As Integer = Math.Max(0, offset)
-            Dim right As Integer = CInt(Math.Min(CLng(bounds.Width), CLng(offset) + blockWidth))
+            Dim blockWidth As Int32 = Math.Max(1, bounds.Width \ 4)
+            Dim offset As Int32 = CInt((CLng(Me._marqueePhase) * (CLng(bounds.Width) + blockWidth)) \ 1000) - blockWidth
+            Dim left As Int32 = Math.Max(0, offset)
+            Dim right As Int32 = CInt(Math.Min(CLng(bounds.Width), CLng(offset) + blockWidth))
             Return New Rectangle(bounds.X + left, bounds.Y, Math.Max(0, right - left), bounds.Height)
         End Function
 
@@ -938,7 +938,6 @@ Namespace ColorProgressBarControl
                 Dim c As Color = barColor
                 Dim contrast As Color = Me.GetContrastColor(c)
 
-                'NOTE: mit Kontrast experimentieren
                 '50 % Balkenfarbe und 50 % Kontrastfarbe
                 'Dim accent As Color = Color.FromArgb(c.A, (CInt(c.R) + contrast.R) \ 2, (CInt(c.G) + contrast.G) \ 2, (CInt(c.B) + contrast.B) \ 2)
 

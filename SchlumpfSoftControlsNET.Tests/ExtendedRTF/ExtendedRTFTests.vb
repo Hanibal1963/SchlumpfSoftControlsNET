@@ -14,14 +14,26 @@ Namespace SchlumpfSoftControlsNET.Tests.ExtendedRTFControl
     <TestClass>
     Public Class ExtendedRTFTests
         <TestMethod>
-        Public Sub SelectionFontSize_RejectsValueBelowMinimum()
+        <DataRow(-1.0F)>
+        <DataRow(0.0F)>
+        <DataRow(5.0F)>
+        Public Sub SelectionFontSize_RejectsValueBelowMinimum(size As Single)
             Using control As New ExtendedRTF()
                 Try
-                    control.SelectionFontSize = 5.0F
+                    control.SelectionFontSize = size
                     Assert.Fail("Es wurde keine ArgumentOutOfRangeException ausgelöst.")
                 Catch ex As ArgumentOutOfRangeException
                     Assert.AreEqual("value", ex.ParamName)
                 End Try
+            End Using
+        End Sub
+
+        ''' <summary>Prüft, dass die kleinste zulässige Schriftgröße übernommen wird.</summary>
+        <TestMethod>
+        Public Sub SelectionFontSize_AcceptsMinimum()
+            Using control As New ExtendedRTF()
+                control.SelectionFontSize = 8.0F
+                Assert.AreEqual(8.0F, control.SelectionFontSize.Value)
             End Using
         End Sub
 

@@ -63,7 +63,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 control.Value = 5
                 Dim handle As IntPtr = control.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
-                Dim changes As Integer = 0
+                Dim changes As Int32 = 0
                 AddHandler control.Invalidated, Sub(sender, e) changes += 1
                 control.Thresholds.Add(New ColorProgressBarThreshold(0, 10, SystemColors.Highlight))
                 Assert.AreEqual(1, changes)
@@ -190,7 +190,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 For Each style As ColorProgressBarStyle In {ColorProgressBarStyle.Solid, ColorProgressBarStyle.Gradient,
                         ColorProgressBarStyle.Striped, ColorProgressBarStyle.Marquee}
                     control.ProgressStyle = style
-                    For Each value As Integer In {0, 10}
+                    For Each value As Int32 In {0, 10}
                         control.Value = value
                         Using image As Bitmap = RenderControl(control)
                             AssertPixel(Color.Black, image, 23, 10)
@@ -369,7 +369,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                         Using image As Bitmap = RenderControl(control)
                             Dim upper As Color = image.GetPixel(20, 9)
                             Dim lower As Color = image.GetPixel(20, 20)
-                            Dim difference As Integer = Math.Max(Math.Abs(CInt(upper.R) - CInt(lower.R)),
+                            Dim difference As Int32 = Math.Max(Math.Abs(CInt(upper.R) - CInt(lower.R)),
                                 Math.Max(Math.Abs(CInt(upper.G) - CInt(lower.G)), Math.Abs(CInt(upper.B) - CInt(lower.B))))
                             Assert.IsGreaterThan(45, difference, $"Farbe {color}, Glanz {glossy}")
                         End Using
@@ -394,9 +394,9 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                     For Each style As ColorProgressBarStyle In {ColorProgressBarStyle.Gradient, ColorProgressBarStyle.Striped}
                         control.ProgressStyle = style
                         Using styled As Bitmap = RenderControl(control)
-                            Dim differences As Integer = 0
-                            For y As Integer = 1 To 28
-                                For x As Integer = 1 To 50
+                            Dim differences As Int32 = 0
+                            For y As Int32 = 1 To 28
+                                For x As Int32 = 1 To 50
                                     If solid.GetPixel(x, y) <> styled.GetPixel(x, y) Then differences += 1
                                 Next
                             Next
@@ -424,7 +424,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                         control.Size = size
                         For Each color As Color In {Color.Black, Color.White, Color.Transparent}
                             control.BarColor = color
-                            For Each value As Integer In {0, 10}
+                            For Each value As Int32 In {0, 10}
                                 control.Value = value
                                 Using image As Bitmap = RenderControl(control)
                                     Assert.AreEqual(size, image.Size)
@@ -490,10 +490,10 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                     Using percentage As Bitmap = RenderControl(control)
                         control.TextFormat = ColorProgressBarTextFormat.Value
                         Using value As Bitmap = RenderControl(control)
-                            Dim visiblePixels As Integer = 0
-                            Dim differentPixels As Integer = 0
-                            For y As Integer = 1 To control.Height - 2
-                                For x As Integer = 1 To control.Width - 2
+                            Dim visiblePixels As Int32 = 0
+                            Dim differentPixels As Int32 = 0
+                            For y As Int32 = 1 To control.Height - 2
+                                For x As Int32 = 1 To control.Width - 2
                                     If withoutText.GetPixel(x, y) <> percentage.GetPixel(x, y) Then visiblePixels += 1
                                     If percentage.GetPixel(x, y) <> value.GetPixel(x, y) Then differentPixels += 1
                                 Next
@@ -548,23 +548,23 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Assert.IsNotNull(maximumDefault)
                 Assert.AreEqual(1, control.Value)
                 Assert.AreEqual(10, control.ProgressMaximumValue)
-                Assert.AreEqual(control.Value, DirectCast(valueDefault.Value, Integer))
-                Assert.AreEqual(control.ProgressMaximumValue, DirectCast(maximumDefault.Value, Integer))
+                Assert.AreEqual(control.Value, DirectCast(valueDefault.Value, Int32))
+                Assert.AreEqual(control.ProgressMaximumValue, DirectCast(maximumDefault.Value, Int32))
             End Using
         End Sub
 
         <TestMethod>
-        <DataRow(Integer.MinValue, Integer.MinValue, 1, 0)>
+        <DataRow(Int32.MinValue, Int32.MinValue, 1, 0)>
         <DataRow(0, 0, 1, 0)>
         <DataRow(1, 1, 1, 1)>
-        <DataRow(-5, Integer.MaxValue, 1, 1)>
+        <DataRow(-5, Int32.MaxValue, 1, 1)>
         <DataRow(10, -1, 10, 0)>
         <DataRow(10, 5, 10, 5)>
         <DataRow(10, 11, 10, 10)>
-        <DataRow(Integer.MaxValue, Integer.MinValue, Integer.MaxValue, 0)>
-        <DataRow(Integer.MaxValue, Integer.MaxValue - 1, Integer.MaxValue, Integer.MaxValue - 1)>
-        <DataRow(Integer.MaxValue, Integer.MaxValue, Integer.MaxValue, Integer.MaxValue)>
-        Public Sub Progress_BoundsInt32Inputs(maximum As Integer, value As Integer, expectedMaximum As Integer, expectedValue As Integer)
+        <DataRow(Int32.MaxValue, Int32.MinValue, Int32.MaxValue, 0)>
+        <DataRow(Int32.MaxValue, Int32.MaxValue - 1, Int32.MaxValue, Int32.MaxValue - 1)>
+        <DataRow(Int32.MaxValue, Int32.MaxValue, Int32.MaxValue, Int32.MaxValue)>
+        Public Sub Progress_BoundsInt32Inputs(maximum As Int32, value As Int32, expectedMaximum As Int32, expectedValue As Int32)
             Using control As New ColorProgressBar()
                 control.ProgressMaximumValue = maximum
                 control.Value = value
@@ -579,22 +579,22 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
             Using control As New ColorProgressBar()
                 control.Size = New Size(100, 20)
                 control.IsGlossy = False
-                control.ProgressMaximumValue = Integer.MaxValue
-                control.Value = Integer.MinValue
+                control.ProgressMaximumValue = Int32.MaxValue
+                control.Value = Int32.MinValue
 
                 Using image As Bitmap = RenderControl(control)
                     AssertPixel(Color.Silver, image, 1, 10)
                     AssertPixel(Color.Silver, image, 98, 10)
                 End Using
 
-                control.Value = Integer.MaxValue \ 2
+                control.Value = Int32.MaxValue \ 2
                 Using image As Bitmap = RenderControl(control)
                     AssertPixel(Color.Blue, image, 50, 10)
                     AssertPixel(Color.Silver, image, 51, 10)
                 End Using
 
-                control.Value = Integer.MaxValue
-                control.ProgressMaximumValue = Integer.MinValue
+                control.Value = Int32.MaxValue
+                control.ProgressMaximumValue = Int32.MinValue
                 Assert.AreEqual(1, control.ProgressMaximumValue)
                 Assert.AreEqual(1, control.Value)
                 Using image As Bitmap = RenderControl(control)
@@ -631,8 +631,8 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Dim handle As IntPtr = control.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
 
-                Dim observedValues As New List(Of Integer)()
-                Dim observedMaximums As New List(Of Integer)()
+                Dim observedValues As New List(Of Int32)()
+                Dim observedMaximums As New List(Of Int32)()
 
                 Using image As New Bitmap(100, 20)
 
@@ -660,10 +660,10 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                                 RemoveHandler control.Invalidated, onInvalidated
                             End Try
 
-                            Dim intvar1 As Integer() = New Integer() {4, 4, 7}
+                            Dim intvar1 As Int32() = New Int32() {4, 4, 7}
                             CollectionAssert.AreEqual(intvar1, observedValues.ToArray())
 
-                            Dim intvar2 As Integer() = New Integer() {4, 20, 20}
+                            Dim intvar2 As Int32() = New Int32() {4, 20, 20}
                             CollectionAssert.AreEqual(intvar2, observedMaximums.ToArray())
 
                             Assert.AreEqual(7, control.Value)
@@ -685,13 +685,13 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 control.Value = 5
                 Dim handle As IntPtr = control.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
-                Dim invalidationCount As Integer = 0
+                Dim invalidationCount As Int32 = 0
                 AddHandler control.Invalidated, Sub(sender, e) invalidationCount += 1
 
                 control.Value = 5
                 Assert.AreEqual(0, invalidationCount)
 
-                control.Value = Integer.MinValue
+                control.Value = Int32.MinValue
                 Assert.AreEqual(0, control.Value)
                 Assert.AreEqual(1, invalidationCount)
 
@@ -699,7 +699,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 control.Value = 0
                 Assert.AreEqual(1, invalidationCount)
 
-                control.Value = Integer.MaxValue
+                control.Value = Int32.MaxValue
                 Assert.AreEqual(10, control.Value)
                 Assert.AreEqual(2, invalidationCount)
 
@@ -715,7 +715,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 control.Value = 8
                 Dim handle As IntPtr = control.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
-                Dim invalidationCount As Integer = 0
+                Dim invalidationCount As Int32 = 0
                 AddHandler control.Invalidated, Sub(sender, e) invalidationCount += 1
 
                 control.ProgressMaximumValue = 10
@@ -726,16 +726,16 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Assert.AreEqual(1, control.Value)
                 Assert.AreEqual(1, invalidationCount)
 
-                control.ProgressMaximumValue = Integer.MinValue
+                control.ProgressMaximumValue = Int32.MinValue
                 control.ProgressMaximumValue = 1
                 Assert.AreEqual(1, invalidationCount)
 
-                control.ProgressMaximumValue = Integer.MaxValue
-                Assert.AreEqual(Integer.MaxValue, control.ProgressMaximumValue)
+                control.ProgressMaximumValue = Int32.MaxValue
+                Assert.AreEqual(Int32.MaxValue, control.ProgressMaximumValue)
                 Assert.AreEqual(1, control.Value)
                 Assert.AreEqual(2, invalidationCount)
 
-                control.ProgressMaximumValue = Integer.MaxValue
+                control.ProgressMaximumValue = Int32.MaxValue
                 Assert.AreEqual(2, invalidationCount)
             End Using
         End Sub
@@ -749,7 +749,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 control.IsGlossy = False
                 Dim handle As IntPtr = control.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
-                Dim invalidationCount As Integer = 0
+                Dim invalidationCount As Int32 = 0
                 AddHandler control.Invalidated, Sub(sender, e) invalidationCount += 1
 
                 Using image As Bitmap = RenderControl(control)
@@ -948,7 +948,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Assert.IsNotNull(glossBrush)
                 Assert.AreSame(emptyBrush, CachedBrush(control, "_emptyBrush"))
 
-                For index As Integer = 1 To 20
+                For index As Int32 = 1 To 20
                     Using image As Bitmap = RenderControl(control)
                         AssertPixel(Color.Blue, image, 10, 10)
                         AssertPixel(Color.Silver, image, 75, 10)
@@ -987,7 +987,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Dim emptyBrush As SolidBrush = CachedBrush(control, "_emptyBrush")
                 Assert.IsNotNull(barBrush)
                 Assert.IsNotNull(emptyBrush)
-                Dim invalidationCount As Integer = 0
+                Dim invalidationCount As Int32 = 0
                 AddHandler control.Invalidated, Sub(sender, e) invalidationCount += 1
 
                 control.BarColor = Color.Blue
@@ -1023,7 +1023,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 control.IsGlossy = False
                 Dim handle As IntPtr = control.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
-                Dim invalidationCount As Integer = 0
+                Dim invalidationCount As Int32 = 0
 
                 Using image As New Bitmap(100, 20)
                     Using graphics As Graphics = Graphics.FromImage(image)
@@ -1099,8 +1099,8 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                             Assert.AreEqual(systemColor, systemBar.Color)
                             Assert.AreEqual(systemColor, systemEmpty.Color)
 
-                            Dim systemEventCount As Integer = 0
-                            Dim invalidationCount As Integer = 0
+                            Dim systemEventCount As Int32 = 0
+                            Dim invalidationCount As Int32 = 0
                             Dim onSystemColorsChanged As EventHandler = Sub(sender, e)
                                                                             systemEventCount += 1
                                                                             control.PaintForTest(args)
@@ -1249,7 +1249,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
             Using control As New TestableColorProgressBar()
                 control.Size = New Size(100, 20)
                 control.Value = 5
-                Dim disposedEventCount As Integer = 0
+                Dim disposedEventCount As Int32 = 0
 
                 Using image As New Bitmap(100, 20)
                     Using graphics As Graphics = Graphics.FromImage(image)
@@ -1314,7 +1314,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
 
         <TestMethod>
         Public Sub RepeatedControlDisposal_ReleasesEveryCreatedBrush()
-            For index As Integer = 1 To 25
+            For index As Int32 = 1 To 25
                 Using control As New ColorProgressBar()
                     control.Size = New Size(100, 20)
                     control.Value = 5
@@ -1507,7 +1507,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Dim handle As IntPtr = control.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
                 Dim originalSize As Size = control.Size
-                Dim originalClientWidth As Integer = control.ClientSize.Width
+                Dim originalClientWidth As Int32 = control.ClientSize.Width
 
                 Using image As New Bitmap(100, 20)
                     Using graphics As Graphics = Graphics.FromImage(image)
@@ -1586,7 +1586,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
             Using control As New ColorProgressBar()
                 Dim handle As IntPtr = control.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
-                Dim invalidationCount As Integer = 0
+                Dim invalidationCount As Int32 = 0
                 AddHandler control.Invalidated, Sub(sender, e) invalidationCount += 1
 
                 Dim changes As Action() = {
@@ -1612,7 +1612,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
         Public Sub Paint_RaisesEventAfterDrawing()
             Using control As New ColorProgressBar()
                 control.Size = New Size(100, 20)
-                Dim paintCount As Integer = 0
+                Dim paintCount As Int32 = 0
                 AddHandler control.Paint, Sub(sender, e)
                                               paintCount += 1
                                               e.Graphics.FillRectangle(Brushes.Yellow, 10, 10, 1, 1)
@@ -1631,7 +1631,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 control.Size = New Size(100, 20)
                 control.Value = 5
                 control.IsGlossy = False
-                Dim paintCount As Integer = 0
+                Dim paintCount As Int32 = 0
                 AddHandler control.Paint, Sub(sender, e)
                                               paintCount += 1
                                               e.Graphics.FillRectangle(Brushes.Yellow, 10, 10, 1, 1)
@@ -1666,7 +1666,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 control.IsGlossy = False
                 Dim handle As IntPtr = control.Handle
                 Assert.AreNotEqual(IntPtr.Zero, handle)
-                Dim invalidationCount As Integer = 0
+                Dim invalidationCount As Int32 = 0
 
                 Using image As New Bitmap(100, 20)
                     Using graphics As Graphics = Graphics.FromImage(image)
@@ -1704,7 +1704,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
                 Assert.AreEqual(0, control.Controls.Count)
                 Assert.IsTrue(control.StandardClickEnabled)
 
-                Dim clickCount As Integer = 0
+                Dim clickCount As Int32 = 0
                 Dim eventSender As Object = Nothing
                 AddHandler control.Click, Sub(sender, e)
                                               clickCount += 1
@@ -1728,7 +1728,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
             End Try
         End Function
 
-        Private Shared Sub AssertPixel(expected As Color, image As Bitmap, x As Integer, y As Integer)
+        Private Shared Sub AssertPixel(expected As Color, image As Bitmap, x As Int32, y As Int32)
             Assert.AreEqual(expected.ToArgb(), image.GetPixel(x, y).ToArgb(), $"Unerwartete Farbe bei ({x}, {y}).")
         End Sub
 

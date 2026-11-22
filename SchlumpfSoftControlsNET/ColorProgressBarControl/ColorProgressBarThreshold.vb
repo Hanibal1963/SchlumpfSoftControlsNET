@@ -17,7 +17,7 @@ Namespace ColorProgressBarControl
         ''' <param name="maximum">Inklusive obere Grenze.</param>
         ''' <param name="color">Farbe für Werte innerhalb des Bereichs.</param>
         ''' <exception cref="ArgumentOutOfRangeException">Die Grenzen sind negativ oder vertauscht.</exception>
-        Public Sub New(minimum As Integer, maximum As Integer, color As Color)
+        Public Sub New(minimum As Int32, maximum As Int32, color As Color)
 #If NETFRAMEWORK Then
             If minimum < 0 Then Throw New ArgumentOutOfRangeException(NameOf(minimum))
             If maximum < minimum Then Throw New ArgumentOutOfRangeException(NameOf(maximum))
@@ -31,10 +31,10 @@ Namespace ColorProgressBarControl
         End Sub
 
         ''' <summary>Inklusive untere Grenze des Bereichs.</summary>
-        Public ReadOnly Property Minimum As Integer
+        Public ReadOnly Property Minimum As Int32
 
         ''' <summary>Inklusive obere Grenze des Bereichs.</summary>
-        Public ReadOnly Property Maximum As Integer
+        Public ReadOnly Property Maximum As Int32
 
         ''' <summary>Farbe des Bereichs, einschließlich transparenter und Systemfarben.</summary>
         Public ReadOnly Property Color As Color

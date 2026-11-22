@@ -37,7 +37,7 @@ Namespace WizardControl
             End Get
         End Property
 
-        Private ReadOnly Property CountGeneric As Integer Implements ICollection(Of WizardPage).Count, IReadOnlyCollection(Of WizardPage).Count
+        Private ReadOnly Property CountGeneric As Int32 Implements ICollection(Of WizardPage).Count, IReadOnlyCollection(Of WizardPage).Count
             Get
                 Return Me.List.Count
             End Get
@@ -73,7 +73,7 @@ Namespace WizardControl
             Return Me.List.Contains(Page)
         End Function
 
-        Public Overloads Sub RemoveAt(index As Integer) Implements IList(Of WizardPage).RemoveAt
+        Public Overloads Sub RemoveAt(index As Int32) Implements IList(Of WizardPage).RemoveAt
             Me.List.RemoveAt(index)
         End Sub
 
@@ -94,8 +94,8 @@ Namespace WizardControl
             Return False
         End Function
 
-        Public Sub CopyTo(array() As WizardPage, arrayIndex As Integer) Implements ICollection(Of WizardPage).CopyTo
-            For index As Integer = 0 To Me.List.Count - 1
+        Public Sub CopyTo(array() As WizardPage, arrayIndex As Int32) Implements ICollection(Of WizardPage).CopyTo
+            For index As Int32 = 0 To Me.List.Count - 1
                 array(arrayIndex + index) = CType(Me.List(index), WizardPage)
             Next
         End Sub

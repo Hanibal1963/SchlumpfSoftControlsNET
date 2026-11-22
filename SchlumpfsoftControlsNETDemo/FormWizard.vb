@@ -8,8 +8,8 @@ Imports SchlumpfSoft.ControlsNET
 
 Public Class FormWizard
 
-    Private oldindex As Integer
-    Private newindex As Integer
+    Private oldindex As Int32
+    Private newindex As Int32
 
     Public Sub New()
         Me.InitializeComponent()

@@ -152,7 +152,7 @@ Namespace DriveWatcherControl
         ''' <param name="driveName">Der erste gemeldete Laufwerksname.</param>
         ''' <param name="unitMask">Die unveränderte Laufwerksmaske.</param>
         ''' <param name="flags">Die unveränderten Volume-Flags.</param>
-        Public Event VolumeObserved(sender As Object, eventCode As Integer, driveName As String, unitMask As Integer, flags As Short)
+        Public Event VolumeObserved(sender As Object, eventCode As Int32, driveName As String, unitMask As Int32, flags As Int16)
 
         ''' <summary>Wird ausgelöst, wenn ein logisches Volume vom Betriebssystem als hinzugefügt gemeldet wird. </summary>
         ''' <param name="sender">Die auslösende Instanz von <see cref="DriveWatcherNativeForm"/>.</param>

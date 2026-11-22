@@ -44,7 +44,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
         <TestMethod>
         Public Sub CreateNewFile_UsesDefaultPrefixAndCreatesSampleContent()
             Using ini As New IniFile()
-                Dim changeCount As Integer
+                Dim changeCount As Int32
                 AddHandler ini.FileContentChanged, Sub(sender, e)
                                                        changeCount += 1
                                                    End Sub
@@ -131,7 +131,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
 
             Using ini As New IniFile()
                 ini.CreateNewFile()
-                Dim changeCount As Integer
+                Dim changeCount As Int32
                 AddHandler ini.FileContentChanged, Sub(sender, e)
                                                        changeCount += 1
                                                    End Sub
@@ -160,8 +160,8 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
         Public Sub AddSection_RaisesChangeEventAndRejectsDuplicateName()
             Using ini As New IniFile()
                 ini.CreateNewFile()
-                Dim changeCount As Integer
-                Dim duplicateCount As Integer
+                Dim changeCount As Int32
+                Dim duplicateCount As Int32
                 AddHandler ini.FileContentChanged, Sub(sender, e)
                                                        changeCount += 1
                                                    End Sub
@@ -186,7 +186,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
         Public Sub AddEntryAndSetEntryValue_UpdatesStructureAndSerializedContent()
             Using ini As New IniFile()
                 ini.CreateNewFile()
-                Dim changeCount As Integer
+                Dim changeCount As Int32
                 AddHandler ini.FileContentChanged, Sub(sender, e)
                                                        changeCount += 1
                                                    End Sub
@@ -207,8 +207,8 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
         Public Sub AddEntry_RaisesDuplicateEventWithoutChangingContent()
             Using ini As New IniFile()
                 ini.CreateNewFile()
-                Dim changeCount As Integer
-                Dim duplicateCount As Integer
+                Dim changeCount As Int32
+                Dim duplicateCount As Int32
                 AddHandler ini.FileContentChanged, Sub(sender, e)
                                                        changeCount += 1
                                                    End Sub
@@ -251,7 +251,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
         Public Sub RenameSection_RaisesDuplicateEventWithoutRenaming()
             Using ini As New IniFile()
                 ini.CreateNewFile()
-                Dim duplicateCount As Integer
+                Dim duplicateCount As Int32
                 AddHandler ini.SectionNameExist, Sub(sender, e)
                                                      duplicateCount += 1
                                                  End Sub
@@ -268,7 +268,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
         Public Sub RenameEntry_PreservesValueAndRejectsDuplicateName()
             Using ini As New IniFile()
                 ini.CreateNewFile()
-                Dim duplicateCount As Integer
+                Dim duplicateCount As Int32
                 AddHandler ini.EntryNameExist, Sub(sender, e)
                                                    duplicateCount += 1
                                                End Sub
@@ -313,7 +313,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
         Public Sub SetComments_ReplacesCommentsAndRegeneratesContent()
             Using ini As New IniFile()
                 ini.CreateNewFile("#"c)
-                Dim changeCount As Integer
+                Dim changeCount As Int32
                 AddHandler ini.FileContentChanged, Sub(sender, e)
                                                        changeCount += 1
                                                    End Sub
@@ -335,7 +335,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
         Public Sub SaveFileAs_WritesContentUpdatesPathAndRaisesChangeEvent()
             Using ini As New IniFile()
                 ini.CreateNewFile()
-                Dim changeCount As Integer
+                Dim changeCount As Int32
                 AddHandler ini.FileContentChanged, Sub(sender, e)
                                                        changeCount += 1
                                                    End Sub
@@ -367,7 +367,7 @@ Namespace SchlumpfSoftControlsNET.Tests.IniFileControl
                 ini.FileName = "autosave.ini"
                 ini.SaveFile()
                 ini.AutoSave = True
-                Dim changeCount As Integer
+                Dim changeCount As Int32
                 AddHandler ini.FileContentChanged, Sub(sender, e)
                                                        changeCount += 1
                                                    End Sub

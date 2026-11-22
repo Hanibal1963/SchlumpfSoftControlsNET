@@ -64,7 +64,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <DataRow(0, False)>
         <DataRow(1, True)>
         <DataRow(2, True)>
-        Public Sub TraceLevel_ReportsReadErrorsAccordingToThreshold(level As Integer, expected As Boolean)
+        Public Sub TraceLevel_ReportsReadErrorsAccordingToThreshold(level As Int32, expected As Boolean)
             Using listener As New RecordingListener(), watcher As New TestWatcher()
                 Dim unused = Trace.Listeners.Add(listener)
                 Try
@@ -96,7 +96,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                     watcher.TraceLevel = TraceLevel.Verbose
                     Dim nativeProperty = GetType(DriveWatcher).GetProperty("NatForm", BindingFlags.NonPublic Or BindingFlags.Instance)
                     Dim native = DirectCast(nativeProperty.GetValue(watcher), NativeWindow)
-                    Dim volume As New BroadcastVolume With {.Size = Marshal.SizeOf(Of BroadcastVolume)(), .DeviceType = 2, .UnitMask = 4, .Flags = Short.MinValue}
+                    Dim volume As New BroadcastVolume With {.Size = Marshal.SizeOf(Of BroadcastVolume)(), .DeviceType = 2, .UnitMask = 4, .Flags = Int16.MinValue}
                     Dim buffer As IntPtr = Marshal.AllocHGlobal(volume.Size)
                     Try
                         Marshal.StructureToPtr(volume, buffer, False)
@@ -140,15 +140,15 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
         <StructLayout(LayoutKind.Sequential)>
         Private Structure BroadcastVolume
-            Public Size As Integer
-            Public DeviceType As Integer
-            Public Reserved As Integer
-            Public UnitMask As Integer
-            Public Flags As Short
+            Public Size As Int32
+            Public DeviceType As Int32
+            Public Reserved As Int32
+            Public UnitMask As Int32
+            Public Flags As Int16
         End Structure
 
         <DllImport("user32.dll", CharSet:=CharSet.Auto)>
-        Private Shared Function SendMessage(handle As IntPtr, message As Integer, wParam As IntPtr, lParam As IntPtr) As IntPtr
+        Private Shared Function SendMessage(handle As IntPtr, message As Int32, wParam As IntPtr, lParam As IntPtr) As IntPtr
         End Function
     End Class
 End Namespace

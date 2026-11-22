@@ -53,7 +53,7 @@ Namespace SchlumpfSoftControlsNET.Tests.PasswordControl
         Public Sub PasswortChanged_ProvidesVerifiableCode()
             Using control As New Password()
                 Dim tb As TextBox = FindControl(Of TextBox)(control, "TB")
-                Dim raised As Integer = 0
+                Dim raised As Int32 = 0
                 Dim passwordCode As String = Nothing
 
                 AddHandler control.PasswortChanged,

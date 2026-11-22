@@ -66,14 +66,14 @@ Namespace SchlumpfSoftControlsNET.Tests.ImageComboBoxControl
                 Dim second As New ImageComboBoxItem("B")
                 Dim inserted As New ImageComboBoxItem("X")
                 Dim replacement As New ImageComboBoxItem("R")
-                Dim eventCount As Integer
+                Dim eventCount As Int32
 
                 AddHandler collection.UpdateItems, Sub(sender, e)
                                                        eventCount += 1
                                                    End Sub
 
-                Dim firstIndex As Integer = collection.Add(first)
-                Dim secondIndex As Integer = collection.Add(second)
+                Dim firstIndex As Int32 = collection.Add(first)
+                Dim secondIndex As Int32 = collection.Add(second)
                 collection.Insert(1, inserted)
                 collection(0) = replacement
 
@@ -97,7 +97,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ImageComboBoxControl
                 Dim second As New ImageComboBoxItem("2")
                 Dim third As New ImageComboBoxItem("3")
                 Dim missing As New ImageComboBoxItem("Fehlt")
-                Dim eventCount As Integer
+                Dim eventCount As Int32
 
                 Dim unused2 = collection.Add(first)
                 Dim unused1 = collection.Add(second)
@@ -184,7 +184,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ImageComboBoxControl
             Assert.AreEqual(GetType(ImageComboBoxItem), allowedTypes(0))
         End Sub
 
-        Private Shared Function BaseItemsCount(control As ImageComboBox) As Integer
+        Private Shared Function BaseItemsCount(control As ImageComboBox) As Int32
             Return DirectCast(control, ComboBox).Items.Count
         End Function
 

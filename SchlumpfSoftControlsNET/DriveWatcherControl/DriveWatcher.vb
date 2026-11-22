@@ -285,7 +285,7 @@ Namespace DriveWatcherControl
         ''' <param name="driveName">Der Name des betroffenen Laufwerks.</param>
         ''' <param name="unitMask">Die native Laufwerksbitmaske.</param>
         ''' <param name="flags">Die nativen Volume-Flags.</param>
-        Private Sub NatForm_VolumeObserved(sender As Object, eventCode As Integer, driveName As String, unitMask As Integer, flags As Short) Handles NatForm.VolumeObserved
+        Private Sub NatForm_VolumeObserved(sender As Object, eventCode As Int32, driveName As String, unitMask As Int32, flags As Int16) Handles NatForm.VolumeObserved
             If Me.IsTraceEnabled(System.Diagnostics.TraceLevel.Verbose) Then
                 WriteDiagnostic($"Native EventCode=0x{eventCode:X4} Drive={driveName} UnitMask=0x{unitMask:X8} Flags=0x{CInt(flags) And &HFFFF:X4}")
             End If

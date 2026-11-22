@@ -30,7 +30,7 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 - `Paint`: Registrierte Ereignishandler werden nach der Darstellung des Steuerelements aufgerufen und können diese ergänzen.
 
-- `SystemColorsChanged`: Bei Systemfarben in `BarColor` oder `EmptyColor` werden deren Brushes vor dem Aufruf der Ereignishandler verworfen und eine Neuzeichnung angefordert.
+- `SystemColorsChanged`: Bei Systemfarben in `BarColor`, `EmptyColor` oder einem Schwellenwert werden betroffene Brushes vor dem Aufruf der Ereignishandler verworfen und eine Neuzeichnung angefordert.
 
 ## 3. Eigenschaften
 
@@ -39,6 +39,8 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 - `ProgressMaximumValue` (`Int32`, Standardwert `10`): Gibt den Maximalwert des Fortschrittsbalkens zurück oder legt diesen fest. Eingaben kleiner als `1` werden auf `1` begrenzt; ein höherer Fortschrittswert wird auf das neue Maximum reduziert. Bleibt das begrenzte Maximum unverändert, wird keine Invalidierung ausgelöst.
 
 - `BarColor`: Gibt die Farbe des gefüllten Fortschrittsbereichs zurück oder legt diese fest. Transparente Farben, `Color.Empty` und Systemfarben werden unterstützt.
+
+- `Thresholds` (`ColorProgressBarThresholdCollection`, schreibgeschützt): Programmatisch bearbeitbare, geordnete Sammlung von Farbbereichen; standardmäßig leer. Einfügen oder Ersetzen mit `Nothing` löst `ArgumentNullException` aus. Die Sammlung wird nicht im WinForms-Designer serialisiert.
 
 - `EmptyColor`: Gibt die Farbe des leeren Fortschrittsbereichs zurück oder legt diese fest. Transparente Farben, `Color.Empty` und Systemfarben werden unterstützt.
 
@@ -92,6 +94,10 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 - `ColorProgressBarStyle`: Enumeration mit `Solid`, `Gradient`, `Striped` und `Marquee`.
 
+- `ColorProgressBarThreshold(minimum, maximum, color)`: Unveränderlicher Farbbereich mit inklusiven Grenzen `Minimum`, `Maximum` und `Color`. `minimum` muss mindestens `0`, `maximum` mindestens `minimum` sein; andernfalls wird `ArgumentOutOfRangeException` ausgelöst. Transparente Farben, `Color.Empty` und Systemfarben sind zulässig.
+
+- `ColorProgressBarThresholdCollection`: Geordnete Sammlung von `ColorProgressBarThreshold`; Hinzufügen, Ersetzen, Entfernen und Leeren aktualisieren die Anzeige. Eine Instanz wird vom Control bereitgestellt.
+
 ## 6. Hinweise
 
 - Das Minimum für `Value` ist fest `0`; `ProgressMaximumValue` liegt zwischen `1` und `Int32.MaxValue`. Werte außerhalb des gültigen Bereichs werden ohne Ausnahme auf die jeweiligen Grenzen begrenzt.
@@ -107,6 +113,15 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 - `Gradient` zeigt innerhalb der Füllung einen vertikalen Verlauf: Oben liegt die Mischung aus `BarColor` und Schwarz beziehungsweise Weiß, unten `BarColor`. `Striped` ergänzt diagonale Kontraststreifen. Die Textkontrastberechnung berücksichtigt diese Muster nicht. `Marquee` bewegt unabhängig von `Value` einen Balken durch die Innenfläche; optionaler Text und Accessibility melden weiterhin den tatsächlichen Wert. Die Animation läuft mit 50 ms Timerintervall nur zur Laufzeit, solange das Control sichtbar ist und ein Handle besitzt; nach Entsorgen wird der Timer freigegeben.
 
 - Bei `AnimateValueChanges` interpoliert die Füllung über 300 ms mit kubischem Ease-out zum Zielwert. Weitere Wertänderungen starten beim aktuellen Zwischenstand; Text und Accessibility melden sofort den Zielwert. Änderungen des Maximums, ausgeblendete Controls, Handle-Verlust, Designer und `Marquee` übernehmen den Zielwert sofort. Der Timer läuft nur während eines sichtbaren Übergangs und wird beim Entsorgen freigegeben.
+
+- Für Schwellenwerte gilt der erste Bereich, der den aktuell dargestellten Wert einschließlich seiner Grenzen enthält; ohne Treffer gilt `BarColor`. Überlappungen werden nach Reihenfolge der Sammlung aufgelöst. Bei Animation werden auch gebrochene Zwischenwerte geprüft; zwischen Bereichen mit Abstand gilt dort `BarColor`. Bei `Marquee` wird der tatsächliche `Value` verwendet. Füllung und Textkontrast verwenden dieselbe ausgewählte Farbe; `BarColor`, Wert und Accessibility bleiben unverändert. Bereiche oberhalb des Maximums bleiben gespeichert und werden bei einer späteren Erhöhung berücksichtigt.
+
+  Beispiel (bei `ProgressMaximumValue = 100`):
+
+  ```vb
+  progressBar.Thresholds.Add(New ColorProgressBarThreshold(0, 49, Color.Red))
+  progressBar.Thresholds.Add(New ColorProgressBarThreshold(50, 100, Color.Green))
+  ```
 
 - Segmente teilen die Innenfläche gleichmäßig auf; der Fortschritt füllt sie weiterhin kontinuierlich, sodass auch Teilsegmente möglich sind. Die Zwischenräume werden in `BackColor` gezeichnet. Füllung, Glanz und Text werden auf Segmentflächen beschränkt; `Paint`-Handler erhalten wieder die ursprüngliche Zeichenbeschränkung. Alle Darstellungsstile und animierte Übergänge sind kombinierbar. Bei Platzmangel wird zuerst die sichtbare Anzahl auf die Pixelbreite und danach der Abstand reduziert, sodass jedes sichtbare Segment mindestens ein Pixel breit bleibt. `SegmentSpacing = 0` zeichnet ohne Zwischenräume.
 

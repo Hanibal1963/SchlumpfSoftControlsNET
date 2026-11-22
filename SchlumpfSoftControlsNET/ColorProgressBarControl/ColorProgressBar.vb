@@ -57,6 +57,9 @@ Namespace ColorProgressBarControl
         ''' <summary>Aktueller Darstellungsmodus; Solid bewahrt die bisherige Darstellung.</summary>
         Private _progressStyle As ColorProgressBarStyle = ColorProgressBarStyle.Solid
 
+        ''' <summary>Geordnete Farbbereiche für die Fortschrittsanzeige.</summary>
+        Private ReadOnly _thresholds As ColorProgressBarThresholdCollection
+
         ''' <summary>Aktiviert die Unterteilung der Zeichenfläche in Segmente.</summary>
         Private _showSegments As Boolean
 
@@ -88,16 +91,19 @@ Namespace ColorProgressBarControl
         Private _valueAnimationTimer As Timer
 
         ''' <summary>Farbe des gefüllten Bereichs.</summary>
-        Private _BarColor As System.Drawing.Color = Color.Blue
+        Private _BarColor As Color = Color.Blue
 
         ''' <summary>Farbe des leeren Bereichs.</summary>
-        Private _EmptyColor As System.Drawing.Color = Color.Silver
+        Private _EmptyColor As Color = Color.Silver
 
         ''' <summary>Farbe des Rahmens.</summary>
-        Private _BorderColor As System.Drawing.Color = Color.Black
+        Private _BorderColor As Color = Color.Black
 
         ''' <summary>Wiederverwendeter Pinsel für den gefüllten Bereich.</summary>
         Private _barBrush As SolidBrush
+
+        ''' <summary>Ursprüngliche Farbe des zwischengespeicherten Füllpinsels.</summary>
+        Private _barBrushColor As Color
 
         ''' <summary>Wiederverwendeter Pinsel für den leeren Bereich.</summary>
         Private _emptyBrush As SolidBrush
@@ -138,6 +144,16 @@ Namespace ColorProgressBarControl
 #End Region
 
 #Region "öffentliche Eigenschaften"
+
+        ''' <summary>Geordnete Farbbereiche; bei Überlappung gilt der erste passende Eintrag.</summary>
+        ''' <remarks>Eine leere Sammlung verwendet unverändert <see cref="BarColor"/>.</remarks>
+        <Browsable(False)>
+        <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+        Public ReadOnly Property Thresholds As ColorProgressBarThresholdCollection
+            Get
+                Return Me._thresholds
+            End Get
+        End Property
 
         ''' <summary>Aktiviert die segmentierte Darstellung; standardmäßig ausgeschaltet.</summary>
         <Description("Aktiviert die segmentierte Darstellung.")>
@@ -517,6 +533,7 @@ Namespace ColorProgressBarControl
         ''' </summary>
         Public Sub New()
 
+            Me._thresholds = New ColorProgressBarThresholdCollection(AddressOf Me.ThresholdsChanged)
             ' Dieser Aufruf ist für den Designer erforderlich.
             Me.InitializeComponent()
 
@@ -762,6 +779,20 @@ Namespace ColorProgressBarControl
 
         End Function
 
+        ''' <summary>Invalidiert das Control nach einer Änderung der Farbbereiche.</summary>
+        Private Sub ThresholdsChanged()
+            If Not Me.IsDisposed AndAlso Not Me.Disposing Then Me.Invalidate()
+        End Sub
+
+        ''' <summary>Ermittelt die Farbe des dargestellten Fortschritts anhand der ersten passenden Schwelle.</summary>
+        ''' <returns>Die Bereichsfarbe oder die reguläre Balkenfarbe.</returns>
+        Private Function GetDisplayedBarColor() As Color
+            For Each threshold As ColorProgressBarThreshold In Me._thresholds
+                If Me._displayValue >= threshold.Minimum AndAlso Me._displayValue <= threshold.Maximum Then Return threshold.Color
+            Next
+            Return Me._BarColor
+        End Function
+
         ''' <summary>Begrenzt die Zeichnung auf gleichmäßig verteilte Segmente und zeichnet die Zwischenräume.</summary>
         ''' <param name="graphics">Die Zeichenfläche mit bereits vorhandener Beschränkung.</param>
         Private Sub ApplySegmentClip(graphics As Graphics)
@@ -885,10 +916,15 @@ Namespace ColorProgressBarControl
         ''' <summary>Zeichnet den gefüllten Bereich im gewählten Stil.</summary>
         ''' <param name="graphics">Die Zeichenfläche.</param>
         ''' <param name="bounds">Die Füllfläche innerhalb des Controls.</param>
-        Private Sub DrawStyledFill(graphics As Graphics, bounds As Rectangle)
+        ''' <param name="barColor">Die für den dargestellten Wert gültige Farbe.</param>
+        Private Sub DrawStyledFill(graphics As Graphics, bounds As Rectangle, barColor As Color)
 
             If bounds.Width <= 0 OrElse bounds.Height <= 0 Then Return
-            If Me._barBrush Is Nothing Then Me._barBrush = New SolidBrush(Me._BarColor)
+            If Me._barBrush IsNot Nothing AndAlso Me._barBrushColor <> barColor Then DisposeCachedBrush(Me._barBrush)
+            If Me._barBrush Is Nothing Then
+                Me._barBrush = New SolidBrush(barColor)
+                Me._barBrushColor = barColor
+            End If
 
             If Me._progressStyle = ColorProgressBarStyle.Gradient Then
 
@@ -899,7 +935,7 @@ Namespace ColorProgressBarControl
                 '4.	Der LinearGradientBrush erzeugt innerhalb von bounds einen Verlauf von accent oben nach c unten. FillRectangle füllt damit die Fläche.
                 '5.	Using gibt den temporären Pinsel nach dem Zeichnen automatisch frei.
                 'Beispielsweise wird ein vollständig deckendes Blau (0, 0, 255) bei weißer Kontrastfarbe zu einem Akzent von (127, 127, 255) gemischt. Der Balken verläuft dann von diesem helleren Blau zum ursprünglichen Blau.
-                Dim c As Color = Me._BarColor
+                Dim c As Color = barColor
                 Dim contrast As Color = Me.GetContrastColor(c)
 
                 'NOTE: mit Kontrast experimentieren
@@ -921,7 +957,7 @@ Namespace ColorProgressBarControl
                 graphics.FillRectangle(Me._barBrush, bounds)
                 If Me._progressStyle = ColorProgressBarStyle.Striped Then
 
-                    Dim c As Color = Me._BarColor
+                    Dim c As Color = barColor
                     Dim contrast As Color = Me.GetContrastColor(c)
                     Dim stripe As Color = Color.FromArgb(c.A, (CInt(c.R) + contrast.R) \ 2, (CInt(c.G) + contrast.G) \ 2, (CInt(c.B) + contrast.B) \ 2)
 
@@ -937,7 +973,9 @@ Namespace ColorProgressBarControl
 
         ''' <summary>Zeichnet den zentrierten Text getrennt über beiden Fortschrittsbereichen.</summary>
         ''' <param name="graphics">Die Zeichenfläche des Controls.</param>
-        Private Sub DrawProgressText(graphics As Graphics, fillBounds As Rectangle)
+        ''' <param name="fillBounds">Die gefüllte Fläche.</param>
+        ''' <param name="barColor">Die für den dargestellten Wert gültige Farbe.</param>
+        Private Sub DrawProgressText(graphics As Graphics, fillBounds As Rectangle, barColor As Color)
             If Me._cachedContentBounds.Width <= 0 OrElse Me._cachedContentBounds.Height <= 0 Then Return
 
             Dim text As String = If(Me._textFormat = ColorProgressBarTextFormat.Percentage,
@@ -946,7 +984,7 @@ Namespace ColorProgressBarControl
             Dim flags As TextFormatFlags = TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter Or
                 TextFormatFlags.SingleLine Or TextFormatFlags.EndEllipsis Or TextFormatFlags.NoPadding Or
                 TextFormatFlags.PreserveGraphicsClipping
-            Me.DrawTextRegion(graphics, text, fillBounds, Me._BarColor, flags)
+            Me.DrawTextRegion(graphics, text, fillBounds, barColor, flags)
             Dim content As Rectangle = Me._cachedContentBounds
             If Me._progressStyle = ColorProgressBarStyle.Marquee Then
                 Me.DrawTextRegion(graphics, text, New Rectangle(content.X, content.Y, Math.Max(0, fillBounds.X - content.X), content.Height), Me._EmptyColor, flags)
@@ -1038,6 +1076,7 @@ Namespace ColorProgressBarControl
 
             Dim fillBounds As Rectangle = If(Me._progressStyle = ColorProgressBarStyle.Marquee,
                 Me.GetMarqueeBounds(), Me._cachedFillBounds)
+            Dim barColor As Color = Me.GetDisplayedBarColor()
 
             Dim segmentState As Drawing2D.GraphicsState = Nothing
             If Me._showSegments Then
@@ -1054,7 +1093,7 @@ Namespace ColorProgressBarControl
                 Else
                     Me.DrawEmptyRegion(e.Graphics, Me._cachedEmptyBounds)
                 End If
-                Me.DrawStyledFill(e.Graphics, fillBounds)
+                Me.DrawStyledFill(e.Graphics, fillBounds, barColor)
 
                 If Me._IsGlossy AndAlso Me._cachedGlossBounds.Width > 0 AndAlso Me._cachedGlossBounds.Height > 0 Then
                     If Me._glossBrush Is Nothing Then
@@ -1063,7 +1102,7 @@ Namespace ColorProgressBarControl
                     e.Graphics.FillRectangle(Me._glossBrush, Me._cachedGlossBounds)
                 End If
 
-                If Me._showText Then Me.DrawProgressText(e.Graphics, fillBounds)
+                If Me._showText Then Me.DrawProgressText(e.Graphics, fillBounds, barColor)
             Finally
                 If segmentState IsNot Nothing Then e.Graphics.Restore(segmentState)
             End Try
@@ -1090,9 +1129,12 @@ Namespace ColorProgressBarControl
         Protected Overrides Sub OnSystemColorsChanged(e As EventArgs)
 
             Dim usesSystemColor As Boolean = Me._BarColor.IsSystemColor OrElse Me._EmptyColor.IsSystemColor
+            For Each threshold As ColorProgressBarThreshold In Me._thresholds
+                If threshold.Color.IsSystemColor Then usesSystemColor = True
+            Next
 
             ' Ereignishandler können bereits synchron mit den neuen Systemfarben zeichnen.
-            If Me._BarColor.IsSystemColor Then
+            If Me._BarColor.IsSystemColor OrElse (Me._barBrush IsNot Nothing AndAlso Me._barBrushColor.IsSystemColor) Then
                 DisposeCachedBrush(Me._barBrush)
             End If
             If Me._EmptyColor.IsSystemColor Then

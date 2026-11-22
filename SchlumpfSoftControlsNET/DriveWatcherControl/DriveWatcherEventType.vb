@@ -7,7 +7,7 @@
 Namespace DriveWatcherControl
 
 		''' <summary>Bezeichnet die paarweise gegenüberstehenden Laufwerksereignisse.</summary>
-    Friend Enum DriveEventType
+    Friend Enum DriveWatcherEventType
 
         ''' <summary>Ein Laufwerk wurde hinzugefügt.</summary>
         Added = 0

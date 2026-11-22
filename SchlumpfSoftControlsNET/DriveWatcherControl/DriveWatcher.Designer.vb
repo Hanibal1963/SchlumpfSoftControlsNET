@@ -45,7 +45,7 @@
             Try
                 If disposing Then
                     Me.StopEventDispatch()
-                    Dim nativeForm As NativeForm = NatForm
+                    Dim nativeForm As DriveWatcherNativeForm = NatForm
                     ' Die WithEvents-Handler vor dem Zerstören des Fensters abmelden.
                     NatForm = Nothing
                     Try

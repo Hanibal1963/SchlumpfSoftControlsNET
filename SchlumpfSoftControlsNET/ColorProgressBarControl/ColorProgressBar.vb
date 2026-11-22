@@ -177,7 +177,7 @@ Namespace ColorProgressBarControl
 
         ''' <summary>Bestimmt den gewünschten Segmentabstand in Pixeln im Bereich 0 bis 1000.</summary>
         ''' <exception cref="ArgumentOutOfRangeException">Der Abstand liegt außerhalb des gültigen Bereichs.</exception>
-        <Description("Bestimmt den Abstand zwischen Segmenten in Pixeln.")>
+        <Description("Bestimmt den Abstand zwischen Segmenten in Pixeln (Die Abstände werden in der Rahmenfarbe angezeigt).")>
         <Browsable(True)>
         <Category("Appearance")>
         <DefaultValue(2)>

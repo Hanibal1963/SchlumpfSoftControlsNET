@@ -629,7 +629,7 @@ Namespace ExplorerTreeViewControl
         ''' </summary>
         ''' <param name="sender"></param>
         ''' <param name="e"></param>
-        Private Sub DW_DriveAdded(sender As Object, e As DriveWatcherControl.DriveAddedEventArgs) Handles DW.DriveAdded
+        Private Sub DW_DriveAdded(sender As Object, e As DriveWatcherControl.DriveWatcherAddedEventArgs) Handles DW.DriveAdded
             Dim newNode As New DriveNode(New DriveInfo(e.DriveName)) With {.Tag = e.DriveName}
             Dim inserted As Boolean = False
             For i As Int32 = 0 To Me.TV.Nodes.Item(0).Nodes.Count - 1
@@ -655,7 +655,7 @@ Namespace ExplorerTreeViewControl
         ''' </summary>
         ''' <param name="sender"></param>
         ''' <param name="e"></param>
-        Private Sub DW_DriveRemoved(sender As Object, e As DriveWatcherControl.DriveRemovedEventArgs) Handles DW.DriveRemoved
+        Private Sub DW_DriveRemoved(sender As Object, e As DriveWatcherControl.DriveWatcherRemovedEventArgs) Handles DW.DriveRemoved
             For Each node As TreeNode In Me.TV.Nodes.Item(0).Nodes
                 If TypeOf node Is DriveNode Then
                     If CType(node, DriveNode).Tag.ToString() = e.DriveName Then

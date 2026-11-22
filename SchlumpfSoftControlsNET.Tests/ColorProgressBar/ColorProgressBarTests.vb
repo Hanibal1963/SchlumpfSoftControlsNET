@@ -19,6 +19,103 @@ Namespace SchlumpfSoftControlsNET.Tests.ColorProgressBarControl
     <STATestClass>
     Public Class ColorProgressBarTests
 
+        ''' <summary>Prüft Bereiche, Priorität, Begrenzungen und Änderungen der Sammlung.</summary>
+        <TestMethod>
+        Public Sub Thresholds_RenderRangesAndReactToCollectionChanges()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.IsGlossy = False
+                control.Value = 5
+                control.Thresholds.Add(New ColorProgressBarThreshold(0, 5, Color.Red))
+                control.Thresholds.Add(New ColorProgressBarThreshold(5, 10, Color.Lime))
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Red, image, 10, 10)
+                End Using
+                control.Value = 6
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Lime, image, 10, 10)
+                End Using
+                control.Thresholds(1) = New ColorProgressBarThreshold(6, 8, Color.Yellow)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Yellow, image, 10, 10)
+                End Using
+                control.Thresholds.RemoveAt(1)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                End Using
+                control.Value = 5
+                control.Thresholds.Clear()
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                End Using
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Function() New ColorProgressBarThreshold(-1, 5, Color.Red))
+                Assert.ThrowsExactly(Of ArgumentOutOfRangeException)(Function() New ColorProgressBarThreshold(5, 4, Color.Red))
+                Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.Thresholds.Add(Nothing))
+            End Using
+        End Sub
+
+        ''' <summary>Prüft Invalidierungen und die Aktualisierung von Systemfarben.</summary>
+        <TestMethod>
+        Public Sub Thresholds_InvalidateAndRefreshSystemColorBrushes()
+            Using control As New TestableColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.IsGlossy = False
+                control.Value = 5
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                Dim changes As Integer = 0
+                AddHandler control.Invalidated, Sub(sender, e) changes += 1
+                control.Thresholds.Add(New ColorProgressBarThreshold(0, 10, SystemColors.Highlight))
+                Assert.AreEqual(1, changes)
+                Dim brush As SolidBrush
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(SystemColors.Highlight, image, 10, 10)
+                    brush = CachedBrush(control, "_barBrush")
+                End Using
+                control.RaiseSystemColorsChangedForTest()
+                AssertBrushDisposed(brush)
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(SystemColors.Highlight, image, 10, 10)
+                End Using
+                control.Thresholds.Clear()
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Blue, image, 10, 10)
+                End Using
+            End Using
+        End Sub
+
+        ''' <summary>Prüft Schwellenfarben bei animierten Werten und kombinierten Darstellungsmodi.</summary>
+        <TestMethod>
+        Public Sub Thresholds_FollowDisplayedValueAcrossStylesAndAnimation()
+            Using control As New ColorProgressBar()
+                control.Size = New Size(100, 20)
+                control.IsGlossy = False
+                control.Value = 0
+                control.Thresholds.Add(New ColorProgressBarThreshold(0, 4, Color.Red))
+                control.Thresholds.Add(New ColorProgressBarThreshold(5, 10, Color.Lime))
+                control.AnimateValueChanges = True
+                Dim handle As IntPtr = control.Handle
+                Assert.AreNotEqual(IntPtr.Zero, handle)
+                control.Value = 10
+                Dim advance As MethodInfo = GetType(ColorProgressBar).GetMethod("UpdateAnimatedValue", BindingFlags.Instance Or BindingFlags.NonPublic)
+                Assert.IsNotNull(advance)
+                advance.Invoke(control, New Object() {150.0})
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Lime, image, 10, 10)
+                End Using
+                advance.Invoke(control, New Object() {300.0})
+                control.ShowSegments = True
+                control.ProgressStyle = ColorProgressBarStyle.Striped
+                Using image As Bitmap = RenderControl(control)
+                    Assert.AreNotEqual(Color.Blue.ToArgb(), image.GetPixel(10, 10).ToArgb())
+                End Using
+                control.ProgressStyle = ColorProgressBarStyle.Marquee
+                Using image As Bitmap = RenderControl(control)
+                    AssertPixel(Color.Lime, image, 8, 10)
+                End Using
+            End Using
+        End Sub
+
         ''' <summary>Prüft die gleichmäßige Aufteilung und kontinuierliche Füllung über Segmentgrenzen.</summary>
         <TestMethod>
         Public Sub Segments_RenderFillAndGapsWithoutChangingProgress()

@@ -64,9 +64,9 @@
 
   - Abschnitt `## 6. Hinweise` für numerische Grenzen, Genauigkeit, Abhängigkeiten (z. B. `System.Drawing`) und Namespace-Besonderheiten.
 
-  - Abschnitt `## 7. Optimierungsvorschläge` als Link zu einer Datei `ContolNameOptimierungsvorschläge.md` (ohne das Wort Control) mit allen Vorschlägen zur Verbesserung der Leistung, Lesbarkeit oder Wartbarkeit und einem Abschnitt mit der Reihenfolge zur Durchführung.
+  - Abschnitt `## 7. geplante Optimierungen` mit allen Vorschlägen zur Verbesserung der Leistung, Lesbarkeit oder Wartbarkeit (als Unterpunkte ### 7.x.) und dem letzten Abschnitt mit der Reihenfolge zur Durchführung.
 
-  - Abschnitt `## 8. Erweiterungsvorschläge` als Link zu einer Datei `ContolNameErweiterungsvorschläge.md` (ohne das Wort Control) mit allen Vorschlägen zur Erweiterung der Funktionalität und einem Abschnitt mit der Reihenfolge zur Durchführung.
+  - Abschnitt `## 8. geplante Erweiterungen` mit allen Vorschlägen zur Erweiterung der Funktionalität (als Unterpunkte ### 8.x.) und dem letzten Abschnitt mit der Reihenfolge zur Durchführung.
 
   - Optionale kurze Beispiele, wenn für die Nutzung hilfreich.
 

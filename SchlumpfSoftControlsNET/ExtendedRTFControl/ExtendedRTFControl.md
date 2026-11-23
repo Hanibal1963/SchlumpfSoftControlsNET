@@ -1,4 +1,4 @@
-﻿# ExtendedRTF Control
+﻿# ExtendedRTFControl
 
 Erweiterte RichTextBox für Windows Forms mit komfortablen Formatierungs- und Abfragehilfen (Schriftgröße, Stil-Flags, Farben, Einzüge, Ausrichtung) sowie Redraw-Suppression (flackerreduziertes Batch-Update).
 
@@ -9,22 +9,28 @@ Erweiterte RichTextBox für Windows Forms mit komfortablen Formatierungs- und Ab
 
 ## 1. Konstruktoren
 
-- Keine zusätzlichen öffentlichen Konstruktoren dokumentiert.
+- `ExtendedRTF.New()`: Initialisiert das Steuerelement und seine Designerkomponenten.
+
+---
 
 ## 2. Ereignisse
 
 - Keine zusätzlichen öffentlichen Ereignisse definiert (es gelten die geerbten Ereignisse der `RichTextBox`).
 
+---
+
 ## 3. Eigenschaften
 
-- `SelectionFontSize`: Liest oder setzt die Schriftgröße der aktuellen Auswahl bzw. am Caret; bei uneinheitlicher Auswahl wird `Nothing` zurückgegeben.
+- `SelectionFontSize`: Liest oder setzt die Schriftgröße der aktuellen Auswahl bzw. am Caret; bei uneinheitlicher Auswahl wird `Nothing` zurückgegeben. Beim Setzen bewirkt `Nothing` keine Änderung; Werte unter 8 lösen `ArgumentOutOfRangeException` aus.
 - `SelectionBold`: Liest oder setzt den Fettdruck der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
 - `SelectionItalic`: Liest oder setzt Kursiv (`Italic`) der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
 - `SelectionUnderline`: Liest oder setzt Unterstreichung der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
 - `SelectionStrikeout`: Liest oder setzt Durchstreichung der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
 - `SelectionForeColor`: Liest oder setzt die aktuelle Vordergrundfarbe (Textfarbe) der Auswahl bzw. am Caret.
 - `SelectionBackColor`: Liest oder setzt die aktuelle Hintergrund-/Highlightfarbe der Auswahl bzw. am Caret.
-- `SelectionLeftIndent`: Liest oder setzt den linken Absatz-Einzug (in Pixel) der aktuellen Absatz-/Absatzauswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
+- `SelectionLeftIndent`: Liest oder setzt den linken Absatz-Einzug (in Pixel) der aktuellen Absatz-/Absatzauswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben. Beim Setzen bewirkt `Nothing` keine Änderung; negative Werte lösen `ArgumentOutOfRangeException` aus.
+
+---
 
 ## 4. Funktionen
 
@@ -36,14 +42,149 @@ Erweiterte RichTextBox für Windows Forms mit komfortablen Formatierungs- und Ab
 - `ToggleStrikeout()`: Schaltet Durchstreichung für aktuelle Auswahl bzw. Caret um.
 - `ToggleBullet()`: Schaltet Bullet-Aufzählung für aktuelle Absatz-/Absatzauswahl um.
 
+---
+
 ## 5. Hilfstypen/Strukturen
 
 - Keine zusätzlichen öffentlichen Hilfstypen oder Strukturen dokumentiert.
 
+---
+
 ## 6. Hinweise
 
-- Die Konstante `MIN_FONT_SIZE` wird verwendet und muss im Projekt definiert sein (z. B. als `Private Const MIN_FONT_SIZE As Single = 6.0F` in der Klasse).
+- Die Konstante `MIN_FONT_SIZE` ist in `ApiDefinitions` mit dem Wert `8.0F` definiert.
 
-## [7. Optimierungsvorschläge](ExtendedRTFOptimierungsvorschläge.md)
+---
 
-## [8. Erweiterungsvorschläge](ExtendedRTFErweiterungsvorschläge.md)
+## 7. geplante Optimierungen
+
+### 7.1. Zielbild
+
+Stabile RichText-Formatierung mit performantem Batch-Verhalten.
+
+---
+
+### 7.2. Redraw-Suppression vereinheitlichen
+
+**Status:** In der Quelldatei nicht angegeben.
+
+**Umsetzung:**
+
+- Alle formatierenden Methoden in ein gemeinsames Batch-API einhängen.
+
+- Verschachtelungszähler atomar verwalten.
+
+**Nutzen:** Weniger Flackern und konsistentes Repaint-Verhalten.
+
+---
+
+### 7.3. Font-Objekte und Stilwechsel optimieren
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- Wiederholte `New Font(...)`-Erzeugungen in Utility kapseln.
+
+- Nur bei effektiver Stiländerung neu setzen.
+
+**Nutzen:** Geringerer GC-Druck bei intensiver Bearbeitung.
+
+---
+
+### 7.4. Mixed-State-Ermittlung beschleunigen
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- Selektionsscans minimieren und Ergebnisse temporär cachen.
+
+- Ereignisunterdrückung granularer steuern.
+
+**Nutzen:** Flüssigere Toolbar-Updates bei großer Selektion.
+
+---
+
+### 7.5. RTF-Interoperabilität härten
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- Grenzfälle (leer, ungültiges RTF, fremde Encodings) robust behandeln.
+
+- Fallback auf PlainText definieren.
+
+**Nutzen:** Weniger Laufzeitfehler bei externen Inhalten.
+
+---
+
+### 7.6. API-Dokumentation präzisieren
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- Verhalten bei `Nothing`/Mischzustand explizit dokumentieren.
+
+- Nebenwirkungen von Toggle-Methoden klar beschreiben.
+
+**Nutzen:** Weniger Integrationsfehler in Host-Apps.
+
+---
+
+### 7.7. Empfohlene Reihenfolge
+
+1. Batch-API
+2. Mixed-State-Performance
+3. Font-/Stiloptimierung
+4. Interoperabilität
+5. Dokumentation
+
+---
+
+## 8. geplante Erweiterungen
+
+### 8.1. Undo/Redo-Transaktionen
+
+**Vorschlag:** Batch-Formatierungen als eine Undo-Operation gruppieren.
+**Umsetzung:** Native Nachrichten oder internes Kommandomodell kapseln.
+
+---
+
+### 8.2. Stilvorlagen
+
+**Vorschlag:** Wiederverwendbare Textstile (`Heading`, `Code`, `Note`).
+**Umsetzung:** Style-Objekte definieren und auf Selektion anwenden.
+
+---
+
+### 8.3. Einfüge-APIs erweitern
+
+**Vorschlag:** `InsertImage`, `InsertLink`, `InsertTableLikeText`.
+**Umsetzung:** RTF-Snippet-Builder mit Validierung.
+
+---
+
+### 8.4. Exportoptionen
+
+**Vorschlag:** Export nach PlainText/HTML/Markdown (Basis).
+**Umsetzung:** Adapter-Layer je Zielformat.
+
+---
+
+### 8.5. Ereignisse für Editorintegration
+
+**Vorschlag:** `FormattingChanged`, `SelectionStyleChanged`.
+**Umsetzung:** Bestehende `SelectionChanged`-Ableitung mit Debounce ergänzen.
+
+---
+
+### 8.6. Empfohlene Reihenfolge
+
+1. Undo/Redo-Transaktionen
+2. Stilvorlagen
+3. Einfüge-APIs erweitern
+4. Exportoptionen
+5. Ereignisse für Editorintegration

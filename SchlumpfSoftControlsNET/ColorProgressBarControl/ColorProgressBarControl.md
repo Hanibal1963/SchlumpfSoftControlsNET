@@ -24,6 +24,8 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 - `New()`: Initialisiert das Steuerelement, aktiviert flimmerfreies Zeichnen und setzt die Standarddarstellung.
 
+---
+
 ## 2. Ereignisse
 
 - `Click`: Klicks auf das Steuerelement lösen direkt das Click-Ereignis aus.
@@ -31,6 +33,8 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 - `Paint`: Registrierte Ereignishandler werden nach der Darstellung des Steuerelements aufgerufen und können diese ergänzen.
 
 - `SystemColorsChanged`: Bei Systemfarben in `BarColor`, `EmptyColor` oder einem Schwellenwert werden betroffene Brushes vor dem Aufruf der Ereignishandler verworfen und eine Neuzeichnung angefordert.
+
+---
 
 ## 3. Eigenschaften
 
@@ -84,9 +88,13 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 - `Padding` (überladen, ausgeblendet): Inneres Padding wird intern zur Rahmendarstellung verwaltet.
 
+---
+
 ## 4. Funktionen
 
 - Keine zusätzlichen öffentlichen Funktionen dokumentiert.
+
+---
 
 ## 5. Hilfstypen/Strukturen
 
@@ -97,6 +105,8 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 - `ColorProgressBarThreshold(minimum, maximum, color)`: Unveränderlicher Farbbereich mit inklusiven Grenzen `Minimum`, `Maximum` und `Color`. `minimum` muss mindestens `0`, `maximum` mindestens `minimum` sein; andernfalls wird `ArgumentOutOfRangeException` ausgelöst. Transparente Farben, `Color.Empty` und Systemfarben sind zulässig.
 
 - `ColorProgressBarThresholdCollection`: Geordnete Sammlung von `ColorProgressBarThreshold`; Hinzufügen, Ersetzen, Entfernen und Leeren aktualisieren die Anzeige. Eine Instanz wird vom Control bereitgestellt.
+
+---
 
 ## 6. Hinweise
 
@@ -141,10 +151,148 @@ Da die Downloads auf der Seite nicht mehr zu funktionieren scheinen und die Besc
 
 - Die Darstellung erfolgt ohne interne Panels. Anwendungen, die über `Controls` auf diese Panels zugegriffen haben, müssen entsprechend angepasst werden.
 
-## [7. Optimierungsvorschläge](ColorProgressBarOptimierungsvorschläge.md)
+---
 
-z.Zt. alle umgesetzt
+## 7. geplante Optimierungen
 
-## [8. Erweiterungsvorschläge](ColorProgressBarErweiterungsvorschläge.md)
+### 7.1. Zielbild
 
-z.Zt. alle umgesetzt
+Flüssige Fortschrittsdarstellung ohne Flackern bei hoher Updatefrequenz.
+
+---
+
+### 7.2. Vollständig owner-drawn rendern
+
+**Status:** &#x2705; Umgesetzt.
+
+**Umsetzung:**
+
+- Füllung, Leerbereich und Glanz werden in `OnPaint` gezeichnet; der Rahmen entsteht weiterhin durch Hintergrundfarbe und Padding.
+
+- `DoubleBuffered`, `UserPaint`, `AllPaintingInWmPaint` und `ResizeRedraw` sind aktiviert.
+
+**Nutzen:** Weniger Control-Overhead, stabilere Darstellung.
+
+---
+
+### 7.3. Layout-Neuberechnung minimieren
+
+**Status:** &#x2705; Umgesetzt.
+
+**Umsetzung:**
+
+- `Value` und `ProgressMaximumValue` werden begrenzt. Nur Änderungen des jeweils begrenzten Werts lösen eine Invalidierung aus; bei einem kleineren Maximum wird `Value` nötigenfalls angepasst.
+
+- Inhalts- und Glanzrechteck werden zwischengespeichert und bei Änderungen von `ClientRectangle`, `Size` oder `Padding` beim nächsten Zeichnen neu berechnet.
+
+- Füll- und Leerrechteck werden zusätzlich bei Änderungen von `Value` oder `ProgressMaximumValue` neu berechnet. Farben und `IsGlossy` benötigen keine neue Geometrie.
+
+- Der Rahmen entsteht weiterhin durch Hintergrundfarbe und Padding; ein eigenes Rahmenrechteck ist nicht erforderlich. Explizites Neuzeichnen und das `Paint`-Ereignis bleiben erhalten.
+
+**Nutzen:** Weniger unnötige Invalidierungen und Geometrieberechnungen bei häufigen Fortschrittsupdates.
+
+---
+
+### 7.4. Farbübergänge effizient gestalten
+
+**Status:** &#x2705; Umgesetzt.
+
+**Umsetzung:**
+
+- Die Brushes für Füllung, Leerbereich und Glanz werden bei Bedarf pro Control erzeugt und bei weiteren Zeichenvorgängen wiederverwendet.
+
+- Bei Änderungen von `BarColor` oder `EmptyColor` wird der jeweilige Brush freigegeben und erst beim nächsten Zeichnen neu erzeugt. Systemfarben werden beim Ereignis `SystemColorsChanged` entsprechend aktualisiert.
+
+- Die verbleibenden Brushes werden beim Entsorgen des Controls freigegeben. Der Rahmen benötigt weiterhin keinen eigenen Pen.
+
+**Nutzen:** Weniger wiederholte GDI+-Brush-Erzeugungen und zuverlässige Freigabe der Zeichenressourcen.
+
+---
+
+### 7.5. API-Konsistenz verbessern
+
+**Status:** &#x2705; Umgesetzt.
+
+**Umsetzung:**
+
+- `ProgressMaximumValue` und `Value` werden gemeinsam validiert: Das Maximum beträgt mindestens `1`, der Fortschrittswert liegt zwischen `0` und dem Maximum.
+
+- Änderungen beider Werte werden vor einer gemeinsamen Invalidierung übernommen; unveränderte begrenzte Werte lösen keine Invalidierung aus.
+
+- Das optionale konfigurierbare `Minimum` wurde nicht ergänzt, um die bestehende API und das feste Minimum `0` beizubehalten.
+
+**Nutzen:** Vorhersagbares Verhalten für Integratoren.
+
+---
+
+### 7.6. Accessibility-Basis ergänzen
+
+**Status:** &#x2705; Umgesetzt.
+
+**Umsetzung:**
+
+- Die Standardrolle ist `ProgressBar`. Name und Beschreibung können über `AccessibleName` und `AccessibleDescription` angepasst werden; andernfalls werden eine zugeordnete Beschriftung beziehungsweise lokalisierte Standardtexte verwendet.
+
+- MSAA und UI Automation stellen den Fortschritt schreibgeschützt bereit: als lokalisierten Prozenttext sowie über `RangeValue` mit aktuellem Wert und Maximum. Änderungen werden an Accessibility-Clients gemeldet.
+
+- Die sichtbare Darstellung bleibt unverändert; ein Text-Overlay wurde nicht hinzugefügt.
+
+**Nutzen:** Bessere Nutzbarkeit und Compliance.
+
+---
+
+### 7.7. Empfohlene Reihenfolge
+
+Aktuell sind keine Optimierungspunkte mehr offen.
+
+---
+
+## 8. geplante Erweiterungen
+
+### 8.1. Mehr Darstellungsmodi
+
+**Status:** &#x2705; umgesetzt
+
+**Vorschlag:** `ProgressStyle` mit `Solid`, `Gradient`, `Striped`, `Marquee`.
+
+**Umsetzung:** Renderingpfad je Style verzweigen, gemeinsame Geometrie wiederverwenden.
+
+---
+
+### 8.2. Textanzeige integrieren
+
+**Status:** &#x2705; umgesetzt
+
+**Vorschlag:** Prozent-/Werttext im Balken (`ShowText`, `TextFormat`).
+
+**Umsetzung:** Textmessung zentralisieren, Kontrastfarbe automatisch wählen.
+
+---
+
+### 8.3. Animierte Übergänge
+
+**Status:** &#x2705; umgesetzt
+
+**Vorschlag:** Weiches Interpolieren bei Sprüngen des `Value`.
+
+**Umsetzung:** Zielwert und Istwert trennen, Timer-basiertes easing.
+
+---
+
+### 8.4. Segmentierter Fortschritt
+
+**Status:** &#x2705; umgesetzt
+
+**Vorschlag:** Optionale Segmentanzeige (z. B. 10 Blöcke).
+
+**Umsetzung:** Segmentanzahl und Abstand als Properties.
+
+---
+
+### 8.5. Schwellenwertfarben
+
+**Status:** &#x2705; umgesetzt
+
+**Vorschlag:** Dynamischer Farbwechsel bei Schwellwerten.
+
+**Umsetzung:** `Thresholds`-Collection mit Bereich/Farbe.

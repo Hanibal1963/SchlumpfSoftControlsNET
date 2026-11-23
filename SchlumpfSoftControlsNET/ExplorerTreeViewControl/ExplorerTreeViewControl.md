@@ -10,9 +10,13 @@ Unterstützt Laufwerke, spezielle Benutzerordner (Desktop, Dokumente, Downloads,
 
 - `New()`: Initialisiert das Steuerelement, lädt die erforderlichen Bilder und setzt den Wurzelknoten des TreeViews.
 
+---
+
 ## 2. Ereignisse
 
 - `SelectedPathChanged`: Wird ausgelöst, wenn sich der ausgewählte Pfad geändert hat.
+
+---
 
 ## 3. Eigenschaften
 
@@ -27,18 +31,157 @@ Unterstützt Laufwerke, spezielle Benutzerordner (Desktop, Dokumente, Downloads,
 - `ForeColor`: Legt die Vordergrundfarbe für das Anzeigen von Text fest oder gibt diese zurück.
 - `Font`: Legt die Schriftart für den Text im Steuerelement fest oder gibt diese zurück.
 
+---
+
 ## 4. Funktionen
 
-- `ExpandPath(path As String) As Boolean`: Öffnet und selektiert den Knoten zum angegebenen Verzeichnispfad (auch bei noch nicht geladenen Unterknoten) und liefert `True` bei Erfolg, sonst `False`.
+- `ExpandPath(path As String) As Boolean`: Öffnet und selektiert den Knoten zum angegebenen Verzeichnispfad (auch bei noch nicht geladenen Unterknoten) und liefert `True` bei Erfolg, sonst `False`. `Nothing`, eine leere Zeichenfolge und reine Leerzeichen liefern `False`.
+
+---
 
 ## 5. Hilfstypen/Strukturen
 
 - `SelectedPathChangedEventArgs`: Enthält die Ereignisdaten für Pfadänderungen.
 
+---
+
 ## 6. Hinweise
 
 - Dateisystemänderungen werden über interne FileSystemWatcher und Laufwerksüberwachung nachgeführt.
 
-## [7. Optimierungsvorschläge](ExplorerTreeViewOptimierungsvorschläge.md)
+---
 
-## [8. Erweiterungsvorschläge](ExplorerTreeViewErweiterungsvorschläge.md)
+## 7. geplante Optimierungen
+
+### 7.1. Zielbild
+
+Schnelle Navigation in großen Verzeichnisstrukturen mit reaktiver UI.
+
+---
+
+### 7.2. Lazy-Loading weiter ausbauen
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- Unterknoten nur bei Expand laden.
+
+- Platzhalterknoten nutzen und nachladen.
+
+- Metadaten (Exists/AccessDenied) vorhalten.
+
+**Nutzen:** Schneller Initialstart, weniger I/O-Spitzen.
+
+---
+
+### 7.3. Dateisystemzugriffe entkoppeln
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- Auflistungen in Hintergrund-Tasks ausführen.
+
+- UI-Update gebündelt per `BeginInvoke` anwenden.
+
+**Nutzen:** UI friert bei langsamen Netzlaufwerken nicht ein.
+
+---
+
+### 7.4. Caching für Icons und SpecialFolders
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- Drive-/Folder-Icons zentral cachen.
+
+- KnownFolder-Auflösung einmalig pro Session durchführen.
+
+**Nutzen:** Reduzierte Systemaufrufe und schnelleres Rendering.
+
+---
+
+### 7.5. Fehlerbehandlung verbessern
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- `UnauthorizedAccessException`, `PathTooLongException`, Offline-Shares gezielt behandeln.
+
+- Defekte Knoten visuell markieren statt Ausnahme weiterreichen.
+
+**Nutzen:** Robuste Navigation auch in problematischen Ordnern.
+
+---
+
+### 7.6. Refresh-Strategie optimieren
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- Dateiänderungen per Debounce bündeln.
+
+- Nur betroffene Teilbäume aktualisieren.
+
+**Nutzen:** Weniger Flackern und CPU-Last bei häufigen Änderungen.
+
+---
+
+### 7.7. Empfohlene Reihenfolge
+
+1. Lazy-Loading/Ladepfad
+2. Async-I/O
+3. Fehlerbehandlung
+4. Caching
+5. Teilbaum-Refresh
+
+---
+
+## 8. geplante Erweiterungen
+
+### 8.1. Kontextmenü-Integration
+
+**Vorschlag:** Optionales Shell-nahes Kontextmenü je Knoten.
+**Umsetzung:** Ereignis `BuildContextMenu(node, menu)` bereitstellen.
+
+---
+
+### 8.2. Multi-Selection-Modus
+
+**Vorschlag:** Mehrfachauswahl von Ordnern.
+**Umsetzung:** Interne Selektionsverwaltung plus API `SelectedPaths`.
+
+---
+
+### 8.3. Such- und Filterfunktion
+
+**Vorschlag:** Knoten per Muster/Präfix filtern.
+**Umsetzung:** In-Memory-Filter mit Highlighting und optionalem „nur Treffer“-Modus.
+
+---
+
+### 8.4. Drag&Drop-Unterstützung
+
+**Vorschlag:** Dateien/Ordner in den Tree ziehen oder verschieben.
+**Umsetzung:** `AllowDrop` aktivieren, Zielpfad über Ereignisse validieren.
+
+---
+
+### 8.5. Bookmark/Favoriten
+
+**Vorschlag:** Häufige Pfade als Favoritenknoten.
+**Umsetzung:** Persistente Favoritenliste mit eigener Root-Gruppe.
+
+---
+
+### 8.6. Empfohlene Reihenfolge
+
+1. Kontextmenü-Integration
+2. Multi-Selection-Modus
+3. Such- und Filterfunktion
+4. Drag&Drop-Unterstützung
+5. Bookmark/Favoriten

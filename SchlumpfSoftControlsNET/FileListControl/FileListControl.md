@@ -1,4 +1,4 @@
-﻿# FileList Control
+﻿# FileListControl
 
 FileList ist ein benutzerdefiniertes Control, das Dateien und Verzeichnisse in einem ListView darstellt.
 
@@ -21,9 +21,13 @@ Die Breite der Spalten passt sich automatisch an den Inhalt an.
 
 - `New()`: Initialisiert eine neue Instanz der `FileList`-Klasse, richtet die Benutzeroberfläche ein und lädt die gespeicherte Spaltenreihenfolge.
 
+---
+
 ## 2. Ereignisse
 
 - Keine öffentlichen Ereignisse vorhanden.
+
+---
 
 ## 3. Eigenschaften
 
@@ -31,18 +35,155 @@ Die Breite der Spalten passt sich automatisch an den Inhalt an.
 - `AutoResizeColumnsEnabled`: Gibt an, ob die automatische Größenanpassung von Spalten aktiviert ist.
 - `ColumnOrderState`: Ruft den aktuellen Zustand der Spaltenreihenfolge als Zeichenfolge ab oder legt ihn fest.
 
+---
+
 ## 4. Funktionen
 
 - `RefreshEntries()`: Aktualisiert die Einträge im `ListView` durch erneutes Laden des Startordners.
+
+---
 
 ## 5. Hilfstypen/Strukturen
 
 - Keine zusätzlichen öffentlichen Hilfstypen oder Strukturen dokumentiert.
 
+---
+
 ## 6. Hinweise
 
 - Sortierung und Spaltenreihenfolge werden über den ListView-Zustand gesteuert und können benutzerspezifisch variieren.
 
-## [7. Optimierungsvorschläge](FileListOptimierungsvorschläge.md)
+---
 
-## [8. Erweiterungsvorschläge](FileListErweiterungsvorschläge.md)
+## 7. geplante Optimierungen
+
+### 7.1. Zielbild
+
+Große Verzeichnisse performant laden und bedienen.
+
+---
+
+### 7.2. Virtuellen ListView-Modus prüfen
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- Optional `VirtualMode` einführen.
+
+- Datenquelle getrennt halten (Model statt direkter Item-Objekte).
+
+**Nutzen:** Deutlich bessere Performance bei vielen Dateien.
+
+---
+
+### 7.3. Ordnergrößenberechnung entkoppeln
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- Größe zunächst als „wird berechnet“ anzeigen.
+
+- Berechnung asynchron pro Eintrag, mit Abbruchtoken bei Ordnerwechsel.
+
+**Nutzen:** Sofortige Anzeige ohne UI-Blockade.
+
+---
+
+### 7.4. Sortierung stabilisieren
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- Typisierte Sortierung pro Spalte (Datum/Größe/Text).
+
+- Sekundärsortierung (Name) für reproduzierbare Reihenfolge.
+
+**Nutzen:** Erwartbares Sortierverhalten.
+
+---
+
+### 7.5. Persistenz robuster machen
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- `ColumnOrderState` versionieren.
+
+- Ungültige/alte Zustände beim Laden validieren und fallbacken.
+
+**Nutzen:** Weniger Fehler nach Updates.
+
+---
+
+### 7.6. Dateisystemfehler abfangen
+
+**Status:** &#x1F4A1; offen
+
+**Umsetzung:**
+
+- Zugriffsfehler je Eintrag behandeln.
+
+- Teilresultate anzeigen statt Abbruch.
+
+**Nutzen:** Stabile Anzeige auch bei geschützten Pfaden.
+
+---
+
+### 7.7. Empfohlene Reihenfolge
+
+1. Async-Ladepfad
+2. Virtueller Modus
+3. Sortierlogik
+4. Persistenz
+5. Fehlerbehandlung
+
+---
+
+## 8. geplante Erweiterungen
+
+### 8.1. Spaltenkonfiguration erweitern
+
+**Vorschlag:** Ein-/Ausblenden, Reihenfolge, benutzerdefinierte Spalten.
+**Umsetzung:** Column-Descriptor-Modell mit Persistenz.
+
+---
+
+### 8.2. Dateivorschau
+
+**Vorschlag:** Optionales Vorschaupanel für Bilder/Text/PDF-Metadaten.
+**Umsetzung:** Ereignisbasiertes Preview-Provider-Interface.
+
+---
+
+### 8.3. Filter und Suche
+
+**Vorschlag:** Live-Filter nach Name, Typ, Größe, Datum.
+**Umsetzung:** In-Memory-Query oder serverseitige Provider-Schnittstelle.
+
+---
+
+### 8.4. Dateioperationen
+
+**Vorschlag:** Copy/Move/Delete/Rename als optionales API.
+**Umsetzung:** Kommandos mit Confirm-Callbacks und Fehlerkanal.
+
+---
+
+### 8.5. Watcher-basierte Aktualisierung
+
+**Vorschlag:** Auto-Refresh bei Änderungen im Startordner.
+**Umsetzung:** `FileSystemWatcher` mit Debounce und Teilupdates.
+
+---
+
+### 8.6. Empfohlene Reihenfolge
+
+1. Spaltenkonfiguration erweitern
+2. Dateivorschau
+3. Filter und Suche
+4. Dateioperationen
+5. Watcher-basierte Aktualisierung

@@ -8,23 +8,36 @@ Imports System
 Imports System.ComponentModel
 Imports System.IO
 Imports System.Security
+Imports System.Collections.Generic
 
 Namespace DriveWatcherControl
 
-		''' <summary>Erstellt eine Momentaufnahme verfügbarer Laufwerksinformationen.</summary>
+    ''' <summary>Erstellt eine Momentaufnahme verfügbarer Laufwerksinformationen.</summary>
     Friend NotInheritable Class DriveWatcherInfoSnapshotReader
 
-		''' <summary>Verhindert die Instanziierung der Hilfsklasse.</summary>
+        ''' <summary>Verhindert die Instanziierung der Hilfsklasse.</summary>
         Private Sub New()
         End Sub
 
-		''' <summary>Liest eine Momentaufnahme über die reguläre Laufwerksdatenquelle.</summary>
-		''' <param name="name">Name des abzufragenden Laufwerks.</param>
-		''' <returns>Die Laufwerksdaten und gegebenenfalls Lesefehler.</returns>
+        ''' <summary>Liest eine Momentaufnahme über die reguläre Laufwerksdatenquelle.</summary>
+        ''' <param name="name">Name des abzufragenden Laufwerks.</param>
+        ''' <returns>Die Laufwerksdaten und gegebenenfalls Lesefehler.</returns>
         Friend Shared Function Read(name As String) As DriveWatcherAddedEventArgs
 
             Return Read(name, Function(driveName) New DriveWatcherInfoSource(driveName))
 
+        End Function
+
+        ''' <summary>Liest die angegebenen Laufwerke über die bereitgestellte Datenquellenfabrik.</summary>
+        ''' <param name="names">Bei der Enumeration ermittelte Laufwerksnamen.</param>
+        ''' <param name="factory">Erstellt die Datenquelle für einen Laufwerksnamen.</param>
+        ''' <returns>Eine schreibgeschützte Liste unabhängiger Momentaufnahmen.</returns>
+        Friend Shared Function ReadCurrent(names As IEnumerable(Of String), factory As Func(Of String, IDriveWatcherDriveInfoSource)) As IReadOnlyList(Of DriveWatcherDriveSnapshot)
+            Dim result As New List(Of DriveWatcherDriveSnapshot)()
+            For Each name In names
+                result.Add(New DriveWatcherDriveSnapshot(Read(name, factory)))
+            Next
+            Return result.AsReadOnly()
         End Function
 
         ''' <summary>Liest eine Momentaufnahme über eine vorgegebene Datenquellenfabrik.</summary>

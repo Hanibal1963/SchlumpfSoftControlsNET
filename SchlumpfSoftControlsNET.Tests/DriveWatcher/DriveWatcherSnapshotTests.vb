@@ -18,6 +18,55 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
     Public NotInheritable Class DriveWatcherSnapshotTests
 
         <TestMethod>
+        Public Sub ReadCurrent_MultipleDrives_ReturnsIndependentReadOnlySnapshots()
+            Dim ready As New FakeSource()
+            Dim notReady As New FakeSource With {.Ready = False}
+            Dim failure As New IOException("read failed")
+            ready.Failures.Add("DriveFormat", failure)
+#Disable Warning CA1861 ' Konstantenmatrizen als Argumente vermeiden
+            Dim result = DriveWatcherInfoSnapshotReader.ReadCurrent({"X:\", "Y:\"}, Function(name) If(name = "X:\", ready, notReady))
+#Enable Warning CA1861 ' Konstantenmatrizen als Argumente vermeiden
+            Assert.HasCount(2, result)
+            Assert.AreEqual("X:\", result(0).DriveName)
+            Assert.AreEqual(DriveType.Fixed, result(0).DriveType)
+            Assert.IsTrue(result(0).IsReady)
+            Assert.AreEqual("Data", result(0).VolumeLabel)
+            Assert.AreEqual("", result(0).DriveFormat)
+            Assert.AreEqual(11L, result(0).AvailableFreeSpace)
+            Assert.AreEqual(22L, result(0).TotalFreeSpace)
+            Assert.AreEqual(33L, result(0).TotalSize)
+            Assert.AreSame(failure, result(0).ReadErrors("DriveFormat"))
+            Assert.AreEqual("Y:\", result(1).DriveName)
+            Assert.IsFalse(result(1).IsReady)
+            Assert.AreEqual(0, notReady.DetailReads)
+            Assert.IsEmpty(result(1).ReadErrors)
+            Dim unused1 = Assert.ThrowsExactly(Of NotSupportedException)(Sub() DirectCast(result, IList(Of DriveWatcherDriveSnapshot)).Clear())
+            Dim unused = Assert.ThrowsExactly(Of NotSupportedException)(Sub() DirectCast(result(0).ReadErrors, IDictionary(Of String, Exception)).Clear())
+        End Sub
+
+        <TestMethod>
+        Public Sub ReadCurrent_EmptyAndUnexpectedFailure_AreNotHidden()
+            Dim empty = DriveWatcherInfoSnapshotReader.ReadCurrent(Array.Empty(Of String)(), Function(name) New FakeSource())
+            Assert.IsEmpty(empty)
+            Dim source As New FakeSource()
+            source.Failures.Add("VolumeLabel", New InvalidOperationException("unexpected"))
+            Dim unused1 = Assert.ThrowsExactly(Of InvalidOperationException)(
+                Sub()
+#Disable Warning CA1861 ' Konstantenmatrizen als Argumente vermeiden
+                    Dim unused = DriveWatcherInfoSnapshotReader.ReadCurrent({"X:\"}, Function(name) source)
+#Enable Warning CA1861 ' Konstantenmatrizen als Argumente vermeiden
+                End Sub)
+        End Sub
+
+        <TestMethod>
+        Public Sub GetCurrentDrives_ContainsSystemDrive()
+            Dim snapshots = DriveWatcher.GetCurrentDrives()
+            Dim systemRoot = Path.GetPathRoot(Environment.SystemDirectory)
+            Assert.IsNotNull(systemRoot)
+            Assert.IsTrue(snapshots.Any(Function(drive) String.Equals(drive.DriveName, systemRoot, StringComparison.OrdinalIgnoreCase)))
+        End Sub
+
+        <TestMethod>
         Public Sub Read_ReadyDrive_ReturnsAllValues()
             Dim source As New FakeSource()
             Dim result = DriveWatcherInfoSnapshotReader.Read("X:\", Function(name) source)

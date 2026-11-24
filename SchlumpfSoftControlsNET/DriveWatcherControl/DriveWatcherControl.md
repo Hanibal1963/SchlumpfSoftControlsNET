@@ -244,3 +244,11 @@ Aktuell sind keine Optimierungspunkte mehr offen.
 **Vorschlag:** `DiagnosticMode` mit Rohereignis-Feed.
 
 **Umsetzung:** Separates Event `RawDeviceEventReceived` ergänzen.
+
+### ## 8.6. Empfohlene Reihenfolge
+
+1. Filterbare Events
+2. Snapshot-API
+3. Erweiterte EventArgs
+4. Polling-Fallback
+5. Diagnosemodus

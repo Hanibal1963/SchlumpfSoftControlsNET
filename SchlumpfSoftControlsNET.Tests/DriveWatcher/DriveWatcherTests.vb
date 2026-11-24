@@ -23,6 +23,64 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         End Sub
 
         <TestMethod>
+        Public Sub Filters_ApplyToAllEventsAndRememberFilteredDriveType()
+            Using watcher As New TestDriveWatcher()
+                Dim count As Int32 = 0
+                AddHandler watcher.DriveAdded, Sub(sender, e) count += 1
+                AddHandler watcher.DriveRemoved, Sub(sender, e) count += 1
+                AddHandler watcher.MediaInserted, Sub(sender, e) count += 1
+                AddHandler watcher.MediaRemoved, Sub(sender, e) count += 1
+                AddHandler watcher.NetworkDriveAdded, Sub(sender, e) count += 1
+                AddHandler watcher.NetworkDriveRemoved, Sub(sender, e) count += 1
+                watcher.IncludeLetters = New Char() {"e"c}
+                watcher.IncludeDriveTypes = New DriveType() {DriveType.Removable}
+                watcher.RaiseDriveAdded(New DriveWatcherAddedEventArgs("F:\", DriveType.Removable, True))
+                watcher.RaiseDriveAdded(New DriveWatcherAddedEventArgs("E:\", DriveType.Fixed, True))
+                watcher.RaiseDriveRemoved(New DriveWatcherRemovedEventArgs("E:\"))
+                watcher.RaiseDriveAdded(New DriveWatcherAddedEventArgs("E:\", DriveType.Removable, True))
+                watcher.RaiseDriveRemoved(New DriveWatcherRemovedEventArgs("e:\"))
+                watcher.RaiseMediaInserted(New DriveWatcherAddedEventArgs("E:\", DriveType.Removable, True))
+                watcher.RaiseMediaRemoved(New DriveWatcherRemovedEventArgs("E:\"))
+                watcher.RaiseNetworkDriveAdded(New DriveWatcherAddedEventArgs("E:\", DriveType.Network, True))
+                watcher.RaiseNetworkDriveRemoved(New DriveWatcherRemovedEventArgs("E:\"))
+                Assert.AreEqual(4, count)
+                watcher.IncludeDriveTypes = New DriveType() {DriveType.Network}
+                watcher.RaiseNetworkDriveAdded(New DriveWatcherAddedEventArgs("E:\", DriveType.Network, True))
+                watcher.RaiseNetworkDriveRemoved(New DriveWatcherRemovedEventArgs("E:\"))
+                Assert.AreEqual(6, count)
+            End Using
+        End Sub
+
+        <TestMethod>
+        Public Sub Filters_UnknownRemovalAndDefensiveCopies_AreHandledExplicitly()
+            Using watcher As New TestDriveWatcher()
+                Dim count As Int32 = 0
+                AddHandler watcher.DriveRemoved, Sub(sender, e) count += 1
+                Dim letters As Char() = {"e"c}
+                Dim types As DriveType() = {DriveType.Unknown}
+                watcher.IncludeLetters = letters
+                watcher.IncludeDriveTypes = types
+                letters(0) = "F"c
+                types(0) = DriveType.Fixed
+                Dim returnedLetters = watcher.IncludeLetters
+                returnedLetters(0) = "F"c
+                Dim returnedTypes = watcher.IncludeDriveTypes
+                returnedTypes(0) = DriveType.Fixed
+                watcher.RaiseDriveRemoved(New DriveWatcherRemovedEventArgs("E:\"))
+                Assert.AreEqual(1, count)
+                Dim varchar As Char() = New Char() {"1"c}
+                Dim unused1 = Assert.ThrowsExactly(Of ArgumentException)(Sub() watcher.IncludeLetters = varchar)
+                Dim unused = Assert.ThrowsExactly(Of System.ComponentModel.InvalidEnumArgumentException)(Sub() watcher.IncludeDriveTypes = New DriveType() {CType(999, DriveType)})
+                Assert.AreEqual("E"c, watcher.IncludeLetters(0))
+                Assert.AreEqual(DriveType.Unknown, watcher.IncludeDriveTypes(0))
+                watcher.IncludeLetters = Nothing
+                watcher.IncludeDriveTypes = Nothing
+                watcher.RaiseDriveRemoved(New DriveWatcherRemovedEventArgs("F:\"))
+                Assert.AreEqual(2, count)
+            End Using
+        End Sub
+
+        <TestMethod>
         Public Sub Debounce_InterleavedEventsAndOppositeTransition_PreservesRealTransitions()
             Using watcher As New TestDriveWatcher()
                 Dim added As Int32 = 0
@@ -158,8 +216,16 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 MyBase.OnMediaInserted(e)
             End Sub
 
+            Public Sub RaiseMediaRemoved(e As DriveWatcherRemovedEventArgs)
+                MyBase.OnMediaRemoved(e)
+            End Sub
+
             Public Sub RaiseNetworkDriveAdded(e As DriveWatcherAddedEventArgs)
                 MyBase.OnNetworkDriveAdded(e)
+            End Sub
+
+            Public Sub RaiseNetworkDriveRemoved(e As DriveWatcherRemovedEventArgs)
+                MyBase.OnNetworkDriveRemoved(e)
             End Sub
         End Class
 

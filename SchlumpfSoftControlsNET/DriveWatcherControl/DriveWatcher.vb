@@ -262,6 +262,22 @@ Namespace DriveWatcherControl
 
 #Region "Öffentliche Methoden"
 
+        ''' <summary>Ermittelt die aktuell vom Betriebssystem gemeldeten logischen Laufwerke und ihre Metadaten.</summary>
+        ''' <returns>Eine schreibgeschützte Liste unabhängiger Laufwerksmomentaufnahmen.</returns>
+        ''' <remarks>
+        ''' Die synchrone Abfrage berücksichtigt keine Ereignisfilter und löst keine Ereignisse aus. Laufwerke und
+        ''' Eigenschaften werden nacheinander gelesen; die Daten bilden daher keinen atomaren Systemzustand ab.
+        ''' Einzelne erwartete Lesefehler stehen in der jeweiligen Momentaufnahme. Fehler bei der Aufzählung und
+        ''' unerwartete Fehler werden weitergegeben.
+        ''' </remarks>
+        Public Shared Function GetCurrentDrives() As IReadOnlyList(Of DriveWatcherDriveSnapshot)
+            Dim names As New List(Of String)()
+            For Each drive In DriveInfo.GetDrives()
+                names.Add(drive.Name)
+            Next
+            Return DriveWatcherInfoSnapshotReader.ReadCurrent(names, Function(name) New DriveWatcherInfoSource(name))
+        End Function
+
         ''' <summary>
         ''' Initialisiert eine neue Instanz von <see cref="DriveWatcher"/>.
         ''' </summary>

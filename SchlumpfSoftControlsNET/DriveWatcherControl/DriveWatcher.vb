@@ -10,6 +10,7 @@ Imports System.IO
 Imports System.Drawing
 Imports System.Diagnostics
 Imports System.Globalization
+Imports System.Collections.Generic
 
 Namespace DriveWatcherControl
 
@@ -55,6 +56,15 @@ Namespace DriveWatcherControl
 
         ''' <summary>Unterdrückt wiederholte Laufwerksereignisse innerhalb des Zeitfensters.</summary>
         Private ReadOnly _debouncer As New DriveWatcherEventDebouncer()
+
+        ''' <summary>Momentaufnahme der zugelassenen Laufwerkstypen; leer bedeutet keine Einschränkung.</summary>
+        Private _includeDriveTypes As DriveType() = Array.Empty(Of DriveType)()
+
+        ''' <summary>Momentaufnahme der zugelassenen Laufwerksbuchstaben; leer bedeutet keine Einschränkung.</summary>
+        Private _includeLetters As Char() = Array.Empty(Of Char)()
+
+        ''' <summary>Zuletzt beobachtete Typen, auch für nachfolgende Entfernungsereignisse.</summary>
+        Private ReadOnly _driveTypes As New Dictionary(Of String, DriveType)(StringComparer.OrdinalIgnoreCase)
 
 #End Region
 
@@ -120,6 +130,66 @@ Namespace DriveWatcherControl
 #End Region
 
 #Region "Öffentliche Eigenschaften"
+
+        ''' <summary>Ruft die zugelassenen Laufwerkstypen ab oder legt sie fest.</summary>
+        ''' <value>Eine kopierte Liste; <see langword="Nothing"/> oder eine leere Liste deaktiviert den Typfilter.</value>
+        ''' <remarks>Bei Entfernungen wird der zuletzt beobachtete Typ verwendet; ohne bekannten Typ gilt Unknown.</remarks>
+        ''' <exception cref="InvalidEnumArgumentException">Ein Eintrag ist kein gültiger Laufwerkstyp.</exception>
+        ''' <exception cref="ObjectDisposedException">Die Eigenschaft wird nach dem Freigeben gesetzt.</exception>
+        <Browsable(False)>
+        <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+        Public Property IncludeDriveTypes As DriveType()
+            Get
+                SyncLock Me._notificationSyncRoot
+                    Return DirectCast(Me._includeDriveTypes.Clone(), DriveType())
+                End SyncLock
+            End Get
+            Set(value As DriveType())
+                SyncLock Me._notificationSyncRoot
+#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
+                    If Me._notificationDisposed Then Throw New ObjectDisposedException(NameOf(DriveWatcher))
+#Enable Warning CA1513
+                    Dim values As DriveType() = If(value Is Nothing, Array.Empty(Of DriveType)(), DirectCast(value.Clone(), DriveType()))
+                    For Each driveType In values
+#Disable Warning CA2263 ' Die generische IsDefined-Überladung ist unter .NET Framework nicht verfügbar.
+                        If Not [Enum].IsDefined(GetType(DriveType), driveType) Then Throw New InvalidEnumArgumentException(NameOf(value), CInt(driveType), GetType(DriveType))
+#Enable Warning CA2263
+                    Next
+                    Me._includeDriveTypes = values
+                    Me._debouncer.Clear()
+                End SyncLock
+            End Set
+        End Property
+
+        ''' <summary>Ruft die zugelassenen Laufwerksbuchstaben ab oder legt sie fest.</summary>
+        ''' <value>Eine kopierte Liste; <see langword="Nothing"/> oder eine leere Liste deaktiviert den Buchstabenfilter.</value>
+        ''' <remarks>Nur ASCII-Buchstaben A bis Z sind zulässig; Groß- und Kleinschreibung sind gleichwertig.</remarks>
+        ''' <exception cref="ArgumentException">Ein Eintrag ist kein Laufwerksbuchstabe von A bis Z.</exception>
+        ''' <exception cref="ObjectDisposedException">Die Eigenschaft wird nach dem Freigeben gesetzt.</exception>
+        <Browsable(False)>
+        <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+        Public Property IncludeLetters As Char()
+            Get
+                SyncLock Me._notificationSyncRoot
+                    Return DirectCast(Me._includeLetters.Clone(), Char())
+                End SyncLock
+            End Get
+            Set(value As Char())
+                SyncLock Me._notificationSyncRoot
+#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
+                    If Me._notificationDisposed Then Throw New ObjectDisposedException(NameOf(DriveWatcher))
+#Enable Warning CA1513
+                    Dim values As Char() = If(value Is Nothing, Array.Empty(Of Char)(), DirectCast(value.Clone(), Char()))
+                    For index As Int32 = 0 To values.Length - 1
+                        Dim letter As Char = Char.ToUpperInvariant(values(index))
+                        If letter < "A"c OrElse letter > "Z"c Then Throw New ArgumentException("Nur Laufwerksbuchstaben von A bis Z sind zulässig.", NameOf(value))
+                        values(index) = letter
+                    Next
+                    Me._includeLetters = values
+                    Me._debouncer.Clear()
+                End SyncLock
+            End Set
+        End Property
 
         ''' <summary>Ruft die optionale Diagnosestufe für diese Instanz ab oder legt sie fest.</summary>
         ''' <value>Die Diagnosestufe; standardmäßig <see cref="System.Diagnostics.TraceLevel.Off"/>.</value>
@@ -339,6 +409,7 @@ Namespace DriveWatcherControl
         ''' <param name="e">Die Ereignisdaten des hinzugefügten Laufwerks.</param>
         Protected Overridable Sub OnDriveAdded(e As DriveWatcherAddedEventArgs)
 
+            If Not Me.IsIncluded(e.DriveName, e.DriveType, True) Then Return
             ' Verhindert doppelte Signale bei schnellen Mehrfachmeldungen derselben Quelle.
             If Me.IsDebouncedEvent(e.DriveName, DriveWatcherEventType.Added) Then Return
 
@@ -352,6 +423,7 @@ Namespace DriveWatcherControl
         ''' <param name="e">Die Ereignisdaten des entfernten Laufwerks.</param>
         Protected Overridable Sub OnDriveRemoved(e As DriveWatcherRemovedEventArgs)
 
+            If Not Me.IsIncluded(e.DriveName, DriveType.Unknown, False) Then Return
             ' Verhindert doppelte Signale bei schnellen Mehrfachmeldungen derselben Quelle.
             If Me.IsDebouncedEvent(e.DriveName, DriveWatcherEventType.Removed) Then Return
 
@@ -365,6 +437,7 @@ Namespace DriveWatcherControl
         ''' <param name="e">Die Ereignisdaten des eingelegten Mediums.</param>
         Protected Overridable Sub OnMediaInserted(e As DriveWatcherAddedEventArgs)
 
+            If Not Me.IsIncluded(e.DriveName, e.DriveType, True) Then Return
             If Me.IsDebouncedEvent(e.DriveName, DriveWatcherEventType.MediaInserted) Then Return
 
             Me.DispatchEvent(Sub() RaiseEvent MediaInserted(Me, e))
@@ -377,6 +450,7 @@ Namespace DriveWatcherControl
         ''' <param name="e">Die Ereignisdaten des entfernten Mediums.</param>
         Protected Overridable Sub OnMediaRemoved(e As DriveWatcherRemovedEventArgs)
 
+            If Not Me.IsIncluded(e.DriveName, DriveType.Unknown, False) Then Return
             If Me.IsDebouncedEvent(e.DriveName, DriveWatcherEventType.MediaRemoved) Then Return
 
             Me.DispatchEvent(Sub() RaiseEvent MediaRemoved(Me, e))
@@ -389,6 +463,7 @@ Namespace DriveWatcherControl
         ''' <param name="e">Die Ereignisdaten des hinzugefügten Netzlaufwerks.</param>
         Protected Overridable Sub OnNetworkDriveAdded(e As DriveWatcherAddedEventArgs)
 
+            If Not Me.IsIncluded(e.DriveName, DriveType.Network, True) Then Return
             If Me.IsDebouncedEvent(e.DriveName, DriveWatcherEventType.NetworkAdded) Then Return
 
             Me.DispatchEvent(Sub() RaiseEvent NetworkDriveAdded(Me, e))
@@ -401,6 +476,7 @@ Namespace DriveWatcherControl
         ''' <param name="e">Die Ereignisdaten des entfernten Netzlaufwerks.</param>
         Protected Overridable Sub OnNetworkDriveRemoved(e As DriveWatcherRemovedEventArgs)
 
+            If Not Me.IsIncluded(e.DriveName, DriveType.Network, True) Then Return
             If Me.IsDebouncedEvent(e.DriveName, DriveWatcherEventType.NetworkRemoved) Then Return
 
             Me.DispatchEvent(Sub() RaiseEvent NetworkDriveRemoved(Me, e))
@@ -455,9 +531,31 @@ Namespace DriveWatcherControl
             SyncLock Me._notificationSyncRoot
                 Me._notificationDisposed = True
                 Me._synchronizingObject = Nothing
+                Me._driveTypes.Clear()
             End SyncLock
             Me._debouncer.Clear()
         End Sub
+
+        ''' <summary>Aktualisiert bekannte Typen und prüft beide Filter atomar.</summary>
+        ''' <param name="driveName">Gemeldeter Laufwerksname.</param>
+        ''' <param name="driveType">Beobachteter Typ oder Unknown bei einer Entfernung.</param>
+        ''' <param name="hasType">Ob der Typ aus dem aktuellen Ereignis stammt.</param>
+        ''' <returns>Ob das Ereignis beide aktiven Filter erfüllt.</returns>
+        Private Function IsIncluded(driveName As String, driveType As DriveType, hasType As Boolean) As Boolean
+            SyncLock Me._notificationSyncRoot
+                If Me._notificationDisposed Then Return False
+                If Not String.IsNullOrEmpty(driveName) Then
+                    If hasType Then
+                        Me._driveTypes(driveName) = driveType
+                    Else
+                        Dim knownType As DriveType
+                        If Me._driveTypes.TryGetValue(driveName, knownType) Then driveType = knownType
+                    End If
+                End If
+                If Me._includeLetters.Length > 0 AndAlso (String.IsNullOrEmpty(driveName) OrElse Array.IndexOf(Me._includeLetters, Char.ToUpperInvariant(driveName(0))) < 0) Then Return False
+                Return Me._includeDriveTypes.Length = 0 OrElse Array.IndexOf(Me._includeDriveTypes, driveType) >= 0
+            End SyncLock
+        End Function
 
         ''' <summary>
         ''' Prüft, ob ein Laufwerksereignis als Duplikat innerhalb des Entprellungsfensters gilt.

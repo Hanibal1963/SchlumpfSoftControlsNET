@@ -21,16 +21,6 @@ Namespace NotifyFormControl
 
         Inherits Component
 
-#Region "Variablen"
-
-        Private _Title As String
-        Private _Style As NotifyFormStyle
-        Private _ShowTime As Int32
-        Private _Message As String
-        Private _Design As NotifyFormDesign
-
-#End Region
-
 #Region "Eigenschaften"
 
         ''' <summary>
@@ -44,13 +34,7 @@ Namespace NotifyFormControl
         <Description("Legt das Aussehen des Benachrichtigungsfensters fest.")>
         <DefaultValue(GetType(NotifyFormDesign), "Bright")>
         Public Property Design As NotifyFormDesign
-            Get
-                Return Me._Design
-            End Get
-            Set
-                Me._Design = Value
-            End Set
-        End Property
+
 
         ''' <summary>
         ''' Legt den Benachrichtigungstext fest der angezeigt werden soll.
@@ -60,13 +44,6 @@ Namespace NotifyFormControl
         <Description("Legt den Benachrichtigungstext fest der angezeigt werden soll.")>
         <DefaultValue("Mitteilung")>
         Public Property Message As String
-            Get
-                Return Me._Message
-            End Get
-            Set
-                Me._Message = Value
-            End Set
-        End Property
 
         ''' <summary>
         ''' Legt die Anzeigedauer des Benachrichtigungsfensters in ms fest.
@@ -79,13 +56,6 @@ Namespace NotifyFormControl
         <Description("Legt die Anzeigedauer des Benachrichtigungsfensters in ms fest.")>
         <DefaultValue(5000)>
         Public Property ShowTime As Int32
-            Get
-                Return Me._ShowTime
-            End Get
-            Set
-                Me._ShowTime = Value
-            End Set
-        End Property
 
         ''' <summary>
         ''' Legt das anzuzeigende Symbol im Benachrichtigungsfensters fest.
@@ -98,13 +68,6 @@ Namespace NotifyFormControl
         <Description("Legt das anzuzeigende Symbol im Benachrichtigungsfensters fest.")>
         <DefaultValue(GetType(NotifyFormStyle), "Information")>
         Public Property Style As NotifyFormStyle
-            Get
-                Return Me._Style
-            End Get
-            Set
-                Me._Style = Value
-            End Set
-        End Property
 
         ''' <summary>
         ''' Legt den Text der Titelzeile des Benachrichtigungsfensters fest.
@@ -114,13 +77,6 @@ Namespace NotifyFormControl
         <Description("Legt den Text der Titelzeile des Benachrichtigungsfensters fest.")>
         <DefaultValue("Titel")>
         Public Property Title As String
-            Get
-                Return Me._Title
-            End Get
-            Set
-                Me._Title = Value
-            End Set
-        End Property
 
 #End Region
 

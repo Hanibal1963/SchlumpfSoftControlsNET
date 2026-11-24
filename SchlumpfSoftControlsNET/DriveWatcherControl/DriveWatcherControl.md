@@ -56,6 +56,17 @@ Gleiche Ereignisse desselben Laufwerks werden innerhalb von 200 Millisekunden na
 
 ## 3. Eigenschaften
 
+- `IncludeDriveTypes As DriveType()`: Zugelassene Laufwerkstypen. `Nothing` oder ein leeres Array deaktiviert den Typfilter (Standard). Ungültige Enumwerte lösen `InvalidEnumArgumentException` aus. Ein- und Ausgabe sind unabhängige Kopien.
+
+- `IncludeLetters As Char()`: Zugelassene Laufwerksbuchstaben von `A` bis `Z`, ohne Beachtung der Groß-/Kleinschreibung. `Nothing` oder ein leeres Array deaktiviert den Buchstabenfilter (Standard). Andere Zeichen lösen `ArgumentException` aus. Ein- und Ausgabe sind unabhängige Kopien; zurückgegebene Buchstaben sind großgeschrieben.
+
+Beide Filter gelten gemeinsam für alle sechs Ereignisse und werden vor der Entprellung und Zustellung geprüft. Das Setzen nach `Dispose()` löst `ObjectDisposedException` aus. Beim Ändern eines Filters wird der Entprellungsspeicher geleert; bereits zur Zustellung vorgemerkte Ereignisse behalten ihre ursprüngliche Filterentscheidung. Die Eigenschaften werden nicht vom Designer serialisiert.
+
+```vb
+DriveWatcher1.IncludeDriveTypes = {System.IO.DriveType.Removable}
+DriveWatcher1.IncludeLetters = {"E"c, "F"c}
+```
+
 - `TraceLevel As System.Diagnostics.TraceLevel`: Instanzbezogene Diagnosestufe, standardmäßig `Off`. `Error` meldet Lesefehler mit Ereignistyp, Laufwerk, Feld, Ausnahmetyp und Meldung; `Warning` enthält derzeit dieselben Meldungen. `Info` ergänzt alle verarbeiteten Ereignisse einschließlich ihrer Unterdrückungsentscheidung; `Verbose` ergänzt native Volume-Rohmeldungen mit Windows-Ereigniscode, Laufwerksmaske und Flags. Jeder Eintrag enthält einen UTC-Zeitstempel im Roundtrip-Format. Ungültige Enumwerte lösen `InvalidEnumArgumentException` aus, das Setzen nach `Dispose()` löst `ObjectDisposedException` aus.
 
 ```vb
@@ -106,6 +117,8 @@ DriveWatcher1.SynchronizingObject = Me
 - Die Komponente ist für Windows und Windows Forms vorgesehen.
 
 - Das Entprellungsfenster verwendet eine monotone Zeitmessung und ist nicht konfigurierbar. Abgelaufene Einträge werden bei nachfolgenden Ereignissen entfernt; beim Freigeben wird der Cache geleert.
+
+- Für Entfernungen wird der zuletzt bei einem Hinzufüge- oder Einlegeereignis beobachtete Typ verwendet, auch wenn dieses Ereignis herausgefiltert wurde. Ist keiner bekannt, gilt `DriveType.Unknown`. Für Netzlaufwerk-Ereignisse gilt `DriveType.Network`. Der letzte Typ bleibt bis zu einer erneuten Beobachtung gespeichert und kann bei nicht beobachteten Zustandswechseln veraltet sein. Soll eine Entfernung ohne bekannten Typ zugelassen werden, muss `Unknown` im Typfilter enthalten sein oder der Typfilter deaktiviert werden.
 
 - Die optionale Diagnose schreibt synchron auf dem empfangenden beziehungsweise aufrufenden Thread über `System.Diagnostics.Trace.Listeners`. Die Anwendung verwaltet ihre Listener selbst; sie muss einen geeigneten Listener konfigurieren und bei Bedarf leeren. Trace-Ausgaben benötigen ein mit `TRACE` kompiliertes Control. Listenerfehler werden nicht abgefangen und können die Ereignisverarbeitung unterbrechen. Ausnahmetexte und Laufwerksnamen können sensible Informationen enthalten. Die vorhandenen Warnungen bei ungültigen Windows-Nachrichten bleiben unabhängig von `TraceLevel` aktiv.
 
@@ -199,11 +212,11 @@ Aktuell sind keine Optimierungspunkte mehr offen.
 
 ### 8.1. Filterbare Events
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Vorschlag:** Nur bestimmte DriveTypes oder Buchstaben melden.
 
-**Umsetzung:** Filter-Properties (`IncludeDriveTypes`, `IncludeLetters`) vor Eventauslösung prüfen.
+**Umsetzung:** `IncludeDriveTypes` und `IncludeLetters` filtern alle sechs Ereignisse vor der Entprellung; Entfernungen verwenden den zuletzt beobachteten Laufwerkstyp beziehungsweise `Unknown`.
 
 ---
 
@@ -244,3 +257,10 @@ Aktuell sind keine Optimierungspunkte mehr offen.
 **Vorschlag:** `DiagnosticMode` mit Rohereignis-Feed.
 
 **Umsetzung:** Separates Event `RawDeviceEventReceived` ergänzen.
+
+### ## 8.6. Empfohlene Reihenfolge
+
+1. Snapshot-API
+2. Erweiterte EventArgs
+3. Polling-Fallback
+4. Diagnosemodus

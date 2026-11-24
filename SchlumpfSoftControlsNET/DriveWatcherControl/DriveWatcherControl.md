@@ -84,11 +84,15 @@ DriveWatcher1.SynchronizingObject = Me
 
 ## 4. Funktionen
 
+- `Shared GetCurrentDrives() As IReadOnlyList(Of DriveWatcherDriveSnapshot)`: Ermittelt synchron alle von `DriveInfo.GetDrives()` gemeldeten logischen Laufwerke und liest deren Metadaten. Die Liste und ihre Einträge sind schreibgeschützt. Erwartete Fehler einzelner Felder stehen in `ReadErrors`; Fehler beim Aufzählen und unerwartete Fehler werden weitergegeben. Die Methode benötigt keine Instanz, verwendet keine Ereignisfilter und verändert weder Ereignisse noch deren Typcache.
+
 - `Dispose()`: Meldet die internen Ereignishandler ab, verwirft noch nicht begonnene vorgemerkte Zustellungen und gibt das Empfangsfenster sowie die verwalteten Komponenten frei. Die Referenz auf das Synchronisierungsobjekt wird entfernt; das Objekt selbst wird nicht freigegeben. Bereits laufende Rückrufe können noch beendet werden. Ein mehrfacher Aufruf ist zulässig. Ein Komponentencontainer gibt die bei ihm angemeldete Instanz ebenfalls frei, wenn er selbst freigegeben wird.
 
 ---
 
 ## 5. Hilfstypen/Strukturen
+
+- `DriveWatcherDriveSnapshot`: Unveränderliche Laufwerksdaten mit Name, Typ, Bereitschaft, Volumebezeichnung, Dateisystem und Speichergrößen sowie schreibgeschütztem `ReadErrors`. Einzelheiten stehen in [DriveWatcherDriveSnapshot.md](DriveWatcherDriveSnapshot.md).
 
 - `DriveWatcherAddedEventArgs`: Enthält `DriveName`, `DriveType`, `IsReady`, `VolumeLabel`, `DriveFormat`, `AvailableFreeSpace`, `TotalFreeSpace` und `TotalSize`. Neben dem parameterlosen Konstruktor akzeptieren die weiteren Konstruktoren den Laufwerksnamen und optional Typ und Bereitschaft. Sie führen keine Systemabfragen durch.
 
@@ -103,6 +107,8 @@ DriveWatcher1.SynchronizingObject = Me
 - Das Control reagiert auf Laufwerksänderungen des Betriebssystems und meldet diese über die genannten Ereignisse.
 
 - Die Informationen hinzugefügter Laufwerke werden unabhängig voneinander gelesen. Erwartete Zugriffs- und Systemfehler stehen in `ReadErrors`; andere Felder bleiben erhalten. `IsReady` kann vom Betriebssystem auch ohne Ausnahme `False` melden, sodass die Ursache nicht immer erkennbar ist. Unerwartete Ausnahmen werden nicht unterdrückt. Die Komponente führt keine WMI-Abfragen durch.
+
+- `GetCurrentDrives()` liest Laufwerke und Eigenschaften nacheinander. Das Ergebnis ist daher keine atomare Momentaufnahme; Laufwerke können während der Abfrage verschwinden und Speicherwerte sich ändern. Die synchrone Abfrage kann insbesondere bei Netzlaufwerken dauern.
 
 - Nur Ankunfts- und vollständige Entfernungsbenachrichtigungen mit gültiger Volume-Struktur werden ausgewertet. Fehlende oder zu kurze Strukturen und ungültige Laufwerksmasken werden über `Trace.TraceWarning` gemeldet. Bei mehreren gesetzten Laufwerksbits wird weiterhin das erste ausgewertet.
 
@@ -222,11 +228,11 @@ Aktuell sind keine Optimierungspunkte mehr offen.
 
 ### 8.2. Snapshot-API
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Vorschlag:** `GetCurrentDrives()` mit Metadaten (Typ, Label, Dateisystem, frei/belegt).
 
-**Umsetzung:** Einheitliches DriveInfo-Modell definieren.
+**Umsetzung:** `GetCurrentDrives()` liefert schreibgeschützte `DriveWatcherDriveSnapshot`-Einträge einschließlich Metadaten und feldbezogener Lesefehler.
 
 ---
 
@@ -260,7 +266,6 @@ Aktuell sind keine Optimierungspunkte mehr offen.
 
 ### ## 8.6. Empfohlene Reihenfolge
 
-1. Snapshot-API
-2. Erweiterte EventArgs
-3. Polling-Fallback
-4. Diagnosemodus
+1. Erweiterte EventArgs
+2. Polling-Fallback
+3. Diagnosemodus

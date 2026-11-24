@@ -30,6 +30,8 @@
 
 - Bei Markdown-Dokumenten sollen die Regeln MD022 und MD032 eingehalten werden: Überschriften müssen von Leerzeilen umgeben sein und Listen ebenfalls.
 
+- Compilerwarnungen und Analyzerwarnungen sollen nicht unterdrückt werden, außer es ist ausdrücklich begründet und auf die betroffene Stelle beschränkt. Melde verbleibende oder nicht überprüfbare Warnungen. Auch Meldungen sollen möglichst vermieden werden, die auf fehlende plattformspezifische APIs zurückzuführen sind. Prüfe die betroffenen Zielplattformen mit dem passenden Build und behebe durch die Änderung verursachte Warnungen an ihrer Ursache, ohne bestehendes Verhalten unnötig zu ändern.
+
 ## Konventionen & Stil
 
 - Einrückung: Tabs (keine Spaces).

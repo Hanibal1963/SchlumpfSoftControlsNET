@@ -66,6 +66,27 @@ Namespace DriveWatcherControl
         ''' <summary>Zuletzt beobachtete Typen, auch für nachfolgende Entfernungsereignisse.</summary>
         Private ReadOnly _driveTypes As New Dictionary(Of String, DriveType)(StringComparer.OrdinalIgnoreCase)
 
+        ''' <summary>Thread, auf dem Empfangsfenster und Polling-Timer betrieben werden.</summary>
+        Private ReadOnly _ownerThreadId As Int32 = Environment.CurrentManagedThreadId
+
+        ''' <summary>Timer für den optionalen, auf dem Fensterthread laufenden Vergleich.</summary>
+        Private WithEvents _pollingTimer As System.Windows.Forms.Timer
+
+        ''' <summary>Abfrageintervall in Millisekunden.</summary>
+        Private _pollingInterval As Int32 = 2000
+
+        ''' <summary>Aktivierter Polling-Modus; native Ereignisse werden dann nicht zugestellt.</summary>
+        Private _pollingEnabled As Boolean
+
+        ''' <summary>Verhindert verschachtelte Abfragen durch eine erneut betretene Nachrichtenschleife.</summary>
+        Private _pollingBusy As Boolean
+
+        ''' <summary>Letzter erfolgreicher Vergleichszustand, unabhängig von Ereignisfiltern.</summary>
+        Private _pollingState As New Dictionary(Of String, PollingDriveState)(StringComparer.OrdinalIgnoreCase)
+
+        ''' <summary>Liefert vollständige Ereignisdaten für den nächsten Vergleich.</summary>
+        Private _pollingSource As Func(Of IReadOnlyList(Of DriveWatcherAddedEventArgs)) = AddressOf ReadPollingDrives
+
 #End Region
 
 #Region "Öffentliche Ereignisse"
@@ -130,6 +151,76 @@ Namespace DriveWatcherControl
 #End Region
 
 #Region "Öffentliche Eigenschaften"
+
+        ''' <summary>Aktiviert den Vergleich von Laufwerksmomentaufnahmen anstelle nativer Ereignisse.</summary>
+        ''' <remarks>Das Setzen erfolgt auf dem Thread des Empfangsfensters. Die erste synchrone Abfrage erzeugt keine Ereignisse; danach ist eine Nachrichtenschleife erforderlich.</remarks>
+        ''' <exception cref="ObjectDisposedException">Die Komponente wurde freigegeben.</exception>
+        ''' <exception cref="InvalidOperationException">Das Setzen erfolgt auf einem anderen Thread oder während einer Polling-Abfrage.</exception>
+        <DefaultValue(False)>
+        <Description("Aktiviert den laufwerksbasierten Polling-Fallback anstelle nativer Ereignisse.")>
+        Public Property PollingEnabled As Boolean
+            Get
+                SyncLock Me._notificationSyncRoot
+                    Return Me._pollingEnabled
+                End SyncLock
+            End Get
+            Set(value As Boolean)
+                Me.CheckPollingThread()
+                If value AndAlso Me._pollingBusy Then Throw New InvalidOperationException("Der Polling-Modus kann während einer Abfrage nicht aktiviert werden.")
+                If value = Me._pollingEnabled Then Return
+                If value Then
+                    Dim initial = Me.CreatePollingState(Me._pollingSource(), Nothing)
+                    Dim timer As New System.Windows.Forms.Timer With {.Interval = Me._pollingInterval}
+                    Dim started As Boolean = False
+                    Try
+                        timer.Start()
+                        started = True
+                    Finally
+                        If Not started Then timer.Dispose()
+                    End Try
+                    Me._pollingState = initial
+                    Me._pollingTimer = timer
+                    SyncLock Me._notificationSyncRoot
+                        Me._pollingEnabled = True
+                        Me._driveTypes.Clear()
+                    End SyncLock
+                    Me._debouncer.Clear()
+                    Me.RememberPollingTypes(initial)
+                Else
+                    SyncLock Me._notificationSyncRoot
+                        Me._pollingEnabled = False
+                    End SyncLock
+                    Dim timer = Me._pollingTimer
+                    Me._pollingTimer = Nothing
+                    If timer IsNot Nothing Then timer.Dispose()
+                    Me._pollingState = New Dictionary(Of String, PollingDriveState)(StringComparer.OrdinalIgnoreCase)
+                    Me._debouncer.Clear()
+                End If
+            End Set
+        End Property
+
+        ''' <summary>Ruft das Polling-Intervall in Millisekunden ab oder legt es fest.</summary>
+        ''' <value>Ein positiver Wert; standardmäßig 2000 Millisekunden.</value>
+        ''' <exception cref="ArgumentOutOfRangeException">Das Intervall ist nicht positiv.</exception>
+        ''' <exception cref="ObjectDisposedException">Die Komponente wurde freigegeben.</exception>
+        ''' <exception cref="InvalidOperationException">Das Setzen erfolgt nicht auf dem Thread des Empfangsfensters.</exception>
+        <DefaultValue(2000)>
+        <Description("Intervall des Polling-Fallbacks in Millisekunden.")>
+        Public Property PollingInterval As Int32
+            Get
+                Return Me._pollingInterval
+            End Get
+            Set(value As Int32)
+                Me.CheckPollingThread()
+#If NET8_0_OR_GREATER Then
+                ArgumentOutOfRangeException.ThrowIfNegativeOrZero(value, NameOf(value))
+#Else
+                If value <= 0 Then Throw New ArgumentOutOfRangeException(NameOf(value))
+#End If
+                If Me._pollingTimer IsNot Nothing Then Me._pollingTimer.Interval = value
+                Me._pollingInterval = value
+            End Set
+        End Property
 
         ''' <summary>Ruft die zugelassenen Laufwerkstypen ab oder legt sie fest.</summary>
         ''' <value>Eine kopierte Liste; <see langword="Nothing"/> oder eine leere Liste deaktiviert den Typfilter.</value>
@@ -295,9 +386,158 @@ Namespace DriveWatcherControl
 
         End Sub
 
+        ''' <summary>Ersetzt die Datenquelle für deterministische Tests vor dem Aktivieren.</summary>
+        ''' <param name="source">Liefert die Laufwerksdaten für jeden Vergleich.</param>
+        Friend Sub SetPollingSource(source As Func(Of IReadOnlyList(Of DriveWatcherAddedEventArgs)))
+            Me.CheckPollingThread()
+#If NET8_0_OR_GREATER Then
+            ArgumentNullException.ThrowIfNull(source, NameOf(source))
+#Else
+            If source Is Nothing Then Throw New ArgumentNullException(NameOf(source))
+#End If
+            If Me.PollingEnabled Then Throw New InvalidOperationException("Die Datenquelle kann bei aktivem Polling nicht geändert werden.")
+            Me._pollingSource = source
+        End Sub
+
 #End Region
 
 #Region "Interne Methoden"
+
+        ''' <summary>Prüft Lebensdauer und Threadzugehörigkeit der Polling-Konfiguration.</summary>
+        ''' <exception cref="ObjectDisposedException">Die Komponente wurde freigegeben.</exception>
+        ''' <exception cref="InvalidOperationException">Der aktuelle Thread ist nicht der Fensterthread.</exception>
+        Private Sub CheckPollingThread()
+            SyncLock Me._notificationSyncRoot
+#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
+                If Me._notificationDisposed Then Throw New ObjectDisposedException(NameOf(DriveWatcher))
+#Enable Warning CA1513
+            End SyncLock
+            If Environment.CurrentManagedThreadId <> Me._ownerThreadId Then Throw New InvalidOperationException("Polling muss auf dem Thread des Empfangsfensters konfiguriert werden.")
+        End Sub
+
+        ''' <summary>Liest alle Laufwerke einschließlich der für Ereignisse benötigten Metadaten.</summary>
+        ''' <returns>Die beim aktuellen Durchlauf gelesenen Laufwerksdaten.</returns>
+        Private Shared Function ReadPollingDrives() As IReadOnlyList(Of DriveWatcherAddedEventArgs)
+            Dim result As New List(Of DriveWatcherAddedEventArgs)()
+            For Each drive In DriveInfo.GetDrives()
+                result.Add(DriveWatcherInfoSnapshotReader.Read(drive.Name))
+            Next
+            Return result
+        End Function
+
+        ''' <summary>Übernimmt zuverlässige Werte und bewahrt ältere Werte bei fehlgeschlagenen Einzelabfragen.</summary>
+        ''' <param name="drives">Aktuell gelesene Laufwerke.</param>
+        ''' <param name="previous">Vorheriger Vergleichszustand oder Nothing beim Start.</param>
+        ''' <returns>Neuer Zustand mit case-insensitiven Laufwerksnamen.</returns>
+        Private Function CreatePollingState(drives As IReadOnlyList(Of DriveWatcherAddedEventArgs), previous As Dictionary(Of String, PollingDriveState)) As Dictionary(Of String, PollingDriveState)
+            Dim result As New Dictionary(Of String, PollingDriveState)(StringComparer.OrdinalIgnoreCase)
+            For Each drive In drives
+                If Me.IsTraceEnabled(System.Diagnostics.TraceLevel.Error) Then
+                    For Each entry In drive.ReadErrors
+                        WriteDiagnostic($"ReadError Event=Polling Drive={drive.DriveName} Field={entry.Key} Exception={entry.Value.GetType().FullName} Message={entry.Value.Message}")
+                    Next
+                End If
+                Dim old As PollingDriveState = Nothing
+                If previous IsNot Nothing Then previous.TryGetValue(drive.DriveName, old)
+                Dim type = drive.DriveType
+                Dim ready As Boolean? = drive.IsReady
+                If drive.ReadErrors.ContainsKey("DriveInfo") OrElse drive.ReadErrors.ContainsKey(NameOf(drive.DriveType)) Then
+                    type = If(old Is Nothing, DriveType.Unknown, old.DriveType)
+                End If
+                If drive.ReadErrors.ContainsKey("DriveInfo") OrElse drive.ReadErrors.ContainsKey(NameOf(drive.IsReady)) Then
+                    ready = If(old Is Nothing, Nothing, old.Ready)
+                End If
+                result.Add(drive.DriveName, New PollingDriveState(drive, type, ready))
+            Next
+            Return result
+        End Function
+
+        ''' <summary>Merkt Typen auch für später gefilterte Entfernungsereignisse vor.</summary>
+        ''' <param name="state">Aktuelle Laufwerkszustände.</param>
+        Private Sub RememberPollingTypes(state As Dictionary(Of String, PollingDriveState))
+            SyncLock Me._notificationSyncRoot
+                For Each entry In state
+                    If entry.Value.DriveType <> DriveType.Unknown Then Me._driveTypes(entry.Key) = entry.Value.DriveType
+                Next
+            End SyncLock
+        End Sub
+
+        ''' <summary>Führt den zeitgesteuerten Vergleich auf dem Fensterthread aus.</summary>
+        ''' <param name="sender">Der auslösende Timer.</param>
+        ''' <param name="e">Die Timer-Ereignisdaten.</param>
+        Private Sub PollingTimer_Tick(sender As Object, e As EventArgs) Handles _pollingTimer.Tick
+            Me.PollNow()
+        End Sub
+
+        ''' <summary>Vergleicht einen vollständigen neuen Zustand und meldet daraus abgeleitete Änderungen.</summary>
+        ''' <remarks>Ein Fehler bei der Aufzählung wird weitergegeben und verändert den vorherigen Zustand nicht.</remarks>
+        Friend Sub PollNow()
+            Me.CheckPollingThread()
+            If Not Me.PollingEnabled OrElse Me._pollingBusy Then Return
+            Me._pollingBusy = True
+            Try
+                Dim previous = Me._pollingState
+                Dim current = Me.CreatePollingState(Me._pollingSource(), previous)
+                Me._pollingState = current
+                For Each entry In previous
+                    If Not Me.PollingEnabled Then Return
+                    Dim nextState As PollingDriveState = Nothing
+                    If Not current.TryGetValue(entry.Key, nextState) OrElse IsNetworkReplacement(entry.Value, nextState) Then
+                        Me.PublishPollingRemoval(entry.Key, entry.Value.DriveType)
+                    End If
+                Next
+                For Each entry In current
+                    If Not Me.PollingEnabled Then Return
+                    Dim old As PollingDriveState = Nothing
+                    If Not previous.TryGetValue(entry.Key, old) OrElse IsNetworkReplacement(old, entry.Value) Then
+                        Me.PublishPollingAddition(entry.Value, False)
+                    ElseIf (entry.Value.DriveType = DriveType.Removable OrElse entry.Value.DriveType = DriveType.CDRom) AndAlso old.Ready.HasValue AndAlso entry.Value.Ready.HasValue AndAlso old.Ready.Value <> entry.Value.Ready.Value Then
+                        If entry.Value.Ready.Value Then
+                            Me.PublishPollingAddition(entry.Value, True)
+                        Else
+                            Me.OnMediaRemoved(New DriveWatcherRemovedEventArgs(entry.Key))
+                        End If
+                    End If
+                Next
+                Me.RememberPollingTypes(current)
+            Finally
+                Me._pollingBusy = False
+            End Try
+        End Sub
+
+        ''' <summary>Erkennt den Wechsel zwischen Netzwerk- und anderem bekanntem Laufwerkstyp.</summary>
+        ''' <param name="old">Vorheriger Zustand.</param>
+        ''' <param name="current">Aktueller Zustand.</param>
+        ''' <returns>Ob ein Entfernungs- und Hinzufügeereignis erforderlich ist.</returns>
+        Private Shared Function IsNetworkReplacement(old As PollingDriveState, current As PollingDriveState) As Boolean
+            Return old.DriveType <> DriveType.Unknown AndAlso current.DriveType <> DriveType.Unknown AndAlso (old.DriveType = DriveType.Network) <> (current.DriveType = DriveType.Network)
+        End Function
+
+        ''' <summary>Meldet eine erkannte Entfernung mit dem zuletzt bekannten Typ.</summary>
+        ''' <param name="name">Name des entfernten Laufwerks.</param>
+        ''' <param name="driveType">Zuletzt bekannter Laufwerkstyp.</param>
+        Private Sub PublishPollingRemoval(name As String, driveType As DriveType)
+            If driveType = DriveType.Network Then
+                Me.OnNetworkDriveRemoved(New DriveWatcherRemovedEventArgs(name))
+            Else
+                Me.OnDriveRemoved(New DriveWatcherRemovedEventArgs(name))
+            End If
+        End Sub
+
+        ''' <summary>Meldet ein erkanntes Laufwerk beziehungsweise ein eingelegtes Medium.</summary>
+        ''' <param name="state">Aktuelle Laufwerksdaten.</param>
+        ''' <param name="media">Gibt an, ob ein Medienwechsel gemeldet wird.</param>
+        Private Sub PublishPollingAddition(state As PollingDriveState, media As Boolean)
+            Dim data = state.Data
+            If media Then
+                Me.OnMediaInserted(data)
+            ElseIf state.DriveType = DriveType.Network Then
+                data.IsNetwork = True
+                Me.OnNetworkDriveAdded(data)
+            Else
+                Me.OnDriveAdded(data)
+            End If
+        End Sub
 
         ''' <summary>
         ''' Übernimmt das interne NativeForm-Ereignis für ein hinzugefügtes Laufwerk.
@@ -309,6 +549,7 @@ Namespace DriveWatcherControl
         ''' <param name="sender">Das native Empfangsfenster.</param>
         ''' <param name="e">Der Name des hinzugefügten Laufwerks.</param>
         Private Sub NatForm_DriveAdded(sender As Object, e As String) Handles NatForm.DriveAdded
+            If Me.PollingEnabled Then Return
             Me.OnDriveAdded(Me.ReadDriveInfo(e, DriveWatcherEventType.Added))
         End Sub
 
@@ -318,6 +559,7 @@ Namespace DriveWatcherControl
         ''' <param name="sender">Das native Empfangsfenster.</param>
         ''' <param name="e">Der Name des entfernten Laufwerks.</param>
         Private Sub NatForm_DriveRemoved(sender As Object, e As String) Handles NatForm.DriveRemoved
+            If Me.PollingEnabled Then Return
 
             ' Beim Entfernen ist typischerweise nur noch der Laufwerksname zuverlässig vorhanden.
             Dim arg As New DriveWatcherRemovedEventArgs(e)
@@ -332,6 +574,7 @@ Namespace DriveWatcherControl
         ''' <param name="sender">Die auslösende Instanz von <see cref="DriveWatcherNativeForm"/>.</param>
         ''' <param name="e">Die Laufwerksinformationen des betroffenen Laufwerks.</param>
         Private Sub NatForm_MediaInserted(sender As Object, e As String) Handles NatForm.MediaInserted
+            If Me.PollingEnabled Then Return
 
             Me.OnMediaInserted(Me.ReadDriveInfo(e, DriveWatcherEventType.MediaInserted))
 
@@ -344,6 +587,7 @@ Namespace DriveWatcherControl
         ''' <param name="sender">Die auslösende Instanz von <see cref="DriveWatcherNativeForm"/>.</param>
         ''' <param name="e">Die Laufwerksinformationen des betroffenen Laufwerks.</param>
         Private Sub NatForm_MediaRemoved(sender As Object, e As String) Handles NatForm.MediaRemoved
+            If Me.PollingEnabled Then Return
 
             Dim arg As New DriveWatcherRemovedEventArgs(e)
             Me.OnMediaRemoved(arg)
@@ -360,6 +604,7 @@ Namespace DriveWatcherControl
         ''' <param name="sender">Das native Empfangsfenster.</param>
         ''' <param name="e">Der Name des hinzugefügten Netzlaufwerks.</param>
         Private Sub NatForm_NetworkDriveAdded(sender As Object, e As String) Handles NatForm.NetworkDriveAdded
+            If Me.PollingEnabled Then Return
 
             Me.OnNetworkDriveAdded(Me.ReadDriveInfo(e, DriveWatcherEventType.NetworkAdded))
 
@@ -414,6 +659,7 @@ Namespace DriveWatcherControl
         ''' <param name="sender">Das native Empfangsfenster.</param>
         ''' <param name="e">Der Name des entfernten Netzlaufwerks.</param>
         Private Sub NatForm_NetworkDriveRemoved(sender As Object, e As String) Handles NatForm.NetworkDriveRemoved
+            If Me.PollingEnabled Then Return
 
             Dim arg As New DriveWatcherRemovedEventArgs(e)
             Me.OnNetworkDriveRemoved(arg)
@@ -547,9 +793,14 @@ Namespace DriveWatcherControl
         Private Sub StopEventDispatch()
             SyncLock Me._notificationSyncRoot
                 Me._notificationDisposed = True
+                Me._pollingEnabled = False
                 Me._synchronizingObject = Nothing
                 Me._driveTypes.Clear()
             End SyncLock
+            Dim timer = Me._pollingTimer
+            Me._pollingTimer = Nothing
+            If timer IsNot Nothing Then timer.Dispose()
+            Me._pollingState = New Dictionary(Of String, PollingDriveState)(StringComparer.OrdinalIgnoreCase)
             Me._debouncer.Clear()
         End Sub
 
@@ -591,6 +842,34 @@ Namespace DriveWatcherControl
             Return duplicate
 
         End Function
+
+#End Region
+
+#Region "interne Klassen"
+
+        ''' <summary>Speichert die zuletzt verlässlich beobachteten Vergleichswerte eines Laufwerks.</summary>
+        Private NotInheritable Class PollingDriveState
+
+            ''' <summary>Beim letzten Vergleich gelesene Ereignisdaten.</summary>
+            Friend ReadOnly Data As DriveWatcherAddedEventArgs
+
+            ''' <summary>Letzter bekannter Typ; Unknown bezeichnet einen unbekannten Typ.</summary>
+            Friend ReadOnly DriveType As DriveType
+
+            ''' <summary>Letzter bekannter Bereitschaftsstatus; Nothing bezeichnet einen unbekannten Status.</summary>
+            Friend ReadOnly Ready As Boolean?
+
+            ''' <summary>Erstellt einen unveränderlichen Vergleichszustand.</summary>
+            ''' <param name="data">Aktuelle Ereignisdaten.</param>
+            ''' <param name="driveType">Zuletzt bekannter Laufwerkstyp.</param>
+            ''' <param name="ready">Zuletzt bekannte Bereitschaft.</param>
+            Friend Sub New(data As DriveWatcherAddedEventArgs, driveType As DriveType, ready As Boolean?)
+                Me.Data = data
+                Me.DriveType = driveType
+                Me.Ready = ready
+            End Sub
+
+        End Class
 
 #End Region
 

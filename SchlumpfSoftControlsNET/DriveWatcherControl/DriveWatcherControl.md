@@ -73,6 +73,15 @@ DriveWatcher1.IncludeLetters = {"E"c, "F"c}
 DriveWatcher1.TraceLevel = System.Diagnostics.TraceLevel.Verbose
 ```
 
+- `PollingEnabled As Boolean`: Aktiviert den Polling-Fallback; standardmäßig `False`. Beim Einschalten wird synchron ein Ausgangszustand gelesen, ohne Ereignisse auszulösen. Während Polling aktiv ist, ersetzt es die nativen Ereignisse; beim Ausschalten werden diese wieder verwendet. Das Setzen muss auf dem Thread des Empfangsfensters erfolgen; andernfalls wird `InvalidOperationException` ausgelöst. Ein erneutes Aktivieren während einer laufenden Abfrage ist nicht möglich. Das Ausschalten aus einem Ereignishandler ist zulässig. Nach `Dispose()` löst das Setzen `ObjectDisposedException` aus. Ein Fehler der initialen Aufzählung wird weitergegeben und der Modus bleibt ausgeschaltet.
+
+- `PollingInterval As Integer`: Polling-Abstand in Millisekunden, standardmäßig `2000`. Positive Werte sind zulässig; andere lösen `ArgumentOutOfRangeException` aus. Änderungen erfolgen auf dem Thread des Empfangsfensters und gelten auch bei laufendem Polling. Andere Threads lösen `InvalidOperationException`, das Setzen nach `Dispose()` `ObjectDisposedException` aus.
+
+```vb
+DriveWatcher1.PollingInterval = 2000
+DriveWatcher1.PollingEnabled = True
+```
+
 - `SynchronizingObject As System.ComponentModel.ISynchronizeInvoke`: Optionales Ziel für die Zustellung aller sechs Ereignisse; der Standardwert ist `Nothing`. `Nothing` stellt die direkte Zustellung wieder her. Ist `InvokeRequired` wahr, wird die Zustellung asynchron mit `BeginInvoke` vorgemerkt, andernfalls erfolgt sie direkt. Ein Windows Forms-Steuerelement muss bei der Zustellung ein bereits erstelltes Fensterhandle besitzen; andernfalls wird `InvalidOperationException` ausgelöst. Das Setzen nach `Dispose()` löst `ObjectDisposedException` aus. Die Eigenschaft wird zur Laufzeit gesetzt und nicht vom Designer serialisiert.
 
 ```vb
@@ -119,6 +128,12 @@ DriveWatcher1.SynchronizingObject = Me
 - Jede Instanz besitzt genau ein eigenes unsichtbares Empfangsfenster. Windows sendet die standardmäßigen Volume-Benachrichtigungen an dieses Fenster; eine zusätzliche Geräteanmeldung ist dafür nicht erforderlich.
 
 - Das Fenster wird auf dem Thread erstellt, der den Konstruktor aufruft. Für den automatischen Empfang muss dieser Thread eine Windows-Nachrichtenschleife betreiben. `Dispose()` sollte auf demselben Thread aufgerufen werden, damit das Fenster unmittelbar zerstört wird; bei einem Aufruf von einem anderen Thread kann sich die Zerstörung bis zur Verarbeitung einer Fensternachricht verzögern.
+
+- Der Polling-Timer benötigt ebenfalls die Nachrichtenschleife des Fensterthreads. Die Abfragen laufen dort synchron und können insbesondere bei Netzlaufwerken die Oberfläche blockieren; das Intervall ist kein garantierter Höchstabstand. Zwischen zwei Abfragen vollständig abgeschlossene Zustandswechsel und Medienwechsel ohne erkennbare Bereitschaftsänderung können nicht erkannt werden. Die Momentaufnahmen sind nicht atomar.
+
+- Polling meldet neue beziehungsweise entfernte Netzwerk- und andere Laufwerke getrennt. Bei bereits vorhandenen Wechsel- und CD-/DVD-Laufwerken wird ein Wechsel der Bereitschaft als Medienwechsel gemeldet; ein neues oder entferntes Laufwerk erzeugt nur das jeweilige Laufwerksereignis. Fehler bei Typ- oder Bereitschaftsabfragen erhalten den letzten bekannten Wert für den Vergleich, statt einen Medienwechsel zu erfinden. `IsReady = False` ohne Lesefehler bleibt eine gültige Beobachtung. Ereignisfilter, Entprellung und `SynchronizingObject` gelten auch im Polling-Modus. Beim Start und beim Ausschalten wird der Entprellungsspeicher geleert; bereits vorgemerkte Zustellungen bleiben bestehen.
+
+- Ein Fehler bei der Laufwerksaufzählung wird beim Einschalten direkt und bei einem Timer-Tick gemäß der Windows-Forms-Fehlerbehandlung weitergegeben; der letzte erfolgreiche Vergleichszustand bleibt erhalten. Feldbezogene Lesefehler erscheinen in den Ereignisdaten und ab `TraceLevel.Error` bei jedem Polling-Durchlauf in der Diagnose. Beim Ausschalten oder Freigeben wird der Timer beendet und der Vergleichszustand verworfen.
 
 - Das Synchronisierungsobjekt muss während der Zustellung verfügbar bleiben; sein Thread benötigt für asynchrone Aufrufe eine Nachrichtenschleife. Eine Änderung von `SynchronizingObject` betrifft nachfolgende Ereignisse, nicht bereits vorgemerkte Zustellungen. Die Handlerliste wird erst bei der tatsächlichen Zustellung ausgewertet.
 
@@ -252,11 +267,11 @@ Aktuell sind keine Optimierungspunkte mehr offen.
 
 ### 8.4. Polling-Fallback
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Vorschlag:** Optionaler Fallback-Modus bei fehlenden Systemevents.
 
-**Umsetzung:** Intervallbasierten Vergleich gegen letzten Snapshot.
+**Umsetzung:** `PollingEnabled` schaltet auf den intervallbasierten Vergleich um; `PollingInterval` bestimmt den Abstand. Der erste Zustand dient als Ausgangsbasis, danach werden Änderungen über die vorhandenen Ereignisse, Filter und Zustellungsmechanismen gemeldet.
 
 ---
 
@@ -270,5 +285,4 @@ Aktuell sind keine Optimierungspunkte mehr offen.
 
 ### ## 8.6. Empfohlene Reihenfolge
 
-1. Polling-Fallback
-2. Diagnosemodus
+1. Diagnosemodus

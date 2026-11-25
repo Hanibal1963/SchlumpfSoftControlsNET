@@ -95,6 +95,14 @@ Namespace DriveWatcherControl
         ''' </summary>
         Public Property IsReady As Boolean
 
+        ''' <summary>Ruft die vom Dateisystem gemeldete Volumeseriennummer ab oder legt sie fest.</summary>
+        ''' <remarks>Ein nicht verfügbarer Wert ist <see langword="Nothing"/>; er ist keine Hardware-Seriennummer.</remarks>
+        Public Property VolumeSerialNumber As UInteger?
+
+        ''' <summary>Gibt an, ob das Laufwerk als Netzlaufwerk erkannt wurde.</summary>
+        ''' <remarks>Bei unbekanntem Laufwerkstyp ist der Wert standardmäßig <see langword="False"/>.</remarks>
+        Public Property IsNetwork As Boolean
+
         ''' <summary>
         ''' Ruft die Fehler beim Lesen der Laufwerksinformationen ab. Die Schlüssel entsprechen den
         ''' Eigenschaftsnamen; <c>DriveInfo</c> bezeichnet einen Fehler beim Erstellen der Abfrage.
@@ -149,6 +157,7 @@ Namespace DriveWatcherControl
             MyClass.New
             Me.DriveName = DriveName
             Me.DriveType = DriveType
+            Me.IsNetwork = DriveType = IO.DriveType.Network
 
         End Sub
 
@@ -163,6 +172,7 @@ Namespace DriveWatcherControl
             MyClass.New
             Me.DriveName = DriveName
             Me.DriveType = DriveType
+            Me.IsNetwork = DriveType = IO.DriveType.Network
             Me.IsReady = IsReady
 
         End Sub

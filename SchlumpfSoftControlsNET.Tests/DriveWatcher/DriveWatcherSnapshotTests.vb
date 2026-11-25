@@ -45,6 +45,28 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         End Sub
 
         <TestMethod>
+        Public Sub EventArgs_ConstructorsAndNetworkSource_PreserveNetworkStatus()
+            Dim args As New DriveWatcherAddedEventArgs("Z:\", DriveType.Network)
+            Assert.IsTrue(args.IsNetwork)
+            Assert.IsFalse(args.VolumeSerialNumber.HasValue)
+            args = New DriveWatcherAddedEventArgs("Z:\", DriveType.Fixed, True)
+            Assert.IsFalse(args.IsNetwork)
+            Dim source As New FakeSource With {.Type = DriveType.Network}
+            Dim result = DriveWatcherInfoSnapshotReader.Read("Z:\", Function(name) source)
+            Assert.IsTrue(result.IsNetwork)
+        End Sub
+
+        <TestMethod>
+        Public Sub Read_SystemDrive_ObtainsVolumeSerialNumber()
+            Dim systemRoot = Path.GetPathRoot(Environment.SystemDirectory)
+            Assert.IsNotNull(systemRoot)
+            Dim result = DriveWatcherInfoSnapshotReader.Read(systemRoot)
+            Assert.IsTrue(result.IsReady)
+            Assert.IsFalse(result.ReadErrors.ContainsKey(NameOf(result.VolumeSerialNumber)))
+            Assert.IsTrue(result.VolumeSerialNumber.HasValue)
+        End Sub
+
+        <TestMethod>
         Public Sub ReadCurrent_EmptyAndUnexpectedFailure_AreNotHidden()
             Dim empty = DriveWatcherInfoSnapshotReader.ReadCurrent(Array.Empty(Of String)(), Function(name) New FakeSource())
             Assert.IsEmpty(empty)
@@ -78,6 +100,8 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             Assert.AreEqual(22L, result.TotalFreeSpace)
             Assert.AreEqual(33L, result.TotalSize)
             Assert.AreEqual("NTFS", result.DriveFormat)
+            Assert.AreEqual(CUInt(&H1234ABCD), result.VolumeSerialNumber.Value)
+            Assert.IsFalse(result.IsNetwork)
             Assert.IsEmpty(result.ReadErrors)
         End Sub
 
@@ -88,6 +112,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
         <DataRow("TotalSize")>
         <DataRow("DriveFormat")>
         <DataRow("DriveType")>
+        <DataRow("VolumeSerialNumber")>
         Public Sub Read_IndividualFailure_PreservesOtherValues(propertyName As String)
             Dim source As New FakeSource()
             Dim failure As New IOException("read failed")
@@ -102,6 +127,11 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
             Assert.AreEqual(If(propertyName = "TotalFreeSpace", 0L, 22L), result.TotalFreeSpace)
             Assert.AreEqual(If(propertyName = "TotalSize", 0L, 33L), result.TotalSize)
             Assert.AreEqual(If(propertyName = "DriveFormat", "", "NTFS"), result.DriveFormat)
+            If propertyName = "VolumeSerialNumber" Then
+                Assert.IsFalse(result.VolumeSerialNumber.HasValue)
+            Else
+                Assert.AreEqual(CUInt(&H1234ABCD), result.VolumeSerialNumber.Value)
+            End If
         End Sub
 
         <TestMethod>
@@ -167,6 +197,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
             Friend ReadOnly Failures As New Dictionary(Of String, Exception)()
             Friend Ready As Boolean = True
+            Friend Type As DriveType = IO.DriveType.Fixed
             Friend DetailReads As Int32
 
             Private Function Value(Of T)(name As String, resultValue As T, Optional detail As Boolean = False) As T
@@ -178,7 +209,13 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
 
             Public ReadOnly Property DriveType As DriveType Implements IDriveWatcherDriveInfoSource.DriveType
                 Get
-                    Return Me.Value(NameOf(DriveType), IO.DriveType.Fixed)
+                    Return Me.Value(NameOf(DriveType), Me.Type)
+                End Get
+            End Property
+
+            Public ReadOnly Property VolumeSerialNumber As UInteger Implements IDriveWatcherDriveInfoSource.VolumeSerialNumber
+                Get
+                    Return Me.Value(NameOf(VolumeSerialNumber), CUInt(&H1234ABCD), True)
                 End Get
             End Property
 

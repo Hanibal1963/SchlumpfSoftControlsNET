@@ -383,6 +383,7 @@ Namespace DriveWatcherControl
         ''' <returns>Die gelesenen Laufwerksinformationen einschließlich etwaiger Lesefehler.</returns>
         Private Function ReadDriveInfo(driveName As String, eventType As DriveWatcherEventType) As DriveWatcherAddedEventArgs
             Dim result As DriveWatcherAddedEventArgs = DriveWatcherInfoSnapshotReader.Read(driveName)
+            If eventType = DriveWatcherEventType.NetworkAdded Then result.IsNetwork = True
             If Me.IsTraceEnabled(System.Diagnostics.TraceLevel.Error) Then
                 For Each entry In result.ReadErrors
                     WriteDiagnostic($"ReadError Event={eventType} Drive={driveName} Field={entry.Key} Exception={entry.Value.GetType().FullName} Message={entry.Value.Message}")

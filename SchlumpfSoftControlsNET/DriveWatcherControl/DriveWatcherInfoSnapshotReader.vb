@@ -35,7 +35,7 @@ Namespace DriveWatcherControl
         Friend Shared Function ReadCurrent(names As IEnumerable(Of String), factory As Func(Of String, IDriveWatcherDriveInfoSource)) As IReadOnlyList(Of DriveWatcherDriveSnapshot)
             Dim result As New List(Of DriveWatcherDriveSnapshot)()
             For Each name In names
-                result.Add(New DriveWatcherDriveSnapshot(Read(name, factory)))
+                result.Add(New DriveWatcherDriveSnapshot(Read(name, factory, False)))
             Next
             Return result.AsReadOnly()
         End Function
@@ -43,10 +43,11 @@ Namespace DriveWatcherControl
         ''' <summary>Liest eine Momentaufnahme über eine vorgegebene Datenquellenfabrik.</summary>
         ''' <param name="name">Name des abzufragenden Laufwerks.</param>
         ''' <param name="factory">Erstellt die Datenquelle für den Laufwerksnamen.</param>
+        ''' <param name="includeSerialNumber">Gibt an, ob die Volumeseriennummer gelesen wird.</param>
         ''' <returns>Die Laufwerksdaten und gegebenenfalls Lesefehler.</returns>
         ''' <exception cref="ArgumentNullException">Die Fabrik ist <see langword="Nothing"/>.</exception>
         ''' <exception cref="InvalidOperationException">Die Fabrik liefert ohne erfassten Lesefehler keine Datenquelle.</exception>
-        Friend Shared Function Read(name As String, factory As Func(Of String, IDriveWatcherDriveInfoSource)) As DriveWatcherAddedEventArgs
+        Friend Shared Function Read(name As String, factory As Func(Of String, IDriveWatcherDriveInfoSource), Optional includeSerialNumber As Boolean = True) As DriveWatcherAddedEventArgs
 
 #If NET8_0_OR_GREATER Then
             ArgumentNullException.ThrowIfNull(factory, NameOf(factory))
@@ -65,9 +66,10 @@ Namespace DriveWatcherControl
             End If
 
             result.DriveType = ReadValue(result, NameOf(result.DriveType), Function() source.DriveType, DriveType.Unknown)
+            result.IsNetwork = result.DriveType = DriveType.Network
             result.IsReady = ReadValue(result, NameOf(result.IsReady), Function() source.IsReady, False)
 
-			' Medienabhängige Eigenschaften nur bei gemeldeter Bereitschaft abfragen.
+            ' Medienabhängige Eigenschaften nur bei gemeldeter Bereitschaft abfragen.
             If result.IsReady Then
 
                 ' Einzelne Fehler dürfen die übrigen Metadaten nicht unterdrücken.
@@ -76,6 +78,9 @@ Namespace DriveWatcherControl
                 result.TotalFreeSpace = ReadValue(result, NameOf(result.TotalFreeSpace), Function() source.TotalFreeSpace, 0L)
                 result.TotalSize = ReadValue(result, NameOf(result.TotalSize), Function() source.TotalSize, 0L)
                 result.DriveFormat = ReadValue(result, NameOf(result.DriveFormat), Function() source.DriveFormat, "")
+                If includeSerialNumber Then
+                    result.VolumeSerialNumber = ReadValue(Of UInteger?)(result, NameOf(result.VolumeSerialNumber), Function() source.VolumeSerialNumber, Nothing)
+                End If
 
             End If
 

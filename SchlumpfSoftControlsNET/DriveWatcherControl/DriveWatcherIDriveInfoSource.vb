@@ -32,6 +32,9 @@ Namespace DriveWatcherControl
         ''' <summary>Ruft den Namen des Dateisystems ab.</summary>
         ReadOnly Property DriveFormat As String
 
+        ''' <summary>Ruft die vom Dateisystem vergebene Volumeseriennummer ab.</summary>
+        ReadOnly Property VolumeSerialNumber As UInteger
+
     End Interface
 
 End Namespace

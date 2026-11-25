@@ -94,7 +94,11 @@ DriveWatcher1.SynchronizingObject = Me
 
 - `DriveWatcherDriveSnapshot`: Unveränderliche Laufwerksdaten mit Name, Typ, Bereitschaft, Volumebezeichnung, Dateisystem und Speichergrößen sowie schreibgeschütztem `ReadErrors`. Einzelheiten stehen in [DriveWatcherDriveSnapshot.md](DriveWatcherDriveSnapshot.md).
 
-- `DriveWatcherAddedEventArgs`: Enthält `DriveName`, `DriveType`, `IsReady`, `VolumeLabel`, `DriveFormat`, `AvailableFreeSpace`, `TotalFreeSpace` und `TotalSize`. Neben dem parameterlosen Konstruktor akzeptieren die weiteren Konstruktoren den Laufwerksnamen und optional Typ und Bereitschaft. Sie führen keine Systemabfragen durch.
+- `DriveWatcherAddedEventArgs`: Enthält `DriveName`, `DriveType`, `IsReady`, `IsNetwork`, `VolumeSerialNumber`, `VolumeLabel`, `DriveFormat`, `AvailableFreeSpace`, `TotalFreeSpace` und `TotalSize`. Neben dem parameterlosen Konstruktor akzeptieren die weiteren Konstruktoren den Laufwerksnamen und optional Typ und Bereitschaft. Sie führen keine Systemabfragen durch. `IsNetwork` wird bei diesen Konstruktoren anhand des Typs initialisiert; beide neuen Eigenschaften sind wie die vorhandenen Eigenschaften veränderbar.
+
+- `VolumeSerialNumber As UInteger?`: Die von Windows gemeldete Volumeseriennummer, nicht die Hardware-Seriennummer. `Nothing` bedeutet, dass sie nicht gelesen wurde oder die Abfrage fehlgeschlagen ist; auch `0` kann eine gültige Seriennummer sein. Sie wird nur bei bereitem Laufwerk abgefragt. Ein Fehler steht unter `VolumeSerialNumber` in `ReadErrors`.
+
+- `IsNetwork As Boolean`: Bei gelesenen Ereignisdaten anhand von `DriveType.Network` gesetzt; für `NetworkDriveAdded` auch dann `True`, wenn die Typabfrage fehlschlägt. Bei unbekanntem Typ anderer Ereignisse ist der Wert `False`.
 
 - `DriveWatcherAddedEventArgs.ReadErrors As IReadOnlyDictionary(Of String, Exception)`: Schreibgeschützte Fehlerzuordnung für Systemabfragen. Der Schlüssel ist der Name der betroffenen Eigenschaft; `DriveInfo` bezeichnet einen Fehler beim Erstellen der Abfrage. Bei selbst erstellten Ereignisdaten ist die Zuordnung leer. Fehlgeschlagene Felder behalten ihren neutralen Wert (`Unknown`, `False`, leere Zeichenfolge oder `0`). Bei nicht bereitem Laufwerk werden Detailfelder nicht abgefragt. Ein leeres Wörterbuch bedeutet dabei nicht, dass die Detailwerte gelesen wurden.
 
@@ -238,11 +242,11 @@ Aktuell sind keine Optimierungspunkte mehr offen.
 
 ### 8.3. Erweiterte EventArgs
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Vorschlag:** Seriennummer und IsNetwork. Dateisystem (`DriveFormat`) und `VolumeLabel` sind bereits in `DriveWatcherAddedEventArgs` enthalten.
 
-**Umsetzung:** EventArgs-Klassen erweitern und Abwärtskompatibilität sichern.
+**Umsetzung:** `DriveWatcherAddedEventArgs` stellt die optionale Windows-Volumeseriennummer und `IsNetwork` bereit. Bestehende Konstruktoren bleiben erhalten; Fehler der Seriennummernabfrage werden in `ReadErrors` erfasst.
 
 ---
 
@@ -266,6 +270,5 @@ Aktuell sind keine Optimierungspunkte mehr offen.
 
 ### ## 8.6. Empfohlene Reihenfolge
 
-1. Erweiterte EventArgs
-2. Polling-Fallback
-3. Diagnosemodus
+1. Polling-Fallback
+2. Diagnosemodus

@@ -31,8 +31,10 @@ Public Class FormDriveWatcher
             Dim totalSize = If(e.ReadErrors.ContainsKey(NameOf(e.TotalSize)), "nicht ermittelbar", e.TotalSize.ToString())
             Dim freeSpace = If(e.ReadErrors.ContainsKey(NameOf(e.TotalFreeSpace)), "nicht ermittelbar", e.TotalFreeSpace.ToString())
             Dim availableFreeSpace = If(e.ReadErrors.ContainsKey(NameOf(e.AvailableFreeSpace)), "nicht ermittelbar", e.AvailableFreeSpace.ToString())
+            Dim serial = If(e.ReadErrors.ContainsKey(NameOf(e.VolumeSerialNumber)), "nicht ermittelbar", e.VolumeSerialNumber.ToString())
             msg = $"Das Laufwerk {name} vom Typ {type} wurde hinzugefügt und ist bereit." & Environment.NewLine &
                   $"Es ist {format} formatiert und hat die Bezeichnung {label}." & Environment.NewLine &
+                  $"Die Seriennummer des Laufwerks lautet {serial}." & Environment.NewLine &
                   $"Die Gesamtkapazität beträgt {totalSize} Bytes und {freeSpace} Bytes Gesamtkapazität sind noch frei." & Environment.NewLine &
                   $"Für den aktuellen Benutzer sind noch {availableFreeSpace} Bytes freier Speicher verfügbar."
 

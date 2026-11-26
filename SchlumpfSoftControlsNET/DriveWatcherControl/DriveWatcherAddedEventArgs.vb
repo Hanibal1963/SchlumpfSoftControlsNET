@@ -97,7 +97,7 @@ Namespace DriveWatcherControl
 
         ''' <summary>Ruft die vom Dateisystem gemeldete Volumeseriennummer ab oder legt sie fest.</summary>
         ''' <remarks>Ein nicht verfügbarer Wert ist <see langword="Nothing"/>; er ist keine Hardware-Seriennummer.</remarks>
-        Public Property VolumeSerialNumber As UInteger?
+        Public Property VolumeSerialNumber As UInt32?
 
         ''' <summary>Gibt an, ob das Laufwerk als Netzlaufwerk erkannt wurde.</summary>
         ''' <remarks>Bei unbekanntem Laufwerkstyp ist der Wert standardmäßig <see langword="False"/>.</remarks>

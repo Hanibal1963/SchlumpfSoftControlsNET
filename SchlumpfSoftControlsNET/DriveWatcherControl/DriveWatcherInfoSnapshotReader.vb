@@ -79,7 +79,7 @@ Namespace DriveWatcherControl
                 result.TotalSize = ReadValue(result, NameOf(result.TotalSize), Function() source.TotalSize, 0L)
                 result.DriveFormat = ReadValue(result, NameOf(result.DriveFormat), Function() source.DriveFormat, "")
                 If includeSerialNumber Then
-                    result.VolumeSerialNumber = ReadValue(Of UInteger?)(result, NameOf(result.VolumeSerialNumber), Function() source.VolumeSerialNumber, Nothing)
+                    result.VolumeSerialNumber = ReadValue(Of UInt32?)(result, NameOf(result.VolumeSerialNumber), Function() source.VolumeSerialNumber, Nothing)
                 End If
 
             End If

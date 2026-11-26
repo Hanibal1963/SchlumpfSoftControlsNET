@@ -26,7 +26,7 @@ Namespace DriveWatcherControl
         ''' <param name="fileSystemNameSize">Größe des Dateisystempuffers.</param>
         ''' <returns>Gibt an, ob die Abfrage erfolgreich war.</returns>
         <DllImport("kernel32.dll", EntryPoint:="GetVolumeInformationW", CharSet:=CharSet.Unicode, SetLastError:=True, ExactSpelling:=True)>
-        Private Shared Function GetVolumeInformation(rootPath As String, volumeName As IntPtr, volumeNameSize As UInteger, ByRef serialNumber As UInteger, maximumComponentLength As IntPtr, fileSystemFlags As IntPtr, fileSystemName As IntPtr, fileSystemNameSize As UInteger) As <MarshalAs(UnmanagedType.Bool)> Boolean
+        Private Shared Function GetVolumeInformation(rootPath As String, volumeName As IntPtr, volumeNameSize As UInt32, ByRef serialNumber As UInt32, maximumComponentLength As IntPtr, fileSystemFlags As IntPtr, fileSystemName As IntPtr, fileSystemNameSize As UInt32) As <MarshalAs(UnmanagedType.Bool)> Boolean
         End Function
 
         ''' <summary>Enthält das zugrunde liegende Laufwerksobjekt.</summary>
@@ -47,9 +47,9 @@ Namespace DriveWatcherControl
         End Property
 
         ''' <summary>Ruft die Volumeseriennummer ab und meldet Windows-Fehler als Ausnahme.</summary>
-        Public ReadOnly Property VolumeSerialNumber As UInteger Implements IDriveWatcherDriveInfoSource.VolumeSerialNumber
+        Public ReadOnly Property VolumeSerialNumber As UInt32 Implements IDriveWatcherDriveInfoSource.VolumeSerialNumber
             Get
-                Dim serialNumber As UInteger
+                Dim serialNumber As UInt32
                 If Not GetVolumeInformation(Me._drive.Name, IntPtr.Zero, 0UI, serialNumber, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 0UI) Then
                     Throw New Win32Exception(Marshal.GetLastWin32Error())
                 End If

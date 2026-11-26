@@ -54,6 +54,9 @@ Namespace DriveWatcherControl
         ''' <summary>Aktuelle Diagnosestufe dieser Instanz.</summary>
         Private _traceLevel As TraceLevel = TraceLevel.Off
 
+        ''' <summary>Aktiviert die optionale Zustellung nativer Rohereignisse.</summary>
+        Private _diagnosticMode As Boolean
+
         ''' <summary>Unterdrückt wiederholte Laufwerksereignisse innerhalb des Zeitfensters.</summary>
         Private ReadOnly _debouncer As New DriveWatcherEventDebouncer()
 
@@ -90,6 +93,13 @@ Namespace DriveWatcherControl
 #End Region
 
 #Region "Öffentliche Ereignisse"
+
+        ''' <summary>Wird bei aktivem Diagnosemodus für jede empfangene WM_DEVICECHANGE-Nachricht ausgelöst.</summary>
+        ''' <param name="sender">Die auslösende DriveWatcher-Instanz.</param>
+        ''' <param name="e">Kopierte Rohdaten ohne native Zeiger.</param>
+        ''' <remarks>Das Ereignis ist unabhängig von Laufwerksfiltern, Entprellung und Polling und verwendet SynchronizingObject.</remarks>
+        <Description("Meldet native Geräteänderungen im Diagnosemodus.")>
+        Public Event RawDeviceEventReceived(sender As Object, e As DriveWatcherRawDeviceEventArgs)
 
         ''' <summary>
         ''' Wird ausgelöst, wenn ein logisches Laufwerk (Volume) hinzugefügt wurde.
@@ -151,6 +161,28 @@ Namespace DriveWatcherControl
 #End Region
 
 #Region "Öffentliche Eigenschaften"
+
+        ''' <summary>Aktiviert die Zustellung von nativen Geräteänderungen über RawDeviceEventReceived.</summary>
+        ''' <value>Standardmäßig <see langword="False"/>; unabhängig von TraceLevel und PollingEnabled.</value>
+        ''' <remarks>Das Abschalten betrifft neue Nachrichten; bereits vorgemerkte Zustellungen bleiben bestehen.</remarks>
+        ''' <exception cref="ObjectDisposedException">Die Eigenschaft wird nach der Freigabe gesetzt.</exception>
+        <DefaultValue(False)>
+        <Description("Aktiviert die Zustellung nativer Geräte-Rohereignisse.")>
+        Public Property DiagnosticMode As Boolean
+            Get
+                SyncLock Me._notificationSyncRoot
+                    Return Me._diagnosticMode
+                End SyncLock
+            End Get
+            Set(value As Boolean)
+                SyncLock Me._notificationSyncRoot
+#Disable Warning CA1513 ' ObjectDisposedException.ThrowIf ist unter .NET Framework nicht verfügbar.
+                    If Me._notificationDisposed Then Throw New ObjectDisposedException(NameOf(DriveWatcher))
+#Enable Warning CA1513
+                    Me._diagnosticMode = value
+                End SyncLock
+            End Set
+        End Property
 
         ''' <summary>Aktiviert den Vergleich von Laufwerksmomentaufnahmen anstelle nativer Ereignisse.</summary>
         ''' <remarks>Das Setzen erfolgt auf dem Thread des Empfangsfensters. Die erste synchrone Abfrage erzeugt keine Ereignisse; danach ist eine Nachrichtenschleife erforderlich.</remarks>
@@ -610,6 +642,20 @@ Namespace DriveWatcherControl
 
         End Sub
 
+        ''' <summary>Stellt eine native Geräteänderung bei aktiviertem Diagnosemodus zu.</summary>
+        ''' <param name="sender">Das native Empfangsfenster.</param>
+        ''' <param name="eventCode">Numerischer Windows-Ereigniscode.</param>
+        ''' <param name="deviceType">Gerätetyp oder Nothing.</param>
+        ''' <param name="unitMask">Volume-Bitmaske oder Nothing.</param>
+        ''' <param name="flags">Volume-Flags oder Nothing.</param>
+        Private Sub NatForm_RawDeviceObserved(sender As Object, eventCode As Int64, deviceType As Int32?, unitMask As Int32?, flags As Int16?) Handles NatForm.RawDeviceObserved
+            SyncLock Me._notificationSyncRoot
+                If Me._notificationDisposed OrElse Not Me._diagnosticMode Then Return
+            End SyncLock
+            Dim data As New DriveWatcherRawDeviceEventArgs(eventCode, deviceType, unitMask, flags, DateTimeOffset.UtcNow)
+            Me.DispatchEvent(Sub() RaiseEvent RawDeviceEventReceived(Me, data))
+        End Sub
+
         ''' <summary>Protokolliert bei ausführlicher Diagnose die nativen Volume-Daten.</summary>
         ''' <param name="sender">Das native Empfangsfenster.</param>
         ''' <param name="eventCode">Der native Ereigniscode.</param>
@@ -793,6 +839,7 @@ Namespace DriveWatcherControl
         Private Sub StopEventDispatch()
             SyncLock Me._notificationSyncRoot
                 Me._notificationDisposed = True
+                Me._diagnosticMode = False
                 Me._pollingEnabled = False
                 Me._synchronizingObject = Nothing
                 Me._driveTypes.Clear()

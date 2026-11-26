@@ -38,7 +38,7 @@ DriveWatcher Control wurde mit folgenden Geräten getestet:
 
 Ohne `SynchronizingObject` werden alle Ereignisse synchron auf dem Thread ausgelöst, der das Empfangsfenster erstellt hat. Bei einem konfigurierten Synchronisierungsobjekt erfolgt die Zustellung auf dessen Thread. Geschützte `On...`-Methoden, die von abgeleiteten Klassen direkt aufgerufen werden, verwenden ohne Synchronisierungsobjekt den jeweiligen aufrufenden Thread.
 
-Gleiche Ereignisse desselben Laufwerks werden innerhalb von 200 Millisekunden nach der ersten zugelassenen Meldung unterdrückt. Laufwerksnamen werden ohne Beachtung der Groß-/Kleinschreibung verglichen; andere Laufwerke und Ereignistypen besitzen jeweils eigene Einträge. Ein entgegengesetzter Zustandswechsel (hinzugefügt/entfernt beziehungsweise Medium eingelegt/entfernt) hebt den Eintrag seines Ereignispartners auf, sodass beispielsweise Hinzufügen–Entfernen–Hinzufügen vollständig gemeldet wird. Unterdrückte Duplikate verlängern das Zeitfenster nicht. Die Prüfung erfolgt vor einer gegebenenfalls asynchronen Zustellung.
+Bei den sechs Laufwerksereignissen werden gleiche Ereignisse desselben Laufwerks innerhalb von 200 Millisekunden nach der ersten zugelassenen Meldung unterdrückt. Laufwerksnamen werden ohne Beachtung der Groß-/Kleinschreibung verglichen; andere Laufwerke und Ereignistypen besitzen jeweils eigene Einträge. Ein entgegengesetzter Zustandswechsel (hinzugefügt/entfernt beziehungsweise Medium eingelegt/entfernt) hebt den Eintrag seines Ereignispartners auf, sodass beispielsweise Hinzufügen–Entfernen–Hinzufügen vollständig gemeldet wird. Unterdrückte Duplikate verlängern das Zeitfenster nicht. Die Prüfung erfolgt vor einer gegebenenfalls asynchronen Zustellung. Der Rohereignis-Feed wird nicht entprellt.
 
 - `DriveAdded`: Wird ausgelöst, wenn ein logisches Laufwerk (Volume) hinzugefügt wurde.
 
@@ -52,6 +52,8 @@ Gleiche Ereignisse desselben Laufwerks werden innerhalb von 200 Millisekunden na
 
 - `NetworkDriveRemoved`: Wird ausgelöst, wenn ein Netzlaufwerk entfernt wurde.
 
+- `RawDeviceEventReceived`: Wird bei aktiviertem `DiagnosticMode` für jede vom Empfangsfenster empfangene `WM_DEVICECHANGE`-Nachricht ausgelöst, auch bei aktivem Polling, für andere Gerätetypen und für unvollständige Meldungen. Laufwerksfilter und Entprellung gelten nicht. Die kopierten Ereignisdaten sind in [DriveWatcherRawDeviceEventArgs.md](DriveWatcherRawDeviceEventArgs.md) beschrieben. Die Meldung wird vor der normalen Laufwerksverarbeitung zur Zustellung übergeben; bei asynchroner Zustellung hängt die tatsächliche Ausführungsreihenfolge vom Synchronisierungsobjekt ab.
+
 ---
 
 ## 3. Eigenschaften
@@ -60,7 +62,7 @@ Gleiche Ereignisse desselben Laufwerks werden innerhalb von 200 Millisekunden na
 
 - `IncludeLetters As Char()`: Zugelassene Laufwerksbuchstaben von `A` bis `Z`, ohne Beachtung der Groß-/Kleinschreibung. `Nothing` oder ein leeres Array deaktiviert den Buchstabenfilter (Standard). Andere Zeichen lösen `ArgumentException` aus. Ein- und Ausgabe sind unabhängige Kopien; zurückgegebene Buchstaben sind großgeschrieben.
 
-Beide Filter gelten gemeinsam für alle sechs Ereignisse und werden vor der Entprellung und Zustellung geprüft. Das Setzen nach `Dispose()` löst `ObjectDisposedException` aus. Beim Ändern eines Filters wird der Entprellungsspeicher geleert; bereits zur Zustellung vorgemerkte Ereignisse behalten ihre ursprüngliche Filterentscheidung. Die Eigenschaften werden nicht vom Designer serialisiert.
+Beide Filter gelten gemeinsam für die sechs Laufwerksereignisse, nicht aber für `RawDeviceEventReceived`, und werden vor der Entprellung und Zustellung geprüft. Das Setzen nach `Dispose()` löst `ObjectDisposedException` aus. Beim Ändern eines Filters wird der Entprellungsspeicher geleert; bereits zur Zustellung vorgemerkte Ereignisse behalten ihre ursprüngliche Filterentscheidung. Die Eigenschaften werden nicht vom Designer serialisiert.
 
 ```vb
 DriveWatcher1.IncludeDriveTypes = {System.IO.DriveType.Removable}
@@ -73,6 +75,8 @@ DriveWatcher1.IncludeLetters = {"E"c, "F"c}
 DriveWatcher1.TraceLevel = System.Diagnostics.TraceLevel.Verbose
 ```
 
+- `DiagnosticMode As Boolean`: Aktiviert den Rohereignis-Feed; standardmäßig `False`. Die Einstellung ist unabhängig von `TraceLevel` und `PollingEnabled`. Das Ausschalten betrifft neue Meldungen, nicht bereits vorgemerkte Zustellungen. Nach `Dispose()` löst das Setzen `ObjectDisposedException` aus.
+
 - `PollingEnabled As Boolean`: Aktiviert den Polling-Fallback; standardmäßig `False`. Beim Einschalten wird synchron ein Ausgangszustand gelesen, ohne Ereignisse auszulösen. Während Polling aktiv ist, ersetzt es die nativen Ereignisse; beim Ausschalten werden diese wieder verwendet. Das Setzen muss auf dem Thread des Empfangsfensters erfolgen; andernfalls wird `InvalidOperationException` ausgelöst. Ein erneutes Aktivieren während einer laufenden Abfrage ist nicht möglich. Das Ausschalten aus einem Ereignishandler ist zulässig. Nach `Dispose()` löst das Setzen `ObjectDisposedException` aus. Ein Fehler der initialen Aufzählung wird weitergegeben und der Modus bleibt ausgeschaltet.
 
 - `PollingInterval As Integer`: Polling-Abstand in Millisekunden, standardmäßig `2000`. Positive Werte sind zulässig; andere lösen `ArgumentOutOfRangeException` aus. Änderungen erfolgen auf dem Thread des Empfangsfensters und gelten auch bei laufendem Polling. Andere Threads lösen `InvalidOperationException`, das Setzen nach `Dispose()` `ObjectDisposedException` aus.
@@ -82,7 +86,7 @@ DriveWatcher1.PollingInterval = 2000
 DriveWatcher1.PollingEnabled = True
 ```
 
-- `SynchronizingObject As System.ComponentModel.ISynchronizeInvoke`: Optionales Ziel für die Zustellung aller sechs Ereignisse; der Standardwert ist `Nothing`. `Nothing` stellt die direkte Zustellung wieder her. Ist `InvokeRequired` wahr, wird die Zustellung asynchron mit `BeginInvoke` vorgemerkt, andernfalls erfolgt sie direkt. Ein Windows Forms-Steuerelement muss bei der Zustellung ein bereits erstelltes Fensterhandle besitzen; andernfalls wird `InvalidOperationException` ausgelöst. Das Setzen nach `Dispose()` löst `ObjectDisposedException` aus. Die Eigenschaft wird zur Laufzeit gesetzt und nicht vom Designer serialisiert.
+- `SynchronizingObject As System.ComponentModel.ISynchronizeInvoke`: Optionales Ziel für die Zustellung aller Laufwerks- und Rohereignisse; der Standardwert ist `Nothing`. `Nothing` stellt die direkte Zustellung wieder her. Ist `InvokeRequired` wahr, wird die Zustellung asynchron mit `BeginInvoke` vorgemerkt, andernfalls erfolgt sie direkt. Ein Windows Forms-Steuerelement muss bei der Zustellung ein bereits erstelltes Fensterhandle besitzen; andernfalls wird `InvalidOperationException` ausgelöst. Das Setzen nach `Dispose()` löst `ObjectDisposedException` aus. Die Eigenschaft wird zur Laufzeit gesetzt und nicht vom Designer serialisiert.
 
 ```vb
 ' Nach Erstellung des Formularhandles, zum Beispiel im Shown-Ereignis:
@@ -102,6 +106,8 @@ DriveWatcher1.SynchronizingObject = Me
 ## 5. Hilfstypen/Strukturen
 
 - `DriveWatcherDriveSnapshot`: Unveränderliche Laufwerksdaten mit Name, Typ, Bereitschaft, Volumebezeichnung, Dateisystem und Speichergrößen sowie schreibgeschütztem `ReadErrors`. Einzelheiten stehen in [DriveWatcherDriveSnapshot.md](DriveWatcherDriveSnapshot.md).
+
+- `DriveWatcherRawDeviceEventArgs`: Unveränderlicher Windows-Ereigniscode, UTC-Zeitpunkt und gegebenenfalls Gerätetyp, Volume-Bitmaske und Flags. Die Werte werden vor der Zustellung kopiert; native Zeiger werden nicht gespeichert. Einzelheiten stehen in [DriveWatcherRawDeviceEventArgs.md](DriveWatcherRawDeviceEventArgs.md).
 
 - `DriveWatcherAddedEventArgs`: Enthält `DriveName`, `DriveType`, `IsReady`, `IsNetwork`, `VolumeSerialNumber`, `VolumeLabel`, `DriveFormat`, `AvailableFreeSpace`, `TotalFreeSpace` und `TotalSize`. Neben dem parameterlosen Konstruktor akzeptieren die weiteren Konstruktoren den Laufwerksnamen und optional Typ und Bereitschaft. Sie führen keine Systemabfragen durch. `IsNetwork` wird bei diesen Konstruktoren anhand des Typs initialisiert; beide neuen Eigenschaften sind wie die vorhandenen Eigenschaften veränderbar.
 
@@ -123,7 +129,7 @@ DriveWatcher1.SynchronizingObject = Me
 
 - `GetCurrentDrives()` liest Laufwerke und Eigenschaften nacheinander. Das Ergebnis ist daher keine atomare Momentaufnahme; Laufwerke können während der Abfrage verschwinden und Speicherwerte sich ändern. Die synchrone Abfrage kann insbesondere bei Netzlaufwerken dauern.
 
-- Nur Ankunfts- und vollständige Entfernungsbenachrichtigungen mit gültiger Volume-Struktur werden ausgewertet. Fehlende oder zu kurze Strukturen und ungültige Laufwerksmasken werden über `Trace.TraceWarning` gemeldet. Bei mehreren gesetzten Laufwerksbits wird weiterhin das erste ausgewertet.
+- Nur Ankunfts- und vollständige Entfernungsbenachrichtigungen mit gültiger Volume-Struktur werden zu Laufwerksereignissen ausgewertet. Fehlende oder zu kurze Strukturen und ungültige Laufwerksmasken werden über `Trace.TraceWarning` gemeldet. Bei mehreren gesetzten Laufwerksbits wird weiterhin das erste ausgewertet. Der Rohfeed enthält dagegen die vollständige Bitmaske und meldet auch andere `WM_DEVICECHANGE`-Codes. Für andere Codes werden keine `lParam`-Strukturen ausgewertet; die optionalen Strukturfelder sind dann `Nothing`.
 
 - Jede Instanz besitzt genau ein eigenes unsichtbares Empfangsfenster. Windows sendet die standardmäßigen Volume-Benachrichtigungen an dieses Fenster; eine zusätzliche Geräteanmeldung ist dafür nicht erforderlich.
 
@@ -138,6 +144,8 @@ DriveWatcher1.SynchronizingObject = Me
 - Das Synchronisierungsobjekt muss während der Zustellung verfügbar bleiben; sein Thread benötigt für asynchrone Aufrufe eine Nachrichtenschleife. Eine Änderung von `SynchronizingObject` betrifft nachfolgende Ereignisse, nicht bereits vorgemerkte Zustellungen. Die Handlerliste wird erst bei der tatsächlichen Zustellung ausgewertet.
 
 - Fehler beim Vormerken werden weitergegeben. Ausnahmen asynchroner Handler folgen der Fehlerbehandlung des jeweiligen `ISynchronizeInvoke`-Objekts; bei Windows Forms erfolgt diese über den zugehörigen Thread. Für den nativen Nachrichtenweg gelten außerdem die Fehlerbehandlungsregeln von Windows Forms.
+
+- Der Rohfeed verarbeitet nur tatsächlich am Empfangsfenster eintreffende Nachrichten und ergänzt keine künstlichen Meldungen aus dem Polling. Ohne `SynchronizingObject` laufen Rohhandler synchron vor der normalen Nachrichtenverarbeitung; ihre Ausnahmen können diese unterbrechen. Bei hohem Nachrichtenaufkommen können viele asynchrone Zustellungen vorgemerkt werden. Der Feed ist nicht von `TRACE` oder einem Trace-Listener abhängig.
 
 - Die Komponente ist für Windows und Windows Forms vorgesehen.
 
@@ -277,12 +285,12 @@ Aktuell sind keine Optimierungspunkte mehr offen.
 
 ### 8.5. Diagnosemodus
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Vorschlag:** `DiagnosticMode` mit Rohereignis-Feed.
 
-**Umsetzung:** Separates Event `RawDeviceEventReceived` ergänzen.
+**Umsetzung:** `DiagnosticMode` aktiviert das separate Ereignis `RawDeviceEventReceived` mit kopierten nativen Meldungsdaten, unabhängig von Filtern, Entprellung und Polling.
 
-### ## 8.6. Empfohlene Reihenfolge
+### 8.6. Empfohlene Reihenfolge
 
-1. Diagnosemodus
+Aktuell sind keine Erweiterungspunkte mehr offen.

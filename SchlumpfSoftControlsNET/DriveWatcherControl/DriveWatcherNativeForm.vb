@@ -146,6 +146,14 @@ Namespace DriveWatcherControl
 
 #Region "Öffentliche Ereignisse"
 
+        ''' <summary>Meldet eine empfangene Geräteänderung mit den sicher auswertbaren Rohfeldern.</summary>
+        ''' <param name="sender">Das Empfangsfenster.</param>
+        ''' <param name="eventCode">Unveränderter Windows-Ereigniscode.</param>
+        ''' <param name="deviceType">Gerätetyp aus einem gültigen Header oder Nothing.</param>
+        ''' <param name="unitMask">Volume-Bitmaske oder Nothing.</param>
+        ''' <param name="flags">Volume-Flags oder Nothing.</param>
+        Public Event RawDeviceObserved(sender As Object, eventCode As Int64, deviceType As Int32?, unitMask As Int32?, flags As Int16?)
+
         ''' <summary>Wird vor der Verarbeitung einer gültigen Volume-Meldung ausgelöst.</summary>
         ''' <param name="sender">Das Empfangsfenster.</param>
         ''' <param name="eventCode">Der Windows-Ereigniscode.</param>
@@ -254,6 +262,7 @@ Namespace DriveWatcherControl
 
             ' Vor dem Auslesen den Zeiger und die gemeldete Mindestgröße prüfen.
             If m.LParam = IntPtr.Zero Then
+                RaiseEvent RawDeviceObserved(Me, m.WParam.ToInt64(), Nothing, Nothing, Nothing)
 
                 Trace.TraceWarning("WM_DEVICECHANGE enthält keinen Geräteheader.")
                 Return
@@ -261,6 +270,7 @@ Namespace DriveWatcherControl
             End If
 
             If Marshal.ReadInt32(m.LParam) < Marshal.SizeOf(Of DEV_BROADCAST_HDR)() Then
+                RaiseEvent RawDeviceObserved(Me, m.WParam.ToInt64(), Nothing, Nothing, Nothing)
 
                 Trace.TraceWarning("WM_DEVICECHANGE enthält einen zu kurzen Geräteheader.")
                 Return
@@ -273,11 +283,15 @@ Namespace DriveWatcherControl
 
                 ' Die Volume-Struktur benötigt mehr Platz als der gemeinsame Header.
                 If header.dbch_size < Marshal.SizeOf(Of DEV_BROADCAST_VOLUME)() Then
+                    RaiseEvent RawDeviceObserved(Me, m.WParam.ToInt64(), header.dbch_devicetype, Nothing, Nothing)
                     Trace.TraceWarning("WM_DEVICECHANGE enthält eine zu kurze Volume-Struktur.")
                     Return
                 End If
 
                 Me.HandleVolume(m)
+
+            Else
+                RaiseEvent RawDeviceObserved(Me, m.WParam.ToInt64(), header.dbch_devicetype, Nothing, Nothing)
 
             End If
 
@@ -295,6 +309,7 @@ Namespace DriveWatcherControl
             Dim objVolume As Object = m.GetLParam(volume.GetType)
             If Not VisualBasic.IsNothing(objVolume) Then
                 volume = DirectCast(objVolume, DEV_BROADCAST_VOLUME)
+                RaiseEvent RawDeviceObserved(Me, m.WParam.ToInt64(), volume.dbch_devicetype, volume.dbcv_unitmask, volume.dbcv_flags)
 
                 ' Der Name ist bereits bekannt, auch wenn das Laufwerk nicht mehr lesbar ist.
                 Dim driveLetter As Char = Me.DriveFromMask(volume.dbcv_unitmask)
@@ -377,9 +392,13 @@ Namespace DriveWatcherControl
 
             ' Zentrale Eintrittsstelle für alle Fensternachrichten dieses NativeWindow.
             ' Für dieses Control interessiert ausschließlich WM_DEVICECHANGE.
-            If m.Msg = WM_DEVICECHANGE AndAlso
-                (m.WParam = New IntPtr(DBT_DEVICEARRIVAL) OrElse m.WParam = New IntPtr(DBT_DEVICEREMOVECOMPLETE)) Then
-                Me.HandleHeader(m)
+            If m.Msg = WM_DEVICECHANGE Then
+                If m.WParam = New IntPtr(DBT_DEVICEARRIVAL) OrElse m.WParam = New IntPtr(DBT_DEVICEREMOVECOMPLETE) Then
+                    Me.HandleHeader(m)
+                Else
+                    ' Andere Ereignistypen besitzen unterschiedliche lParam-Formate.
+                    RaiseEvent RawDeviceObserved(Me, m.WParam.ToInt64(), Nothing, Nothing, Nothing)
+                End If
             End If
 
             ' Nicht verarbeitete Nachrichten an die Basisklasse weiterreichen.

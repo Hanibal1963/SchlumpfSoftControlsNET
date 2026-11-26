@@ -64,7 +64,8 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 Dim volume As New BroadcastVolume With {.Size = Marshal.SizeOf(Of BroadcastVolume)(), .DeviceType = 2, .UnitMask = 4}
                 SendVolume(watcher, &H8004, volume)
                 SendVolume(watcher, &H8004, volume)
-                CollectionAssert.AreEqual(New String() {"raw", "removed", "raw"}, events)
+                Dim strvar As String() = New String() {"raw", "removed", "raw"}
+                CollectionAssert.AreEqual(strvar, events)
             End Using
         End Sub
 

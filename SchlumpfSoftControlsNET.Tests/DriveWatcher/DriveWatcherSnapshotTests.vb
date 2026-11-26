@@ -213,7 +213,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 End Get
             End Property
 
-            Public ReadOnly Property VolumeSerialNumber As UInteger Implements IDriveWatcherDriveInfoSource.VolumeSerialNumber
+            Public ReadOnly Property VolumeSerialNumber As UInt32 Implements IDriveWatcherDriveInfoSource.VolumeSerialNumber
                 Get
                     Return Me.Value(NameOf(VolumeSerialNumber), CUInt(&H1234ABCD), True)
                 End Get

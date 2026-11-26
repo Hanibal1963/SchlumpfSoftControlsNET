@@ -38,10 +38,12 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 drives = {New DriveWatcherAddedEventArgs("e:\", DriveType.CDRom, True), New DriveWatcherAddedEventArgs("Z:\", DriveType.Network, True), New DriveWatcherAddedEventArgs("F:\", DriveType.Fixed, True)}
                 watcher.PollNow()
                 watcher.PollNow()
-                CollectionAssert.AreEquivalent(New String() {"insert:e:\", "network+:Z:\", "add:F:\"}, events)
+                Dim strvar1 As String() = New String() {"insert:e:\", "network+:Z:\", "add:F:\"}
+                CollectionAssert.AreEquivalent(strvar1, events)
                 drives = {New DriveWatcherAddedEventArgs("E:\", DriveType.CDRom, False)}
                 watcher.PollNow()
-                CollectionAssert.AreEquivalent(New String() {"insert:e:\", "network+:Z:\", "add:F:\", "eject:E:\", "network-:Z:\", "remove:F:\"}, events)
+                Dim strvar2 As String() = New String() {"insert:e:\", "network+:Z:\", "add:F:\", "eject:E:\", "network-:Z:\", "remove:F:\"}
+                CollectionAssert.AreEquivalent(strvar2, events)
             End Using
         End Sub
 
@@ -68,7 +70,8 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                 watcher.PollingEnabled = True
                 drives = {New DriveWatcherAddedEventArgs("Z:\", DriveType.Fixed, True)}
                 watcher.PollNow()
-                CollectionAssert.AreEqual(New String() {"network-:Z:\", "add:Z:\"}, events)
+                Dim strvar As String() = New String() {"network-:Z:\", "add:Z:\"}
+                CollectionAssert.AreEqual(strvar, events)
             End Using
         End Sub
 
@@ -86,7 +89,7 @@ Namespace SchlumpfSoftControlsNET.Tests.DriveWatcherControl
                                          End Sub)
                 worker.Start()
                 worker.Join()
-                Assert.IsInstanceOfType(Of InvalidOperationException)(errorValue)
+                Dim unused = Assert.IsInstanceOfType(Of InvalidOperationException)(errorValue)
                 Assert.IsFalse(watcher.PollingEnabled)
             End Using
         End Sub

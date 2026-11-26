@@ -42,6 +42,9 @@ Namespace DriveWatcherControl
         ''' <summary>Empfangsfenster für native Geräteänderungen und deren Ereignisse.</summary>
         Private WithEvents NatForm As DriveWatcherNativeForm ' Unsichtbares natives Fenster für den Empfang von WM_DEVICECHANGE.
 
+        ''' <summary>Timer für den optionalen, auf dem Fensterthread laufenden Vergleich.</summary>
+        Private WithEvents PollingTimer As System.Windows.Forms.Timer
+
         ''' <summary>Synchronisiert Zustellung, Freigabe und Diagnoseeinstellungen.</summary>
         Private ReadOnly _notificationSyncRoot As New Object
 
@@ -71,9 +74,6 @@ Namespace DriveWatcherControl
 
         ''' <summary>Thread, auf dem Empfangsfenster und Polling-Timer betrieben werden.</summary>
         Private ReadOnly _ownerThreadId As Int32 = Environment.CurrentManagedThreadId
-
-        ''' <summary>Timer für den optionalen, auf dem Fensterthread laufenden Vergleich.</summary>
-        Private WithEvents _pollingTimer As System.Windows.Forms.Timer
 
         ''' <summary>Abfrageintervall in Millisekunden.</summary>
         Private _pollingInterval As Int32 = 2000
@@ -211,7 +211,7 @@ Namespace DriveWatcherControl
                         If Not started Then timer.Dispose()
                     End Try
                     Me._pollingState = initial
-                    Me._pollingTimer = timer
+                    Me.pollingTimer = timer
                     SyncLock Me._notificationSyncRoot
                         Me._pollingEnabled = True
                         Me._driveTypes.Clear()
@@ -222,8 +222,8 @@ Namespace DriveWatcherControl
                     SyncLock Me._notificationSyncRoot
                         Me._pollingEnabled = False
                     End SyncLock
-                    Dim timer = Me._pollingTimer
-                    Me._pollingTimer = Nothing
+                    Dim timer = Me.pollingTimer
+                    Me.pollingTimer = Nothing
                     If timer IsNot Nothing Then timer.Dispose()
                     Me._pollingState = New Dictionary(Of String, PollingDriveState)(StringComparer.OrdinalIgnoreCase)
                     Me._debouncer.Clear()
@@ -249,7 +249,7 @@ Namespace DriveWatcherControl
 #Else
                 If value <= 0 Then Throw New ArgumentOutOfRangeException(NameOf(value))
 #End If
-                If Me._pollingTimer IsNot Nothing Then Me._pollingTimer.Interval = value
+                If Me.pollingTimer IsNot Nothing Then Me.pollingTimer.Interval = value
                 Me._pollingInterval = value
             End Set
         End Property
@@ -470,14 +470,16 @@ Namespace DriveWatcherControl
                     Next
                 End If
                 Dim old As PollingDriveState = Nothing
-                If previous IsNot Nothing Then previous.TryGetValue(drive.DriveName, old)
+                If previous IsNot Nothing Then
+                    Dim unused = previous.TryGetValue(drive.DriveName, old)
+                End If
                 Dim type = drive.DriveType
                 Dim ready As Boolean? = drive.IsReady
                 If drive.ReadErrors.ContainsKey("DriveInfo") OrElse drive.ReadErrors.ContainsKey(NameOf(drive.DriveType)) Then
                     type = If(old Is Nothing, DriveType.Unknown, old.DriveType)
                 End If
                 If drive.ReadErrors.ContainsKey("DriveInfo") OrElse drive.ReadErrors.ContainsKey(NameOf(drive.IsReady)) Then
-                    ready = If(old Is Nothing, Nothing, old.Ready)
+                    ready = old?.Ready
                 End If
                 result.Add(drive.DriveName, New PollingDriveState(drive, type, ready))
             Next
@@ -497,7 +499,7 @@ Namespace DriveWatcherControl
         ''' <summary>Führt den zeitgesteuerten Vergleich auf dem Fensterthread aus.</summary>
         ''' <param name="sender">Der auslösende Timer.</param>
         ''' <param name="e">Die Timer-Ereignisdaten.</param>
-        Private Sub PollingTimer_Tick(sender As Object, e As EventArgs) Handles _pollingTimer.Tick
+        Private Sub PollingTimer_Tick(sender As Object, e As EventArgs) Handles pollingTimer.Tick
             Me.PollNow()
         End Sub
 
@@ -542,7 +544,7 @@ Namespace DriveWatcherControl
         ''' <param name="current">Aktueller Zustand.</param>
         ''' <returns>Ob ein Entfernungs- und Hinzufügeereignis erforderlich ist.</returns>
         Private Shared Function IsNetworkReplacement(old As PollingDriveState, current As PollingDriveState) As Boolean
-            Return old.DriveType <> DriveType.Unknown AndAlso current.DriveType <> DriveType.Unknown AndAlso (old.DriveType = DriveType.Network) <> (current.DriveType = DriveType.Network)
+            Return old.DriveType <> DriveType.Unknown AndAlso current.DriveType <> DriveType.Unknown AndAlso old.DriveType = DriveType.Network <> (current.DriveType = DriveType.Network)
         End Function
 
         ''' <summary>Meldet eine erkannte Entfernung mit dem zuletzt bekannten Typ.</summary>
@@ -844,8 +846,8 @@ Namespace DriveWatcherControl
                 Me._synchronizingObject = Nothing
                 Me._driveTypes.Clear()
             End SyncLock
-            Dim timer = Me._pollingTimer
-            Me._pollingTimer = Nothing
+            Dim timer = Me.pollingTimer
+            Me.pollingTimer = Nothing
             If timer IsNot Nothing Then timer.Dispose()
             Me._pollingState = New Dictionary(Of String, PollingDriveState)(StringComparer.OrdinalIgnoreCase)
             Me._debouncer.Clear()

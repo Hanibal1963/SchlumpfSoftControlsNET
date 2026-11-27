@@ -1,6 +1,7 @@
 ﻿' --------------------------------------------------------------------------------------------------------
 ' Datei: DirectoryNode.vb
 ' Author: Andreas Sauer
+' Datum: 27.11.2026
 ' --------------------------------------------------------------------------------------------------------
 
 Imports System.Diagnostics
@@ -11,6 +12,7 @@ Namespace ExplorerTreeViewControl
 
     ''' <summary>Verwaltet den verzögerten Lade- und Zugriffsstatus eines Verzeichnisknotens.</summary>
     Friend MustInherit Class DirectoryNode
+
         Inherits TreeNode
 
         ''' <summary>Beschreibt das Ergebnis des letzten Ladeversuchs; vor dem ersten Versuch ist es unbekannt.</summary>
@@ -33,6 +35,7 @@ Namespace ExplorerTreeViewControl
 
         ''' <summary>Enthält das Ergebnis einer Verzeichnisabfrage ohne Verweise auf UI-Elemente.</summary>
         Friend NotInheritable Class LoadResult
+
             ''' <summary>Initialisiert Status und ermittelte Unterverzeichnisse.</summary>
             ''' <param name="status">Ergebnis der Abfrage.</param>
             ''' <param name="directories">Vollständige Pfade der Unterverzeichnisse.</param>
@@ -65,29 +68,41 @@ Namespace ExplorerTreeViewControl
         ''' <param name="directoryPath">Pfad des zu lesenden Verzeichnisses.</param>
         ''' <returns>Verzeichnispfade und Zugriffsstatus.</returns>
         Friend Shared Function ReadChildren(directoryPath As String) As LoadResult
-            If String.IsNullOrWhiteSpace(directoryPath) Then Return New LoadResult(DirectoryStatus.Missing, Nothing)
+
+            If String.IsNullOrWhiteSpace(directoryPath) Then
+                Return New LoadResult(DirectoryStatus.Missing, Nothing)
+            End If
+
             Try
+
                 Return New LoadResult(DirectoryStatus.Accessible, Directory.GetDirectories(directoryPath))
+
             Catch ex As UnauthorizedAccessException
                 Debug.WriteLine($"Zugriff auf '{directoryPath}' verweigert: {ex.Message}")
                 Return New LoadResult(DirectoryStatus.AccessDenied, Nothing)
+
             Catch ex As DirectoryNotFoundException
                 Debug.WriteLine($"Verzeichnis '{directoryPath}' nicht gefunden: {ex.Message}")
                 Return New LoadResult(DirectoryStatus.Missing, Nothing)
+
             Catch ex As IOException
                 Debug.WriteLine($"Verzeichnis '{directoryPath}' nicht verfügbar: {ex.Message}")
                 Return New LoadResult(DirectoryStatus.Unavailable, Nothing)
+
             End Try
+
         End Function
 
         ''' <summary>Übernimmt ein Abfrageergebnis auf dem Thread des zugehörigen TreeViews.</summary>
         ''' <param name="result">Das zuvor ermittelte Ergebnis.</param>
         ''' <returns>True bei erfolgreicher Auflistung.</returns>
         Friend Function ApplyLoadResult(result As LoadResult) As Boolean
+
             Me.Status = result.Status
+
             If result.Status = DirectoryStatus.Accessible Then
                 Dim remaining As New HashSet(Of String)(result.Directories, StringComparer.OrdinalIgnoreCase)
-                For index As Integer = Me.Nodes.Count - 1 To 0 Step -1
+                For index As Int32 = Me.Nodes.Count - 1 To 0 Step -1
                     Dim child As FolderNode = TryCast(Me.Nodes(index), FolderNode)
                     If child Is Nothing OrElse Not remaining.Remove(child.FullPath) Then
                         Me.Nodes.RemoveAt(index)
@@ -104,6 +119,9 @@ Namespace ExplorerTreeViewControl
 
             Me.ChildrenLoaded = False
             Return False
+
         End Function
+
     End Class
+
 End Namespace

@@ -20,6 +20,58 @@ Namespace ExplorerTreeViewControl
 
         Inherits TreeNode
 
+        ''' <summary>Enthält Daten eines Wurzeleintrags unabhängig von TreeView-Knoten.</summary>
+        Friend NotInheritable Class RootEntry
+            ''' <summary>Initialisiert die Anzeige- und Pfaddaten eines Wurzeleintrags.</summary>
+            ''' <param name="text">Anzeigename.</param>
+            ''' <param name="path">Vollständiger Pfad.</param>
+            ''' <param name="imageKey">Schlüssel des Symbols.</param>
+            ''' <param name="isDrive">Kennzeichnet einen Laufwerkseintrag.</param>
+            Friend Sub New(text As String, path As String, imageKey As String, isDrive As Boolean)
+                Me.Text = text
+                Me.Path = path
+                Me.ImageKey = imageKey
+                Me.IsDrive = isDrive
+            End Sub
+
+            ''' <summary>Gibt den Anzeigenamen zurück.</summary>
+            Friend ReadOnly Property Text As String
+            ''' <summary>Gibt den vollständigen Pfad zurück.</summary>
+            Friend ReadOnly Property Path As String
+            ''' <summary>Gibt den Symbolschlüssel zurück.</summary>
+            Friend ReadOnly Property ImageKey As String
+            ''' <summary>Gibt an, ob der Eintrag ein Laufwerk beschreibt.</summary>
+            Friend ReadOnly Property IsDrive As Boolean
+        End Class
+
+        ''' <summary>Ermittelt Spezialordner und Laufwerksmetadaten ohne Zugriff auf Baumknoten.</summary>
+        ''' <returns>Die Daten für die unmittelbaren Wurzelknoten.</returns>
+        Friend Shared Function ReadEntries() As List(Of RootEntry)
+            Dim entries As New List(Of RootEntry)
+            For Each name As String In {"Desktop", "Dokumente", "Downloads", "Musik", "Bilder", "Videos"}
+                entries.Add(New RootEntry(name, GetSpezialFolderPath(name), GetImageKey(name), False))
+            Next
+            For Each drive As DriveInfo In DriveInfo.GetDrives()
+                entries.Add(New RootEntry($"{GetVolumeLabel(drive)} ({GetDriveName(drive)})", drive.Name, GetImageKey(GetDriveTypeString(drive)), True))
+            Next
+            Return entries
+        End Function
+
+        ''' <summary>Übernimmt vorbereitete Wurzeleinträge auf dem UI-Thread.</summary>
+        ''' <param name="entries">Zuvor ermittelte Daten für Ordner und Laufwerke.</param>
+        Friend Sub ApplyEntries(entries As List(Of RootEntry))
+            Me.Nodes.Clear()
+            For Each entry As RootEntry In entries
+                Dim node As TreeNode
+                If entry.IsDrive Then
+                    node = New DriveNode(entry.Text, entry.Path, entry.ImageKey)
+                Else
+                    node = New SpecialFolderNode(entry.Text, entry.Path, entry.ImageKey)
+                End If
+                Dim unused = Me.Nodes.Add(node)
+            Next
+        End Sub
+
         ''' <summary>
         ''' Initialisiert eine neue Instanz der ComputerNode-Klasse und setzt den Text des Knotens auf den
         ''' Computernamen.

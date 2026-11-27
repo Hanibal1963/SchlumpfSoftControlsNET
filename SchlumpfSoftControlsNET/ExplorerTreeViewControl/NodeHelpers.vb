@@ -96,14 +96,15 @@ Namespace ExplorerTreeViewControl
         ''' Dieses Dictionary wird verwendet, um den vollständigen Pfad eines speziellen Ordners basierend auf seinem
         ''' Namen zu ermitteln.
         ''' </summary>
-        Private ReadOnly FolderMappings As New Collections.Generic.Dictionary(Of String, String) From {
+        Private ReadOnly FolderMappings As New Lazy(Of Collections.Generic.Dictionary(Of String, String))(
+            Function() New Collections.Generic.Dictionary(Of String, String) From {
             {FOLDER_DESKTOP, Environment.GetFolderPath(Environment.SpecialFolder.Desktop)},
             {FOLDER_DOKUMENTE, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)},
             {FOLDER_DOWNLOADS, GetDownloadsFolderPath()},
             {FOLDER_MUSIK, Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)},
             {FOLDER_BILDER, Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)},
             {FOLDER_VIDEOS, Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)}
-        }
+        })
 
         ''' <summary>
         ''' Dieses Dictionary wird verwendet, um die Imagekeys für Ordner und Laufwerke zu ermitteln.
@@ -207,7 +208,7 @@ Namespace ExplorerTreeViewControl
         ''' <returns></returns>
         Public Function GetSpezialFolderPath(Text As String) As String
             Dim value As String = Nothing
-            Return If(FolderMappings.TryGetValue(Text, value), value, String.Empty)
+            Return If(FolderMappings.Value.TryGetValue(Text, value), value, String.Empty)
         End Function
 
         ''' <summary>

@@ -7,6 +7,7 @@
 Imports System
 Imports System.Drawing
 Imports System.IO
+Imports System.Linq
 Imports System.Windows.Forms
 
 Imports Microsoft.VisualStudio.TestTools.UnitTesting
@@ -22,6 +23,26 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
             Dim args As New SelectedPathChangedEventArgs(expectedPath)
 
             Assert.AreEqual(expectedPath, args.SelectedPath)
+        End Sub
+
+        ''' <summary>Prüft die Wurzelauflistung nach Erstellung des TreeView-Handles.</summary>
+        <STATestMethod>
+        Public Sub Root_LoadsDrivesAndSpecialFoldersAsynchronously()
+            Using control As New ExplorerTreeView()
+                control.CreateControl()
+                Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                Dim handle As IntPtr = tv.Handle
+                Dim root As TreeNode = tv.Nodes(0)
+                Assert.IsTrue(root.Nodes.Cast(Of TreeNode)().Any(Function(node) Not TypeOf node Is DirectoryNode))
+                Assert.IsTrue(WaitForCondition(Function() root.Nodes.Cast(Of TreeNode)().Any(Function(node) TypeOf node Is DriveNode)), "Die Laufwerke wurden nicht geladen.")
+                Assert.AreEqual(6, root.Nodes.Cast(Of TreeNode)().Count(Function(node) TypeOf node Is SpecialFolderNode))
+                Assert.IsFalse(root.Nodes.Cast(Of TreeNode)().Any(Function(node) Not TypeOf node Is DirectoryNode))
+                Dim existingDrive As DriveNode = root.Nodes.Cast(Of TreeNode)().OfType(Of DriveNode)().First()
+                Dim previousCount As Integer = root.Nodes.Count
+                Dim handler = GetType(ExplorerTreeView).GetMethod("DW_DriveAdded", Reflection.BindingFlags.Instance Or Reflection.BindingFlags.NonPublic)
+                Dim ignored = handler.Invoke(control, {Nothing, New SchlumpfSoft.ControlsNET.DriveWatcherControl.DriveWatcherAddedEventArgs(existingDrive.FullPath)})
+                Assert.AreEqual(previousCount, root.Nodes.Count)
+            End Using
         End Sub
 
         ''' <summary>Prüft, dass ein fehlendes Verzeichnis den bestätigten Pfad nicht überschreibt.</summary>

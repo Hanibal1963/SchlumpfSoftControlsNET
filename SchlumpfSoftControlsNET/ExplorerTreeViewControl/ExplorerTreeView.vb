@@ -83,6 +83,12 @@ Namespace ExplorerTreeViewControl
         Private _loadGeneration As Long
         ''' <summary>Kennzeichnet die weiterhin synchrone öffentliche Pfadnavigation.</summary>
         Private _synchronousNavigation As Boolean
+        ''' <summary>Verwirft überholte Ergebnisse der Wurzelauflistung.</summary>
+        Private _rootGeneration As Long
+        ''' <summary>Gibt an, ob die aktuelle Wurzelauflistung noch läuft.</summary>
+        Private _rootLoading As Boolean
+        ''' <summary>Gibt an, ob die Wurzeleinträge erfolgreich übernommen wurden.</summary>
+        Private _rootLoaded As Boolean
 
 #End Region
 
@@ -354,6 +360,8 @@ Namespace ExplorerTreeViewControl
         '''
         ''' <para>Außerdem wird der Wurzelknoten des TreeViews gesetzt, um die Struktur des Steuerelements zu
         ''' definieren.</para>
+        ''' <para>Die Spezialordner und Laufwerke werden nach der Erstellung des TreeView-Handles im Hintergrund
+        ''' ermittelt. Ein Aufruf von <see cref="ExpandPath(String)"/> kann die Ermittlung synchron vorziehen.</para>
         ''' </remarks>
         Public Sub New()
             Me.InitializeComponent()
@@ -380,6 +388,7 @@ Namespace ExplorerTreeViewControl
                 Dim lastpath As String = String.Empty
                 Dim lastnode As TreeNode = Me.TV.Nodes.Item(0)
                 lastnode.Expand()
+                If Not Me._rootLoaded Then Me.LoadRootSynchronously(DirectCast(lastnode, ComputerNode))
                 Dim foundNode As TreeNode
                 For Each pathsegment As String In GetPathSegments(Path)
                     lastpath = IO.Path.Combine(lastpath, pathsegment)
@@ -501,13 +510,80 @@ Namespace ExplorerTreeViewControl
         ''' <param name="Node"></param>
         Private Sub LoadSubfolders(Node As TreeNode)
             If TypeOf Node Is ComputerNode Then
-                Node.Nodes.Clear()
-                CType(Node, ComputerNode).LoadSpecialFolders()
-                CType(Node, ComputerNode).LoadDrives()
+                If Me._synchronousNavigation Then
+                    Me.LoadRootSynchronously(DirectCast(Node, ComputerNode))
+                Else
+                    Me.LoadRootAsync(DirectCast(Node, ComputerNode))
+                End If
             ElseIf TypeOf Node Is DirectoryNode Then
                 Dim directoryNode As DirectoryNode = CType(Node, DirectoryNode)
                 Me.LoadDirectoryAsync(directoryNode)
             End If
+        End Sub
+
+        ''' <summary>Lädt die Wurzel für die bestehende synchrone Pfadnavigation und verwirft ältere Aufträge.</summary>
+        ''' <param name="node">Wurzelknoten des Steuerelements.</param>
+        Private Sub LoadRootSynchronously(node As ComputerNode)
+            If Me._rootLoaded Then Return
+            Me._rootGeneration += 1
+            Me._rootLoading = False
+            Dim entries As List(Of ComputerNode.RootEntry) = ComputerNode.ReadEntries()
+            node.ApplyEntries(entries)
+            node.ToolTipText = String.Empty
+            Me._rootLoaded = True
+        End Sub
+
+        ''' <summary>Ermittelt Wurzeleinträge im Hintergrund und übernimmt nur das aktuelle Ergebnis.</summary>
+        ''' <param name="node">Wurzelknoten des Steuerelements.</param>
+        Private Sub LoadRootAsync(node As ComputerNode)
+            If Me._rootLoaded OrElse Me._rootLoading OrElse Not Me.TV.IsHandleCreated Then Return
+            Me._rootGeneration += 1
+            Dim generation As Long = Me._rootGeneration
+            Me._rootLoading = True
+            Dim unused = Task.Run(Function() ComputerNode.ReadEntries()).ContinueWith(
+                Sub(task As Task(Of List(Of ComputerNode.RootEntry)))
+                    If task.IsFaulted Then Debug.WriteLine($"Fehler beim Laden der Wurzeleinträge: {task.Exception}")
+                    Try
+                        Dim ignored = Me.TV.BeginInvoke(New MethodInvoker(
+                            Sub()
+                                If Me.IsDisposed OrElse Me.Disposing OrElse generation <> Me._rootGeneration OrElse
+                                    node.TreeView IsNot Me.TV OrElse Not node.IsExpanded Then Return
+                                Me._rootLoading = False
+                                If task.IsFaulted Then
+                                    node.ToolTipText = "Laufwerke und Spezialordner konnten nicht geladen werden. Erneut aufklappen, um es nochmals zu versuchen."
+                                    Return
+                                End If
+                                Me.TV.BeginUpdate()
+                                Try
+                                    node.ApplyEntries(task.Result)
+                                    node.ToolTipText = String.Empty
+                                    Me._rootLoaded = True
+                                Finally
+                                    Me.TV.EndUpdate()
+                                End Try
+                            End Sub))
+                    Catch ex As InvalidOperationException
+                        Debug.WriteLine($"Wurzeleinträge konnten nicht zugestellt werden: {ex.Message}")
+                    End Try
+                End Sub)
+        End Sub
+
+        ''' <summary>Startet nach Wiederherstellung des Handles eine noch ausstehende Wurzelauflistung.</summary>
+        ''' <param name="sender">Das TreeView.</param>
+        ''' <param name="e">Ereignisdaten.</param>
+        Private Sub TV_HandleCreated(sender As Object, e As EventArgs) Handles TV.HandleCreated
+            If Me.TV.Nodes.Count > 0 Then
+                Dim root As ComputerNode = TryCast(Me.TV.Nodes(0), ComputerNode)
+                If root IsNot Nothing AndAlso root.IsExpanded Then Me.LoadRootAsync(root)
+            End If
+        End Sub
+
+        ''' <summary>Verwirft Ergebnisse, die an ein zerstörtes Handle gebunden sind.</summary>
+        ''' <param name="sender">Das TreeView.</param>
+        ''' <param name="e">Ereignisdaten.</param>
+        Private Sub TV_HandleDestroyed(sender As Object, e As EventArgs) Handles TV.HandleDestroyed
+            Me._rootGeneration += 1
+            Me._rootLoading = False
         End Sub
 
         ''' <summary>Fragt Unterverzeichnisse im Hintergrund ab und übernimmt nur das neueste gültige Ergebnis.</summary>
@@ -789,6 +865,11 @@ Namespace ExplorerTreeViewControl
         ''' <param name="sender"></param>
         ''' <param name="e"></param>
         Private Sub TV_AfterCollapse(sender As Object, e As TreeViewEventArgs) Handles TV.AfterCollapse
+            If TypeOf e.Node Is ComputerNode Then
+                Me._rootGeneration += 1
+                Me._rootLoading = False
+                Me._rootLoaded = False
+            End If
             Me.RemoveFileSystemWatchers(GetDirectoryPath(e.Node))
             Dim obsolete As New List(Of DirectoryNode)
             For Each pending As DirectoryNode In Me._pendingLoads.Keys
@@ -864,6 +945,14 @@ Namespace ExplorerTreeViewControl
         ''' <param name="sender"></param>
         ''' <param name="e"></param>
         Private Sub DW_DriveAdded(sender As Object, e As DriveWatcherControl.DriveWatcherAddedEventArgs) Handles DW.DriveAdded
+            If Not Me._rootLoaded Then
+                Me.RestartRootLoading()
+                Return
+            End If
+            For Each node As TreeNode In Me.TV.Nodes.Item(0).Nodes
+                Dim drive As DriveNode = TryCast(node, DriveNode)
+                If drive IsNot Nothing AndAlso String.Equals(drive.FullPath, e.DriveName, StringComparison.OrdinalIgnoreCase) Then Return
+            Next
             Dim newNode As New DriveNode(New DriveInfo(e.DriveName)) With {.Tag = e.DriveName}
             Dim inserted As Boolean = False
             For i As Int32 = 0 To Me.TV.Nodes.Item(0).Nodes.Count - 1
@@ -890,6 +979,11 @@ Namespace ExplorerTreeViewControl
         ''' <param name="sender"></param>
         ''' <param name="e"></param>
         Private Sub DW_DriveRemoved(sender As Object, e As DriveWatcherControl.DriveWatcherRemovedEventArgs) Handles DW.DriveRemoved
+            If Not Me._rootLoaded Then
+                Me.RemoveFileSystemWatchers(e.DriveName)
+                Me.RestartRootLoading()
+                Return
+            End If
             For Each node As TreeNode In Me.TV.Nodes.Item(0).Nodes
                 If TypeOf node Is DriveNode Then
                     If CType(node, DriveNode).Tag.ToString() = e.DriveName Then
@@ -898,6 +992,16 @@ Namespace ExplorerTreeViewControl
                     End If
                 End If
             Next
+        End Sub
+
+        ''' <summary>Startet nach einer Laufwerksänderung eine noch nicht abgeschlossene Wurzelauflistung neu.</summary>
+        Private Sub RestartRootLoading()
+            Me._rootGeneration += 1
+            Me._rootLoading = False
+            If Me.TV.Nodes.Count > 0 Then
+                Dim root As ComputerNode = TryCast(Me.TV.Nodes(0), ComputerNode)
+                If root IsNot Nothing AndAlso root.IsExpanded Then Me.LoadRootAsync(root)
+            End If
         End Sub
 
         ''' <summary>

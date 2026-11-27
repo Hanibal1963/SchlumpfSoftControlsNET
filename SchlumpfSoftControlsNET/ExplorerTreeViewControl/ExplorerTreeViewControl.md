@@ -8,7 +8,7 @@ Unterstützt Laufwerke, spezielle Benutzerordner (Desktop, Dokumente, Downloads,
 
 ## 1. Konstruktoren
 
-- `New()`: Initialisiert das Steuerelement, lädt die erforderlichen Bilder und setzt den Wurzelknoten des TreeViews.
+- `New()`: Initialisiert das Steuerelement, lädt die erforderlichen Bilder und setzt den Wurzelknoten des TreeViews. Spezialordner und Laufwerke werden nach Erstellung des TreeView-Handles im Hintergrund ermittelt.
 
 ---
 
@@ -79,7 +79,7 @@ Verzeichnisknoten erhalten zunächst einen Platzhalter; ihre unmittelbaren Unter
 
 ### 7.3. Dateisystemzugriffe entkoppeln
 
-**Status** &#x26A0; Teilweise umgesetzt: Verzeichnisauflistungen beim Aufklappen und Aktualisieren, die Einrichtung der Verzeichnisüberwachung und die Prüfung interaktiver Auswahlen erfolgen im Hintergrund. Nach der Einrichtung wird erneut geladen, damit zwischenzeitliche Änderungen berücksichtigt werden; vorhandene Unterbäume bleiben bei der Aktualisierung erhalten. `ExpandPath` und seine Auswahlprüfung bleiben synchron. Initialisierung und asynchrone Pfadnavigation sind noch offen.
+**Status** &#x26A0; Teilweise umgesetzt: Die Ermittlung der Wurzeleinträge, Verzeichnisauflistungen beim Aufklappen und Aktualisieren, die Einrichtung der Verzeichnisüberwachung und die Prüfung interaktiver Auswahlen erfolgen im Hintergrund. Nach Einrichtung der Überwachung wird erneut geladen, damit zwischenzeitliche Änderungen berücksichtigt werden; vorhandene Unterbäume bleiben bei der Aktualisierung erhalten. `ExpandPath` und seine Auswahlprüfung bleiben synchron. Die asynchrone Pfadnavigation und die Metadatenabfrage für nachträglich hinzugefügte Laufwerke sind noch offen.
 
 **Umsetzung:**
 

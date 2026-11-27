@@ -7,7 +7,6 @@
 Imports System
 Imports System.IO
 Imports System.Windows.Forms
-Imports System.Threading.Tasks
 
 Namespace ExplorerTreeViewControl
 
@@ -20,7 +19,14 @@ Namespace ExplorerTreeViewControl
     ''' </remarks>
     Friend NotInheritable Class FolderNode
 
-        Inherits TreeNode
+        Inherits DirectoryNode
+
+        ''' <summary>Gibt den Pfad für das verzögerte Laden zurück.</summary>
+        Friend Overrides ReadOnly Property DirectoryPath As String
+            Get
+                Return Me.FullPath
+            End Get
+        End Property
 
         ''' <summary>
         ''' Gibt den vollständigen Pfad des Ordners zurück, der im Tag-Property gespeichert ist.
@@ -49,37 +55,7 @@ Namespace ExplorerTreeViewControl
             ' Leert die Knoten, um Platz für Unterordner zu schaffen
             Me.Nodes.Clear()
             ' Füge einen Platzhalterknoten hinzu, der später durch die Unterordner ersetzt wird
-            Dim unused = Me.Nodes.Add(New TreeNode("Ordner laden ..."))
-        End Sub
-
-        ''' <summary>
-        ''' Lädt die Unterordner des aktuellen Ordners und fügt sie als FolderNode-Knoten hinzu.
-        ''' </summary>
-        Public Sub LoadSubfolders()
-            ' Starte die Enumeration im Hintergrund, aktualisiere UI-thread-sicher
-            Dim folderPath = Me.FullPath
-            Dim unused1 = Task.Run(Sub()
-                                       Try
-                                           Dim dirs() As String = Directory.GetDirectories(folderPath)
-                                           If Me.TreeView IsNot Nothing AndAlso Me.TreeView.InvokeRequired Then
-                                               Dim unused2 = Me.TreeView.BeginInvoke(
-                                               New MethodInvoker(
-                                               Sub()
-                                                   For Each dir As String In dirs
-                                                       Dim unused = Me.Nodes.Add(New FolderNode(Path.GetFileName(dir), dir))
-                                                   Next
-                                               End Sub))
-                                           Else
-                                               For Each dir As String In dirs
-                                                   Dim unused = Me.Nodes.Add(New FolderNode(Path.GetFileName(dir), dir))
-                                               Next
-                                           End If
-                                       Catch ex As UnauthorizedAccessException
-                                           ' Zugriff verweigert – Ordner wird übersprungen
-                                       Catch
-                                           ' Allgemeine Fehler ignorieren, verhindern dass Hintergrundtask abstürzt
-                                       End Try
-                                   End Sub)
+            Me.AddPlaceholder()
         End Sub
 
     End Class

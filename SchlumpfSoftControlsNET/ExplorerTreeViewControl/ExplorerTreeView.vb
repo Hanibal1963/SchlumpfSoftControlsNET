@@ -460,22 +460,15 @@ Namespace ExplorerTreeViewControl
         ''' </summary>
         ''' <param name="Node"></param>
         Private Sub LoadSubfolders(Node As TreeNode)
-            Node.Nodes.Clear()
-            Select Case True
-                Case TypeOf Node Is ComputerNode
-                    CType(Node, ComputerNode).LoadSpecialFolders()
-                    CType(Node, ComputerNode).LoadDrives()
-                Case TypeOf Node Is SpecialFolderNode
-                    CType(Node, SpecialFolderNode).LoadSubfolders()
-                Case TypeOf Node Is DriveNode
-                    CType(Node, DriveNode).LoadSubfolders()
-                Case TypeOf Node Is FolderNode
-                    CType(Node, FolderNode).LoadSubfolders()
-            End Select
-
-            For Each child As TreeNode In Node.Nodes
-                Me.UpdateNodeAccessVisual(child)
-            Next
+            If TypeOf Node Is ComputerNode Then
+                Node.Nodes.Clear()
+                CType(Node, ComputerNode).LoadSpecialFolders()
+                CType(Node, ComputerNode).LoadDrives()
+            ElseIf TypeOf Node Is DirectoryNode Then
+                Dim directoryNode As DirectoryNode = CType(Node, DirectoryNode)
+                Dim unused = directoryNode.LoadChildren(True)
+                Me.UpdateNodeAccessVisual(directoryNode)
+            End If
         End Sub
 
         ''' <summary>
@@ -579,13 +572,10 @@ Namespace ExplorerTreeViewControl
                 Return
             End If
 
-            Dim path As String = GetDirectoryPath(e.Node)
-            If Not CanOpenFolder(path) Then
-                e.Cancel = True ' anzeigen ja, öffnen nein
-                Return
-            End If
-
-            Me.LoadSubfolders(e.Node)
+            Dim directoryNode As DirectoryNode = TryCast(e.Node, DirectoryNode)
+            If directoryNode Is Nothing Then Return
+            e.Cancel = Not directoryNode.LoadChildren()
+            Me.UpdateNodeAccessVisual(directoryNode)
         End Sub
 
         ''' <summary>
@@ -606,6 +596,8 @@ Namespace ExplorerTreeViewControl
         ''' <param name="e"></param>
         Private Sub TV_AfterCollapse(sender As Object, e As TreeViewEventArgs) Handles TV.AfterCollapse
             Me.RemoveFileSystemWatchers(GetDirectoryPath(e.Node))
+            Dim directoryNode As DirectoryNode = TryCast(e.Node, DirectoryNode)
+            If directoryNode IsNot Nothing Then directoryNode.ChildrenLoaded = False
         End Sub
 
         ''' <summary>
@@ -694,12 +686,21 @@ Namespace ExplorerTreeViewControl
             Dim path As String = GetDirectoryPath(node)
             If String.IsNullOrWhiteSpace(path) Then Exit Sub
 
-            If CanOpenFolder(path) Then
+            Dim directoryNode As DirectoryNode = TryCast(node, DirectoryNode)
+            If directoryNode Is Nothing OrElse directoryNode.Status = DirectoryNode.DirectoryStatus.Unknown OrElse
+                directoryNode.Status = DirectoryNode.DirectoryStatus.Accessible Then
                 node.ForeColor = Me.TV.ForeColor
                 node.ToolTipText = String.Empty
             Else
                 node.ForeColor = Drawing.Color.Gray
-                node.ToolTipText = "Kein Zugriff auf diesen Ordner"
+                Select Case directoryNode.Status
+                    Case DirectoryNode.DirectoryStatus.AccessDenied
+                        node.ToolTipText = "Kein Zugriff auf diesen Ordner"
+                    Case DirectoryNode.DirectoryStatus.Missing
+                        node.ToolTipText = "Ordner nicht gefunden"
+                    Case Else
+                        node.ToolTipText = "Ordner nicht verfügbar"
+                End Select
             End If
         End Sub
 

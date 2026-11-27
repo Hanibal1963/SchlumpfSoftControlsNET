@@ -15,7 +15,14 @@ Namespace ExplorerTreeViewControl
     ''' </summary>
     Friend NotInheritable Class DriveNode
 
-        Inherits TreeNode
+        Inherits DirectoryNode
+
+        ''' <summary>Gibt den Pfad für das verzögerte Laden zurück.</summary>
+        Friend Overrides ReadOnly Property DirectoryPath As String
+            Get
+                Return Me.FullPath
+            End Get
+        End Property
 
         ''' <summary>
         ''' Gibt den vollständigen Pfad des Laufwerks zurück (z. B. "C:\").
@@ -56,31 +63,7 @@ Namespace ExplorerTreeViewControl
             ' Leert die Knoten, um Platz für Unterordner zu schaffen
             Me.Nodes.Clear()
             ' Füge einen Platzhalterknoten hinzu, der später durch die Unterordner ersetzt wird
-            Dim unused = Me.Nodes.Add(New TreeNode("Ordner laden ..."))
-        End Sub
-
-        ''' <summary>
-        ''' Lädt die Unterordner des Laufwerks und fügt sie als FolderNode-Knoten hinzu.
-        ''' </summary>
-        Public Sub LoadSubfolders()
-            Try
-                ' Erstellt ein DriveInfo-Objekt für das aktuelle Laufwerk
-                Dim drive As New DriveInfo(Me.FullPath)
-                ' Prüft, ob das Laufwerk bereit ist (z. B. CD eingelegt, Netzwerk verbunden)
-                If drive.IsReady Then
-                    ' Durchläuft alle Unterverzeichnisse des Laufwerks
-                    For Each dir As String In Directory.GetDirectories(Me.FullPath)
-                        ' Fügt jeden gefundenen Ordner als FolderNode dem Knoten hinzu
-                        Dim unused = Me.Nodes.Add(New FolderNode(Path.GetFileName(dir), dir))
-                    Next
-                End If
-            Catch ex As UnauthorizedAccessException
-                ' Zugriff verweigert – Ordner wird übersprungen, keine Fehlermeldung
-            Catch ex As IOException
-                ' IO-Fehler – z.B. Laufwerk nicht verfügbar, keine Fehlermeldung
-            Catch ex As Exception
-                ' Allgemeiner Fehler – optional loggen, keine Fehlermeldung
-            End Try
+            Me.AddPlaceholder()
         End Sub
 
     End Class

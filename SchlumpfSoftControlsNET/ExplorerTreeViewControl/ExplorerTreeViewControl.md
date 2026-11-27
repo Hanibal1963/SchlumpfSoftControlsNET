@@ -61,7 +61,7 @@ Schnelle Navigation in großen Verzeichnisstrukturen mit reaktiver UI.
 
 ### 7.2. Lazy-Loading weiter ausbauen
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
@@ -70,6 +70,8 @@ Schnelle Navigation in großen Verzeichnisstrukturen mit reaktiver UI.
 - Platzhalterknoten nutzen und nachladen.
 
 - Metadaten (Exists/AccessDenied) vorhalten.
+
+Verzeichnisknoten erhalten zunächst einen Platzhalter; ihre unmittelbaren Unterordner werden erst beim Aufklappen synchron ermittelt. Der letzte Ladezustand unterscheidet unbekannte, zugängliche, fehlende, zugriffsgeschützte und nicht verfügbare Verzeichnisse. Fehlerhafte Knoten bleiben für einen erneuten Versuch aufklappbar und werden entsprechend markiert. Nach dem Zuklappen oder einer Dateisystemänderung wird erneut geladen. Hintergrund-I/O bleibt Gegenstand von 7.3.
 
 **Nutzen:** Schneller Initialstart, weniger I/O-Spitzen.
 

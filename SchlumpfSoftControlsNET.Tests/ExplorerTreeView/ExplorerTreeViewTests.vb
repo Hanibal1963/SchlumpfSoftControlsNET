@@ -25,6 +25,47 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
             Assert.AreEqual(expectedPath, args.SelectedPath)
         End Sub
 
+        ''' <summary>Prüft, dass entfernte Hotplug-Aufträge verworfen und erneute Einfügungen asynchron verarbeitet werden.</summary>
+        <STATestMethod>
+        Public Sub DriveHotplug_RemoveAndReadd_DiscardsObsoleteRequest()
+            Using control As New ExplorerTreeView()
+                control.CreateControl()
+                Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                Dim handle As IntPtr = tv.Handle
+                Dim root As TreeNode = tv.Nodes(0)
+                Dim drivePath As String = Path.GetPathRoot(Environment.SystemDirectory)
+                Dim matchingDrives As Func(Of Integer) = Function() root.Nodes.Cast(Of TreeNode)().OfType(Of DriveNode)().Count(Function(node) String.Equals(node.FullPath, drivePath, StringComparison.OrdinalIgnoreCase))
+                Assert.IsTrue(WaitForCondition(Function() matchingDrives() = 1), "Das Systemlaufwerk wurde nicht geladen.")
+                Dim initialCount As Integer = root.Nodes.Count
+                Dim flags As Reflection.BindingFlags = Reflection.BindingFlags.Instance Or Reflection.BindingFlags.NonPublic
+                Dim added = GetType(ExplorerTreeView).GetMethod("DW_DriveAdded", flags)
+                Dim removed = GetType(ExplorerTreeView).GetMethod("DW_DriveRemoved", flags)
+                Dim pending = DirectCast(GetType(ExplorerTreeView).GetField("_pendingDriveAdds", flags).GetValue(control), Dictionary(Of String, Long))
+                Dim addArgs As New SchlumpfSoft.ControlsNET.DriveWatcherControl.DriveWatcherAddedEventArgs(drivePath)
+                Dim removeArgs As New SchlumpfSoft.ControlsNET.DriveWatcherControl.DriveWatcherRemovedEventArgs(drivePath)
+
+                Dim ignored = removed.Invoke(control, {Nothing, removeArgs})
+                Assert.AreEqual(0, matchingDrives())
+                ignored = added.Invoke(control, {Nothing, addArgs})
+                Assert.AreEqual(0, matchingDrives())
+                Assert.IsTrue(pending.ContainsKey(drivePath))
+                Dim originalGeneration As Long = pending(drivePath)
+                ignored = removed.Invoke(control, {Nothing, removeArgs})
+                Assert.IsFalse(pending.ContainsKey(drivePath))
+                ignored = added.Invoke(control, {Nothing, addArgs})
+                Assert.AreNotEqual(originalGeneration, pending(drivePath))
+                ignored = added.Invoke(control, {Nothing, addArgs})
+                Dim beforeRecreate As Long = pending(drivePath)
+                Dim recreate = GetType(Control).GetMethod("RecreateHandle", flags)
+                ignored = recreate.Invoke(tv, Nothing)
+                Assert.IsTrue(pending.ContainsKey(drivePath))
+                Assert.AreNotEqual(beforeRecreate, pending(drivePath))
+                Assert.IsTrue(WaitForCondition(Function() matchingDrives() = 1), "Das Laufwerk wurde nicht erneut eingefügt.")
+                Assert.IsFalse(pending.ContainsKey(drivePath))
+                Assert.AreEqual(initialCount, root.Nodes.Count)
+            End Using
+        End Sub
+
         ''' <summary>Prüft die Wurzelauflistung nach Erstellung des TreeView-Handles.</summary>
         <STATestMethod>
         Public Sub Root_LoadsDrivesAndSpecialFoldersAsynchronously()

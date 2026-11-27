@@ -52,9 +52,16 @@ Namespace ExplorerTreeViewControl
                 entries.Add(New RootEntry(name, GetSpezialFolderPath(name), GetImageKey(name), False))
             Next
             For Each drive As DriveInfo In DriveInfo.GetDrives()
-                entries.Add(New RootEntry($"{GetVolumeLabel(drive)} ({GetDriveName(drive)})", drive.Name, GetImageKey(GetDriveTypeString(drive)), True))
+                entries.Add(ReadDriveEntry(drive))
             Next
             Return entries
+        End Function
+
+        ''' <summary>Ermittelt die Anzeige- und Symboldaten eines Laufwerks ohne Zugriff auf Baumknoten.</summary>
+        ''' <param name="drive">Das abzufragende Laufwerk.</param>
+        ''' <returns>Vorbereitete Daten für den Laufwerksknoten.</returns>
+        Friend Shared Function ReadDriveEntry(drive As DriveInfo) As RootEntry
+            Return New RootEntry($"{GetVolumeLabel(drive)} ({GetDriveName(drive)})", drive.Name, GetImageKey(GetDriveTypeString(drive)), True)
         End Function
 
         ''' <summary>Übernimmt vorbereitete Wurzeleinträge auf dem UI-Thread.</summary>

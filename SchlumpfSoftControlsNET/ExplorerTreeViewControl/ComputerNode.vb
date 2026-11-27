@@ -22,6 +22,7 @@ Namespace ExplorerTreeViewControl
 
         ''' <summary>Enthält Daten eines Wurzeleintrags unabhängig von TreeView-Knoten.</summary>
         Friend NotInheritable Class RootEntry
+
             ''' <summary>Initialisiert die Anzeige- und Pfaddaten eines Wurzeleintrags.</summary>
             ''' <param name="text">Anzeigename.</param>
             ''' <param name="path">Vollständiger Pfad.</param>
@@ -36,12 +37,16 @@ Namespace ExplorerTreeViewControl
 
             ''' <summary>Gibt den Anzeigenamen zurück.</summary>
             Friend ReadOnly Property Text As String
+
             ''' <summary>Gibt den vollständigen Pfad zurück.</summary>
             Friend ReadOnly Property Path As String
+
             ''' <summary>Gibt den Symbolschlüssel zurück.</summary>
             Friend ReadOnly Property ImageKey As String
+
             ''' <summary>Gibt an, ob der Eintrag ein Laufwerk beschreibt.</summary>
             Friend ReadOnly Property IsDrive As Boolean
+
         End Class
 
         ''' <summary>Ermittelt Spezialordner und Laufwerksmetadaten ohne Zugriff auf Baumknoten.</summary>
@@ -69,12 +74,9 @@ Namespace ExplorerTreeViewControl
         Friend Sub ApplyEntries(entries As List(Of RootEntry))
             Me.Nodes.Clear()
             For Each entry As RootEntry In entries
-                Dim node As TreeNode
-                If entry.IsDrive Then
-                    node = New DriveNode(entry.Text, entry.Path, entry.ImageKey)
-                Else
-                    node = New SpecialFolderNode(entry.Text, entry.Path, entry.ImageKey)
-                End If
+                Dim node = If(entry.IsDrive,
+                    New DriveNode(entry.Text, entry.Path, entry.ImageKey),
+                    DirectCast(New SpecialFolderNode(entry.Text, entry.Path, entry.ImageKey), TreeNode))
                 Dim unused = Me.Nodes.Add(node)
             Next
         End Sub

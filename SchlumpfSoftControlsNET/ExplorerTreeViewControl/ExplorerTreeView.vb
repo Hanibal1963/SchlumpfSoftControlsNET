@@ -56,66 +56,94 @@ Namespace ExplorerTreeViewControl
     <Description("Stellt ein Steuerelement zur Anzeige und Navigation der Verzeichnisstruktur des Computers bereit.")>
     <ToolboxItem(True)>
     <ToolboxBitmap(GetType(ExplorerTreeView), "ExplorerTreeViewControl.ExplorerTreeView.bmp")>
-    Public Class ExplorerTreeView : Inherits UserControl
+    Public Class ExplorerTreeView
+
+        Inherits UserControl
 
         Implements IDisposable
 
 #Region "Variablen"
 
         Private disposedValue As Boolean
+
         Private ReadOnly _FileSystemWatchers As New Dictionary(Of String, FileSystemWatcher)(StringComparer.OrdinalIgnoreCase)
+
         ''' <summary>Schützt Überwachungen und ihre noch laufende Einrichtung vor konkurrierendem Entsorgen.</summary>
         Private ReadOnly _watcherLock As New Object()
+
         ''' <summary>Enthält die Generationen der noch nicht fertig eingerichteten Überwachungen.</summary>
-        Private ReadOnly _pendingWatchers As New Dictionary(Of String, Long)(StringComparer.OrdinalIgnoreCase)
+        Private ReadOnly _pendingWatchers As New Dictionary(Of String, Int64)(StringComparer.OrdinalIgnoreCase)
+
         ''' <summary>Erzeugt eindeutige Generationen für die Einrichtung einer Überwachung.</summary>
-        Private _watcherGeneration As Long
+        Private _watcherGeneration As Int64
+
         ''' <summary>Verhindert nach dem Entsorgen die Registrierung weiterer Überwachungen.</summary>
         Private _watchersStopped As Boolean
+
         Private _SelectedPath As String
+
         ''' <summary>Verwirft Ergebnisse älterer Auswahlprüfungen nach einer erneuten Auswahl.</summary>
-        Private _selectionGeneration As Long
+        Private _selectionGeneration As Int64
+
         ''' <summary>Merkt eine noch nicht bestätigte Auswahl für die synchrone Pfadnavigation.</summary>
         Private _pendingSelection As TreeNode
+
         ''' <summary>Ordnet laufenden Verzeichnisabfragen ihre aktuelle Generation zu.</summary>
-        Private ReadOnly _pendingLoads As New Dictionary(Of DirectoryNode, Long)
+        Private ReadOnly _pendingLoads As New Dictionary(Of DirectoryNode, Int64)
+
         ''' <summary>Erzeugt eindeutige Generationen für Verzeichnisabfragen.</summary>
-        Private _loadGeneration As Long
+        Private _loadGeneration As Int64
+
         ''' <summary>Kennzeichnet die weiterhin synchrone öffentliche Pfadnavigation.</summary>
         Private _synchronousNavigation As Boolean
+
         ''' <summary>Verwirft überholte Ergebnisse der Wurzelauflistung.</summary>
-        Private _rootGeneration As Long
+        Private _rootGeneration As Int64
+
         ''' <summary>Gibt an, ob die aktuelle Wurzelauflistung noch läuft.</summary>
         Private _rootLoading As Boolean
+
         ''' <summary>Gibt an, ob die Wurzeleinträge erfolgreich übernommen wurden.</summary>
         Private _rootLoaded As Boolean
+
         ''' <summary>Ordnet ausstehenden Laufwerksabfragen ihre aktuelle Generation zu.</summary>
-        Private ReadOnly _pendingDriveAdds As New Dictionary(Of String, Long)(StringComparer.OrdinalIgnoreCase)
+        Private ReadOnly _pendingDriveAdds As New Dictionary(Of String, Int64)(StringComparer.OrdinalIgnoreCase)
+
         ''' <summary>Erzeugt eindeutige Generationen für die Abfrage neu hinzugefügter Laufwerke.</summary>
-        Private _driveAddGeneration As Long
+        Private _driveAddGeneration As Int64
+
         ''' <summary>Enthält den Abbruchzustand der aktuellen asynchronen Navigation.</summary>
         Private _activeNavigation As NavigationState
+
         ''' <summary>Unterscheidet die eigene Knotenauswahl von einer Benutzeraktion.</summary>
         Private _navigationSelecting As Boolean
+
         ''' <summary>Unterdrückt Abbrüche durch automatische Knotenänderungen beim Anwenden eines Ergebnisses.</summary>
         Private _navigationMutation As Boolean
 
         ''' <summary>Stellt ein Signal zum Abbruch einer asynchronen Navigation bereit.</summary>
         Private NotInheritable Class NavigationState
+
             ''' <summary>Wird beim Abbruch gesetzt und beendet wartende Navigationsschritte.</summary>
             Friend ReadOnly Stopped As New TaskCompletionSource(Of Boolean)(TaskCreationOptions.RunContinuationsAsynchronously)
+
         End Class
 
         ''' <summary>Beschreibt einen auf dem UI-Thread vorbereiteten Navigationsschritt.</summary>
         Private NotInheritable Class NavigationStep
+
             ''' <summary>Gibt den zu ladenden Knoten an.</summary>
             Friend Property Node As DirectoryNode
+
             ''' <summary>Gibt den Verzeichnispfad für den Hintergrundzugriff an.</summary>
             Friend Property Path As String
+
             ''' <summary>Gibt die beim Start beobachtete Ladegeneration an.</summary>
-            Friend Property Generation As Long?
+            Friend Property Generation As Int64?
+
             ''' <summary>Gibt an, ob eine Verzeichnisabfrage benötigt wird.</summary>
             Friend Property NeedsRead As Boolean
+
         End Class
 
 #End Region
@@ -462,7 +490,7 @@ Namespace ExplorerTreeViewControl
             Try
                 Dim root As ComputerNode = DirectCast(Me.TV.Nodes(0), ComputerNode)
                 Me.ExpandForNavigation(root)
-                Dim rootGeneration As Long = Me._rootGeneration
+                Dim rootGeneration As Int64 = Me._rootGeneration
                 If Not Me._rootLoaded Then
                     Dim rootRead = Task.Run(Function() ComputerNode.ReadEntries())
                     Dim entries = Await AwaitNavigation(rootRead, state).ConfigureAwait(False)
@@ -608,8 +636,8 @@ Namespace ExplorerTreeViewControl
             Dim node As DirectoryNode = TryCast(FindNodeByPath(parent.Nodes, path), DirectoryNode)
             If node Is Nothing Then Return Nothing
             Me.ExpandForNavigation(node)
-            Dim generation As Long
-            Dim pending As Long? = Nothing
+            Dim generation As Int64
+            Dim pending As Int64? = Nothing
             If Me._pendingLoads.TryGetValue(node, generation) Then pending = generation
             Return New NavigationStep With {.Node = node, .Path = node.DirectoryPath, .Generation = pending, .NeedsRead = Not node.ChildrenLoaded OrElse pending.HasValue}
         End Function
@@ -630,7 +658,7 @@ Namespace ExplorerTreeViewControl
         ''' <param name="navStep">Vorbereiteter Navigationsschritt.</param>
         ''' <param name="result">Im Hintergrund ermitteltes Verzeichnisergebnis.</param>
         ''' <returns>0 bei Fehlschlag, 1 bei Erfolg und 2, wenn wegen eines neueren Auftrags erneut gelesen werden muss.</returns>
-        Private Function ApplyNavigationStep(navStep As NavigationStep, result As DirectoryNode.LoadResult) As Integer
+        Private Function ApplyNavigationStep(navStep As NavigationStep, result As DirectoryNode.LoadResult) As Int32
             Dim node As DirectoryNode = navStep.Node
             If node.TreeView IsNot Me.TV Then Return 0
             Dim ancestor As TreeNode = node.Parent
@@ -638,7 +666,7 @@ Namespace ExplorerTreeViewControl
                 If Not ancestor.IsExpanded Then Return 0
                 ancestor = ancestor.Parent
             End While
-            Dim current As Long
+            Dim current As Int64
             Dim hasCurrent As Boolean = Me._pendingLoads.TryGetValue(node, current)
             If Not hasCurrent AndAlso node.ChildrenLoaded Then Return 1
             If hasCurrent <> navStep.Generation.HasValue OrElse (hasCurrent AndAlso current <> navStep.Generation.GetValueOrDefault()) Then Return 2
@@ -774,7 +802,7 @@ Namespace ExplorerTreeViewControl
         Private Sub LoadRootAsync(node As ComputerNode)
             If Me._rootLoaded OrElse Me._rootLoading OrElse Not Me.TV.IsHandleCreated Then Return
             Me._rootGeneration += 1
-            Dim generation As Long = Me._rootGeneration
+            Dim generation As Int64 = Me._rootGeneration
             Me._rootLoading = True
             Dim unused = Task.Run(Function() ComputerNode.ReadEntries()).ContinueWith(
                 Sub(task As Task(Of List(Of ComputerNode.RootEntry)))
@@ -834,7 +862,7 @@ Namespace ExplorerTreeViewControl
         ''' <param name="node">Der auf dem UI-Thread verwaltete Verzeichnisknoten.</param>
         Private Sub LoadDirectoryAsync(node As DirectoryNode)
             Me._loadGeneration += 1
-            Dim generation As Long = Me._loadGeneration
+            Dim generation As Int64 = Me._loadGeneration
             Me._pendingLoads(node) = generation
             Dim path As String = node.DirectoryPath
             Dim unused = Task.Run(Function() DirectoryNode.ReadChildren(path)).ContinueWith(
@@ -845,7 +873,7 @@ Namespace ExplorerTreeViewControl
                     Try
                         Dim ignored = Me.TV.BeginInvoke(New MethodInvoker(
                             Sub()
-                                Dim current As Long
+                                Dim current As Int64
                                 If Me.IsDisposed OrElse Not Me._pendingLoads.TryGetValue(node, current) OrElse current <> generation Then Return
                                 Dim removed = Me._pendingLoads.Remove(node)
                                 If node.TreeView IsNot Me.TV OrElse Not node.IsExpanded Then Return
@@ -895,7 +923,7 @@ Namespace ExplorerTreeViewControl
         ''' <param name="FolderPath"></param>
         Private Sub CreateFileSystemWatcher(FolderPath As String)
             If String.IsNullOrEmpty(FolderPath) Then Return
-            Dim generation As Long
+            Dim generation As Int64
             SyncLock Me._watcherLock
                 If Me._watchersStopped OrElse Me._FileSystemWatchers.ContainsKey(FolderPath) OrElse Me._pendingWatchers.ContainsKey(FolderPath) Then Return
                 Me._watcherGeneration += 1
@@ -911,7 +939,7 @@ Namespace ExplorerTreeViewControl
         ''' <summary>Erstellt und registriert einen Watcher, sofern seine Anforderung noch gültig ist.</summary>
         ''' <param name="folderPath">Zu überwachendes Verzeichnis.</param>
         ''' <param name="generation">Generation der ursprünglichen Anforderung.</param>
-        Private Sub InitializeFileSystemWatcher(folderPath As String, generation As Long)
+        Private Sub InitializeFileSystemWatcher(folderPath As String, generation As Int64)
             Dim watcher As FileSystemWatcher = Nothing
             Dim registered As Boolean = False
             Try
@@ -921,7 +949,7 @@ Namespace ExplorerTreeViewControl
                 AddHandler watcher.Renamed, AddressOf Me.FSW_DirectoryChanged
                 watcher.EnableRaisingEvents = True
                 SyncLock Me._watcherLock
-                    Dim current As Long
+                    Dim current As Int64
                     If Not Me._watchersStopped AndAlso Me._pendingWatchers.TryGetValue(folderPath, current) AndAlso current = generation Then
                         Dim removed = Me._pendingWatchers.Remove(folderPath)
                         Me._FileSystemWatchers.Add(folderPath, watcher)
@@ -939,7 +967,7 @@ Namespace ExplorerTreeViewControl
                 Debug.WriteLine($"Verzeichnisüberwachung für '{folderPath}' nicht erlaubt: {ex.Message}")
             Finally
                 SyncLock Me._watcherLock
-                    Dim current As Long
+                    Dim current As Int64
                     If Me._pendingWatchers.TryGetValue(folderPath, current) AndAlso current = generation Then
                         Dim removed = Me._pendingWatchers.Remove(folderPath)
                     End If
@@ -1147,7 +1175,7 @@ Namespace ExplorerTreeViewControl
         Private Sub TV_AfterSelect(sender As Object, e As TreeViewEventArgs) Handles TV.AfterSelect
             If Not Me._navigationSelecting Then Me.CancelActiveNavigation()
             Me._selectionGeneration += 1
-            Dim generation As Long = Me._selectionGeneration
+            Dim generation As Int64 = Me._selectionGeneration
             Me._pendingSelection = Nothing
             If Me._navigationSelecting Then Return
             Dim selectedpath As String = GetDirectoryPath(e.Node)
@@ -1209,8 +1237,8 @@ Namespace ExplorerTreeViewControl
             Next
             If Me._pendingDriveAdds.ContainsKey(path) Then Return
             Me._driveAddGeneration += 1
-            Dim generation As Long = Me._driveAddGeneration
-            Dim rootGeneration As Long = Me._rootGeneration
+            Dim generation As Int64 = Me._driveAddGeneration
+            Dim rootGeneration As Int64 = Me._rootGeneration
             Dim root As TreeNode = Me.TV.Nodes(0)
             Me._pendingDriveAdds.Add(path, generation)
             Dim unused = Task.Run(Function() ComputerNode.ReadDriveEntry(New DriveInfo(path))).ContinueWith(
@@ -1219,7 +1247,7 @@ Namespace ExplorerTreeViewControl
                     Try
                         Dim ignored = Me.TV.BeginInvoke(New MethodInvoker(
                             Sub()
-                                Dim current As Long
+                                Dim current As Int64
                                 If Me.IsDisposed OrElse Me.Disposing OrElse Not Me._pendingDriveAdds.TryGetValue(path, current) OrElse current <> generation Then Return
                                 Dim removed = Me._pendingDriveAdds.Remove(path)
                                 If task.IsFaulted OrElse Not Me._rootLoaded OrElse rootGeneration <> Me._rootGeneration OrElse

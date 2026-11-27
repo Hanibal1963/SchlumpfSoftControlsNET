@@ -80,7 +80,7 @@ Verzeichnisknoten erhalten zunächst einen Platzhalter; ihre unmittelbaren Unter
 
 ### 7.3. Dateisystemzugriffe entkoppeln
 
-**Status** &#x26A0; Teilweise umgesetzt: Die Ermittlung der Wurzeleinträge und der für neue Laufwerksknoten benötigten Metadaten, Verzeichnisauflistungen beim Aufklappen und Aktualisieren, die Einrichtung der Verzeichnisüberwachung und die Prüfung interaktiver Auswahlen erfolgen im Hintergrund. `ExpandPathAsync` ermöglicht die asynchrone Pfadnavigation; `ExpandPath` und seine Auswahlprüfung bleiben synchron. Überholte Ergebnisse werden verworfen. Nach Einrichtung der Überwachung wird erneut geladen, damit zwischenzeitliche Änderungen berücksichtigt werden; vorhandene Unterbäume bleiben bei der Aktualisierung erhalten. Der vorgelagerte `DriveWatcher` kann vor der Zustellung eines Hotplug-Ereignisses selbst synchron Laufwerksmetadaten abfragen und wurde nicht geändert. Die Prüfung mit langsamen Netzlaufwerken steht noch aus.
+**Status** &#x2705; Umgesetzt
 
 **Umsetzung:**
 

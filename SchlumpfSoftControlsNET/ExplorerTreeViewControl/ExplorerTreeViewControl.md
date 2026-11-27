@@ -14,13 +14,13 @@ Unterstützt Laufwerke, spezielle Benutzerordner (Desktop, Dokumente, Downloads,
 
 ## 2. Ereignisse
 
-- `SelectedPathChanged`: Wird ausgelöst, wenn sich der ausgewählte Pfad geändert hat.
+- `SelectedPathChanged`: Wird nach erfolgreicher Zugriffsprüfung auf dem UI-Thread ausgelöst. Bei interaktiver Auswahl erfolgt diese Prüfung im Hintergrund; überholte Auswahlprüfungen lösen kein Ereignis aus.
 
 ---
 
 ## 3. Eigenschaften
 
-- `SelectedPath` (nur lesen): Gibt den aktuell ausgewählten Pfad zurück.
+- `SelectedPath` (nur lesen): Gibt den zuletzt erfolgreich geprüften ausgewählten Pfad zurück. Während einer laufenden Prüfung oder bei nicht zugänglicher Auswahl bleibt der bisherige Wert erhalten.
 - `LineColor`: Gibt die Farbe der Linien zwischen den Knoten zurück oder legt diese fest.
 - `ShowLines`: Gibt an, ob Linien zwischen den Knoten angezeigt werden.
 - `ShowPlusMinus`: Legt fest, ob die Plus- und Minuszeichen zum Anzeigen von Unterknoten angezeigt werden.
@@ -35,7 +35,7 @@ Unterstützt Laufwerke, spezielle Benutzerordner (Desktop, Dokumente, Downloads,
 
 ## 4. Funktionen
 
-- `ExpandPath(path As String) As Boolean`: Öffnet und selektiert den Knoten zum angegebenen Verzeichnispfad (auch bei noch nicht geladenen Unterknoten) und liefert `True` bei Erfolg, sonst `False`. `Nothing`, eine leere Zeichenfolge und reine Leerzeichen liefern `False`.
+- `ExpandPath(path As String) As Boolean`: Öffnet und selektiert den Knoten zum angegebenen Verzeichnispfad (auch bei noch nicht geladenen Unterknoten) und liefert `True` bei Erfolg, sonst `False`. `Nothing`, eine leere Zeichenfolge und reine Leerzeichen liefern `False`. Die Navigation und die Auswahlprüfung erfolgen synchron und können den UI-Thread blockieren.
 
 ---
 
@@ -79,7 +79,7 @@ Verzeichnisknoten erhalten zunächst einen Platzhalter; ihre unmittelbaren Unter
 
 ### 7.3. Dateisystemzugriffe entkoppeln
 
-**Status** &#x26A0; Teilweise umgesetzt: Verzeichnisauflistungen beim Aufklappen und Aktualisieren sowie die Einrichtung der Verzeichnisüberwachung erfolgen im Hintergrund. Nach der Einrichtung wird erneut geladen, damit zwischenzeitliche Änderungen berücksichtigt werden; vorhandene Unterbäume bleiben bei der Aktualisierung erhalten. `ExpandPath` bleibt synchron. Initialisierung, Auswahlprüfung und asynchrone Pfadnavigation sind noch offen.
+**Status** &#x26A0; Teilweise umgesetzt: Verzeichnisauflistungen beim Aufklappen und Aktualisieren, die Einrichtung der Verzeichnisüberwachung und die Prüfung interaktiver Auswahlen erfolgen im Hintergrund. Nach der Einrichtung wird erneut geladen, damit zwischenzeitliche Änderungen berücksichtigt werden; vorhandene Unterbäume bleiben bei der Aktualisierung erhalten. `ExpandPath` und seine Auswahlprüfung bleiben synchron. Initialisierung und asynchrone Pfadnavigation sind noch offen.
 
 **Umsetzung:**
 

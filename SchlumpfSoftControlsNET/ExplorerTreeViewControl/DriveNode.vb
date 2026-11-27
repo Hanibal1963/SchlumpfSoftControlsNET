@@ -49,20 +49,18 @@ Namespace ExplorerTreeViewControl
         ''' </summary>
         ''' <param name="Drive"></param>
         Public Sub New(Drive As DriveInfo)
-            ' Setzt den Text des Knotens auf das Laufwerkslabel und den Laufwerksnamen (z. B. "Lokaler Datenträger (C:)").
-            Me.Text = $"{GetVolumeLabel(Drive)} ({GetDriveName(Drive)})"
-            ' Speichert den Laufwerksnamen (z. B. "C:\") im Tag des Knotens.
-            Me.Tag = Drive.Name
-            ' Ermittelt den Laufwerkstyp als String (z. B. "Lokaler Datenträger", "CD-Laufwerk").
-            Dim drivetypestring As String = GetDriveTypeString(Drive)
-            ' Ermittelt den Schlüssel für das Symbol basierend auf dem Laufwerkstyp.
-            Dim key As String = GetImageKey(drivetypestring)
-            ' Setzt das Symbol des Knotens (ImageKey) und das Symbol für den ausgewählten Zustand (SelectedImageKey).
-            Me.ImageKey = key
-            Me.SelectedImageKey = key
-            ' Leert die Knoten, um Platz für Unterordner zu schaffen
-            Me.Nodes.Clear()
-            ' Füge einen Platzhalterknoten hinzu, der später durch die Unterordner ersetzt wird
+            Me.New($"{GetVolumeLabel(Drive)} ({GetDriveName(Drive)})", Drive.Name, GetImageKey(GetDriveTypeString(Drive)))
+        End Sub
+
+        ''' <summary>Erstellt einen Laufwerksknoten aus bereits ermittelten Metadaten ohne weitere Laufwerksabfrage.</summary>
+        ''' <param name="text">Anzeigename des Laufwerks.</param>
+        ''' <param name="path">Vollständiger Laufwerkspfad.</param>
+        ''' <param name="imageKey">Schlüssel des Laufwerkssymbols.</param>
+        Friend Sub New(text As String, path As String, imageKey As String)
+            Me.Text = text
+            Me.Tag = path
+            Me.ImageKey = imageKey
+            Me.SelectedImageKey = imageKey
             Me.AddPlaceholder()
         End Sub
 

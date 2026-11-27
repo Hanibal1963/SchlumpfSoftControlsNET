@@ -40,29 +40,19 @@ Namespace ExplorerTreeViewControl
         ''' </summary>
         ''' <param name="Text"></param>
         Public Sub New(Text As String)
+            Me.New(Text, GetSpezialFolderPath(Text), GetImageKey(Text))
+        End Sub
 
-            ' Setzt den angezeigten Text des Knotens auf den übergebenen Namen des Spezialordners
-            Me.Text = Text
-
-            ' Speichert den vollständigen Pfad des Spezialordners im Tag-Property des Knotens
-            ' Die Methode GetSpezialFolderPath(Text) ermittelt den Pfad basierend auf dem Namen des Spezialordners (z.B. "Desktop")
-            Me.Tag = GetSpezialFolderPath(Text)
-
-            ' Ermittelt den Schlüssel für das anzuzeigende Symbol (ImageKey) anhand des Ordnernamens
-            ' Die Hilfsmethode NodeHelpers.GetImageKey(Text) liefert einen passenden Schlüssel für die Bildliste
-            Dim key As String = GetImageKey(Text)
-
-            ' Setzt das Symbol des Knotens auf den ermittelten Schlüssel
-            Me.ImageKey = key
-            Me.SelectedImageKey = key
-
-            ' Entfernt alle vorhandenen untergeordneten Knoten, um Platz für die später geladenen Unterordner zu schaffen
-            Me.Nodes.Clear()
-
-            ' Fügt einen Platzhalterknoten hinzu, der dem Benutzer anzeigt, dass die Unterordner noch geladen werden
-            ' Dieser Platzhalter wird später durch die tatsächlichen Unterordner ersetzt, sobald diese geladen wurden
+        ''' <summary>Erstellt einen Spezialordnerknoten aus zuvor ermittelten Daten.</summary>
+        ''' <param name="text">Anzeigename des Spezialordners.</param>
+        ''' <param name="path">Ermittelter Verzeichnispfad.</param>
+        ''' <param name="imageKey">Schlüssel des Ordnersymbols.</param>
+        Friend Sub New(text As String, path As String, imageKey As String)
+            Me.Text = text
+            Me.Tag = path
+            Me.ImageKey = imageKey
+            Me.SelectedImageKey = imageKey
             Me.AddPlaceholder()
-
         End Sub
 
     End Class

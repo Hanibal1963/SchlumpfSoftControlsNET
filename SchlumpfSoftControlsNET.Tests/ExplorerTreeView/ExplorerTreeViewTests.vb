@@ -6,8 +6,11 @@
 
 Imports System
 Imports System.Drawing
+Imports System.IO
 Imports System.Windows.Forms
+
 Imports Microsoft.VisualStudio.TestTools.UnitTesting
+
 Imports SchlumpfSoft.ControlsNET.ExplorerTreeViewControl
 
 Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
@@ -19,6 +22,74 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
             Dim args As New SelectedPathChangedEventArgs(expectedPath)
 
             Assert.AreEqual(expectedPath, args.SelectedPath)
+        End Sub
+
+        ''' <summary>Prüft die Pfadnavigation durch mehrere noch nicht geladene Ebenen.</summary>
+        <TestMethod>
+        Public Sub ExpandPath_LoadsAndSelectsNestedDirectory()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim target As String = Path.Combine(root, "first", "nested")
+            Dim unused = Directory.CreateDirectory(target)
+            Try
+                Using control As New ExplorerTreeView()
+                    control.CreateControl()
+                    Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                    Dim handle As IntPtr = tv.Handle
+                    Assert.IsTrue(control.ExpandPath(target))
+                    Assert.AreEqual(target, control.SelectedPath, True)
+                    Assert.AreEqual("nested", tv.SelectedNode.Text)
+                End Using
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
+        ''' <summary>Prüft Platzhalter, verzögertes Laden und erneutes Laden nach Änderungen.</summary>
+        <TestMethod>
+        Public Sub FolderNode_LoadChildren_LoadsOnlyOnDemandAndRefreshes()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim unused1 = Directory.CreateDirectory(Path.Combine(root, "first", "nested"))
+            Try
+                Dim node As New FolderNode("root", root)
+                Assert.AreEqual(DirectoryNode.DirectoryStatus.Unknown, node.Status)
+                Assert.AreEqual(1, node.Nodes.Count)
+                Assert.IsNotInstanceOfType(Of FolderNode)(node.Nodes(0))
+
+                Assert.IsTrue(node.LoadChildren())
+                Assert.AreEqual(DirectoryNode.DirectoryStatus.Accessible, node.Status)
+                Assert.AreEqual(1, node.Nodes.Count)
+                Dim child As FolderNode = DirectCast(node.Nodes(0), FolderNode)
+                Assert.AreEqual("first", child.Text)
+                Assert.AreEqual(DirectoryNode.DirectoryStatus.Unknown, child.Status)
+                Assert.AreEqual(1, child.Nodes.Count)
+                Assert.IsNotInstanceOfType(Of FolderNode)(child.Nodes(0))
+
+                Dim unused = Directory.CreateDirectory(Path.Combine(root, "second"))
+                Assert.IsTrue(node.LoadChildren())
+                Assert.AreEqual(1, node.Nodes.Count)
+                Assert.IsTrue(node.LoadChildren(True))
+                Assert.AreEqual(2, node.Nodes.Count)
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
+        ''' <summary>Prüft, dass fehlende Verzeichnisse erneut geladen werden können.</summary>
+        <TestMethod>
+        Public Sub FolderNode_LoadChildren_MissingDirectoryCanBeRetried()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim node As New FolderNode("root", root)
+            Assert.IsFalse(node.LoadChildren())
+            Assert.AreEqual(DirectoryNode.DirectoryStatus.Missing, node.Status)
+            Assert.AreEqual(1, node.Nodes.Count)
+            Dim unused = Directory.CreateDirectory(root)
+            Try
+                Assert.IsTrue(node.LoadChildren())
+                Assert.AreEqual(DirectoryNode.DirectoryStatus.Accessible, node.Status)
+                Assert.AreEqual(0, node.Nodes.Count)
+            Finally
+                Directory.Delete(root, True)
+            End Try
         End Sub
 
         <TestMethod>

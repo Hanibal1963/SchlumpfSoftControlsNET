@@ -16,7 +16,14 @@ Namespace ExplorerTreeViewControl
     ''' </remarks>
     Friend NotInheritable Class SpecialFolderNode
 
-        Inherits TreeNode
+        Inherits DirectoryNode
+
+        ''' <summary>Gibt den Pfad für das verzögerte Laden zurück.</summary>
+        Friend Overrides ReadOnly Property DirectoryPath As String
+            Get
+                Return Me.FullPath
+            End Get
+        End Property
 
         ''' <summary>
         ''' Gibt den vollständigen Pfad des Spezialordners zurück, der im Tag-Property gespeichert ist.
@@ -54,36 +61,8 @@ Namespace ExplorerTreeViewControl
 
             ' Fügt einen Platzhalterknoten hinzu, der dem Benutzer anzeigt, dass die Unterordner noch geladen werden
             ' Dieser Platzhalter wird später durch die tatsächlichen Unterordner ersetzt, sobald diese geladen wurden
-            Dim unused = Me.Nodes.Add(New System.Windows.Forms.TreeNode("Ordner laden ..."))
+            Me.AddPlaceholder()
 
-        End Sub
-
-        ''' <summary>
-        ''' Lädt die Unterordner des aktuellen Spezialordners und fügt sie als <see cref="FolderNode"/> -Knoten hinzu.
-        ''' </summary>
-        Public Sub LoadSubfolders()
-
-            ' Versucht, die Unterordner des angegebenen Spezialordners zu laden
-            Try
-
-                ' Durchläuft alle Verzeichnisse (Unterordner) im Pfad des Spezialordners
-                For Each dir As String In System.IO.Directory.GetDirectories(Me.FullPath)
-
-                    ' Fügt für jeden gefundenen Unterordner einen neuen FolderNode zum aktuellen Knoten hinzu
-                    ' IO.Path.GetFileName(dir) extrahiert den Ordnernamen aus dem vollständigen Pfad
-                    ' "dir" ist der vollständige Pfad des Unterordners
-                    Dim unused = Me.Nodes.Add(New FolderNode(System.IO.Path.GetFileName(dir), dir))
-
-                Next
-
-            Catch ex As System.UnauthorizedAccessException
-                ' Falls der Zugriff auf einen Ordner verweigert wird, wird die Ausnahme abgefangen
-                ' und der entsprechende Ordner übersprungen, ohne die Anwendung zu unterbrechen
-
-            Catch ex As System.IO.DirectoryNotFoundException
-                ' Ordner existiert nicht (z. B. wurde er verschoben)
-
-            End Try
         End Sub
 
     End Class

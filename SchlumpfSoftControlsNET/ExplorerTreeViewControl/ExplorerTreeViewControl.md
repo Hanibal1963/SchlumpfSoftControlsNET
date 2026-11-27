@@ -79,7 +79,7 @@ Verzeichnisknoten erhalten zunächst einen Platzhalter; ihre unmittelbaren Unter
 
 ### 7.3. Dateisystemzugriffe entkoppeln
 
-**Status** &#x26A0; Teilweise umgesetzt: Verzeichnisauflistungen beim Aufklappen und Aktualisieren erfolgen im Hintergrund; `ExpandPath` bleibt synchron. Initialisierung, Auswahlprüfung, Überwachung und asynchrone Pfadnavigation sind noch offen.
+**Status** &#x26A0; Teilweise umgesetzt: Verzeichnisauflistungen beim Aufklappen und Aktualisieren sowie die Einrichtung der Verzeichnisüberwachung erfolgen im Hintergrund. Nach der Einrichtung wird erneut geladen, damit zwischenzeitliche Änderungen berücksichtigt werden; vorhandene Unterbäume bleiben bei der Aktualisierung erhalten. `ExpandPath` bleibt synchron. Initialisierung, Auswahlprüfung und asynchrone Pfadnavigation sind noch offen.
 
 **Umsetzung:**
 
@@ -143,12 +143,11 @@ Verzeichnisknoten erhalten zunächst einen Platzhalter; ihre unmittelbaren Unter
 
 ### 7.7. Empfohlene Reihenfolge
 
-1. Asynchrones Laden und gebündelte UI-Aktualisierung einschließlich Ladezustand und Schutz vor veralteten Ergebnissen umsetzen.
-2. Initialisierung, Auswahlprüfung, Überwachung und Pfadnavigation einbeziehen; asynchrone Navigation ergänzen und die synchrone API kompatibel halten.
-3. Die betroffenen Abläufe und Grenzfälle testen und die API-Dokumentation aktualisieren.
-4. Fehlerbehandlung für problematische Pfade und Offline-Laufwerke weiter verbessern (7.5).
-5. Icons und SpecialFolders cachen (7.4).
-6. Teilbaum-Refresh und Debounce optimieren (7.6).
+1. Initialisierung, Auswahlprüfung, Überwachung und Pfadnavigation einbeziehen; asynchrone Navigation ergänzen und die synchrone API kompatibel halten.
+2. Die betroffenen Abläufe und Grenzfälle testen und die API-Dokumentation aktualisieren.
+3. Fehlerbehandlung für problematische Pfade und Offline-Laufwerke weiter verbessern (7.5).
+4. Icons und SpecialFolders cachen (7.4).
+5. Teilbaum-Refresh und Debounce optimieren (7.6).
 
 ---
 

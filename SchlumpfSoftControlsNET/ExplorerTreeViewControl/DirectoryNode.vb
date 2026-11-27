@@ -86,9 +86,17 @@ Namespace ExplorerTreeViewControl
         Friend Function ApplyLoadResult(result As LoadResult) As Boolean
             Me.Status = result.Status
             If result.Status = DirectoryStatus.Accessible Then
-                Me.Nodes.Clear()
+                Dim remaining As New HashSet(Of String)(result.Directories, StringComparer.OrdinalIgnoreCase)
+                For index As Integer = Me.Nodes.Count - 1 To 0 Step -1
+                    Dim child As FolderNode = TryCast(Me.Nodes(index), FolderNode)
+                    If child Is Nothing OrElse Not remaining.Remove(child.FullPath) Then
+                        Me.Nodes.RemoveAt(index)
+                    End If
+                Next
                 For Each directory As String In result.Directories
-                    Dim unused = Me.Nodes.Add(New FolderNode(Path.GetFileName(directory), directory))
+                    If remaining.Remove(directory) Then
+                        Dim unused = Me.Nodes.Add(New FolderNode(Path.GetFileName(directory), directory))
+                    End If
                 Next
                 Me.ChildrenLoaded = True
                 Return True

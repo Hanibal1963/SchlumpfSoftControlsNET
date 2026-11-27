@@ -24,6 +24,96 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
             Assert.AreEqual(expectedPath, args.SelectedPath)
         End Sub
 
+        ''' <summary>Prüft, dass ein fehlendes Verzeichnis den bestätigten Pfad nicht überschreibt.</summary>
+        <STATestMethod>
+        Public Sub Selection_MissingDirectoryKeepsConfirmedPath()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim unused = Directory.CreateDirectory(root)
+            Try
+                Using control As New ExplorerTreeView()
+                    control.CreateControl()
+                    Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                    Dim handle As IntPtr = tv.Handle
+                    Dim existing As New FolderNode("existing", root)
+                    Dim missing As New FolderNode("missing", Path.Combine(root, "missing"))
+                    tv.Nodes.Add(existing)
+                    tv.Nodes.Add(missing)
+                    Dim paths As New List(Of String)
+                    AddHandler control.SelectedPathChanged, Sub(sender, args) paths.Add(args.SelectedPath)
+                    tv.SelectedNode = existing
+                    Assert.IsTrue(WaitForCondition(Function() paths.Count = 1))
+                    tv.SelectedNode = missing
+                    Dim pending = GetType(ExplorerTreeView).GetField("_pendingSelection", Reflection.BindingFlags.Instance Or Reflection.BindingFlags.NonPublic)
+                    Assert.IsTrue(WaitForCondition(Function() pending.GetValue(control) Is Nothing), "Die fehlgeschlagene Prüfung wurde nicht beendet.")
+                    Assert.AreEqual(root, control.SelectedPath)
+                    CollectionAssert.AreEqual(New String() {root}, paths)
+                End Using
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
+        ''' <summary>Prüft, dass nur die zuletzt gewählte Auswahl nach der Hintergrundprüfung veröffentlicht wird.</summary>
+        <STATestMethod>
+        Public Sub Selection_RapidChangesPublishOnlyLatestPath()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim first As String = Path.Combine(root, "first")
+            Dim second As String = Path.Combine(root, "second")
+            Dim unused = Directory.CreateDirectory(first)
+            Dim created = Directory.CreateDirectory(second)
+            Try
+                Using control As New ExplorerTreeView()
+                    control.CreateControl()
+                    Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                    Dim handle As IntPtr = tv.Handle
+                    Dim firstNode As New FolderNode("first", first)
+                    Dim secondNode As New FolderNode("second", second)
+                    tv.Nodes.Add(firstNode)
+                    tv.Nodes.Add(secondNode)
+                    Dim paths As New List(Of String)
+                    AddHandler control.SelectedPathChanged, Sub(sender, args) paths.Add(args.SelectedPath)
+
+                    tv.SelectedNode = firstNode
+                    tv.SelectedNode = secondNode
+                    Assert.IsNull(control.SelectedPath)
+                    Assert.IsEmpty(paths)
+                    Assert.IsTrue(WaitForCondition(Function() paths.Count > 0), "Die Auswahl wurde nicht bestätigt.")
+                    Assert.AreEqual(second, control.SelectedPath)
+                    CollectionAssert.AreEqual(New String() {second}, paths)
+                End Using
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
+        ''' <summary>Prüft die synchrone Navigation auf einen bereits gewählten, noch ungeprüften Knoten.</summary>
+        <STATestMethod>
+        Public Sub ExpandPath_ConfirmsPendingSelectionSynchronously()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim target As String = Path.Combine(root, "child")
+            Dim unused = Directory.CreateDirectory(target)
+            Try
+                Using control As New ExplorerTreeView()
+                    control.CreateControl()
+                    Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                    Dim handle As IntPtr = tv.Handle
+                    Assert.IsTrue(control.ExpandPath(target))
+                    Dim targetNode As TreeNode = tv.SelectedNode
+                    Dim paths As New List(Of String)
+                    AddHandler control.SelectedPathChanged, Sub(sender, args) paths.Add(args.SelectedPath)
+                    tv.SelectedNode = tv.Nodes(0)
+                    tv.SelectedNode = targetNode
+                    Assert.IsEmpty(paths)
+
+                    Assert.IsTrue(control.ExpandPath(target))
+                    Assert.AreEqual(target, control.SelectedPath, True)
+                    CollectionAssert.AreEqual(New String() {target}, paths)
+                End Using
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
         ''' <summary>Prüft, dass Aktualisierungen vorhandene Unterbäume nicht ersetzen.</summary>
         <TestMethod>
         Public Sub FolderNode_Refresh_PreservesExistingChildren()

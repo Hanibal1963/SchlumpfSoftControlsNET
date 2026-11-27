@@ -73,6 +73,10 @@ Namespace ExplorerTreeViewControl
         ''' <summary>Verhindert nach dem Entsorgen die Registrierung weiterer Überwachungen.</summary>
         Private _watchersStopped As Boolean
         Private _SelectedPath As String
+        ''' <summary>Verwirft Ergebnisse älterer Auswahlprüfungen nach einer erneuten Auswahl.</summary>
+        Private _selectionGeneration As Long
+        ''' <summary>Merkt eine noch nicht bestätigte Auswahl für die synchrone Pfadnavigation.</summary>
+        Private _pendingSelection As TreeNode
         ''' <summary>Ordnet laufenden Verzeichnisabfragen ihre aktuelle Generation zu.</summary>
         Private ReadOnly _pendingLoads As New Dictionary(Of DirectoryNode, Long)
         ''' <summary>Erzeugt eindeutige Generationen für Verzeichnisabfragen.</summary>
@@ -94,6 +98,8 @@ Namespace ExplorerTreeViewControl
         '''
         ''' <para>Es ermöglicht eine reaktive Programmierung, bei der andere Teile der Anwendung auf Änderungen im
         ''' ausgewählten Pfad reagieren können.</para>
+        ''' <para>Bei interaktiver Auswahl erfolgt die Zugriffsprüfung im Hintergrund; das Ereignis wird danach auf
+        ''' dem UI-Thread ausgelöst, sofern der Knoten weiterhin ausgewählt ist.</para>
         ''' </remarks>
         <Description("Wird ausgelöst, wenn sich der ausgewählte Pfad geändert hat.")>
         <Browsable(True)>
@@ -104,8 +110,9 @@ Namespace ExplorerTreeViewControl
 #Region "Eigenschaften"
 
         ''' <summary>
-        ''' Gibt den aktuell ausgewählten Pfad zurück.
+        ''' Gibt den zuletzt erfolgreich auf Zugriff geprüften ausgewählten Pfad zurück.
         ''' </summary>
+        ''' <remarks>Während einer asynchronen Prüfung bleibt der zuletzt bestätigte Wert erhalten.</remarks>
         ''' <returns></returns>
         <Browsable(False)>
         Public ReadOnly Property SelectedPath As String
@@ -389,7 +396,11 @@ Namespace ExplorerTreeViewControl
                     foundNode.Expand()
                     lastnode = foundNode
                 Next
-                Me.TV.SelectedNode = lastnode
+                If Me.TV.SelectedNode Is lastnode AndAlso Me._pendingSelection Is lastnode Then
+                    Me.TV_AfterSelect(Me.TV, New TreeViewEventArgs(lastnode))
+                Else
+                    Me.TV.SelectedNode = lastnode
+                End If
                 Return True
             Finally
                 Me._synchronousNavigation = previousSynchronousNavigation
@@ -802,17 +813,48 @@ Namespace ExplorerTreeViewControl
 
         ''' <summary>
         ''' Wird aufgerufen, nachdem ein Knoten im TreeView ausgewählt wurde. Aktualisiert den ausgewählten Pfad und
-        ''' löst das Ereignis SelectedPathChanged aus, wenn der ausgewählte Knoten einen gültigen Pfad hat.
+        ''' löst das Ereignis SelectedPathChanged nach erfolgreicher Zugriffsprüfung aus.
         ''' </summary>
         ''' <param name="sender"></param>
         ''' <param name="e"></param>
         Private Sub TV_AfterSelect(sender As Object, e As TreeViewEventArgs) Handles TV.AfterSelect
+            Me._selectionGeneration += 1
+            Dim generation As Long = Me._selectionGeneration
+            Me._pendingSelection = Nothing
             Dim selectedpath As String = GetDirectoryPath(e.Node)
             If String.IsNullOrEmpty(selectedpath) Then Exit Sub
-            If Not CanOpenFolder(selectedpath) Then Exit Sub ' kein Event für geschützte Ordner
+            If Me._synchronousNavigation Then
+                If CanOpenFolder(selectedpath) Then Me.PublishSelectedPath(selectedpath)
+                Return
+            End If
 
-            Me._SelectedPath = selectedpath
-            RaiseEvent SelectedPathChanged(Me, New SelectedPathChangedEventArgs(selectedpath))
+            Dim selectedNode As TreeNode = e.Node
+            Me._pendingSelection = selectedNode
+            Dim unused = Task.Run(Function() CanOpenFolder(selectedpath)).ContinueWith(
+                Sub(task As Task(Of Boolean))
+                    If task.IsFaulted Then
+                        Debug.WriteLine($"Fehler bei der Zugriffsprüfung für '{selectedpath}': {task.Exception}")
+                    End If
+                    Dim accessible As Boolean = task.Status = TaskStatus.RanToCompletion AndAlso task.Result
+                    Try
+                        Dim ignored = Me.TV.BeginInvoke(New MethodInvoker(
+                            Sub()
+                                If Me.IsDisposed OrElse Me.Disposing OrElse generation <> Me._selectionGeneration OrElse
+                                    selectedNode.TreeView IsNot Me.TV OrElse Me.TV.SelectedNode IsNot selectedNode Then Return
+                                Me._pendingSelection = Nothing
+                                If accessible Then Me.PublishSelectedPath(selectedpath)
+                            End Sub))
+                    Catch ex As InvalidOperationException
+                        Debug.WriteLine($"Auswahlprüfung für '{selectedpath}' konnte nicht zugestellt werden: {ex.Message}")
+                    End Try
+                End Sub)
+        End Sub
+
+        ''' <summary>Übernimmt einen bestätigten Pfad und benachrichtigt auf dem UI-Thread über die Auswahl.</summary>
+        ''' <param name="path">Der erfolgreich geprüfte Verzeichnispfad.</param>
+        Private Sub PublishSelectedPath(path As String)
+            Me._SelectedPath = path
+            RaiseEvent SelectedPathChanged(Me, New SelectedPathChangedEventArgs(path))
         End Sub
 
         ''' <summary>

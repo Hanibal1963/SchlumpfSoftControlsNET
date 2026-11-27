@@ -102,13 +102,15 @@ Verzeichnisknoten erhalten zunächst einen Platzhalter; ihre unmittelbaren Unter
 
 ### 7.4. Caching für Icons und SpecialFolders
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt.
 
 **Umsetzung:**
 
 - Drive-/Folder-Icons zentral cachen.
 
 - KnownFolder-Auflösung einmalig pro Session durchführen.
+
+Die eingebetteten Symbole werden pro Prozess einmal geladen; jede Steuerelementinstanz erhält eigene Bildkopien und entsorgt diese mit ihrer ImageList. Die Spezialordner und das Systemlaufwerk werden bei der ersten Verwendung threadsicher ermittelt und für die Lebensdauer des Prozesses zwischengespeichert. Änderungen an Spezialordnerpfaden werden daher erst nach einem Neustart der Anwendung übernommen.
 
 **Nutzen:** Reduzierte Systemaufrufe und schnelleres Rendering.
 
@@ -144,11 +146,8 @@ Verzeichnisknoten erhalten zunächst einen Platzhalter; ihre unmittelbaren Unter
 
 ### 7.7. Empfohlene Reihenfolge
 
-1. Initialisierung, Auswahlprüfung, Überwachung und Pfadnavigation einbeziehen; asynchrone Navigation ergänzen und die synchrone API kompatibel halten.
-2. Die betroffenen Abläufe und Grenzfälle testen und die API-Dokumentation aktualisieren.
-3. Fehlerbehandlung für problematische Pfade und Offline-Laufwerke weiter verbessern (7.5).
-4. Icons und SpecialFolders cachen (7.4).
-5. Teilbaum-Refresh und Debounce optimieren (7.6).
+1. Fehlerbehandlung für problematische Pfade und Offline-Laufwerke weiter verbessern (7.5).
+2. Teilbaum-Refresh und Debounce optimieren (7.6).
 
 ---
 

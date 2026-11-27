@@ -17,6 +17,40 @@ Imports SchlumpfSoft.ControlsNET.ExplorerTreeViewControl
 Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
     <TestClass>
     Public Class ExplorerTreeViewTests
+        ''' <summary>Prüft die unabhängige Lebensdauer der Bildlisten bei gemeinsamem Symbolcache.</summary>
+        <STATestMethod>
+        Public Sub ImageCache_InstancesRemainIndependentAfterDisposal()
+            Dim first As New ExplorerTreeView()
+            Using second As New ExplorerTreeView()
+                Dim firstImages As ImageList = FindControl(Of TreeView)(first, "TV").ImageList
+                Dim secondImages As ImageList = FindControl(Of TreeView)(second, "TV").ImageList
+                Assert.AreNotSame(firstImages, secondImages)
+                Assert.AreEqual(17, firstImages.Images.Count)
+                Assert.AreEqual(firstImages.Images.Count, secondImages.Images.Count)
+                For Each key As String In {ICON_COMPUTER, ICON_DRIVE_NOROOT, ICON_DRIVE_RAM, ICON_FOLDER_FOLDER, ICON_FOLDER_DOWNLOADS}
+                    Assert.IsTrue(firstImages.Images.ContainsKey(key))
+                    Assert.IsTrue(secondImages.Images.ContainsKey(key))
+                Next
+                first.Dispose()
+                Assert.IsNotNull(secondImages.Images(ICON_FOLDER_FOLDER))
+                Using third As New ExplorerTreeView()
+                    Assert.IsNotNull(FindControl(Of TreeView)(third, "TV").ImageList.Images(ICON_DRIVE_NOROOT))
+                End Using
+            End Using
+        End Sub
+
+        ''' <summary>Prüft den gemeinsamen Spezialordnercache bei gleichzeitigen Abfragen.</summary>
+        <TestMethod>
+        Public Sub SpecialFolderCache_ConcurrentQueriesReturnSamePaths()
+            Dim names As String() = {FOLDER_DESKTOP, FOLDER_DOKUMENTE, FOLDER_DOWNLOADS, FOLDER_MUSIK, FOLDER_BILDER, FOLDER_VIDEOS}
+            Dim expected As String() = names.Select(Function(name) GetSpezialFolderPath(name)).ToArray()
+            Dim tasks = Enumerable.Range(0, 16).Select(Function(index) Threading.Tasks.Task.Run(Function() names.Select(Function(name) GetSpezialFolderPath(name)).ToArray())).ToArray()
+            Threading.Tasks.Task.WaitAll(tasks)
+            For Each task In tasks
+                CollectionAssert.AreEqual(expected, task.Result)
+            Next
+        End Sub
+
         <TestMethod>
         Public Sub SelectedPathChangedEventArgs_Constructor_SetsSelectedPath()
             Dim expectedPath As String = "C:\TestFolder"

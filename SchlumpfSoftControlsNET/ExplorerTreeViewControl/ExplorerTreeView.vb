@@ -66,6 +66,31 @@ Namespace ExplorerTreeViewControl
 
         Private disposedValue As Boolean
 
+        ''' <summary>Speichert die unveränderten Quellbilder für alle Instanzen dieser Anwendung.</summary>
+        Private Shared ReadOnly _imageCache As New Lazy(Of List(Of KeyValuePair(Of String, Bitmap)))(
+            Function() New Dictionary(Of String, Bitmap) From {
+                {ICON_COMPUTER, My.Resources.ExplorerTreeViewControl_Computer},
+                {ICON_DRIVE_SYSTEM, My.Resources.ExplorerTreeViewControl_DriveSystem},
+                {ICON_DRIVE_FIXED, My.Resources.ExplorerTreeViewControl_DriveFixed},
+                {ICON_DRIVE_CDROM, My.Resources.ExplorerTreeViewControl_DriveCDRom},
+                {ICON_DRIVE_REMOVABLE, My.Resources.ExplorerTreeViewControl_DriveRemovable},
+                {ICON_DRIVE_NETWORK, My.Resources.ExplorerTreeViewControl_DriveNetwork},
+                {ICON_DRIVE_RAM, My.Resources.ExplorerTreeViewControl_DriveRamDisk},
+                {ICON_DRIVE_FLOPPY, My.Resources.ExplorerTreeViewControl_DriveDisk},
+                {ICON_DRIVE_NOROOT, My.Resources.ExplorerTreeViewControl_DriveNoRoot},
+                {ICON_DRIVE_UNKNOWN, My.Resources.ExplorerTreeViewControl_DriveUnknown},
+                {ICON_FOLDER_FOLDER, My.Resources.ExplorerTreeViewControl_Folder},
+                {ICON_FOLDER_DESKTOP, My.Resources.ExplorerTreeViewControl_FolderDesktop},
+                {ICON_FOLDER_DOCUMENTS, My.Resources.ExplorerTreeViewControl_FolderDocuments},
+                {ICON_FOLDER_DOWNLOADS, My.Resources.ExplorerTreeViewControl_FolderDownloads},
+                {ICON_FOLDER_MUSIC, My.Resources.ExplorerTreeViewControl_FolderMusic},
+                {ICON_FOLDER_PICTURES, My.Resources.ExplorerTreeViewControl_FolderPictures},
+                {ICON_FOLDER_VIDEOS, My.Resources.ExplorerTreeViewControl_FolderVideos}
+            }.OrderBy(Function(entry) If(entry.Key = ICON_COMPUTER, 0, 1)).ToList())
+
+        ''' <summary>Hält Bildkopien bis zur Entsorgung der zugehörigen ImageList verfügbar.</summary>
+        Private ReadOnly _ownedImages As New List(Of Bitmap)
+
         Private ReadOnly _FileSystemWatchers As New Dictionary(Of String, FileSystemWatcher)(StringComparer.OrdinalIgnoreCase)
 
         ''' <summary>Schützt Überwachungen und ihre noch laufende Einrichtung vor konkurrierendem Entsorgen.</summary>
@@ -750,22 +775,18 @@ Namespace ExplorerTreeViewControl
         ''' </summary>
         Private Sub LoadImages()
             Me.TV.ImageList.Images.Clear()
-            Me.TV.ImageList.Images.Add(ICON_COMPUTER, My.Resources.ExplorerTreeViewControl_Computer)
-            Me.TV.ImageList.Images.Add(ICON_DRIVE_SYSTEM, My.Resources.ExplorerTreeViewControl_DriveSystem)
-            Me.TV.ImageList.Images.Add(ICON_DRIVE_FIXED, My.Resources.ExplorerTreeViewControl_DriveFixed)
-            Me.TV.ImageList.Images.Add(ICON_DRIVE_CDROM, My.Resources.ExplorerTreeViewControl_DriveCDRom)
-            Me.TV.ImageList.Images.Add(ICON_DRIVE_REMOVABLE, My.Resources.ExplorerTreeViewControl_DriveRemovable)
-            Me.TV.ImageList.Images.Add(ICON_DRIVE_NETWORK, My.Resources.ExplorerTreeViewControl_DriveNetwork)
-            Me.TV.ImageList.Images.Add(ICON_DRIVE_RAM, My.Resources.ExplorerTreeViewControl_DriveRamDisk)
-            Me.TV.ImageList.Images.Add(ICON_DRIVE_FLOPPY, My.Resources.ExplorerTreeViewControl_DriveDisk)
-            Me.TV.ImageList.Images.Add(ICON_DRIVE_UNKNOWN, My.Resources.ExplorerTreeViewControl_DriveUnknown)
-            Me.TV.ImageList.Images.Add(ICON_FOLDER_FOLDER, My.Resources.ExplorerTreeViewControl_Folder)
-            Me.TV.ImageList.Images.Add(ICON_FOLDER_DESKTOP, My.Resources.ExplorerTreeViewControl_FolderDesktop)
-            Me.TV.ImageList.Images.Add(ICON_FOLDER_DOCUMENTS, My.Resources.ExplorerTreeViewControl_FolderDocuments)
-            Me.TV.ImageList.Images.Add(ICON_FOLDER_DOWNLOADS, My.Resources.ExplorerTreeViewControl_FolderDownloads)
-            Me.TV.ImageList.Images.Add(ICON_FOLDER_MUSIC, My.Resources.ExplorerTreeViewControl_FolderMusic)
-            Me.TV.ImageList.Images.Add(ICON_FOLDER_PICTURES, My.Resources.ExplorerTreeViewControl_FolderPictures)
-            Me.TV.ImageList.Images.Add(ICON_FOLDER_VIDEOS, My.Resources.ExplorerTreeViewControl_FolderVideos)
+            For Each image As Bitmap In Me._ownedImages
+                image.Dispose()
+            Next
+            Me._ownedImages.Clear()
+            ' GDI+-Bilder dürfen nicht gleichzeitig von mehreren UI-Threads kopiert werden.
+            SyncLock _imageCache
+                For Each entry In _imageCache.Value
+                    Dim image As New Bitmap(entry.Value)
+                    Me._ownedImages.Add(image)
+                    Me.TV.ImageList.Images.Add(entry.Key, image)
+                Next
+            End SyncLock
         End Sub
 
         ''' <summary>

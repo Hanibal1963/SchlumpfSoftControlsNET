@@ -9,6 +9,7 @@ Imports System.Drawing
 Imports System.IO
 Imports System.Windows.Forms
 Imports System.ComponentModel
+Imports System.Threading.Tasks
 
 Namespace ExplorerTreeViewControl
 
@@ -64,6 +65,12 @@ Namespace ExplorerTreeViewControl
         Private disposedValue As Boolean
         Private ReadOnly _FileSystemWatchers As New Dictionary(Of String, FileSystemWatcher)
         Private _SelectedPath As String
+        ''' <summary>Ordnet laufenden Verzeichnisabfragen ihre aktuelle Generation zu.</summary>
+        Private ReadOnly _pendingLoads As New Dictionary(Of DirectoryNode, Long)
+        ''' <summary>Erzeugt eindeutige Generationen für Verzeichnisabfragen.</summary>
+        Private _loadGeneration As Long
+        ''' <summary>Kennzeichnet die weiterhin synchrone öffentliche Pfadnavigation.</summary>
+        Private _synchronousNavigation As Boolean
 
 #End Region
 
@@ -352,19 +359,33 @@ Namespace ExplorerTreeViewControl
         ''' </returns>
         Public Function ExpandPath(Path As String) As Boolean
             If String.IsNullOrWhiteSpace(Path) Then Return False
-            Dim lastpath As String = String.Empty
-            Dim lastnode As TreeNode = Me.TV.Nodes.Item(0)
-            lastnode.Expand()
-            Dim foundNode As TreeNode
-            For Each pathsegment As String In GetPathSegments(Path)
-                lastpath = IO.Path.Combine(lastpath, pathsegment)
-                foundNode = FindNodeByPath(lastnode.Nodes, lastpath)
-                If Microsoft.VisualBasic.IsNothing(foundNode) Then Return False
-                foundNode.Expand()
-                lastnode = foundNode
-            Next
-            Me.TV.SelectedNode = lastnode
-            Return True
+            Dim previousSynchronousNavigation As Boolean = Me._synchronousNavigation
+            Me._synchronousNavigation = True
+            Try
+                Dim lastpath As String = String.Empty
+                Dim lastnode As TreeNode = Me.TV.Nodes.Item(0)
+                lastnode.Expand()
+                Dim foundNode As TreeNode
+                For Each pathsegment As String In GetPathSegments(Path)
+                    lastpath = IO.Path.Combine(lastpath, pathsegment)
+                    foundNode = FindNodeByPath(lastnode.Nodes, lastpath)
+                    If Microsoft.VisualBasic.IsNothing(foundNode) Then Return False
+                    Dim directoryNode As DirectoryNode = TryCast(foundNode, DirectoryNode)
+                    If directoryNode IsNot Nothing AndAlso foundNode.IsExpanded AndAlso Not directoryNode.ChildrenLoaded Then
+                        Dim removed = Me._pendingLoads.Remove(directoryNode)
+                        If Not directoryNode.LoadChildren() Then
+                            Me.UpdateNodeAccessVisual(directoryNode)
+                            Return False
+                        End If
+                    End If
+                    foundNode.Expand()
+                    lastnode = foundNode
+                Next
+                Me.TV.SelectedNode = lastnode
+                Return True
+            Finally
+                Me._synchronousNavigation = previousSynchronousNavigation
+            End Try
         End Function
 
 #End Region
@@ -466,9 +487,51 @@ Namespace ExplorerTreeViewControl
                 CType(Node, ComputerNode).LoadDrives()
             ElseIf TypeOf Node Is DirectoryNode Then
                 Dim directoryNode As DirectoryNode = CType(Node, DirectoryNode)
-                Dim unused = directoryNode.LoadChildren(True)
-                Me.UpdateNodeAccessVisual(directoryNode)
+                Me.LoadDirectoryAsync(directoryNode)
             End If
+        End Sub
+
+        ''' <summary>Fragt Unterverzeichnisse im Hintergrund ab und übernimmt nur das neueste gültige Ergebnis.</summary>
+        ''' <param name="node">Der auf dem UI-Thread verwaltete Verzeichnisknoten.</param>
+        Private Sub LoadDirectoryAsync(node As DirectoryNode)
+            Me._loadGeneration += 1
+            Dim generation As Long = Me._loadGeneration
+            Me._pendingLoads(node) = generation
+            Dim path As String = node.DirectoryPath
+            Dim unused = Task.Run(Function() DirectoryNode.ReadChildren(path)).ContinueWith(
+                Sub(task As Task(Of DirectoryNode.LoadResult))
+                    If task.IsFaulted Then
+                        Debug.WriteLine($"Fehler beim Laden von '{path}': {task.Exception}")
+                    End If
+                    Try
+                        Dim ignored = Me.TV.BeginInvoke(New MethodInvoker(
+                            Sub()
+                                Dim current As Long
+                                If Me.IsDisposed OrElse Not Me._pendingLoads.TryGetValue(node, current) OrElse current <> generation Then Return
+                                Dim removed = Me._pendingLoads.Remove(node)
+                                If node.TreeView IsNot Me.TV OrElse Not node.IsExpanded Then Return
+                                Dim ancestor As TreeNode = node.Parent
+                                While ancestor IsNot Nothing
+                                    If Not ancestor.IsExpanded Then Return
+                                    ancestor = ancestor.Parent
+                                End While
+                                Me.TV.BeginUpdate()
+                                Try
+                                    If task.IsFaulted Then
+                                        node.Status = DirectoryNode.DirectoryStatus.Unavailable
+                                        node.ChildrenLoaded = False
+                                    Else
+                                        Dim loaded = node.ApplyLoadResult(task.Result)
+                                    End If
+                                    Me.UpdateNodeAccessVisual(node)
+                                Finally
+                                    Me.TV.EndUpdate()
+                                End Try
+                            End Sub))
+                    Catch ex As InvalidOperationException
+                        Debug.WriteLine($"Ladeergebnis für '{path}' konnte nicht zugestellt werden: {ex.Message}")
+                    End Try
+                End Sub)
         End Sub
 
         ''' <summary>
@@ -574,8 +637,13 @@ Namespace ExplorerTreeViewControl
 
             Dim directoryNode As DirectoryNode = TryCast(e.Node, DirectoryNode)
             If directoryNode Is Nothing Then Return
-            e.Cancel = Not directoryNode.LoadChildren()
-            Me.UpdateNodeAccessVisual(directoryNode)
+            If Me._synchronousNavigation Then
+                Dim removed = Me._pendingLoads.Remove(directoryNode)
+                e.Cancel = Not directoryNode.LoadChildren()
+                Me.UpdateNodeAccessVisual(directoryNode)
+            ElseIf Not directoryNode.ChildrenLoaded Then
+                Me.LoadDirectoryAsync(directoryNode)
+            End If
         End Sub
 
         ''' <summary>
@@ -596,8 +664,25 @@ Namespace ExplorerTreeViewControl
         ''' <param name="e"></param>
         Private Sub TV_AfterCollapse(sender As Object, e As TreeViewEventArgs) Handles TV.AfterCollapse
             Me.RemoveFileSystemWatchers(GetDirectoryPath(e.Node))
+            Dim obsolete As New List(Of DirectoryNode)
+            For Each pending As DirectoryNode In Me._pendingLoads.Keys
+                Dim ancestor As TreeNode = pending
+                While ancestor IsNot Nothing
+                    If ancestor Is e.Node Then
+                        obsolete.Add(pending)
+                        Exit While
+                    End If
+                    ancestor = ancestor.Parent
+                End While
+            Next
+            For Each pending As DirectoryNode In obsolete
+                Dim removed = Me._pendingLoads.Remove(pending)
+                pending.ChildrenLoaded = False
+            Next
             Dim directoryNode As DirectoryNode = TryCast(e.Node, DirectoryNode)
-            If directoryNode IsNot Nothing Then directoryNode.ChildrenLoaded = False
+            If directoryNode IsNot Nothing Then
+                directoryNode.ChildrenLoaded = False
+            End If
         End Sub
 
         ''' <summary>

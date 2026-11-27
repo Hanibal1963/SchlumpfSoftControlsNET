@@ -24,6 +24,58 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
             Assert.AreEqual(expectedPath, args.SelectedPath)
         End Sub
 
+        ''' <summary>Prüft die Übernahme einer im Hintergrund ermittelten Verzeichnisliste.</summary>
+        <STATestMethod>
+        Public Sub ExpandDirectory_LoadsChildrenAsynchronously()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim child As String = Path.Combine(root, "child")
+            Dim unused = Directory.CreateDirectory(child)
+            Try
+                Using control As New ExplorerTreeView()
+                    control.CreateControl()
+                    Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                    Dim handle As IntPtr = tv.Handle
+                    Dim node As New FolderNode("test", root)
+                    tv.Nodes.Add(node)
+                    node.Expand()
+                    Dim timeout As Stopwatch = Stopwatch.StartNew()
+                    While Not node.ChildrenLoaded AndAlso timeout.Elapsed < TimeSpan.FromSeconds(10)
+                        Application.DoEvents()
+                        Threading.Thread.Sleep(10)
+                    End While
+                    Assert.IsTrue(node.ChildrenLoaded)
+                    Assert.AreEqual(DirectoryNode.DirectoryStatus.Accessible, node.Status)
+                    Assert.AreEqual(1, node.Nodes.Count)
+                    Assert.AreEqual(child, DirectCast(node.Nodes(0), FolderNode).FullPath)
+                End Using
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
+        ''' <summary>Prüft die getrennte Abfrage und anschließende Übernahme in den Baum.</summary>
+        <TestMethod>
+        Public Sub DirectoryNode_ReadChildren_DoesNotChangeNodeUntilApplied()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim child As String = Path.Combine(root, "child")
+            Dim unused = Directory.CreateDirectory(child)
+            Try
+                Dim node As New FolderNode("root", root)
+                Dim result As DirectoryNode.LoadResult = DirectoryNode.ReadChildren(root)
+                Assert.AreEqual(DirectoryNode.DirectoryStatus.Accessible, result.Status)
+                CollectionAssert.AreEquivalent(New String() {child}, result.Directories)
+                Assert.AreEqual(DirectoryNode.DirectoryStatus.Unknown, node.Status)
+                Assert.IsFalse(node.ChildrenLoaded)
+                Assert.IsNotInstanceOfType(Of FolderNode)(node.Nodes(0))
+
+                Assert.IsTrue(node.ApplyLoadResult(result))
+                Assert.AreEqual(DirectoryNode.DirectoryStatus.Accessible, node.Status)
+                Assert.AreEqual(child, DirectCast(node.Nodes(0), FolderNode).FullPath)
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
         ''' <summary>Prüft die Pfadnavigation durch mehrere noch nicht geladene Ebenen.</summary>
         <TestMethod>
         Public Sub ExpandPath_LoadsAndSelectsNestedDirectory()

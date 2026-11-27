@@ -106,6 +106,10 @@ Namespace ExplorerTreeViewControl
             {FOLDER_VIDEOS, Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)}
         })
 
+        ''' <summary>Ermittelt das Systemlaufwerk höchstens einmal pro Prozess.</summary>
+        Private ReadOnly _systemDriveCache As New Lazy(Of String)(
+            Function() Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.Windows)))
+
         ''' <summary>
         ''' Dieses Dictionary wird verwendet, um die Imagekeys für Ordner und Laufwerke zu ermitteln.
         ''' </summary>
@@ -272,7 +276,7 @@ Namespace ExplorerTreeViewControl
 
             ' Ermittelt das Root-Verzeichnis des Systemlaufwerks, indem der Pfad des Windows-Ordners verwendet wird.
             ' Beispiel: Wenn Windows auf "C:\Windows" installiert ist, ergibt Path.GetPathRoot(...) "C:\".
-            Dim systemdrive As String = Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.Windows))
+            Dim systemdrive As String = _systemDriveCache.Value
 
             ' Vergleicht den Namen des übergebenen Laufwerks mit dem ermittelten Systemlaufwerk.
             ' String.Equals wird verwendet, um eine kulturunabhängige, nicht case-sensitive Prüfung durchzuführen.

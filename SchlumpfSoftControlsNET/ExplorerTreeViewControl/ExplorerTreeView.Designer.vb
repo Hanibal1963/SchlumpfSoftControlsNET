@@ -11,6 +11,10 @@
                     Me.StopFileSystemWatchers()
                     Me.DW.Dispose()
                     Me.IL.Dispose()
+                    For Each image As System.Drawing.Bitmap In Me._ownedImages
+                        image.Dispose()
+                    Next
+                    Me._ownedImages.Clear()
                     Me.TV.Dispose()
                 End If
                 Me.disposedValue = True

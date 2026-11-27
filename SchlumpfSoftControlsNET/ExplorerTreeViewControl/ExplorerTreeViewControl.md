@@ -36,6 +36,7 @@ Unterstützt Laufwerke, spezielle Benutzerordner (Desktop, Dokumente, Downloads,
 ## 4. Funktionen
 
 - `ExpandPath(path As String) As Boolean`: Öffnet und selektiert den Knoten zum angegebenen Verzeichnispfad (auch bei noch nicht geladenen Unterknoten) und liefert `True` bei Erfolg, sonst `False`. `Nothing`, eine leere Zeichenfolge und reine Leerzeichen liefern `False`. Die Navigation und die Auswahlprüfung erfolgen synchron und können den UI-Thread blockieren.
+- `ExpandPathAsync(path As String) As Task(Of Boolean)`: Navigiert über noch nicht geladene Ebenen und bestätigt die Auswahl nach einer Zugriffsprüfung im Hintergrund. Die Aufgabe liefert `True` bei erfolgreicher Auswahl und sonst `False`, unter anderem für leere, fehlende oder nicht zugängliche Pfade sowie bei Abbruch. Eine neue Navigation, eine andere Auswahl, das Zuklappen eines Knotens, die Zerstörung des Handles oder die Entsorgung bricht einen laufenden Auftrag ab. Der Aufruf muss auf dem UI-Thread bei erstelltem TreeView-Handle erfolgen; andernfalls schlägt die Aufgabe mit `InvalidOperationException` fehl. Fehler bei der Pfadverarbeitung oder unerwartete Abfragefehler werden über die Aufgabe weitergegeben.
 
 ---
 
@@ -79,7 +80,7 @@ Verzeichnisknoten erhalten zunächst einen Platzhalter; ihre unmittelbaren Unter
 
 ### 7.3. Dateisystemzugriffe entkoppeln
 
-**Status** &#x26A0; Teilweise umgesetzt: Die Ermittlung der Wurzeleinträge und der für neue Laufwerksknoten benötigten Metadaten, Verzeichnisauflistungen beim Aufklappen und Aktualisieren, die Einrichtung der Verzeichnisüberwachung und die Prüfung interaktiver Auswahlen erfolgen im Hintergrund. Überholte Hotplug-Ergebnisse werden verworfen. Nach Einrichtung der Überwachung wird erneut geladen, damit zwischenzeitliche Änderungen berücksichtigt werden; vorhandene Unterbäume bleiben bei der Aktualisierung erhalten. `ExpandPath` und seine Auswahlprüfung bleiben synchron. Die asynchrone Pfadnavigation ist noch offen; außerdem kann der vorgelagerte `DriveWatcher` vor der Zustellung eines Hotplug-Ereignisses selbst synchron Laufwerksmetadaten abfragen.
+**Status** &#x26A0; Teilweise umgesetzt: Die Ermittlung der Wurzeleinträge und der für neue Laufwerksknoten benötigten Metadaten, Verzeichnisauflistungen beim Aufklappen und Aktualisieren, die Einrichtung der Verzeichnisüberwachung und die Prüfung interaktiver Auswahlen erfolgen im Hintergrund. `ExpandPathAsync` ermöglicht die asynchrone Pfadnavigation; `ExpandPath` und seine Auswahlprüfung bleiben synchron. Überholte Ergebnisse werden verworfen. Nach Einrichtung der Überwachung wird erneut geladen, damit zwischenzeitliche Änderungen berücksichtigt werden; vorhandene Unterbäume bleiben bei der Aktualisierung erhalten. Der vorgelagerte `DriveWatcher` kann vor der Zustellung eines Hotplug-Ereignisses selbst synchron Laufwerksmetadaten abfragen und wurde nicht geändert. Die Prüfung mit langsamen Netzlaufwerken steht noch aus.
 
 **Umsetzung:**
 
@@ -95,7 +96,7 @@ Verzeichnisknoten erhalten zunächst einen Platzhalter; ihre unmittelbaren Unter
 
 - Verhalten bei langsamen oder nicht verfügbaren Laufwerken, konkurrierenden Aktualisierungen, Zuklappen und Entsorgung sowie die bestehende synchrone Pfadnavigation durch Tests überprüfen.
 
-**Nutzen:** UI friert bei langsamen Netzlaufwerken nicht ein.
+**Nutzen:** Die asynchronen Lade- und Navigationspfade halten die UI bei langsamen Verzeichnisabfragen reaktionsfähig. Die synchrone API und vorgelagerte `DriveWatcher`-Abfragen können weiterhin blockieren.
 
 ---
 

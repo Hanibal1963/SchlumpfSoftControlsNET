@@ -7,6 +7,7 @@
         Protected Overrides Sub Dispose(disposing As Boolean)
             If Not Me.disposedValue Then
                 If disposing Then
+                    Me.CancelActiveNavigation()
                     Me.StopFileSystemWatchers()
                     Me.DW.Dispose()
                     Me.IL.Dispose()

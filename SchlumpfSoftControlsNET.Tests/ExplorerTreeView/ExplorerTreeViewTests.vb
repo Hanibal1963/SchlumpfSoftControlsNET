@@ -25,6 +25,164 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
             Assert.AreEqual(expectedPath, args.SelectedPath)
         End Sub
 
+        ''' <summary>Prüft die Handle-Voraussetzung der asynchronen Navigation.</summary>
+        <STATestMethod>
+        Public Sub ExpandPathAsync_WithoutHandle_Faults()
+            Using control As New ExplorerTreeView()
+                control.CreateControl()
+                Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                Dim handle As IntPtr = tv.Handle
+                Dim destroy = GetType(Control).GetMethod("DestroyHandle", Reflection.BindingFlags.Instance Or Reflection.BindingFlags.NonPublic)
+                Dim ignored = destroy.Invoke(tv, Nothing)
+                Assert.IsFalse(tv.IsHandleCreated)
+                Dim navigation = control.ExpandPathAsync(Path.GetTempPath())
+                Assert.ThrowsExactly(Of InvalidOperationException)(Sub() navigation.GetAwaiter().GetResult())
+            End Using
+        End Sub
+
+        ''' <summary>Prüft den Abbruch bei Neuerstellung des TreeView-Handles.</summary>
+        <STATestMethod>
+        Public Sub ExpandPathAsync_HandleRecreationCancelsPendingNavigation()
+            Using control As New ExplorerTreeView()
+                control.CreateControl()
+                Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                Dim handle As IntPtr = tv.Handle
+                Dim navigation = control.ExpandPathAsync(Path.GetTempPath())
+                Dim recreate = GetType(Control).GetMethod("RecreateHandle", Reflection.BindingFlags.Instance Or Reflection.BindingFlags.NonPublic)
+                Dim ignored = recreate.Invoke(tv, Nothing)
+                Assert.IsTrue(WaitForCondition(Function() navigation.IsCompleted))
+                Assert.IsFalse(navigation.GetAwaiter().GetResult())
+            End Using
+        End Sub
+
+        ''' <summary>Prüft den Abbruch einer laufenden Navigation beim Zuklappen des Wurzelknotens.</summary>
+        <STATestMethod>
+        Public Sub ExpandPathAsync_CollapseCancelsPendingNavigation()
+            Using control As New ExplorerTreeView()
+                control.CreateControl()
+                Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                Dim handle As IntPtr = tv.Handle
+                Dim root As TreeNode = tv.Nodes(0)
+                Assert.IsTrue(root.IsExpanded)
+                Dim navigation = control.ExpandPathAsync(Path.GetTempPath())
+                root.Collapse()
+                Assert.IsTrue(WaitForCondition(Function() navigation.IsCompleted))
+                Assert.IsFalse(navigation.GetAwaiter().GetResult())
+                Assert.IsFalse(root.IsExpanded)
+            End Using
+        End Sub
+
+        ''' <summary>Prüft die Threadvoraussetzung der asynchronen Navigation.</summary>
+        <STATestMethod>
+        Public Sub ExpandPathAsync_WrongThread_Faults()
+            Using control As New ExplorerTreeView()
+                control.CreateControl()
+                Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                Dim handle As IntPtr = tv.Handle
+                Dim navigation = Threading.Tasks.Task.Run(Function() control.ExpandPathAsync(Path.GetTempPath()))
+                Assert.IsTrue(WaitForCondition(Function() navigation.IsCompleted))
+                Assert.ThrowsExactly(Of InvalidOperationException)(Sub() navigation.GetAwaiter().GetResult())
+            End Using
+        End Sub
+
+        ''' <summary>Prüft asynchrone Navigation über mehrere noch nicht geladene Ebenen.</summary>
+        <STATestMethod>
+        Public Sub ExpandPathAsync_LoadsAndSelectsNestedDirectory()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim target As String = Path.Combine(root, "first", "nested")
+            Dim unused = Directory.CreateDirectory(target)
+            Try
+                Using control As New ExplorerTreeView()
+                    control.CreateControl()
+                    Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                    Dim handle As IntPtr = tv.Handle
+                    Dim paths As New List(Of String)
+                    AddHandler control.SelectedPathChanged, Sub(sender, args) paths.Add(args.SelectedPath)
+                    Dim navigation = control.ExpandPathAsync(target)
+                    Assert.IsTrue(WaitForCondition(Function() navigation.IsCompleted), "Die Navigation wurde nicht abgeschlossen.")
+                    Assert.IsTrue(navigation.GetAwaiter().GetResult())
+                    Assert.AreEqual(target, control.SelectedPath, True)
+                    Assert.AreEqual("nested", tv.SelectedNode.Text)
+                    CollectionAssert.AreEqual(New String() {target}, paths)
+                End Using
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
+        ''' <summary>Prüft, dass ein neuer Navigationsauftrag den vorherigen ersetzt.</summary>
+        <STATestMethod>
+        Public Sub ExpandPathAsync_NewerRequestCancelsPreviousRequest()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim first As String = Path.Combine(root, "first")
+            Dim second As String = Path.Combine(root, "second")
+            Dim unused = Directory.CreateDirectory(first)
+            Dim created = Directory.CreateDirectory(second)
+            Try
+                Using control As New ExplorerTreeView()
+                    control.CreateControl()
+                    Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                    Dim handle As IntPtr = tv.Handle
+                    Dim previous = control.ExpandPathAsync(first)
+                    Dim current = control.ExpandPathAsync(second)
+                    Assert.IsTrue(WaitForCondition(Function() previous.IsCompleted AndAlso current.IsCompleted))
+                    Assert.IsFalse(previous.GetAwaiter().GetResult())
+                    Assert.IsTrue(current.GetAwaiter().GetResult())
+                    Assert.AreEqual(second, control.SelectedPath, True)
+                End Using
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
+        ''' <summary>Prüft den sofortigen Abbruch einer Navigation bei der Entsorgung.</summary>
+        <STATestMethod>
+        Public Sub ExpandPathAsync_DisposeCancelsPendingNavigation()
+            Dim control As New ExplorerTreeView()
+            control.CreateControl()
+            Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+            Dim handle As IntPtr = tv.Handle
+            Dim navigation = control.ExpandPathAsync(Path.GetTempPath())
+            control.Dispose()
+            Assert.IsTrue(WaitForCondition(Function() navigation.IsCompleted))
+            Assert.IsFalse(navigation.GetAwaiter().GetResult())
+        End Sub
+
+        ''' <summary>Prüft, dass ungültige und fehlende Pfade keine Auswahl veröffentlichen.</summary>
+        <STATestMethod>
+        Public Sub ExpandPathAsync_InvalidAndMissingPaths_ReturnFalse()
+            Using control As New ExplorerTreeView()
+                control.CreateControl()
+                Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                Dim handle As IntPtr = tv.Handle
+                Dim paths As New List(Of String)
+                AddHandler control.SelectedPathChanged, Sub(sender, args) paths.Add(args.SelectedPath)
+                Assert.IsFalse(control.ExpandPathAsync(Nothing).GetAwaiter().GetResult())
+                Assert.IsFalse(control.ExpandPathAsync("   ").GetAwaiter().GetResult())
+                Dim missing As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+                Dim navigation = control.ExpandPathAsync(missing)
+                Assert.IsTrue(WaitForCondition(Function() navigation.IsCompleted))
+                Assert.IsFalse(navigation.GetAwaiter().GetResult())
+                Assert.IsNull(control.SelectedPath)
+                Assert.IsEmpty(paths)
+            End Using
+        End Sub
+
+        ''' <summary>Prüft, dass eine Benutzerwahl eine laufende Pfadnavigation abbricht.</summary>
+        <STATestMethod>
+        Public Sub ExpandPathAsync_SelectionCancelsPendingNavigation()
+            Using control As New ExplorerTreeView()
+                control.CreateControl()
+                Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                Dim handle As IntPtr = tv.Handle
+                Dim navigation = control.ExpandPathAsync(Path.GetTempPath())
+                tv.SelectedNode = tv.Nodes(0)
+                Assert.IsTrue(WaitForCondition(Function() navigation.IsCompleted))
+                Assert.IsFalse(navigation.GetAwaiter().GetResult())
+                Assert.AreSame(tv.Nodes(0), tv.SelectedNode)
+            End Using
+        End Sub
+
         ''' <summary>Prüft, dass entfernte Hotplug-Aufträge verworfen und erneute Einfügungen asynchron verarbeitet werden.</summary>
         <STATestMethod>
         Public Sub DriveHotplug_RemoveAndReadd_DiscardsObsoleteRequest()

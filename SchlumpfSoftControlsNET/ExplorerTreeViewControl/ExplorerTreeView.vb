@@ -93,6 +93,30 @@ Namespace ExplorerTreeViewControl
         Private ReadOnly _pendingDriveAdds As New Dictionary(Of String, Long)(StringComparer.OrdinalIgnoreCase)
         ''' <summary>Erzeugt eindeutige Generationen für die Abfrage neu hinzugefügter Laufwerke.</summary>
         Private _driveAddGeneration As Long
+        ''' <summary>Enthält den Abbruchzustand der aktuellen asynchronen Navigation.</summary>
+        Private _activeNavigation As NavigationState
+        ''' <summary>Unterscheidet die eigene Knotenauswahl von einer Benutzeraktion.</summary>
+        Private _navigationSelecting As Boolean
+        ''' <summary>Unterdrückt Abbrüche durch automatische Knotenänderungen beim Anwenden eines Ergebnisses.</summary>
+        Private _navigationMutation As Boolean
+
+        ''' <summary>Stellt ein Signal zum Abbruch einer asynchronen Navigation bereit.</summary>
+        Private NotInheritable Class NavigationState
+            ''' <summary>Wird beim Abbruch gesetzt und beendet wartende Navigationsschritte.</summary>
+            Friend ReadOnly Stopped As New TaskCompletionSource(Of Boolean)(TaskCreationOptions.RunContinuationsAsynchronously)
+        End Class
+
+        ''' <summary>Beschreibt einen auf dem UI-Thread vorbereiteten Navigationsschritt.</summary>
+        Private NotInheritable Class NavigationStep
+            ''' <summary>Gibt den zu ladenden Knoten an.</summary>
+            Friend Property Node As DirectoryNode
+            ''' <summary>Gibt den Verzeichnispfad für den Hintergrundzugriff an.</summary>
+            Friend Property Path As String
+            ''' <summary>Gibt die beim Start beobachtete Ladegeneration an.</summary>
+            Friend Property Generation As Long?
+            ''' <summary>Gibt an, ob eine Verzeichnisabfrage benötigt wird.</summary>
+            Friend Property NeedsRead As Boolean
+        End Class
 
 #End Region
 
@@ -385,6 +409,7 @@ Namespace ExplorerTreeViewControl
         ''' <see langword="true"/>, wenn der Knoten gefunden wurde, sonst <see langword="false"/>
         ''' </returns>
         Public Function ExpandPath(Path As String) As Boolean
+            Me.CancelActiveNavigation()
             If String.IsNullOrWhiteSpace(Path) Then Return False
             Dim previousSynchronousNavigation As Boolean = Me._synchronousNavigation
             Me._synchronousNavigation = True
@@ -420,9 +445,216 @@ Namespace ExplorerTreeViewControl
             End Try
         End Function
 
+        ''' <summary>Öffnet und selektiert einen Verzeichnispfad ohne blockierende Dateisystemabfragen auf dem UI-Thread.</summary>
+        ''' <param name="path">Vollständiger Pfad des auszuwählenden Verzeichnisses.</param>
+        ''' <returns>Eine Aufgabe mit True bei erfolgreicher Auswahl; False bei ungültigem, nicht verfügbarem oder überholtem Pfad.</returns>
+        ''' <exception cref="InvalidOperationException">Der Aufruf erfolgt nicht auf dem UI-Thread oder das TreeView besitzt kein Handle.</exception>
+        ''' <remarks>Ein neuer Navigationsauftrag, eine Benutzerauswahl, ein Zuklappen oder die Zerstörung des Handles bricht den laufenden Auftrag ab.</remarks>
+        Public Async Function ExpandPathAsync(path As String) As Task(Of Boolean)
+            If Not Me.TV.IsHandleCreated OrElse Me.TV.InvokeRequired Then
+                Throw New InvalidOperationException("ExpandPathAsync muss auf dem UI-Thread mit erstelltem TreeView-Handle aufgerufen werden.")
+            End If
+            Me.CancelActiveNavigation()
+            If String.IsNullOrWhiteSpace(path) Then Return False
+            Dim segments As List(Of String) = GetPathSegments(path)
+            Dim state As New NavigationState()
+            Me._activeNavigation = state
+            Try
+                Dim root As ComputerNode = DirectCast(Me.TV.Nodes(0), ComputerNode)
+                Me.ExpandForNavigation(root)
+                Dim rootGeneration As Long = Me._rootGeneration
+                If Not Me._rootLoaded Then
+                    Dim rootRead = Task.Run(Function() ComputerNode.ReadEntries())
+                    Dim entries = Await AwaitNavigation(rootRead, state).ConfigureAwait(False)
+                    Dim ready = Await AwaitNavigation(Me.PostNavigation(state,
+                        Function()
+                            If root.TreeView IsNot Me.TV OrElse Not root.IsExpanded OrElse rootGeneration <> Me._rootGeneration Then Return False
+                            If Not Me._rootLoaded Then
+                                Me._rootGeneration += 1
+                                Me._rootLoading = False
+                                root.ApplyEntries(entries)
+                                root.ToolTipText = String.Empty
+                                Me._rootLoaded = True
+                            End If
+                            Return True
+                        End Function), state).ConfigureAwait(False)
+                    If Not ready Then Return False
+                End If
+
+                Dim parent As TreeNode = root
+                Dim currentPath As String = String.Empty
+                For Each segment As String In segments
+                    currentPath = IO.Path.Combine(currentPath, segment)
+                    Dim searchPath As String = currentPath
+                    Dim navStep = Await AwaitNavigation(Me.PostNavigation(state,
+                        Function() Me.PrepareNavigationStep(parent, searchPath)), state).ConfigureAwait(False)
+                    If navStep Is Nothing Then Return False
+                    While navStep.NeedsRead
+                        Dim readTask = Task.Run(Function() DirectoryNode.ReadChildren(navStep.Path))
+                        Dim result = Await AwaitNavigation(readTask, state).ConfigureAwait(False)
+                        Dim outcome = Await AwaitNavigation(Me.PostNavigation(state,
+                            Function() Me.ApplyNavigationStep(navStep, result)), state).ConfigureAwait(False)
+                        If outcome = 0 Then Return False
+                        If outcome = 1 Then Exit While
+                        navStep = Await AwaitNavigation(Me.PostNavigation(state,
+                            Function() Me.PrepareNavigationStep(parent, searchPath)), state).ConfigureAwait(False)
+                        If navStep Is Nothing Then Return False
+                    End While
+                    parent = navStep.Node
+                Next
+
+                Dim target As TreeNode = parent
+                Dim selectionPath As String = currentPath
+                If String.IsNullOrEmpty(selectionPath) Then Return False
+                Dim accessTask = Task.Run(Function() CanOpenFolder(selectionPath))
+                If Not (Await AwaitNavigation(accessTask, state).ConfigureAwait(False)) Then Return False
+                Return Await AwaitNavigation(Me.PostNavigation(state,
+                    Function()
+                        If target.TreeView IsNot Me.TV Then Return False
+                        Dim changed As Boolean = Me.TV.SelectedNode IsNot target OrElse Me._pendingSelection Is target OrElse
+                            Not String.Equals(Me._SelectedPath, selectionPath, StringComparison.OrdinalIgnoreCase)
+                        Me._selectionGeneration += 1
+                        Me._pendingSelection = Nothing
+                        Me._navigationSelecting = True
+                        Try
+                            Me.TV.SelectedNode = target
+                        Finally
+                            Me._navigationSelecting = False
+                        End Try
+                        If Me.TV.SelectedNode IsNot target Then Return False
+                        If changed Then Me.PublishSelectedPath(selectionPath)
+                        Return True
+                    End Function), state).ConfigureAwait(False)
+            Catch ex As OperationCanceledException
+                Return False
+            Finally
+                Me.QueueNavigationCleanup(state)
+            End Try
+        End Function
+
 #End Region
 
 #Region "Interne Methoden"
+
+        ''' <summary>Bricht die aktive Navigation ab, ohne auf laufende Dateisystemaufrufe zu warten.</summary>
+        Private Sub CancelActiveNavigation()
+            Dim state As NavigationState = Me._activeNavigation
+            Me._activeNavigation = Nothing
+            If state IsNot Nothing Then
+                Dim unused = state.Stopped.TrySetResult(True)
+            End If
+        End Sub
+
+        ''' <summary>Wartet auf eine Aufgabe oder den Abbruch der zugehörigen Navigation.</summary>
+        ''' <typeparam name="T">Ergebnistyp der Aufgabe.</typeparam>
+        ''' <param name="operation">Auszuführende Hintergrund- oder UI-Aufgabe.</param>
+        ''' <param name="state">Abbruchzustand der Navigation.</param>
+        ''' <returns>Das Ergebnis der abgeschlossenen Aufgabe.</returns>
+        Private Shared Async Function AwaitNavigation(Of T)(operation As Task(Of T), state As NavigationState) As Task(Of T)
+            Dim observed = operation.ContinueWith(
+                Sub(failed As Task(Of T)) Debug.WriteLine($"Asynchroner Navigationsschritt fehlgeschlagen: {failed.Exception}"),
+                TaskContinuationOptions.OnlyOnFaulted)
+            Dim completed = Await Task.WhenAny(operation, state.Stopped.Task).ConfigureAwait(False)
+            If completed IsNot operation OrElse state.Stopped.Task.IsCompleted Then Throw New OperationCanceledException()
+            Return Await operation.ConfigureAwait(False)
+        End Function
+
+        ''' <summary>Stellt einen Navigationsschritt auf dem UI-Thread zu und übergibt dessen Ergebnis als Aufgabe.</summary>
+        ''' <typeparam name="T">Ergebnistyp des UI-Schritts.</typeparam>
+        ''' <param name="state">Abbruchzustand der Navigation.</param>
+        ''' <param name="action">Auf dem UI-Thread auszuführender Schritt.</param>
+        ''' <returns>Eine Aufgabe mit dem Ergebnis oder einer Zustellungs- beziehungsweise Ausführungsausnahme.</returns>
+        Private Function PostNavigation(Of T)(state As NavigationState, action As Func(Of T)) As Task(Of T)
+            Dim completion As New TaskCompletionSource(Of T)(TaskCreationOptions.RunContinuationsAsynchronously)
+            Try
+                Dim unused = Me.TV.BeginInvoke(New MethodInvoker(
+                    Sub()
+                        If state.Stopped.Task.IsCompleted OrElse Me.IsDisposed OrElse Me.Disposing Then
+                            Dim cancelled = completion.TrySetCanceled()
+                            Return
+                        End If
+                        Try
+                            Dim completed = completion.TrySetResult(action())
+                        Catch ex As Exception
+                            Dim failed = completion.TrySetException(ex)
+                        End Try
+                    End Sub))
+            Catch ex As InvalidOperationException
+                Dim failed = completion.TrySetException(ex)
+            End Try
+            Return completion.Task
+        End Function
+
+        ''' <summary>Entfernt einen abgeschlossenen Navigationsauftrag auf dem UI-Thread.</summary>
+        ''' <param name="state">Abgeschlossener Navigationsauftrag.</param>
+        Private Sub QueueNavigationCleanup(state As NavigationState)
+            If state.Stopped.Task.IsCompleted Then Return
+            Try
+                Dim unused = Me.TV.BeginInvoke(New MethodInvoker(
+                    Sub()
+                        If Me._activeNavigation Is state Then Me._activeNavigation = Nothing
+                    End Sub))
+            Catch ex As InvalidOperationException
+                Debug.WriteLine($"Navigationszustand konnte nicht bereinigt werden: {ex.Message}")
+            End Try
+        End Sub
+
+        ''' <summary>Ermittelt und öffnet einen Pfadabschnitt auf dem UI-Thread.</summary>
+        ''' <param name="parent">Übergeordneter Baumknoten.</param>
+        ''' <param name="path">Vollständiger Pfad des gesuchten Abschnitts.</param>
+        ''' <returns>Ein vorbereiteter Schritt oder Nothing, wenn der Knoten nicht verfügbar ist.</returns>
+        Private Function PrepareNavigationStep(parent As TreeNode, path As String) As NavigationStep
+            If parent.TreeView IsNot Me.TV OrElse Not parent.IsExpanded Then Return Nothing
+            Dim node As DirectoryNode = TryCast(FindNodeByPath(parent.Nodes, path), DirectoryNode)
+            If node Is Nothing Then Return Nothing
+            Me.ExpandForNavigation(node)
+            Dim generation As Long
+            Dim pending As Long? = Nothing
+            If Me._pendingLoads.TryGetValue(node, generation) Then pending = generation
+            Return New NavigationStep With {.Node = node, .Path = node.DirectoryPath, .Generation = pending, .NeedsRead = Not node.ChildrenLoaded OrElse pending.HasValue}
+        End Function
+
+        ''' <summary>Öffnet einen Knoten ohne den synchronen Ladepfad einer verschachtelten Navigation zu übernehmen.</summary>
+        ''' <param name="node">Zu öffnender Knoten.</param>
+        Private Sub ExpandForNavigation(node As TreeNode)
+            Dim previousSynchronousNavigation As Boolean = Me._synchronousNavigation
+            Me._synchronousNavigation = False
+            Try
+                node.Expand()
+            Finally
+                Me._synchronousNavigation = previousSynchronousNavigation
+            End Try
+        End Sub
+
+        ''' <summary>Übernimmt ein Abfrageergebnis, sofern keine aktuellere Verzeichnisänderung vorliegt.</summary>
+        ''' <param name="navStep">Vorbereiteter Navigationsschritt.</param>
+        ''' <param name="result">Im Hintergrund ermitteltes Verzeichnisergebnis.</param>
+        ''' <returns>0 bei Fehlschlag, 1 bei Erfolg und 2, wenn wegen eines neueren Auftrags erneut gelesen werden muss.</returns>
+        Private Function ApplyNavigationStep(navStep As NavigationStep, result As DirectoryNode.LoadResult) As Integer
+            Dim node As DirectoryNode = navStep.Node
+            If node.TreeView IsNot Me.TV Then Return 0
+            Dim ancestor As TreeNode = node.Parent
+            While ancestor IsNot Nothing
+                If Not ancestor.IsExpanded Then Return 0
+                ancestor = ancestor.Parent
+            End While
+            Dim current As Long
+            Dim hasCurrent As Boolean = Me._pendingLoads.TryGetValue(node, current)
+            If Not hasCurrent AndAlso node.ChildrenLoaded Then Return 1
+            If hasCurrent <> navStep.Generation.HasValue OrElse (hasCurrent AndAlso current <> navStep.Generation.GetValueOrDefault()) Then Return 2
+            Dim removed = Me._pendingLoads.Remove(node)
+            Me.TV.BeginUpdate()
+            Me._navigationMutation = True
+            Try
+                If result.Status = DirectoryNode.DirectoryStatus.Accessible Then Me.RemoveMissingChildWatchers(node, result.Directories)
+                Dim loaded As Boolean = node.ApplyLoadResult(result)
+                Me.UpdateNodeAccessVisual(node)
+                Return If(loaded, 1, 0)
+            Finally
+                Me._navigationMutation = False
+                Me.TV.EndUpdate()
+            End Try
+        End Function
 
         ''' <summary>
         ''' Teilt den angegebenen Pfad in seine einzelnen Segmente auf und gibt sie als Liste zurück.
@@ -593,6 +825,7 @@ Namespace ExplorerTreeViewControl
         ''' <param name="sender">Das TreeView.</param>
         ''' <param name="e">Ereignisdaten.</param>
         Private Sub TV_HandleDestroyed(sender As Object, e As EventArgs) Handles TV.HandleDestroyed
+            Me.CancelActiveNavigation()
             Me._rootGeneration += 1
             Me._rootLoading = False
         End Sub
@@ -876,6 +1109,7 @@ Namespace ExplorerTreeViewControl
         ''' <param name="sender"></param>
         ''' <param name="e"></param>
         Private Sub TV_AfterCollapse(sender As Object, e As TreeViewEventArgs) Handles TV.AfterCollapse
+            If Not Me._navigationMutation Then Me.CancelActiveNavigation()
             If TypeOf e.Node Is ComputerNode Then
                 Me._rootGeneration += 1
                 Me._rootLoading = False
@@ -911,9 +1145,11 @@ Namespace ExplorerTreeViewControl
         ''' <param name="sender"></param>
         ''' <param name="e"></param>
         Private Sub TV_AfterSelect(sender As Object, e As TreeViewEventArgs) Handles TV.AfterSelect
+            If Not Me._navigationSelecting Then Me.CancelActiveNavigation()
             Me._selectionGeneration += 1
             Dim generation As Long = Me._selectionGeneration
             Me._pendingSelection = Nothing
+            If Me._navigationSelecting Then Return
             Dim selectedpath As String = GetDirectoryPath(e.Node)
             If String.IsNullOrEmpty(selectedpath) Then Exit Sub
             If Me._synchronousNavigation Then
@@ -988,7 +1224,7 @@ Namespace ExplorerTreeViewControl
                                 Dim removed = Me._pendingDriveAdds.Remove(path)
                                 If task.IsFaulted OrElse Not Me._rootLoaded OrElse rootGeneration <> Me._rootGeneration OrElse
                                     root.TreeView IsNot Me.TV Then Return
-                                Me.InsertDriveNode(root, task.Result)
+                                InsertDriveNode(root, task.Result)
                             End Sub))
                     Catch ex As InvalidOperationException
                         Debug.WriteLine($"Laufwerk '{path}' konnte nicht zugestellt werden: {ex.Message}")
@@ -999,7 +1235,7 @@ Namespace ExplorerTreeViewControl
         ''' <summary>Fügt einen vorbereiteten Laufwerksknoten sortiert ein, sofern er noch nicht vorhanden ist.</summary>
         ''' <param name="root">Wurzelknoten des TreeViews.</param>
         ''' <param name="entry">Im Hintergrund ermittelte Laufwerksdaten.</param>
-        Private Sub InsertDriveNode(root As TreeNode, entry As ComputerNode.RootEntry)
+        Private Shared Sub InsertDriveNode(root As TreeNode, entry As ComputerNode.RootEntry)
             For Each node As TreeNode In root.Nodes
                 Dim drive As DriveNode = TryCast(node, DriveNode)
                 If drive IsNot Nothing AndAlso String.Equals(drive.FullPath, entry.Path, StringComparison.OrdinalIgnoreCase) Then Return

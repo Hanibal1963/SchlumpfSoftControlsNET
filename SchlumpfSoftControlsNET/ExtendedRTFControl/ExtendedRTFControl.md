@@ -148,35 +148,50 @@ Stabile RichText-Formatierung mit performantem Batch-Verhalten.
 
 ### 8.1. Undo/Redo-Transaktionen
 
+**Status:** &#x1F4A1; offen
+
 **Vorschlag:** Batch-Formatierungen als eine Undo-Operation gruppieren.
+
 **Umsetzung:** Native Nachrichten oder internes Kommandomodell kapseln.
 
 ---
 
 ### 8.2. Stilvorlagen
 
+**Status:** &#x1F4A1; offen
+
 **Vorschlag:** Wiederverwendbare Textstile (`Heading`, `Code`, `Note`).
+
 **Umsetzung:** Style-Objekte definieren und auf Selektion anwenden.
 
 ---
 
 ### 8.3. Einfüge-APIs erweitern
 
+**Status:** &#x1F4A1; offen
+
 **Vorschlag:** `InsertImage`, `InsertLink`, `InsertTableLikeText`.
+
 **Umsetzung:** RTF-Snippet-Builder mit Validierung.
 
 ---
 
 ### 8.4. Exportoptionen
 
+**Status:** &#x1F4A1; offen
+
 **Vorschlag:** Export nach PlainText/HTML/Markdown (Basis).
+
 **Umsetzung:** Adapter-Layer je Zielformat.
 
 ---
 
 ### 8.5. Ereignisse für Editorintegration
 
+**Status:** &#x1F4A1; offen
+
 **Vorschlag:** `FormattingChanged`, `SelectionStyleChanged`.
+
 **Umsetzung:** Bestehende `SelectionChanged`-Ableitung mit Debounce ergänzen.
 
 ---

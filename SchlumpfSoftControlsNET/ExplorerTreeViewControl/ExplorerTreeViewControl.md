@@ -145,35 +145,50 @@ Schnelle Navigation in großen Verzeichnisstrukturen mit reaktiver UI.
 
 ### 8.1. Kontextmenü-Integration
 
+**Status:** &#x1F4A1; offen
+
 **Vorschlag:** Optionales Shell-nahes Kontextmenü je Knoten.
+
 **Umsetzung:** Ereignis `BuildContextMenu(node, menu)` bereitstellen.
 
 ---
 
 ### 8.2. Multi-Selection-Modus
 
+**Status:** &#x1F4A1; offen
+
 **Vorschlag:** Mehrfachauswahl von Ordnern.
+
 **Umsetzung:** Interne Selektionsverwaltung plus API `SelectedPaths`.
 
 ---
 
 ### 8.3. Such- und Filterfunktion
 
+**Status:** &#x1F4A1; offen
+
 **Vorschlag:** Knoten per Muster/Präfix filtern.
+
 **Umsetzung:** In-Memory-Filter mit Highlighting und optionalem „nur Treffer“-Modus.
 
 ---
 
 ### 8.4. Drag&Drop-Unterstützung
 
+**Status:** &#x1F4A1; offen
+
 **Vorschlag:** Dateien/Ordner in den Tree ziehen oder verschieben.
+
 **Umsetzung:** `AllowDrop` aktivieren, Zielpfad über Ereignisse validieren.
 
 ---
 
 ### 8.5. Bookmark/Favoriten
 
+**Status:** &#x1F4A1; offen
+
 **Vorschlag:** Häufige Pfade als Favoritenknoten.
+
 **Umsetzung:** Persistente Favoritenliste mit eigener Root-Gruppe.
 
 ---

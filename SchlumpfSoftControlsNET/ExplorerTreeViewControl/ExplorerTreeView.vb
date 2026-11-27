@@ -89,6 +89,10 @@ Namespace ExplorerTreeViewControl
         Private _rootLoading As Boolean
         ''' <summary>Gibt an, ob die Wurzeleinträge erfolgreich übernommen wurden.</summary>
         Private _rootLoaded As Boolean
+        ''' <summary>Ordnet ausstehenden Laufwerksabfragen ihre aktuelle Generation zu.</summary>
+        Private ReadOnly _pendingDriveAdds As New Dictionary(Of String, Long)(StringComparer.OrdinalIgnoreCase)
+        ''' <summary>Erzeugt eindeutige Generationen für die Abfrage neu hinzugefügter Laufwerke.</summary>
+        Private _driveAddGeneration As Long
 
 #End Region
 
@@ -576,6 +580,13 @@ Namespace ExplorerTreeViewControl
                 Dim root As ComputerNode = TryCast(Me.TV.Nodes(0), ComputerNode)
                 If root IsNot Nothing AndAlso root.IsExpanded Then Me.LoadRootAsync(root)
             End If
+            Dim pending As New List(Of String)(Me._pendingDriveAdds.Keys)
+            Me._pendingDriveAdds.Clear()
+            If Me._rootLoaded Then
+                For Each path As String In pending
+                    Me.StartDriveAdd(path)
+                Next
+            End If
         End Sub
 
         ''' <summary>Verwirft Ergebnisse, die an ein zerstörtes Handle gebunden sind.</summary>
@@ -869,6 +880,7 @@ Namespace ExplorerTreeViewControl
                 Me._rootGeneration += 1
                 Me._rootLoading = False
                 Me._rootLoaded = False
+                Me._pendingDriveAdds.Clear()
             End If
             Me.RemoveFileSystemWatchers(GetDirectoryPath(e.Node))
             Dim obsolete As New List(Of DirectoryNode)
@@ -949,26 +961,65 @@ Namespace ExplorerTreeViewControl
                 Me.RestartRootLoading()
                 Return
             End If
+            Me.StartDriveAdd(e.DriveName)
+        End Sub
+
+        ''' <summary>Ermittelt die Metadaten eines hinzugefügten Laufwerks im Hintergrund.</summary>
+        ''' <param name="path">Vollständiger Pfad des neuen Laufwerks.</param>
+        Private Sub StartDriveAdd(path As String)
             For Each node As TreeNode In Me.TV.Nodes.Item(0).Nodes
                 Dim drive As DriveNode = TryCast(node, DriveNode)
-                If drive IsNot Nothing AndAlso String.Equals(drive.FullPath, e.DriveName, StringComparison.OrdinalIgnoreCase) Then Return
+                If drive IsNot Nothing AndAlso String.Equals(drive.FullPath, path, StringComparison.OrdinalIgnoreCase) Then Return
             Next
-            Dim newNode As New DriveNode(New DriveInfo(e.DriveName)) With {.Tag = e.DriveName}
+            If Me._pendingDriveAdds.ContainsKey(path) Then Return
+            Me._driveAddGeneration += 1
+            Dim generation As Long = Me._driveAddGeneration
+            Dim rootGeneration As Long = Me._rootGeneration
+            Dim root As TreeNode = Me.TV.Nodes(0)
+            Me._pendingDriveAdds.Add(path, generation)
+            Dim unused = Task.Run(Function() ComputerNode.ReadDriveEntry(New DriveInfo(path))).ContinueWith(
+                Sub(task As Task(Of ComputerNode.RootEntry))
+                    If task.IsFaulted Then Debug.WriteLine($"Laufwerk '{path}' konnte nicht geladen werden: {task.Exception}")
+                    Try
+                        Dim ignored = Me.TV.BeginInvoke(New MethodInvoker(
+                            Sub()
+                                Dim current As Long
+                                If Me.IsDisposed OrElse Me.Disposing OrElse Not Me._pendingDriveAdds.TryGetValue(path, current) OrElse current <> generation Then Return
+                                Dim removed = Me._pendingDriveAdds.Remove(path)
+                                If task.IsFaulted OrElse Not Me._rootLoaded OrElse rootGeneration <> Me._rootGeneration OrElse
+                                    root.TreeView IsNot Me.TV Then Return
+                                Me.InsertDriveNode(root, task.Result)
+                            End Sub))
+                    Catch ex As InvalidOperationException
+                        Debug.WriteLine($"Laufwerk '{path}' konnte nicht zugestellt werden: {ex.Message}")
+                    End Try
+                End Sub)
+        End Sub
+
+        ''' <summary>Fügt einen vorbereiteten Laufwerksknoten sortiert ein, sofern er noch nicht vorhanden ist.</summary>
+        ''' <param name="root">Wurzelknoten des TreeViews.</param>
+        ''' <param name="entry">Im Hintergrund ermittelte Laufwerksdaten.</param>
+        Private Sub InsertDriveNode(root As TreeNode, entry As ComputerNode.RootEntry)
+            For Each node As TreeNode In root.Nodes
+                Dim drive As DriveNode = TryCast(node, DriveNode)
+                If drive IsNot Nothing AndAlso String.Equals(drive.FullPath, entry.Path, StringComparison.OrdinalIgnoreCase) Then Return
+            Next
+            Dim newNode As New DriveNode(entry.Text, entry.Path, entry.ImageKey)
             Dim inserted As Boolean = False
-            For i As Int32 = 0 To Me.TV.Nodes.Item(0).Nodes.Count - 1
-                Dim currNode As TreeNode = Me.TV.Nodes.Item(0).Nodes(i)
+            For i As Int32 = 0 To root.Nodes.Count - 1
+                Dim currNode As TreeNode = root.Nodes(i)
                 If TypeOf currNode Is DriveNode AndAlso
                         String.Compare(
                         currNode.Tag.ToString,
                         newNode.Tag.ToString,
                         StringComparison.OrdinalIgnoreCase) > 0 Then
-                    Me.TV.Nodes.Item(0).Nodes.Insert(i, newNode)
+                    root.Nodes.Insert(i, newNode)
                     inserted = True
                     Exit For
                 End If
             Next
             If Not inserted Then
-                Dim unused = Me.TV.Nodes.Item(0).Nodes.Add(newNode)
+                Dim unused = root.Nodes.Add(newNode)
             End If
         End Sub
 
@@ -979,6 +1030,7 @@ Namespace ExplorerTreeViewControl
         ''' <param name="sender"></param>
         ''' <param name="e"></param>
         Private Sub DW_DriveRemoved(sender As Object, e As DriveWatcherControl.DriveWatcherRemovedEventArgs) Handles DW.DriveRemoved
+            Dim cancelled = Me._pendingDriveAdds.Remove(e.DriveName)
             If Not Me._rootLoaded Then
                 Me.RemoveFileSystemWatchers(e.DriveName)
                 Me.RestartRootLoading()
@@ -986,7 +1038,7 @@ Namespace ExplorerTreeViewControl
             End If
             For Each node As TreeNode In Me.TV.Nodes.Item(0).Nodes
                 If TypeOf node Is DriveNode Then
-                    If CType(node, DriveNode).Tag.ToString() = e.DriveName Then
+                    If String.Equals(CType(node, DriveNode).FullPath, e.DriveName, StringComparison.OrdinalIgnoreCase) Then
                         Me.RemoveFileSystemWatchers(CType(node, DriveNode).FullPath)
                         CType(node, DriveNode).Remove()
                     End If
@@ -998,6 +1050,7 @@ Namespace ExplorerTreeViewControl
         Private Sub RestartRootLoading()
             Me._rootGeneration += 1
             Me._rootLoading = False
+            Me._pendingDriveAdds.Clear()
             If Me.TV.Nodes.Count > 0 Then
                 Dim root As ComputerNode = TryCast(Me.TV.Nodes(0), ComputerNode)
                 If root IsNot Nothing AndAlso root.IsExpanded Then Me.LoadRootAsync(root)

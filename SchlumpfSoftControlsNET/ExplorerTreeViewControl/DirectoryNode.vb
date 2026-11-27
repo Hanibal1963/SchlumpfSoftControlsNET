@@ -31,6 +31,23 @@ Namespace ExplorerTreeViewControl
         ''' <summary>Gibt an, ob die Unterverzeichnisse erfolgreich geladen wurden.</summary>
         Friend Property ChildrenLoaded As Boolean
 
+        ''' <summary>Enthält das Ergebnis einer Verzeichnisabfrage ohne Verweise auf UI-Elemente.</summary>
+        Friend NotInheritable Class LoadResult
+            ''' <summary>Initialisiert Status und ermittelte Unterverzeichnisse.</summary>
+            ''' <param name="status">Ergebnis der Abfrage.</param>
+            ''' <param name="directories">Vollständige Pfade der Unterverzeichnisse.</param>
+            Friend Sub New(status As DirectoryStatus, directories As String())
+                Me.Status = status
+                Me.Directories = directories
+            End Sub
+
+            ''' <summary>Gibt den Zugriffsstatus zurück.</summary>
+            Friend ReadOnly Property Status As DirectoryStatus
+
+            ''' <summary>Gibt die ermittelten Unterverzeichnisse zurück.</summary>
+            Friend ReadOnly Property Directories As String()
+        End Class
+
         ''' <summary>Markiert einen noch nicht geladenen Knoten als aufklappbar, ohne das Dateisystem abzufragen.</summary>
         Protected Sub AddPlaceholder()
             Dim unused = Me.Nodes.Add(New TreeNode("Ordner laden ..."))
@@ -41,31 +58,49 @@ Namespace ExplorerTreeViewControl
         ''' <returns>True, wenn die Auflistung erfolgreich war.</returns>
         Friend Function LoadChildren(Optional refresh As Boolean = False) As Boolean
             If Me.ChildrenLoaded AndAlso Not refresh Then Return True
-            If String.IsNullOrWhiteSpace(Me.DirectoryPath) Then
-                Me.Status = DirectoryStatus.Missing
-                Me.ChildrenLoaded = False
-                Return False
-            End If
+            Return Me.ApplyLoadResult(ReadChildren(Me.DirectoryPath))
+        End Function
 
+        ''' <summary>Ermittelt Unterverzeichnisse ohne Zugriff auf Baumknoten und kann im Hintergrund ausgeführt werden.</summary>
+        ''' <param name="directoryPath">Pfad des zu lesenden Verzeichnisses.</param>
+        ''' <returns>Verzeichnispfade und Zugriffsstatus.</returns>
+        Friend Shared Function ReadChildren(directoryPath As String) As LoadResult
+            If String.IsNullOrWhiteSpace(directoryPath) Then Return New LoadResult(DirectoryStatus.Missing, Nothing)
             Try
-                Dim directories As String() = Directory.GetDirectories(Me.DirectoryPath)
-                Me.Nodes.Clear()
-                For Each directory As String In directories
-                    Dim unused = Me.Nodes.Add(New FolderNode(Path.GetFileName(directory), directory))
+                Return New LoadResult(DirectoryStatus.Accessible, Directory.GetDirectories(directoryPath))
+            Catch ex As UnauthorizedAccessException
+                Debug.WriteLine($"Zugriff auf '{directoryPath}' verweigert: {ex.Message}")
+                Return New LoadResult(DirectoryStatus.AccessDenied, Nothing)
+            Catch ex As DirectoryNotFoundException
+                Debug.WriteLine($"Verzeichnis '{directoryPath}' nicht gefunden: {ex.Message}")
+                Return New LoadResult(DirectoryStatus.Missing, Nothing)
+            Catch ex As IOException
+                Debug.WriteLine($"Verzeichnis '{directoryPath}' nicht verfügbar: {ex.Message}")
+                Return New LoadResult(DirectoryStatus.Unavailable, Nothing)
+            End Try
+        End Function
+
+        ''' <summary>Übernimmt ein Abfrageergebnis auf dem Thread des zugehörigen TreeViews.</summary>
+        ''' <param name="result">Das zuvor ermittelte Ergebnis.</param>
+        ''' <returns>True bei erfolgreicher Auflistung.</returns>
+        Friend Function ApplyLoadResult(result As LoadResult) As Boolean
+            Me.Status = result.Status
+            If result.Status = DirectoryStatus.Accessible Then
+                Dim remaining As New HashSet(Of String)(result.Directories, StringComparer.OrdinalIgnoreCase)
+                For index As Integer = Me.Nodes.Count - 1 To 0 Step -1
+                    Dim child As FolderNode = TryCast(Me.Nodes(index), FolderNode)
+                    If child Is Nothing OrElse Not remaining.Remove(child.FullPath) Then
+                        Me.Nodes.RemoveAt(index)
+                    End If
                 Next
-                Me.Status = DirectoryStatus.Accessible
+                For Each directory As String In result.Directories
+                    If remaining.Remove(directory) Then
+                        Dim unused = Me.Nodes.Add(New FolderNode(Path.GetFileName(directory), directory))
+                    End If
+                Next
                 Me.ChildrenLoaded = True
                 Return True
-            Catch ex As UnauthorizedAccessException
-                Me.Status = DirectoryStatus.AccessDenied
-                Debug.WriteLine($"Zugriff auf '{Me.DirectoryPath}' verweigert: {ex.Message}")
-            Catch ex As DirectoryNotFoundException
-                Me.Status = DirectoryStatus.Missing
-                Debug.WriteLine($"Verzeichnis '{Me.DirectoryPath}' nicht gefunden: {ex.Message}")
-            Catch ex As IOException
-                Me.Status = DirectoryStatus.Unavailable
-                Debug.WriteLine($"Verzeichnis '{Me.DirectoryPath}' nicht verfügbar: {ex.Message}")
-            End Try
+            End If
 
             Me.ChildrenLoaded = False
             Return False

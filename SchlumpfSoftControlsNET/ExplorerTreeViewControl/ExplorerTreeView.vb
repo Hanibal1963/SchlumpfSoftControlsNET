@@ -9,6 +9,7 @@ Imports System.Drawing
 Imports System.IO
 Imports System.Windows.Forms
 Imports System.ComponentModel
+Imports System.Threading.Tasks
 
 Namespace ExplorerTreeViewControl
 
@@ -62,8 +63,22 @@ Namespace ExplorerTreeViewControl
 #Region "Variablen"
 
         Private disposedValue As Boolean
-        Private ReadOnly _FileSystemWatchers As New Dictionary(Of String, FileSystemWatcher)
+        Private ReadOnly _FileSystemWatchers As New Dictionary(Of String, FileSystemWatcher)(StringComparer.OrdinalIgnoreCase)
+        ''' <summary>Schützt Überwachungen und ihre noch laufende Einrichtung vor konkurrierendem Entsorgen.</summary>
+        Private ReadOnly _watcherLock As New Object()
+        ''' <summary>Enthält die Generationen der noch nicht fertig eingerichteten Überwachungen.</summary>
+        Private ReadOnly _pendingWatchers As New Dictionary(Of String, Long)(StringComparer.OrdinalIgnoreCase)
+        ''' <summary>Erzeugt eindeutige Generationen für die Einrichtung einer Überwachung.</summary>
+        Private _watcherGeneration As Long
+        ''' <summary>Verhindert nach dem Entsorgen die Registrierung weiterer Überwachungen.</summary>
+        Private _watchersStopped As Boolean
         Private _SelectedPath As String
+        ''' <summary>Ordnet laufenden Verzeichnisabfragen ihre aktuelle Generation zu.</summary>
+        Private ReadOnly _pendingLoads As New Dictionary(Of DirectoryNode, Long)
+        ''' <summary>Erzeugt eindeutige Generationen für Verzeichnisabfragen.</summary>
+        Private _loadGeneration As Long
+        ''' <summary>Kennzeichnet die weiterhin synchrone öffentliche Pfadnavigation.</summary>
+        Private _synchronousNavigation As Boolean
 
 #End Region
 
@@ -352,19 +367,33 @@ Namespace ExplorerTreeViewControl
         ''' </returns>
         Public Function ExpandPath(Path As String) As Boolean
             If String.IsNullOrWhiteSpace(Path) Then Return False
-            Dim lastpath As String = String.Empty
-            Dim lastnode As TreeNode = Me.TV.Nodes.Item(0)
-            lastnode.Expand()
-            Dim foundNode As TreeNode
-            For Each pathsegment As String In GetPathSegments(Path)
-                lastpath = IO.Path.Combine(lastpath, pathsegment)
-                foundNode = FindNodeByPath(lastnode.Nodes, lastpath)
-                If Microsoft.VisualBasic.IsNothing(foundNode) Then Return False
-                foundNode.Expand()
-                lastnode = foundNode
-            Next
-            Me.TV.SelectedNode = lastnode
-            Return True
+            Dim previousSynchronousNavigation As Boolean = Me._synchronousNavigation
+            Me._synchronousNavigation = True
+            Try
+                Dim lastpath As String = String.Empty
+                Dim lastnode As TreeNode = Me.TV.Nodes.Item(0)
+                lastnode.Expand()
+                Dim foundNode As TreeNode
+                For Each pathsegment As String In GetPathSegments(Path)
+                    lastpath = IO.Path.Combine(lastpath, pathsegment)
+                    foundNode = FindNodeByPath(lastnode.Nodes, lastpath)
+                    If Microsoft.VisualBasic.IsNothing(foundNode) Then Return False
+                    Dim directoryNode As DirectoryNode = TryCast(foundNode, DirectoryNode)
+                    If directoryNode IsNot Nothing AndAlso foundNode.IsExpanded AndAlso Not directoryNode.ChildrenLoaded Then
+                        Dim removed = Me._pendingLoads.Remove(directoryNode)
+                        If Not directoryNode.LoadChildren() Then
+                            Me.UpdateNodeAccessVisual(directoryNode)
+                            Return False
+                        End If
+                    End If
+                    foundNode.Expand()
+                    lastnode = foundNode
+                Next
+                Me.TV.SelectedNode = lastnode
+                Return True
+            Finally
+                Me._synchronousNavigation = previousSynchronousNavigation
+            End Try
         End Function
 
 #End Region
@@ -466,27 +495,128 @@ Namespace ExplorerTreeViewControl
                 CType(Node, ComputerNode).LoadDrives()
             ElseIf TypeOf Node Is DirectoryNode Then
                 Dim directoryNode As DirectoryNode = CType(Node, DirectoryNode)
-                Dim unused = directoryNode.LoadChildren(True)
-                Me.UpdateNodeAccessVisual(directoryNode)
+                Me.LoadDirectoryAsync(directoryNode)
             End If
         End Sub
 
+        ''' <summary>Fragt Unterverzeichnisse im Hintergrund ab und übernimmt nur das neueste gültige Ergebnis.</summary>
+        ''' <param name="node">Der auf dem UI-Thread verwaltete Verzeichnisknoten.</param>
+        Private Sub LoadDirectoryAsync(node As DirectoryNode)
+            Me._loadGeneration += 1
+            Dim generation As Long = Me._loadGeneration
+            Me._pendingLoads(node) = generation
+            Dim path As String = node.DirectoryPath
+            Dim unused = Task.Run(Function() DirectoryNode.ReadChildren(path)).ContinueWith(
+                Sub(task As Task(Of DirectoryNode.LoadResult))
+                    If task.IsFaulted Then
+                        Debug.WriteLine($"Fehler beim Laden von '{path}': {task.Exception}")
+                    End If
+                    Try
+                        Dim ignored = Me.TV.BeginInvoke(New MethodInvoker(
+                            Sub()
+                                Dim current As Long
+                                If Me.IsDisposed OrElse Not Me._pendingLoads.TryGetValue(node, current) OrElse current <> generation Then Return
+                                Dim removed = Me._pendingLoads.Remove(node)
+                                If node.TreeView IsNot Me.TV OrElse Not node.IsExpanded Then Return
+                                Dim ancestor As TreeNode = node.Parent
+                                While ancestor IsNot Nothing
+                                    If Not ancestor.IsExpanded Then Return
+                                    ancestor = ancestor.Parent
+                                End While
+                                Me.TV.BeginUpdate()
+                                Try
+                                    If task.IsFaulted Then
+                                        node.Status = DirectoryNode.DirectoryStatus.Unavailable
+                                        node.ChildrenLoaded = False
+                                    Else
+                                        If task.Result.Status = DirectoryNode.DirectoryStatus.Accessible Then
+                                            Me.RemoveMissingChildWatchers(node, task.Result.Directories)
+                                        End If
+                                        Dim loaded = node.ApplyLoadResult(task.Result)
+                                    End If
+                                    Me.UpdateNodeAccessVisual(node)
+                                Finally
+                                    Me.TV.EndUpdate()
+                                End Try
+                            End Sub))
+                    Catch ex As InvalidOperationException
+                        Debug.WriteLine($"Ladeergebnis für '{path}' konnte nicht zugestellt werden: {ex.Message}")
+                    End Try
+                End Sub)
+        End Sub
+
+        ''' <summary>Entfernt Überwachungen für Unterbäume, die im neuen Verzeichnisergebnis nicht mehr vorhanden sind.</summary>
+        ''' <param name="node">Aktualisierter Verzeichnisknoten.</param>
+        ''' <param name="directories">Aktuell vorhandene unmittelbare Unterverzeichnisse.</param>
+        Private Sub RemoveMissingChildWatchers(node As DirectoryNode, directories As String())
+            Dim present As New HashSet(Of String)(directories, StringComparer.OrdinalIgnoreCase)
+            For Each child As TreeNode In node.Nodes
+                Dim folder As FolderNode = TryCast(child, FolderNode)
+                If folder IsNot Nothing AndAlso Not present.Contains(folder.FullPath) Then
+                    Me.RemoveFileSystemWatchers(folder.FullPath)
+                End If
+            Next
+        End Sub
+
         ''' <summary>
-        ''' Erstellt einen FileSystemWatcher für das angegebene Verzeichnis, um Änderungen im Dateisystem zu überwachen.
+        ''' Startet die Einrichtung einer Verzeichnisüberwachung auf einem Hintergrundthread.
         ''' </summary>
         ''' <param name="FolderPath"></param>
         Private Sub CreateFileSystemWatcher(FolderPath As String)
-            If String.IsNullOrEmpty(FolderPath) OrElse Not Directory.Exists(FolderPath) Then Return
-            If Me._FileSystemWatchers.ContainsKey(FolderPath) Then Return
+            If String.IsNullOrEmpty(FolderPath) Then Return
+            Dim generation As Long
+            SyncLock Me._watcherLock
+                If Me._watchersStopped OrElse Me._FileSystemWatchers.ContainsKey(FolderPath) OrElse Me._pendingWatchers.ContainsKey(FolderPath) Then Return
+                Me._watcherGeneration += 1
+                generation = Me._watcherGeneration
+                Me._pendingWatchers.Add(FolderPath, generation)
+            End SyncLock
+            Dim unused = Task.Run(Sub() Me.InitializeFileSystemWatcher(FolderPath, generation)).ContinueWith(
+                Sub(task As Task)
+                    If task.IsFaulted Then Debug.WriteLine($"Fehler beim Erstellen des FileSystemWatchers für '{FolderPath}': {task.Exception}")
+                End Sub)
+        End Sub
+
+        ''' <summary>Erstellt und registriert einen Watcher, sofern seine Anforderung noch gültig ist.</summary>
+        ''' <param name="folderPath">Zu überwachendes Verzeichnis.</param>
+        ''' <param name="generation">Generation der ursprünglichen Anforderung.</param>
+        Private Sub InitializeFileSystemWatcher(folderPath As String, generation As Long)
+            Dim watcher As FileSystemWatcher = Nothing
+            Dim registered As Boolean = False
             Try
-                Dim FSW As New FileSystemWatcher(FolderPath) With {.NotifyFilter = NotifyFilters.DirectoryName, .IncludeSubdirectories = False}
-                AddHandler FSW.Created, AddressOf Me.FSW_DirectoryChanged
-                AddHandler FSW.Deleted, AddressOf Me.FSW_DirectoryChanged
-                AddHandler FSW.Renamed, AddressOf Me.FSW_DirectoryChanged
-                Me._FileSystemWatchers.Add(FolderPath, FSW)
-                FSW.EnableRaisingEvents = True
-            Catch ex As Exception
-                Debug.WriteLine($"Fehler beim Erstellen des FileSystemWatchers: {ex.Message}")
+                watcher = New FileSystemWatcher(folderPath) With {.NotifyFilter = NotifyFilters.DirectoryName, .IncludeSubdirectories = False}
+                AddHandler watcher.Created, AddressOf Me.FSW_DirectoryChanged
+                AddHandler watcher.Deleted, AddressOf Me.FSW_DirectoryChanged
+                AddHandler watcher.Renamed, AddressOf Me.FSW_DirectoryChanged
+                watcher.EnableRaisingEvents = True
+                SyncLock Me._watcherLock
+                    Dim current As Long
+                    If Not Me._watchersStopped AndAlso Me._pendingWatchers.TryGetValue(folderPath, current) AndAlso current = generation Then
+                        Dim removed = Me._pendingWatchers.Remove(folderPath)
+                        Me._FileSystemWatchers.Add(folderPath, watcher)
+                        registered = True
+                    End If
+                End SyncLock
+                If registered Then Me.QueueWatcherRefresh(watcher, folderPath)
+            Catch ex As IOException
+                Debug.WriteLine($"Verzeichnisüberwachung für '{folderPath}' nicht verfügbar: {ex.Message}")
+            Catch ex As UnauthorizedAccessException
+                Debug.WriteLine($"Zugriff auf Verzeichnisüberwachung für '{folderPath}' verweigert: {ex.Message}")
+            Catch ex As ArgumentException
+                Debug.WriteLine($"Ungültiges Verzeichnis für Überwachung '{folderPath}': {ex.Message}")
+            Catch ex As System.Security.SecurityException
+                Debug.WriteLine($"Verzeichnisüberwachung für '{folderPath}' nicht erlaubt: {ex.Message}")
+            Finally
+                SyncLock Me._watcherLock
+                    Dim current As Long
+                    If Me._pendingWatchers.TryGetValue(folderPath, current) AndAlso current = generation Then
+                        Dim removed = Me._pendingWatchers.Remove(folderPath)
+                    End If
+                End SyncLock
+                If watcher IsNot Nothing AndAlso Not registered Then
+                    Me.RemoveWatcherHandlers(watcher)
+                    watcher.Dispose()
+                End If
             End Try
         End Sub
 
@@ -497,7 +627,15 @@ Namespace ExplorerTreeViewControl
         ''' <param name="FolderPath"></param>
         Private Sub RemoveFileSystemWatchers(FolderPath As String)
             Dim toRemove As New List(Of String)
-            Me.FindWatchersToRemove(FolderPath, toRemove)
+            SyncLock Me._watcherLock
+                Me.FindWatchersToRemove(FolderPath, toRemove)
+                Dim pending As New List(Of String)(Me._pendingWatchers.Keys)
+                For Each path As String In pending
+                    If IsPathWithin(path, FolderPath) Then
+                        Dim removed = Me._pendingWatchers.Remove(path)
+                    End If
+                Next
+            End SyncLock
             Me.RemoveAndDisposeWatchers(toRemove)
         End Sub
 
@@ -509,25 +647,54 @@ Namespace ExplorerTreeViewControl
         ''' <param name="toRemove"></param>
         Private Sub FindWatchersToRemove(FolderPath As String, toRemove As List(Of String))
             For Each watcherPath In Me._FileSystemWatchers.Keys
-                If watcherPath.Equals(FolderPath, StringComparison.OrdinalIgnoreCase) OrElse
-                       watcherPath.StartsWith(FolderPath & Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) Then
+                If IsPathWithin(watcherPath, FolderPath) Then
                     toRemove.Add(watcherPath)
                 End If
             Next
         End Sub
+
+        ''' <summary>Prüft, ob ein Pfad im angegebenen Teilbaum liegt; ein leerer Basispfad bezeichnet den gesamten Baum.</summary>
+        ''' <param name="candidate">Zu prüfender Pfad.</param>
+        ''' <param name="parent">Basispfad des Teilbaums.</param>
+        ''' <returns>True für den Basispfad und seine Unterverzeichnisse.</returns>
+        Private Shared Function IsPathWithin(candidate As String, parent As String) As Boolean
+            If String.IsNullOrEmpty(parent) Then Return True
+            If candidate.Equals(parent, StringComparison.OrdinalIgnoreCase) Then Return True
+            Dim prefix As String = parent.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) & Path.DirectorySeparatorChar
+            Return candidate.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+        End Function
 
         ''' <summary>
         ''' Entfernt und entsorgt die FileSystemWatcher, deren Pfade in der Liste "toRemove" enthalten sind.
         ''' </summary>
         ''' <param name="toRemove"></param>
         Private Sub RemoveAndDisposeWatchers(toRemove As List(Of String))
-            For Each watcherPath In toRemove
-                Dim watcher = Me._FileSystemWatchers(watcherPath)
+            Dim watchers As New List(Of FileSystemWatcher)
+            SyncLock Me._watcherLock
+                For Each watcherPath In toRemove
+                    Dim watcher As FileSystemWatcher = Nothing
+                    If Me._FileSystemWatchers.TryGetValue(watcherPath, watcher) Then
+                        Dim removed = Me._FileSystemWatchers.Remove(watcherPath)
+                        watchers.Add(watcher)
+                    End If
+                Next
+            End SyncLock
+            For Each watcher As FileSystemWatcher In watchers
                 watcher.EnableRaisingEvents = False
                 Me.RemoveWatcherHandlers(watcher)
                 watcher.Dispose()
-                Dim unused = Me._FileSystemWatchers.Remove(watcherPath)
             Next
+        End Sub
+
+        ''' <summary>Verhindert weitere Registrierungen und entsorgt alle bestehenden Verzeichnisüberwachungen.</summary>
+        Private Sub StopFileSystemWatchers()
+            Dim paths As List(Of String)
+            SyncLock Me._watcherLock
+                Me._watchersStopped = True
+                Me._pendingWatchers.Clear()
+                paths = New List(Of String)(Me._FileSystemWatchers.Keys)
+            End SyncLock
+            Me.RemoveAndDisposeWatchers(paths)
         End Sub
 
         ''' <summary>
@@ -547,16 +714,27 @@ Namespace ExplorerTreeViewControl
         ''' <param name="sender"></param>
         ''' <param name="e"></param>
         Private Sub FSW_DirectoryChanged(sender As Object, e As FileSystemEventArgs)
-            If Me.TV.InvokeRequired Then
-                Dim unused = Me.TV.Invoke(New MethodInvoker(Sub() Me.FSW_DirectoryChanged(sender, e)))
-                Return
-            End If
-            Dim node As TreeNode = FindNodeByPath(Me.TV.Nodes, CType(sender, FileSystemWatcher).Path)
-            Select Case True
-                Case TypeOf node Is DriveNode : Me.LoadSubfolders(node)
-                Case TypeOf node Is SpecialFolderNode : Me.LoadSubfolders(node)
-                Case TypeOf node Is FolderNode : Me.LoadSubfolders(node)
-            End Select
+            Dim watcher As FileSystemWatcher = DirectCast(sender, FileSystemWatcher)
+            Me.QueueWatcherRefresh(watcher, watcher.Path)
+        End Sub
+
+        ''' <summary>Stellt eine Aktualisierung zu, sofern der zugehörige Watcher noch registriert ist.</summary>
+        ''' <param name="watcher">Auslösende Überwachung.</param>
+        ''' <param name="folderPath">Überwachter Verzeichnispfad.</param>
+        Private Sub QueueWatcherRefresh(watcher As FileSystemWatcher, folderPath As String)
+            Try
+                Dim unused = Me.TV.BeginInvoke(New MethodInvoker(
+                    Sub()
+                        SyncLock Me._watcherLock
+                            Dim current As FileSystemWatcher = Nothing
+                            If Me._watchersStopped OrElse Not Me._FileSystemWatchers.TryGetValue(folderPath, current) OrElse current IsNot watcher Then Return
+                        End SyncLock
+                        Dim node As TreeNode = FindNodeByPath(Me.TV.Nodes, folderPath)
+                        If TypeOf node Is DirectoryNode AndAlso node.IsExpanded Then Me.LoadSubfolders(node)
+                    End Sub))
+            Catch ex As InvalidOperationException
+                Debug.WriteLine($"Aktualisierung für '{folderPath}' konnte nicht zugestellt werden: {ex.Message}")
+            End Try
         End Sub
 
         ''' <summary>
@@ -574,8 +752,13 @@ Namespace ExplorerTreeViewControl
 
             Dim directoryNode As DirectoryNode = TryCast(e.Node, DirectoryNode)
             If directoryNode Is Nothing Then Return
-            e.Cancel = Not directoryNode.LoadChildren()
-            Me.UpdateNodeAccessVisual(directoryNode)
+            If Me._synchronousNavigation Then
+                Dim removed = Me._pendingLoads.Remove(directoryNode)
+                e.Cancel = Not directoryNode.LoadChildren()
+                Me.UpdateNodeAccessVisual(directoryNode)
+            ElseIf Not directoryNode.ChildrenLoaded Then
+                Me.LoadDirectoryAsync(directoryNode)
+            End If
         End Sub
 
         ''' <summary>
@@ -596,8 +779,25 @@ Namespace ExplorerTreeViewControl
         ''' <param name="e"></param>
         Private Sub TV_AfterCollapse(sender As Object, e As TreeViewEventArgs) Handles TV.AfterCollapse
             Me.RemoveFileSystemWatchers(GetDirectoryPath(e.Node))
+            Dim obsolete As New List(Of DirectoryNode)
+            For Each pending As DirectoryNode In Me._pendingLoads.Keys
+                Dim ancestor As TreeNode = pending
+                While ancestor IsNot Nothing
+                    If ancestor Is e.Node Then
+                        obsolete.Add(pending)
+                        Exit While
+                    End If
+                    ancestor = ancestor.Parent
+                End While
+            Next
+            For Each pending As DirectoryNode In obsolete
+                Dim removed = Me._pendingLoads.Remove(pending)
+                pending.ChildrenLoaded = False
+            Next
             Dim directoryNode As DirectoryNode = TryCast(e.Node, DirectoryNode)
-            If directoryNode IsNot Nothing Then directoryNode.ChildrenLoaded = False
+            If directoryNode IsNot Nothing Then
+                directoryNode.ChildrenLoaded = False
+            End If
         End Sub
 
         ''' <summary>
@@ -651,6 +851,7 @@ Namespace ExplorerTreeViewControl
             For Each node As TreeNode In Me.TV.Nodes.Item(0).Nodes
                 If TypeOf node Is DriveNode Then
                     If CType(node, DriveNode).Tag.ToString() = e.DriveName Then
+                        Me.RemoveFileSystemWatchers(CType(node, DriveNode).FullPath)
                         CType(node, DriveNode).Remove()
                     End If
                 End If

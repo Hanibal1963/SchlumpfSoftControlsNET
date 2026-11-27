@@ -1,6 +1,4 @@
-﻿Imports System.Linq
-
-Namespace ExplorerTreeViewControl
+﻿Namespace ExplorerTreeViewControl
 
     <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
     Partial Class ExplorerTreeView
@@ -9,7 +7,7 @@ Namespace ExplorerTreeViewControl
         Protected Overrides Sub Dispose(disposing As Boolean)
             If Not Me.disposedValue Then
                 If disposing Then
-                    Me.RemoveAndDisposeWatchers(Me._FileSystemWatchers.Keys.ToList())
+                    Me.StopFileSystemWatchers()
                     Me.DW.Dispose()
                     Me.IL.Dispose()
                     Me.TV.Dispose()

@@ -24,6 +24,125 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
             Assert.AreEqual(expectedPath, args.SelectedPath)
         End Sub
 
+        ''' <summary>Prüft, dass Aktualisierungen vorhandene Unterbäume nicht ersetzen.</summary>
+        <TestMethod>
+        Public Sub FolderNode_Refresh_PreservesExistingChildren()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim first As String = Path.Combine(root, "first")
+            Dim second As String = Path.Combine(root, "second")
+            Dim unused = Directory.CreateDirectory(first)
+            Try
+                Dim node As New FolderNode("root", root)
+                Assert.IsTrue(node.LoadChildren())
+                Dim original As FolderNode = DirectCast(node.Nodes(0), FolderNode)
+                Dim created = Directory.CreateDirectory(second)
+                Assert.IsTrue(node.LoadChildren(True))
+                Assert.AreEqual(2, node.Nodes.Count)
+                Assert.AreSame(original, node.Nodes(0))
+                Assert.AreEqual(second, DirectCast(node.Nodes(1), FolderNode).FullPath)
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
+        ''' <summary>Prüft die asynchrone Einrichtung, Änderungszustellung und Entfernung der Überwachung.</summary>
+        <STATestMethod>
+        Public Sub DirectoryWatcher_RefreshesAndStopsOnCollapse()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim unused = Directory.CreateDirectory(root)
+            Try
+                Using control As New ExplorerTreeView()
+                    control.CreateControl()
+                    Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                    Dim handle As IntPtr = tv.Handle
+                    Dim node As New FolderNode("test", root)
+                    tv.Nodes.Add(node)
+                    node.Expand()
+                    Dim flags As Reflection.BindingFlags = Reflection.BindingFlags.Instance Or Reflection.BindingFlags.NonPublic
+                    Dim gate As Object = GetType(ExplorerTreeView).GetField("_watcherLock", flags).GetValue(control)
+                    Dim watchers = DirectCast(GetType(ExplorerTreeView).GetField("_FileSystemWatchers", flags).GetValue(control), Dictionary(Of String, FileSystemWatcher))
+                    Dim isWatching As Func(Of Boolean) = Function()
+                                                             SyncLock gate
+                                                                 Return watchers.ContainsKey(root)
+                                                             End SyncLock
+                                                         End Function
+                    Assert.IsTrue(WaitForCondition(isWatching), "Die Überwachung wurde nicht eingerichtet.")
+                    Dim child As String = Path.Combine(root, "new")
+                    Dim created = Directory.CreateDirectory(child)
+                    Assert.IsTrue(WaitForCondition(Function() node.ChildrenLoaded AndAlso node.Nodes.Count = 1 AndAlso TypeOf node.Nodes(0) Is FolderNode AndAlso DirectCast(node.Nodes(0), FolderNode).FullPath = child), "Die Änderung wurde nicht angezeigt.")
+                    node.Collapse()
+                    Assert.IsFalse(isWatching(), "Die Überwachung wurde beim Zuklappen nicht entfernt.")
+                End Using
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
+        ''' <summary>Verarbeitet UI-Nachrichten bis zur Bedingung oder bis zum Zeitlimit.</summary>
+        ''' <param name="condition">Zu prüfender Zustand.</param>
+        ''' <returns>True, wenn der Zustand innerhalb des Zeitlimits erreicht wurde.</returns>
+        Private Shared Function WaitForCondition(condition As Func(Of Boolean)) As Boolean
+            Dim timeout As Stopwatch = Stopwatch.StartNew()
+            Do
+                Application.DoEvents()
+                If condition() Then Return True
+                Threading.Thread.Sleep(10)
+            Loop While timeout.Elapsed < TimeSpan.FromSeconds(10)
+            Return False
+        End Function
+
+        ''' <summary>Prüft die Übernahme einer im Hintergrund ermittelten Verzeichnisliste.</summary>
+        <STATestMethod>
+        Public Sub ExpandDirectory_LoadsChildrenAsynchronously()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim child As String = Path.Combine(root, "child")
+            Dim unused = Directory.CreateDirectory(child)
+            Try
+                Using control As New ExplorerTreeView()
+                    control.CreateControl()
+                    Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                    Dim handle As IntPtr = tv.Handle
+                    Dim node As New FolderNode("test", root)
+                    tv.Nodes.Add(node)
+                    node.Expand()
+                    Dim timeout As Stopwatch = Stopwatch.StartNew()
+                    While Not node.ChildrenLoaded AndAlso timeout.Elapsed < TimeSpan.FromSeconds(10)
+                        Application.DoEvents()
+                        Threading.Thread.Sleep(10)
+                    End While
+                    Assert.IsTrue(node.ChildrenLoaded)
+                    Assert.AreEqual(DirectoryNode.DirectoryStatus.Accessible, node.Status)
+                    Assert.AreEqual(1, node.Nodes.Count)
+                    Assert.AreEqual(child, DirectCast(node.Nodes(0), FolderNode).FullPath)
+                End Using
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
+        ''' <summary>Prüft die getrennte Abfrage und anschließende Übernahme in den Baum.</summary>
+        <TestMethod>
+        Public Sub DirectoryNode_ReadChildren_DoesNotChangeNodeUntilApplied()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim child As String = Path.Combine(root, "child")
+            Dim unused = Directory.CreateDirectory(child)
+            Try
+                Dim node As New FolderNode("root", root)
+                Dim result As DirectoryNode.LoadResult = DirectoryNode.ReadChildren(root)
+                Assert.AreEqual(DirectoryNode.DirectoryStatus.Accessible, result.Status)
+                CollectionAssert.AreEquivalent(New String() {child}, result.Directories)
+                Assert.AreEqual(DirectoryNode.DirectoryStatus.Unknown, node.Status)
+                Assert.IsFalse(node.ChildrenLoaded)
+                Assert.IsNotInstanceOfType(Of FolderNode)(node.Nodes(0))
+
+                Assert.IsTrue(node.ApplyLoadResult(result))
+                Assert.AreEqual(DirectoryNode.DirectoryStatus.Accessible, node.Status)
+                Assert.AreEqual(child, DirectCast(node.Nodes(0), FolderNode).FullPath)
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
         ''' <summary>Prüft die Pfadnavigation durch mehrere noch nicht geladene Ebenen.</summary>
         <TestMethod>
         Public Sub ExpandPath_LoadsAndSelectsNestedDirectory()

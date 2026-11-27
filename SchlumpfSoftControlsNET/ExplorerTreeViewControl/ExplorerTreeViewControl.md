@@ -83,9 +83,17 @@ Verzeichnisknoten erhalten zunächst einen Platzhalter; ihre unmittelbaren Unter
 
 **Umsetzung:**
 
-- Auflistungen in Hintergrund-Tasks ausführen.
+- Verzeichnis- und Laufwerksauflistungen sowie weitere möglicherweise blockierende Dateisystemabfragen beim Initialisieren, Aufklappen, Auswählen und Aktualisieren im Hintergrund ausführen. Auch das Einrichten der Verzeichnisüberwachung berücksichtigen.
 
-- UI-Update gebündelt per `BeginInvoke` anwenden.
+- Ergebnisse je Ladeauftrag gebündelt per `BeginInvoke` auf dem UI-Thread anwenden; Baumknoten und Steuerelemente nicht im Hintergrund verändern.
+
+- Ladezustand und Platzhalter während laufender Aufträge anzeigen; fehlgeschlagene Zugriffe weiterhin markieren und erneute Versuche ermöglichen.
+
+- Veraltete Ergebnisse nach erneutem Laden, Zuklappen, Entfernen eines Knotens oder Entsorgen des Steuerelements verwerfen. Gleichzeitige Aufträge und Dateisystemänderungen so koordinieren, dass ältere Ergebnisse neuere Zustände nicht überschreiben.
+
+- Pfadnavigation über noch nicht geladene Ebenen asynchron ermöglichen und Auswahl sowie `SelectedPathChanged` erst nach erfolgreicher Zugriffsprüfung aktualisieren. Die bestehende synchrone `ExpandPath`-API kompatibel erhalten und deren gegebenenfalls weiterhin blockierendes Verhalten dokumentieren; für nicht blockierende Navigation eine asynchrone API ergänzen.
+
+- Verhalten bei langsamen oder nicht verfügbaren Laufwerken, konkurrierenden Aktualisierungen, Zuklappen und Entsorgung sowie die bestehende synchrone Pfadnavigation durch Tests überprüfen.
 
 **Nutzen:** UI friert bei langsamen Netzlaufwerken nicht ein.
 
@@ -135,11 +143,12 @@ Verzeichnisknoten erhalten zunächst einen Platzhalter; ihre unmittelbaren Unter
 
 ### 7.7. Empfohlene Reihenfolge
 
-1. Lazy-Loading/Ladepfad
-2. Async-I/O
-3. Fehlerbehandlung
-4. Caching
-5. Teilbaum-Refresh
+1. Asynchrones Laden und gebündelte UI-Aktualisierung einschließlich Ladezustand und Schutz vor veralteten Ergebnissen umsetzen.
+2. Initialisierung, Auswahlprüfung, Überwachung und Pfadnavigation einbeziehen; asynchrone Navigation ergänzen und die synchrone API kompatibel halten.
+3. Die betroffenen Abläufe und Grenzfälle testen und die API-Dokumentation aktualisieren.
+4. Fehlerbehandlung für problematische Pfade und Offline-Laufwerke weiter verbessern (7.5).
+5. Icons und SpecialFolders cachen (7.4).
+6. Teilbaum-Refresh und Debounce optimieren (7.6).
 
 ---
 

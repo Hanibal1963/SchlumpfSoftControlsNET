@@ -28,6 +28,31 @@ Namespace SchlumpfSoftControlsNET.Tests.ExtendedRTFControl
             End Using
         End Sub
 
+        ''' <summary>Formatierungen dürfen ein ausgeblendetes Steuerelement nicht sichtbar machen.</summary>
+        <TestMethod>
+        Public Sub Formatting_PreservesHiddenControlVisibility()
+            Using control As New ExtendedRTF()
+                control.Visible = False
+                control.CreateControl()
+                Dim handle = control.Handle
+                control.Text = "Text"
+                control.Select(0, 4)
+
+                control.SelectionForeColor = Color.Blue
+                control.SelectionBackColor = Color.Yellow
+                control.SelectionLeftIndent = 10
+                control.SelectionBold = True
+                control.SetSelectionAlignment(HorizontalAlignment.Center)
+                control.ToggleBullet()
+                control.ClearFormatting()
+
+                Assert.IsFalse(control.Visible)
+                Assert.AreEqual(handle, control.Handle)
+                Assert.AreEqual(HorizontalAlignment.Center, control.SelectionAlignment)
+                Assert.IsFalse(control.SelectionBullet)
+            End Using
+        End Sub
+
         ''' <summary>Prüft, dass die kleinste zulässige Schriftgröße übernommen wird.</summary>
         <TestMethod>
         Public Sub SelectionFontSize_AcceptsMinimum()

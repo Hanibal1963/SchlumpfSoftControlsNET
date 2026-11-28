@@ -11,11 +11,6 @@
                 If disposing AndAlso components IsNot Nothing Then
                     components.Dispose()
                 End If
-                ' Falls Entwickler vergessen hat EndUpdate mehrfach aufzurufen.
-                While Me._updateNesting > 0
-                    Me._updateNesting = 1
-                    Me.EndUpdate()
-                End While
             Finally
                 MyBase.Dispose(disposing)
             End Try

@@ -8,6 +8,7 @@ Imports System
 Imports System.ComponentModel
 Imports System.Windows.Forms
 Imports System.Drawing
+Imports System.Threading
 
 Namespace ExtendedRTFControl
 
@@ -38,6 +39,7 @@ Namespace ExtendedRTFControl
 
         Private _updateNesting As Int32 ' Zähler für geschachtelte Update-Blöcke.
         Private _suppressSelectionEvents As Boolean ' Flag zur Unterdrückung von "OnSelectionChanged", wenn intern temporär per-Zeichen-Selektionen durchgeführt werden.
+        Private _redrawHandle As IntPtr ' Handle, für das Redraw tatsächlich unterdrückt wurde.
 
 #End Region
 
@@ -198,7 +200,7 @@ Namespace ExtendedRTFControl
                 Return Me.SelectionColor
             End Get
             Set(value As Color)
-                Me.SelectionColor = value
+                Me.ExecuteBatch(Sub() Me.SelectionColor = value)
             End Set
         End Property
 
@@ -219,7 +221,7 @@ Namespace ExtendedRTFControl
                 Return MyBase.SelectionBackColor
             End Get
             Set(value As Color)
-                MyBase.SelectionBackColor = value
+                Me.ExecuteBatch(Sub() MyBase.SelectionBackColor = value)
             End Set
         End Property
 
@@ -242,7 +244,7 @@ Namespace ExtendedRTFControl
             Set(value As Int32?)
                 If Not value.HasValue Then Exit Property
                 If value.Value < 0 Then Throw New ArgumentOutOfRangeException(NameOf(value), "Einzug darf nicht negativ sein.")
-                Me.SelectionIndent = value.Value
+                Me.ExecuteBatch(Sub() Me.SelectionIndent = value.Value)
             End Set
         End Property
 
@@ -267,35 +269,16 @@ Namespace ExtendedRTFControl
         ''' Auswahl wird das Format an der aktuellen Einfügemarke (Caret) zurückgesetzt.
         ''' </remarks>
         Public Sub ClearFormatting()
-
-            If Me.SelectionLength = 0 Then
-                Dim baseFont = Me.SelectionFont ' Kein Bereich markiert -> Format am Caret zurücksetzen.
-                If baseFont Is Nothing Then baseFont = Me.Font
-                ' Neuer Font auf Regular (alle Stil-Flags weg)
-                Using resetFont As New Font(baseFont.FontFamily, baseFont.Size, FontStyle.Regular, baseFont.Unit, baseFont.GdiCharSet, baseFont.GdiVerticalFont)
-                    Me.SelectionFont = resetFont
-                End Using
-                Me.SelectionColor = Me.ForeColor
-                Me.SelectionBackColor = Me.BackColor
-                Me.SelectionBullet = False
-                Return
-            End If
-
-            Me.BeginUpdate()
-
-            Try
-                Dim baseFont = Me.SelectionFont
-                If baseFont Is Nothing Then baseFont = Me.Font
-                Using resetFont As New Font(baseFont.FontFamily, baseFont.Size, FontStyle.Regular, baseFont.Unit, baseFont.GdiCharSet, baseFont.GdiVerticalFont)
-                    Me.SelectionFont = resetFont
-                End Using
-                Me.SelectionColor = Me.ForeColor
-                Me.SelectionBackColor = Me.BackColor
-                Me.SelectionBullet = False
-            Finally
-                Me.EndUpdate()
-            End Try
-
+            Me.ExecuteBatch(Sub()
+                                Dim baseFont = Me.SelectionFont
+                                If baseFont Is Nothing Then baseFont = Me.Font
+                                Using resetFont As New Font(baseFont.FontFamily, baseFont.Size, FontStyle.Regular, baseFont.Unit, baseFont.GdiCharSet, baseFont.GdiVerticalFont)
+                                    Me.SelectionFont = resetFont
+                                End Using
+                                Me.SelectionColor = Me.ForeColor
+                                Me.SelectionBackColor = Me.BackColor
+                                Me.SelectionBullet = False
+                            End Sub)
         End Sub
 
         ''' <summary>
@@ -306,7 +289,7 @@ Namespace ExtendedRTFControl
         ''' </remarks>
         ''' <param name="alignment">Die gewünschte horizontale Ausrichtung.</param>
         Public Sub SetSelectionAlignment(alignment As HorizontalAlignment)
-            Me.SelectionAlignment = alignment
+            Me.ExecuteBatch(Sub() Me.SelectionAlignment = alignment)
         End Sub
 
         ''' <summary>
@@ -356,7 +339,7 @@ Namespace ExtendedRTFControl
         ''' Wirkt absatzweise. Funktioniert nur auf Absatzebene (SelectionLength = 0 -&gt; aktueller Absatz).
         ''' </remarks>
         Public Sub ToggleBullet()
-            Me.SelectionBullet = Not Me.SelectionBullet
+            Me.ExecuteBatch(Sub() Me.SelectionBullet = Not Me.SelectionBullet)
         End Sub
 
 #End Region
@@ -486,6 +469,12 @@ Namespace ExtendedRTFControl
         ''' </summary>
         ''' <param name="transform">Eine Funktion, die den aktuellen Font nimmt und einen neuen Font zurückgibt.</param>
         Private Sub ApplyFontTransformation(transform As Func(Of Font, Font))
+            Me.ExecuteBatch(Sub() Me.ApplyFontTransformationCore(transform))
+        End Sub
+
+        ''' <summary>Transformiert die Auswahl innerhalb des bereits gestarteten Batch-Blocks.</summary>
+        ''' <param name="transform">Erzeugt den gewünschten Font aus dem aktuellen Font.</param>
+        Private Sub ApplyFontTransformationCore(transform As Func(Of Font, Font))
             If Me.SelectionLength = 0 Then
                 Dim f = Me.SelectionFont ' Nur Caret: Einfach einmal transformieren
                 If f Is Nothing Then f = Me.Font
@@ -542,30 +531,62 @@ Namespace ExtendedRTFControl
             Return $"{f.FontFamily.Name}|{f.Size}|{CInt(f.Style)}|{CInt(f.Unit)}|{f.GdiCharSet}|{f.GdiVerticalFont}"
         End Function
 
+        ''' <summary>Führt eine Formatierung aus und beendet den Batch auch bei Fehlern.</summary>
+        ''' <param name="operation">Die im Batch auszuführende Formatierung.</param>
+        Private Sub ExecuteBatch(operation As Action)
+            Me.BeginUpdate()
+            Try
+                operation()
+            Finally
+                Me.EndUpdate()
+            End Try
+        End Sub
+
         ''' <summary>
         ''' Startet einen verschachtelbaren Batch-Block, der das Neuzeichnen des Controls unterdrückt, um Flackern zu
         ''' vermeiden und die Leistung zu verbessern. Bei verschachtelten Aufrufen wird das Neuzeichnen erst wieder
         ''' aktiviert, wenn alle Blöcke beendet wurden.
         ''' </summary>
         Private Sub BeginUpdate()
-            If Not Me.IsHandleCreated Then Return
-            If Me._updateNesting = 0 Then
-                Dim unused = SendMessage(Me.Handle, WM_SETREDRAW, False, IntPtr.Zero)
+            If Interlocked.Increment(Me._updateNesting) = 1 Then
+                Me.SuppressRedraw()
             End If
-            Me._updateNesting += 1
         End Sub
 
         ''' <summary>
         ''' Beendet einen verschachtelbaren Batch-Block, der das Neuzeichnen des Controls unterdrückt.
         ''' </summary>
         Private Sub EndUpdate()
-            If Not Me.IsHandleCreated Then Return
-            Me._updateNesting -= 1
-            If Me._updateNesting <= 0 Then
-                Me._updateNesting = 0
-                Dim unused = SendMessage(Me.Handle, WM_SETREDRAW, True, IntPtr.Zero)
+            If Interlocked.Decrement(Me._updateNesting) = 0 AndAlso Me._redrawHandle <> IntPtr.Zero Then
+                Dim handle = Me._redrawHandle
+                Me._redrawHandle = IntPtr.Zero
+                Dim unused = SendMessage(handle, WM_SETREDRAW, True, IntPtr.Zero)
                 Me.Invalidate() ' Neuzeichnen anfordern
                 Me.Update()     ' Sofortige Ausführung (reduziert wahrnehmbares Flackern)
+            End If
+        End Sub
+
+        ''' <summary>Übernimmt einen laufenden Batch auf ein neu erzeugtes Fensterhandle.</summary>
+        ''' <param name="e">Die Ereignisdaten der Handle-Erzeugung.</param>
+        Protected Overrides Sub OnHandleCreated(e As EventArgs)
+            MyBase.OnHandleCreated(e)
+            If Me._updateNesting > 0 Then
+                Me.SuppressRedraw()
+            End If
+        End Sub
+
+        ''' <summary>Vergisst ein zerstörtes Handle, damit es nicht erneut verwendet wird.</summary>
+        ''' <param name="e">Die Ereignisdaten der Handle-Zerstörung.</param>
+        Protected Overrides Sub OnHandleDestroyed(e As EventArgs)
+            Me._redrawHandle = IntPtr.Zero
+            MyBase.OnHandleDestroyed(e)
+        End Sub
+
+        ''' <summary>Unterdrückt Redraw nur für sichtbare Controls, da WM_SETREDRAW deren Sichtbarkeit verändert.</summary>
+        Private Sub SuppressRedraw()
+            If Me.IsHandleCreated AndAlso Me.Visible Then
+                Me._redrawHandle = Me.Handle
+                Dim unused = SendMessage(Me._redrawHandle, WM_SETREDRAW, False, IntPtr.Zero)
             End If
         End Sub
 

@@ -1,0 +1,170 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFrameworks>net10.0-windows</TargetFrameworks>
+    <StartupObject>SchlumpfSoftControlsNET.Demo.My.MyApplication</StartupObject>
+    <UseWindowsForms>true</UseWindowsForms>
+    <MyType>WindowsForms</MyType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Form1.Designer.vb" />
+    <Compile Remove="Form1.vb" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Form1.resx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\AniGif_Anim100.gif" />
+    <Content Include="Resources\AniGif_Anim101.gif" />
+    <Content Include="Resources\AniGif_Anim102.gif" />
+    <Content Include="Resources\AniGif_Anim103.gif" />
+    <Content Include="Resources\AniGif_Anim104.gif" />
+    <Content Include="Resources\AniGif_Anim105.gif" />
+    <Content Include="Resources\AniGif_Anim106.gif" />
+    <Content Include="Resources\AniGif_Anim107.gif" />
+    <Content Include="Resources\AniGif_Anim108.gif" />
+    <Content Include="Resources\AniGif_Anim109.gif" />
+    <Content Include="Resources\AniGif_Anim110.gif" />
+    <Content Include="Resources\AniGif_Anim111.gif" />
+    <Content Include="Resources\AniGif_Anim112.gif" />
+    <Content Include="Resources\AniGif_Anim113.gif" />
+    <Content Include="Resources\AniGif_Anim114.gif" />
+    <Content Include="Resources\AniGif_Anim115.gif" />
+    <Content Include="Resources\AniGif_Anim116.gif" />
+    <Content Include="Resources\AniGif_Anim117.gif" />
+    <Content Include="Resources\AniGif_Anim118.gif" />
+    <Content Include="Resources\AniGif_Anim119.gif" />
+    <Content Include="Resources\AniGif_Anim120.gif" />
+    <Content Include="Resources\AniGif_Back.png" />
+    <Content Include="Resources\AniGif_Diagnostics.png" />
+    <Content Include="Resources\AniGif_Forward.png" />
+    <Content Include="Resources\AniGif_OpenFile.png" />
+    <Content Include="Resources\AniGif_Pause.png" />
+    <Content Include="Resources\AniGif_Resume.png" />
+    <Content Include="Resources\AniGif_Start.png" />
+    <Content Include="Resources\AniGif_Stopp.png" />
+    <Content Include="Resources\ExtendedRTF_Backcolor.png" />
+    <Content Include="Resources\ExtendedRTF_Bold.png" />
+    <Content Include="Resources\ExtendedRTF_Delformat.png" />
+    <Content Include="Resources\ExtendedRTF_Fontdown.png" />
+    <Content Include="Resources\ExtendedRTF_Fontformat.png" />
+    <Content Include="Resources\ExtendedRTF_Fontup.png" />
+    <Content Include="Resources\ExtendedRTF_Forecolor.png" />
+    <Content Include="Resources\ExtendedRTF_Italic.png" />
+    <Content Include="Resources\ExtendedRTF_LeftIndentDown.png" />
+    <Content Include="Resources\ExtendedRTF_LeftIndentUp.png" />
+    <Content Include="Resources\ExtendedRTF_Setdown.png" />
+    <Content Include="Resources\ExtendedRTF_Setup.png" />
+    <Content Include="Resources\ExtendedRTF_Strikeout.png" />
+    <Content Include="Resources\ExtendedRTF_Textcenter.png" />
+    <Content Include="Resources\ExtendedRTF_Textleft.png" />
+    <Content Include="Resources\ExtendedRTF_Textright.png" />
+    <Content Include="Resources\ExtendedRTF_Togglebullets.png" />
+    <Content Include="Resources\ExtendedRTF_Underline.png" />
+    <Content Include="Resources\ImagecomboBox_Error.png" />
+    <Content Include="Resources\ImagecomboBox_Help.png" />
+    <Content Include="Resources\ImagecomboBox_Info.png" />
+    <Content Include="Resources\ImagecomboBox_Warning.png" />
+    <Content Include="Resources\Information.png" />
+    <Content Include="Resources\PapaSchlumpf1.png" />
+    <Content Include="Resources\PapaSchlumpf2.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Import Include="System.Data" />
+    <Import Include="System.Drawing" />
+    <Import Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SchlumpfSoftControlsNET\SchlumpfSoftControlsNET.vbproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="FormAniGif.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormColorProgressBar.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormDriveWatcher.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormExplorerTreeView.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormExtendedRTF.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormFileList.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormImageComboBox.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormIniFile.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormMain.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormNotifyForm.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormPassword.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormSevenSegment.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormShape.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormTransparentLabel.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormWizard.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="My Project\Application.Designer.vb">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Application.myapp</DependentUpon>
+    </Compile>
+    <Compile Update="My Project\Resources.Designer.vb">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="My Project\Settings.Designer.vb">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="My Project\Resources.resx">
+      <CustomToolNamespace>My.Resources</CustomToolNamespace>
+      <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="My Project\Application.myapp">
+      <Generator>MyApplicationCodeGenerator</Generator>
+      <LastGenOutput>Application.Designer.vb</LastGenOutput>
+    </None>
+    <None Update="My Project\Settings.settings">
+      <CustomToolNamespace>My</CustomToolNamespace>
+      <LastGenOutput>Settings.Designer.vb</LastGenOutput>
+      <Generator>SettingsSingleFileGenerator</Generator>
+    </None>
+  </ItemGroup>
+
+</Project>

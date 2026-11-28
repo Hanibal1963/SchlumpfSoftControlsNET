@@ -29,8 +29,8 @@ Namespace AniGifControl
         End Sub
 
         'Wird vom Windows Form-Designer benötigt.
+        ''' <summary>Enthält die vom Designer verwalteten Komponenten.</summary>
         Private components As System.ComponentModel.IContainer
-        Private WithEvents Timer As System.Windows.Forms.Timer
 
         'Hinweis: Die folgende Prozedur ist für den Windows Form-Designer erforderlich.
         'Das Bearbeiten ist mit dem Windows Form-Designer möglich.  
@@ -55,6 +55,9 @@ Namespace AniGifControl
             Me.ResumeLayout(False)
 
         End Sub
+
+        ''' <summary>Steuert die zeitgesteuerte Aktualisierung der Animation.</summary>
+        Private WithEvents Timer As System.Windows.Forms.Timer
 
     End Class
 

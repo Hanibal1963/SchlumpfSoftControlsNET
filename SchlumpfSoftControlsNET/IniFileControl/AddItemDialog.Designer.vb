@@ -52,7 +52,6 @@
             Me.ButtonOK.Size = New System.Drawing.Size(67, 23)
             Me.ButtonOK.TabIndex = 0
             Me.ButtonOK.Text = "OK"
-            AddHandler Me.ButtonOK.Click, AddressOf Me.Button_Click
             '
             'ButtonCancel
             '
@@ -63,7 +62,6 @@
             Me.ButtonCancel.Size = New System.Drawing.Size(67, 23)
             Me.ButtonCancel.TabIndex = 1
             Me.ButtonCancel.Text = "Abbrechen"
-            AddHandler Me.ButtonCancel.Click, AddressOf Me.Button_Click
             '
             'Label
             '
@@ -83,7 +81,6 @@
             Me.TextBox.Size = New System.Drawing.Size(316, 20)
             Me.TextBox.TabIndex = 2
             Me.TextBox.WordWrap = False
-            AddHandler Me.TextBox.TextChanged, AddressOf Me.TextBox_TextChanged
             '
             'AddItemDialog
             '

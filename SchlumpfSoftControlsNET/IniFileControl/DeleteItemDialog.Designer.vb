@@ -59,7 +59,6 @@
             Me.ButtonNo.Size = New System.Drawing.Size(67, 23)
             Me.ButtonNo.TabIndex = 1
             Me.ButtonNo.Text = "Nein"
-            AddHandler Me.ButtonNo.Click, AddressOf Me.Button_Click
             '
             'Label
             '
@@ -67,7 +66,6 @@
             Me.Label.Name = "Label"
             Me.Label.Size = New System.Drawing.Size(283, 20)
             Me.Label.TabIndex = 1
-            AddHandler Me.Label.Click, AddressOf Me.Button_Click
             '
             'DeleteItemDialog
             '

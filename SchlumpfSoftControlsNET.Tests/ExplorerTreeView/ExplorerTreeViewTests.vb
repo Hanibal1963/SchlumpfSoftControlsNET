@@ -17,6 +17,10 @@ Imports SchlumpfSoft.ControlsNET.ExplorerTreeViewControl
 Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
     <TestClass>
     Public Class ExplorerTreeViewTests
+
+        ''' <summary>Stellt das Abbruchtoken für wartende Testoperationen bereit.</summary>
+        Public Property TestContext As TestContext
+
         ''' <summary>Prüft die unabhängige Lebensdauer der Bildlisten bei gemeinsamem Symbolcache.</summary>
         <STATestMethod>
         Public Sub ImageCache_InstancesRemainIndependentAfterDisposal()
@@ -56,7 +60,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
             Dim names As String() = {FOLDER_DESKTOP, FOLDER_DOKUMENTE, FOLDER_DOWNLOADS, FOLDER_MUSIK, FOLDER_BILDER, FOLDER_VIDEOS}
             Dim expected As String() = names.Select(Function(name) GetSpezialFolderPath(name)).ToArray()
             Dim tasks = Enumerable.Range(0, 16).Select(Function(index) Threading.Tasks.Task.Run(Function() names.Select(Function(name) GetSpezialFolderPath(name)).ToArray())).ToArray()
-            Threading.Tasks.Task.WaitAll(tasks)
+            Threading.Tasks.Task.WaitAll(tasks, Me.TestContext.CancellationToken)
             For Each task In tasks
                 CollectionAssert.AreEqual(expected, task.Result)
             Next
@@ -283,10 +287,10 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
                 Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
                 Dim handle As IntPtr = tv.Handle
                 Dim root As TreeNode = tv.Nodes(0)
-                Assert.IsTrue(root.Nodes.Cast(Of TreeNode)().Any(Function(node) Not TypeOf node Is DirectoryNode))
+                Assert.IsTrue(root.Nodes.Cast(Of TreeNode)().Any(Function(node) TypeOf node IsNot DirectoryNode))
                 Assert.IsTrue(WaitForCondition(Function() root.Nodes.Cast(Of TreeNode)().Any(Function(node) TypeOf node Is DriveNode)), "Die Laufwerke wurden nicht geladen.")
                 Assert.AreEqual(6, root.Nodes.Cast(Of TreeNode)().Count(Function(node) TypeOf node Is SpecialFolderNode))
-                Assert.IsFalse(root.Nodes.Cast(Of TreeNode)().Any(Function(node) Not TypeOf node Is DirectoryNode))
+                Assert.IsFalse(root.Nodes.Cast(Of TreeNode)().Any(Function(node) TypeOf node IsNot DirectoryNode))
                 Dim existingDrive As DriveNode = root.Nodes.Cast(Of TreeNode)().OfType(Of DriveNode)().First()
                 Dim previousCount As Int32 = root.Nodes.Count
                 Dim handler = GetType(ExplorerTreeView).GetMethod("DW_DriveAdded", Reflection.BindingFlags.Instance Or Reflection.BindingFlags.NonPublic)

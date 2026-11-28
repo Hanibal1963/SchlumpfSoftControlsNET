@@ -59,6 +59,9 @@ Namespace AniGifControl
         ''' <summary>Sammelt die Messwerte der aktuellen Diagnostiksitzung.</summary>
         Private _diagnosticsCollector As DiagnosticsCollector
 
+        ''' <summary>Stellt eine unveränderliche, leere Diagnostik-Momentaufnahme für stabile Objektidentität bereit.</summary>
+        Private Shared ReadOnly _emptyDiagnostics As New AniGifDiagnostics(False, 0, 0, 0, 0, 0, 0)
+
         ''' <summary>Beobachtete übergeordnete Controls für die Sichtbarkeit der Diagnostik.</summary>
         Private _diagnosticsAncestors As List(Of Control)
 
@@ -541,7 +544,7 @@ Namespace AniGifControl
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         Public ReadOnly Property Diagnostics As AniGifDiagnostics
             Get
-                If Me._diagnosticsCollector Is Nothing Then Return New AniGifDiagnostics(False, 0, 0, 0, 0, 0, 0)
+                If Me._diagnosticsCollector Is Nothing Then Return _emptyDiagnostics
                 If Me._diagnosticsEnabled Then Me.UpdateDiagnosticsActivity()
                 Dim timestamp As Int64 = If(Me._diagnosticsCollector.IsActive, Stopwatch.GetTimestamp(), 0L)
                 Return Me._diagnosticsCollector.CreateSnapshot(Me._diagnosticsEnabled, timestamp)

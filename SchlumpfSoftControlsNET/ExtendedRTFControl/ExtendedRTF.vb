@@ -25,7 +25,7 @@ Namespace ExtendedRTFControl
     ''' Leistungssteigerung via <c>WM_SETREDRAW</c> (siehe <see cref="BeginUpdate"/> /<see
     ''' cref="EndUpdate"/>).</description> </item> </list> <list type="bullet"><item><description>Mischzustände in der
     ''' Auswahl werden (soweit implementiert) als <c>Nothing</c> gemeldet (z.B. bei Stil-Flags, Schriftgröße,
-    ''' Einzug).<br/> Farben melden derzeit keinen Mischzustand.</description> </item> </list> <list type="bullet">
+    ''' Einzug).<br/> Farbwerte werden an die geerbten RichTextBox-Eigenschaften delegiert.</description> </item> </list> <list type="bullet">
     ''' <item><description>Mischzustände werden ohne temporäre Änderungen der Auswahl ermittelt.</description> </item> </list>
     '''
     ''' <para><b>Hinweis:</b><br/> Transformationen über die gesamte Auswahl erfolgen per Zeichen und können bei sehr
@@ -49,12 +49,14 @@ Namespace ExtendedRTFControl
         ''' Liest oder setzt die Schriftgröße der aktuellen Auswahl bzw. am Caret.
         ''' </summary>
         ''' <remarks>
-        ''' Bei uneinheitlicher Auswahl wird <see langword="Nothing"/> zurückgegeben (Mischzustand).<br/> Die Zuweisung
-        ''' validiert gegen <c>MIN_FONT_SIZE</c>.
+        ''' Bei uneinheitlicher Auswahl wird <see langword="Nothing"/> zurückgegeben. Ohne Auswahl wird die Größe am
+        ''' Caret gelesen; fehlt dort ein Font, wird der Control-Font verwendet. Das Setzen von <see langword="Nothing"/>
+        ''' bewirkt keine Änderung; andere Werte werden gegen <c>MIN_FONT_SIZE</c> geprüft.
         ''' </remarks>
         ''' <value>
         ''' <see cref="Single?"/>: Konkreter Wert oder <see langword="Nothing"/> bei Mischzustand.
         ''' </value>
+        ''' <exception cref="ArgumentOutOfRangeException">Die zugewiesene Größe liegt unter <c>MIN_FONT_SIZE</c>.</exception>
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         Public Property SelectionFontSize As Single?
@@ -81,7 +83,9 @@ Namespace ExtendedRTFControl
         ''' Liest oder setzt den Fettdruck der aktuellen Auswahl bzw. am Caret.
         ''' </summary>
         ''' <remarks>
-        ''' Bei uneinheitlicher Auswahl wird <see langword="Nothing"/> zurückgegeben (Mischzustand).
+        ''' Bei uneinheitlicher Auswahl wird <see langword="Nothing"/> zurückgegeben. Das Setzen von
+        ''' <see langword="Nothing"/> bewirkt keine Änderung; andere Werte setzen das Flag für die gesamte Auswahl
+        ''' beziehungsweise am Caret, ohne die übrigen Stil-Flags zu ändern.
         ''' </remarks>
         ''' <value>
         ''' <see cref="Boolean?"/>: <see langword="True"/> oder <see langword="False"/>, bzw. <see langword="Nothing"/>
@@ -108,7 +112,9 @@ Namespace ExtendedRTFControl
         ''' Liest oder setzt Kursiv (Italic) der aktuellen Auswahl bzw. am Caret.
         ''' </summary>
         ''' <remarks>
-        ''' Bei uneinheitlicher Auswahl wird <see langword="Nothing"/> zurückgegeben (Mischzustand).
+        ''' Bei uneinheitlicher Auswahl wird <see langword="Nothing"/> zurückgegeben. Das Setzen von
+        ''' <see langword="Nothing"/> bewirkt keine Änderung; andere Werte setzen das Flag für die gesamte Auswahl
+        ''' beziehungsweise am Caret, ohne die übrigen Stil-Flags zu ändern.
         ''' </remarks>
         ''' <value>
         ''' <see cref="Boolean?"/>: <see langword="True"/> oder <see langword="False"/>, bzw. <see langword="Nothing"/>
@@ -135,7 +141,9 @@ Namespace ExtendedRTFControl
         ''' Liest oder setzt Unterstreichung der aktuellen Auswahl bzw. am Caret.
         ''' </summary>
         ''' <remarks>
-        ''' Bei uneinheitlicher Auswahl wird <see langword="Nothing"/> zurückgegeben (Mischzustand).
+        ''' Bei uneinheitlicher Auswahl wird <see langword="Nothing"/> zurückgegeben. Das Setzen von
+        ''' <see langword="Nothing"/> bewirkt keine Änderung; andere Werte setzen das Flag für die gesamte Auswahl
+        ''' beziehungsweise am Caret, ohne die übrigen Stil-Flags zu ändern.
         ''' </remarks>
         ''' <value>
         ''' <see cref="Boolean?"/>: <see langword="True"/> oder <see langword="False"/>, bzw. <see langword="Nothing"/>
@@ -162,7 +170,9 @@ Namespace ExtendedRTFControl
         ''' Liest oder setzt Durchstreichung der aktuellen Auswahl bzw. am Caret.
         ''' </summary>
         ''' <remarks>
-        ''' Bei uneinheitlicher Auswahl wird <see langword="Nothing"/> zurückgegeben (Mischzustand).
+        ''' Bei uneinheitlicher Auswahl wird <see langword="Nothing"/> zurückgegeben. Das Setzen von
+        ''' <see langword="Nothing"/> bewirkt keine Änderung; andere Werte setzen das Flag für die gesamte Auswahl
+        ''' beziehungsweise am Caret, ohne die übrigen Stil-Flags zu ändern.
         ''' </remarks>
         ''' <value>
         ''' <see cref="Boolean?"/>: <see langword="True"/> oder <see langword="False"/>, bzw. <see langword="Nothing"/>
@@ -189,8 +199,8 @@ Namespace ExtendedRTFControl
         ''' Liest oder setzt die aktuelle Vordergrundfarbe (Textfarbe) der Auswahl bzw. am Caret.
         ''' </summary>
         ''' <remarks>
-        ''' Meldet keinen Mischzustand (immer konkreter Wert).<br/> Für echte Mischzustandserkennung wäre eine
-        ''' per-Zeichen-Prüfung analog zu den Stil-Flags nötig.
+        ''' Delegiert an <see cref="RichTextBox.SelectionColor"/>. Bei unterschiedlichen Farben in der Auswahl
+        ''' wird <see cref="Color.Empty"/> zurückgegeben, nicht <see langword="Nothing"/>.
         ''' </remarks>
         ''' <value>
         ''' <see cref="Color"/> der Auswahl bzw. am Caret.
@@ -210,8 +220,7 @@ Namespace ExtendedRTFControl
         ''' Liest oder setzt die aktuelle Hintergrund-/Highlightfarbe der Auswahl bzw. am Caret.
         ''' </summary>
         ''' <remarks>
-        ''' Meldet keinen Mischzustand (immer konkreter Wert).<br/> Für echte Mischzustandserkennung wäre eine
-        ''' per-Zeichen-Prüfung analog zu den Stil-Flags nötig.
+        ''' Delegiert an <see cref="RichTextBox.SelectionBackColor"/>; es wird kein eigener Nullable-Mischzustand ermittelt.
         ''' </remarks>
         ''' <value>
         ''' <see cref="Color"/> der Markierung/Hinterlegung.
@@ -231,12 +240,14 @@ Namespace ExtendedRTFControl
         ''' Liest oder setzt den linken Absatz-Einzug (in Pixel) der aktuellen Absatz-/Absatzauswahl bzw. am Caret.
         ''' </summary>
         ''' <remarks>
-        ''' Bei uneinheitlicher Auswahl wird <see langword="Nothing"/> zurückgegeben (Mischzustand).<br/> Der Einzug
-        ''' wirkt absatzweise; die Auswahl wird intern absatzweise behandelt.
+        ''' Bei uneinheitlicher Auswahl wird <see langword="Nothing"/> zurückgegeben. Das Setzen von
+        ''' <see langword="Nothing"/> bewirkt keine Änderung. Der Einzug wirkt auf die ausgewählten Absätze
+        ''' beziehungsweise ohne Auswahl auf den aktuellen Absatz.
         ''' </remarks>
         ''' <value>
         ''' <see cref="Int32"/>: konkreter Einzug oder <see langword="Nothing"/> bei Mischzustand.
         ''' </value>
+        ''' <exception cref="ArgumentOutOfRangeException">Der zugewiesene Einzug ist negativ.</exception>
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         Public Property SelectionLeftIndent As Int32?
@@ -352,8 +363,10 @@ Namespace ExtendedRTFControl
         ''' Auswahl oder – ohne Auswahl – ab der Caret-Position.
         ''' </summary>
         ''' <remarks>
-        ''' Optimiert: Wendet die Normalisierung einmal auf die gesamte Auswahl an (statt per Zeichen).<br/> Bei keiner
-        ''' Auswahl wird das Format an der aktuellen Einfügemarke (Caret) zurückgesetzt.
+        ''' Setzt den Schriftstil auf Regular, Vorder- und Hintergrundfarbe auf die Control-Farben und entfernt
+        ''' die Bullet-Formatierung der betroffenen Absätze. Als Grundlage dient <see cref="RichTextBox.SelectionFont"/>
+        ''' oder, falls dieser <see langword="Nothing"/> ist, der Control-Font. Bei keiner Auswahl wird das Format
+        ''' am Caret zurückgesetzt; Absatz-Einzug und -Ausrichtung werden nicht ausdrücklich geändert.
         ''' </remarks>
         Public Sub ClearFormatting()
             Me.ExecuteBatch(Sub()
@@ -393,7 +406,9 @@ Namespace ExtendedRTFControl
         ''' Schaltet Fettdruck für aktuelle Auswahl bzw. Caret um.
         ''' </summary>
         ''' <remarks>
-        ''' Bei Auswahl mit Mischzustand wird für alle ausgewählten Zeichen auf den invertierten Zustand umgestellt.
+        ''' Ein einheitlich gesetztes Flag wird entfernt, ein nicht gesetztes oder gemischtes Flag für alle
+        ''' ausgewählten Zeichen gesetzt. Andere Stil-Flags bleiben erhalten. Ohne Auswahl wirkt die Änderung am Caret.
+        ''' Interne temporäre Auswahländerungen können <see cref="RichTextBox.SelectionChanged"/> auslösen.
         ''' </remarks>
         Public Sub ToggleBold()
             Me.SelectionBold = Not Me.SelectionBold.GetValueOrDefault(False)
@@ -403,7 +418,9 @@ Namespace ExtendedRTFControl
         ''' Schaltet Kursiv für aktuelle Auswahl bzw. Caret um.
         ''' </summary>
         ''' <remarks>
-        ''' Bei Auswahl mit Mischzustand wird für alle ausgewählten Zeichen auf den invertierten Zustand umgestellt.
+        ''' Ein einheitlich gesetztes Flag wird entfernt, ein nicht gesetztes oder gemischtes Flag für alle
+        ''' ausgewählten Zeichen gesetzt. Andere Stil-Flags bleiben erhalten. Ohne Auswahl wirkt die Änderung am Caret.
+        ''' Interne temporäre Auswahländerungen können <see cref="RichTextBox.SelectionChanged"/> auslösen.
         ''' </remarks>
         Public Sub ToggleItalic()
             Me.SelectionItalic = Not Me.SelectionItalic.GetValueOrDefault(False)
@@ -413,7 +430,9 @@ Namespace ExtendedRTFControl
         ''' Schaltet Unterstreichung für aktuelle Auswahl bzw. Caret um.
         ''' </summary>
         ''' <remarks>
-        ''' Bei Auswahl mit Mischzustand wird für alle ausgewählten Zeichen auf den invertierten Zustand umgestellt.
+        ''' Ein einheitlich gesetztes Flag wird entfernt, ein nicht gesetztes oder gemischtes Flag für alle
+        ''' ausgewählten Zeichen gesetzt. Andere Stil-Flags bleiben erhalten. Ohne Auswahl wirkt die Änderung am Caret.
+        ''' Interne temporäre Auswahländerungen können <see cref="RichTextBox.SelectionChanged"/> auslösen.
         ''' </remarks>
         Public Sub ToggleUnderline()
             Me.SelectionUnderline = Not Me.SelectionUnderline.GetValueOrDefault(False)
@@ -423,7 +442,9 @@ Namespace ExtendedRTFControl
         ''' Schaltet Durchstreichung für aktuelle Auswahl bzw. Caret um.
         ''' </summary>
         ''' <remarks>
-        ''' Bei Auswahl mit Mischzustand wird für alle ausgewählten Zeichen auf den invertierten Zustand umgestellt.
+        ''' Ein einheitlich gesetztes Flag wird entfernt, ein nicht gesetztes oder gemischtes Flag für alle
+        ''' ausgewählten Zeichen gesetzt. Andere Stil-Flags bleiben erhalten. Ohne Auswahl wirkt die Änderung am Caret.
+        ''' Interne temporäre Auswahländerungen können <see cref="RichTextBox.SelectionChanged"/> auslösen.
         ''' </remarks>
         Public Sub ToggleStrikeout()
             Me.SelectionStrikeout = Not Me.SelectionStrikeout.GetValueOrDefault(False)
@@ -433,7 +454,8 @@ Namespace ExtendedRTFControl
         ''' Schaltet Bullet-Aufzählung für aktuelle Absatz-/Absatzauswahl um.
         ''' </summary>
         ''' <remarks>
-        ''' Wirkt absatzweise. Funktioniert nur auf Absatzebene (SelectionLength = 0 -&gt; aktueller Absatz).
+        ''' Invertiert den von <see cref="RichTextBox.SelectionBullet"/> gemeldeten Wert und weist ihn den betroffenen
+        ''' Absätzen zu. Ohne Auswahl wirkt die Änderung am aktuellen Absatz; ein separater Mischzustand wird nicht ermittelt.
         ''' </remarks>
         Public Sub ToggleBullet()
             Me.ExecuteBatch(Sub() Me.SelectionBullet = Not Me.SelectionBullet)

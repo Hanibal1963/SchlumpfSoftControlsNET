@@ -16,6 +16,48 @@ Imports SchlumpfSoft.ControlsNET.ExtendedRTFControl
 Namespace SchlumpfSoftControlsNET.Tests.ExtendedRTFControl
     <TestClass>
     Public Class ExtendedRTFTests
+        ''' <summary>Gemischte Stile bleiben bei Nothing unverändert und werden durch Toggles einheitlich aktiviert.</summary>
+        <TestMethod>
+        Public Sub MixedStyleToggles_EnableEntireSelectionAndPreserveSelection()
+            Using control As New ExtendedRTF()
+                control.Text = "abcd"
+                control.Select(0, 4)
+                control.SelectionBold = False
+                control.SelectionItalic = False
+                control.SelectionUnderline = False
+                control.SelectionStrikeout = False
+                control.Select(0, 2)
+                control.SelectionBold = True
+                control.SelectionItalic = True
+                control.SelectionUnderline = True
+                control.SelectionStrikeout = True
+                control.Select(0, 4)
+
+                control.SelectionBold = Nothing
+                control.SelectionItalic = Nothing
+                control.SelectionUnderline = Nothing
+                control.SelectionStrikeout = Nothing
+                Assert.IsFalse(control.SelectionBold.HasValue)
+                Assert.IsFalse(control.SelectionItalic.HasValue)
+                Assert.IsFalse(control.SelectionUnderline.HasValue)
+                Assert.IsFalse(control.SelectionStrikeout.HasValue)
+
+                Dim eventCount = 0
+                AddHandler control.SelectionChanged, Sub(sender, args) eventCount += 1
+                control.ToggleBold()
+                control.ToggleItalic()
+                control.ToggleUnderline()
+                control.ToggleStrikeout()
+
+                Assert.IsTrue(control.SelectionBold.Value)
+                Assert.IsTrue(control.SelectionItalic.Value)
+                Assert.IsTrue(control.SelectionUnderline.Value)
+                Assert.IsTrue(control.SelectionStrikeout.Value)
+                Assert.AreEqual(0, control.SelectionStart)
+                Assert.AreEqual(4, control.SelectionLength)
+                Assert.IsGreaterThan(0, eventCount)
+            End Using
+        End Sub
         ''' <summary>RTF wird mit Formatierung übernommen und als solcher gemeldet.</summary>
         <TestMethod>
         Public Sub LoadRtfOrPlainText_ValidRtfPreservesFormatting()

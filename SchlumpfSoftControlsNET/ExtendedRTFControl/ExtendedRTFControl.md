@@ -24,19 +24,21 @@ Erweiterte RichTextBox für Windows Forms mit komfortablen Formatierungs- und Ab
 
 ## 3. Eigenschaften
 
-- `SelectionFontSize`: Liest oder setzt die Schriftgröße der aktuellen Auswahl bzw. am Caret; bei uneinheitlicher Auswahl wird `Nothing` zurückgegeben. Beim Setzen bewirkt `Nothing` keine Änderung; Werte unter 8 lösen `ArgumentOutOfRangeException` aus.
+- `SelectionFontSize As Single?`: Liest oder setzt die Schriftgröße der aktuellen Auswahl bzw. am Caret. Eine uneinheitliche Auswahl ergibt `Nothing`; ohne Auswahl wird der Font am Caret, falls nicht verfügbar der Control-Font verwendet. Beim Setzen bewirkt `Nothing` keine Änderung; Werte unter 8 lösen `ArgumentOutOfRangeException` aus.
 
-- `SelectionBold`: Liest oder setzt den Fettdruck der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
+- `SelectionBold As Boolean?`: Liest oder setzt den Fettdruck der aktuellen Auswahl bzw. am Caret.
 
-- `SelectionItalic`: Liest oder setzt Kursiv (`Italic`) der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
+- `SelectionItalic As Boolean?`: Liest oder setzt Kursiv (`Italic`) der aktuellen Auswahl bzw. am Caret.
 
-- `SelectionUnderline`: Liest oder setzt Unterstreichung der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
+- `SelectionUnderline As Boolean?`: Liest oder setzt Unterstreichung der aktuellen Auswahl bzw. am Caret.
 
-- `SelectionStrikeout`: Liest oder setzt Durchstreichung der aktuellen Auswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben.
+- `SelectionStrikeout As Boolean?`: Liest oder setzt Durchstreichung der aktuellen Auswahl bzw. am Caret.
 
-- `SelectionForeColor`: Liest oder setzt die aktuelle Vordergrundfarbe (Textfarbe) der Auswahl bzw. am Caret.
+  Für alle vier Stil-Eigenschaften gilt: Eine uneinheitliche Auswahl ergibt `Nothing`; beim Setzen bewirkt `Nothing` keine Änderung. `True` oder `False` setzt das jeweilige Flag für die ganze Auswahl beziehungsweise am Caret und erhält die anderen Stil-Flags. Ohne Auswahl wird beim Lesen der Font am Caret, falls nicht verfügbar der Control-Font verwendet.
 
-- `SelectionBackColor`: Liest oder setzt die aktuelle Hintergrund-/Highlightfarbe der Auswahl bzw. am Caret.
+- `SelectionForeColor As Color`: Delegiert die Vordergrundfarbe der Auswahl bzw. des Carets an `RichTextBox.SelectionColor`. Bei unterschiedlichen Vordergrundfarben liefert die geerbte Eigenschaft `Color.Empty`, nicht `Nothing`.
+
+- `SelectionBackColor As Color`: Delegiert die Hintergrund-/Highlightfarbe der Auswahl bzw. des Carets an `RichTextBox.SelectionBackColor`; ein eigener Nullable-Mischzustand wird nicht ermittelt.
 
 - `SelectionLeftIndent`: Liest oder setzt den linken Absatz-Einzug (in Pixel) der aktuellen Absatz-/Absatzauswahl bzw. am Caret; bei Mischzustand wird `Nothing` zurückgegeben. Beim Setzen bewirkt `Nothing` keine Änderung; negative Werte lösen `ArgumentOutOfRangeException` aus.
 
@@ -48,19 +50,21 @@ Erweiterte RichTextBox für Windows Forms mit komfortablen Formatierungs- und Ab
 
 - `LoadRtfOrPlainText(content As Byte(), plainTextEncoding As Encoding) As Boolean`: Liest RTF aus den Originalbytes einschließlich der darin deklarierten Codepage. Bei Ablehnung wird Klartext mit der ausdrücklich angegebenen Kodierung dekodiert; eine dazu passende BOM wird entfernt. `True` meldet RTF, `False` Klartext einschließlich leerer Eingaben. `Nothing` löst `ArgumentNullException` aus; nicht dekodierbare Klartextbytes lösen `DecoderFallbackException` aus, ohne den bisherigen Inhalt zu ändern.
 
-- `ClearFormatting()`: Entfernt Formatierungen (Schriftstil, Vorder-/Hintergrundfarbe, Bullet-Aufzählung) aus der aktuellen Auswahl oder ohne Auswahl ab der Caret-Position.
+- `ClearFormatting()`: Setzt den Schriftstil der Auswahl beziehungsweise am Caret auf `Regular`, die Vorder- und Hintergrundfarbe auf `ForeColor` und `BackColor` des Controls und entfernt die Bullet-Formatierung der betroffenen Absätze. Als Grundlage für die Schrift dient `SelectionFont`, bei `Nothing` der Control-Font. Einzug und Ausrichtung werden nicht ausdrücklich gesetzt; das Entfernen der Bullet-Formatierung kann Absatzformatierung beeinflussen.
 
 - `SetSelectionAlignment(alignment)`: Setzt die horizontale Ausrichtung der aktuellen Absatz-/Absatzauswahl.
 
-- `ToggleBold()`: Schaltet Fettdruck für aktuelle Auswahl bzw. Caret um.
+- `ToggleBold()`: Schaltet das Fettdruck-Flag der Auswahl bzw. am Caret um.
 
-- `ToggleItalic()`: Schaltet Kursiv für aktuelle Auswahl bzw. Caret um.
+- `ToggleItalic()`: Schaltet das Kursiv-Flag der Auswahl bzw. am Caret um.
 
-- `ToggleUnderline()`: Schaltet Unterstreichung für aktuelle Auswahl bzw. Caret um.
+- `ToggleUnderline()`: Schaltet das Unterstreichungs-Flag der Auswahl bzw. am Caret um.
 
-- `ToggleStrikeout()`: Schaltet Durchstreichung für aktuelle Auswahl bzw. Caret um.
+- `ToggleStrikeout()`: Schaltet das Durchstreichungs-Flag der Auswahl bzw. am Caret um.
 
-- `ToggleBullet()`: Schaltet Bullet-Aufzählung für aktuelle Absatz-/Absatzauswahl um.
+  Bei allen vier Stil-Toggles wird ein einheitlich gesetztes Flag entfernt. Ist es einheitlich nicht gesetzt oder gemischt (`Nothing`), wird es für die gesamte Auswahl gesetzt; es wird nicht pro Zeichen invertiert. Andere Stil-Flags bleiben erhalten. Ohne Auswahl wird die Formatierung am Caret geändert. Während einer Änderung mit Auswahl können temporäre Selektionen `SelectionChanged` auslösen; anschließend wird die ursprüngliche Auswahl wiederhergestellt.
+
+- `ToggleBullet()`: Invertiert den von `SelectionBullet` gelieferten booleschen Wert und setzt ihn für die betroffenen Absätze; ohne Auswahl betrifft dies den aktuellen Absatz. Ein eigener Mischzustand wird nicht ermittelt und die Absätze werden nicht einzeln invertiert.
 
 ---
 
@@ -126,13 +130,7 @@ Ein expliziter Import mit erkennbarer Rückgabe verwendet bei Ablehnung durch Ri
 
 ### 7.6. API-Dokumentation präzisieren
 
-**Status:** &#x1F4A1; offen
-
-**Umsetzung:**
-
-- Verhalten bei `Nothing`/Mischzustand explizit dokumentieren.
-
-- Nebenwirkungen von Toggle-Methoden klar beschreiben.
+**Status:** &#x2705; Umgesetzt
 
 **Nutzen:** Weniger Integrationsfehler in Host-Apps.
 
@@ -140,7 +138,7 @@ Ein expliziter Import mit erkennbarer Rückgabe verwendet bei Ablehnung durch Ri
 
 ### 7.7. Empfohlene Reihenfolge
 
-1. Dokumentation
+Alle aufgeführten Optimierungen sind umgesetzt.
 
 ---
 

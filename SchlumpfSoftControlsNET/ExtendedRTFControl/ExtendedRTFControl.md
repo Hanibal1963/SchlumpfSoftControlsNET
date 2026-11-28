@@ -8,7 +8,7 @@ Erweiterte RichTextBox für Windows Forms mit komfortablen Formatierungs- und Ab
 
 - Redraw-Suppression: Internes, verschachtelbares Batching mittels `WM_SETREDRAW` verringert Flackern bei Massenänderungen.
 
-- Ereignis-Steuerung: Interne Scans unterdrücken `SelectionChanged`, um UI-Flackern und Feedback-Schleifen zu vermeiden.
+- Mischzustände werden über native Rich-Edit-Formatabfragen ohne Änderung der Auswahl und ohne Unterdrückung von `SelectionChanged` ermittelt.
 
 ## 1. Konstruktoren
 
@@ -90,13 +90,9 @@ Stabile RichText-Formatierung mit performantem Batch-Verhalten.
 
 ### 7.3. Font-Objekte und Stilwechsel optimieren
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt
 
-**Umsetzung:**
-
-- Wiederholte `New Font(...)`-Erzeugungen in Utility kapseln.
-
-- Nur bei effektiver Stiländerung neu setzen.
+Eine gemeinsame Font-Hilfsfunktion vermeidet unveränderte Zuweisungen. Bei Auswahltransformationen werden Fonts anhand der Ausgangsattribute wiederverwendet und anschließend freigegeben.
 
 **Nutzen:** Geringerer GC-Druck bei intensiver Bearbeitung.
 
@@ -104,13 +100,9 @@ Stabile RichText-Formatierung mit performantem Batch-Verhalten.
 
 ### 7.4. Mixed-State-Ermittlung beschleunigen
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt
 
-**Umsetzung:**
-
-- Selektionsscans minimieren und Ergebnisse temporär cachen.
-
-- Ereignisunterdrückung granularer steuern.
+Native Formatabfragen ersetzen die Selektionsscans. Ihre Ergebnisse werden nur während der jeweiligen Abfrage gehalten, damit auch Änderungen über geerbte Eigenschaften sofort sichtbar sind.
 
 **Nutzen:** Flüssigere Toolbar-Updates bei großer Selektion.
 
@@ -146,10 +138,8 @@ Stabile RichText-Formatierung mit performantem Batch-Verhalten.
 
 ### 7.7. Empfohlene Reihenfolge
 
-1. Mixed-State-Performance
-2. Font-/Stiloptimierung
-3. Interoperabilität
-4. Dokumentation
+1. Interoperabilität
+2. Dokumentation
 
 ---
 

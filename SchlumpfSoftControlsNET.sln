@@ -7,8 +7,6 @@ Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "SchlumpfSoftControlsNET", "
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "SchlumpfSoftControlsNET.Tests", "SchlumpfSoftControlsNET.Tests\SchlumpfSoftControlsNET.Tests.vbproj", "{667A3D32-03C5-45BD-BC92-979A6451033C}"
 EndProject
-Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "SchlumpfsoftControlsNETDemo", "SchlumpfsoftControlsNETDemo\SchlumpfsoftControlsNETDemo.vbproj", "{24A877F2-F545-4167-AE5B-11D54950EB23}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projektmappenelemente", "Projektmappenelemente", "{EAD8E038-47F6-4CA5-AD6E-F4E35A462388}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
@@ -57,18 +55,6 @@ Global
 		{667A3D32-03C5-45BD-BC92-979A6451033C}.Release|x64.Build.0 = Release|Any CPU
 		{667A3D32-03C5-45BD-BC92-979A6451033C}.Release|x86.ActiveCfg = Release|Any CPU
 		{667A3D32-03C5-45BD-BC92-979A6451033C}.Release|x86.Build.0 = Release|Any CPU
-		{24A877F2-F545-4167-AE5B-11D54950EB23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{24A877F2-F545-4167-AE5B-11D54950EB23}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{24A877F2-F545-4167-AE5B-11D54950EB23}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{24A877F2-F545-4167-AE5B-11D54950EB23}.Debug|x64.Build.0 = Debug|Any CPU
-		{24A877F2-F545-4167-AE5B-11D54950EB23}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{24A877F2-F545-4167-AE5B-11D54950EB23}.Debug|x86.Build.0 = Debug|Any CPU
-		{24A877F2-F545-4167-AE5B-11D54950EB23}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{24A877F2-F545-4167-AE5B-11D54950EB23}.Release|Any CPU.Build.0 = Release|Any CPU
-		{24A877F2-F545-4167-AE5B-11D54950EB23}.Release|x64.ActiveCfg = Release|Any CPU
-		{24A877F2-F545-4167-AE5B-11D54950EB23}.Release|x64.Build.0 = Release|Any CPU
-		{24A877F2-F545-4167-AE5B-11D54950EB23}.Release|x86.ActiveCfg = Release|Any CPU
-		{24A877F2-F545-4167-AE5B-11D54950EB23}.Release|x86.Build.0 = Release|Any CPU
 		{0A2592D8-5902-4762-95E1-5C8F85832B02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0A2592D8-5902-4762-95E1-5C8F85832B02}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A2592D8-5902-4762-95E1-5C8F85832B02}.Debug|x64.ActiveCfg = Debug|Any CPU

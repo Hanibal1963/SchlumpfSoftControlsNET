@@ -9,6 +9,7 @@ Imports System.ComponentModel
 Imports System.Windows.Forms
 Imports System.Drawing
 Imports System.Threading
+Imports System.Runtime.InteropServices
 
 Namespace ExtendedRTFControl
 
@@ -23,9 +24,7 @@ Namespace ExtendedRTFControl
     ''' cref="EndUpdate"/>).</description> </item> </list> <list type="bullet"><item><description>Mischzustände in der
     ''' Auswahl werden (soweit implementiert) als <c>Nothing</c> gemeldet (z.B. bei Stil-Flags, Schriftgröße,
     ''' Einzug).<br/> Farben melden derzeit keinen Mischzustand.</description> </item> </list> <list type="bullet">
-    ''' <item><description>Interne per-Zeichen-Operationen (z.B. Mischzustandserkennung, Stiländerungen über die gesamte
-    ''' Auswahl) unterdrücken <see cref="OnSelectionChanged(EventArgs)"/> bewusst, um UI-Event-Spam zu
-    ''' vermeiden.</description> </item> </list>
+    ''' <item><description>Mischzustände werden ohne temporäre Änderungen der Auswahl ermittelt.</description> </item> </list>
     '''
     ''' <para><b>Hinweis:</b><br/> Transformationen über die gesamte Auswahl erfolgen per Zeichen und können bei sehr
     ''' großen Texten zeitintensiv sein;<br/> nutzen Sie nach Möglichkeit Batch-Blöcke.</para>
@@ -38,7 +37,6 @@ Namespace ExtendedRTFControl
 #Region "Variablen"
 
         Private _updateNesting As Int32 ' Zähler für geschachtelte Update-Blöcke.
-        Private _suppressSelectionEvents As Boolean ' Flag zur Unterdrückung von "OnSelectionChanged", wenn intern temporär per-Zeichen-Selektionen durchgeführt werden.
         Private _redrawHandle As IntPtr ' Handle, für das Redraw tatsächlich unterdrückt wurde.
 
 #End Region
@@ -64,7 +62,9 @@ Namespace ExtendedRTFControl
                     If f Is Nothing Then f = Me.Font
                     Return f.Size
                 End If
-                Return Me.GetUniformFontValue(Function(f) f.Size)
+                Dim format = Me.GetSelectionCharacterFormat()
+                If (format.Mask And CFM_SIZE) = 0 Then Return Nothing
+                Return CSng(format.Height) / 20.0F
             End Get
             Set(value As Single?)
                 If Not value.HasValue Then Exit Property
@@ -94,7 +94,7 @@ Namespace ExtendedRTFControl
                     If f Is Nothing Then f = Me.Font
                     Return f.Bold
                 End If
-                Return Me.GetUniformFontFlag(Function(f) f.Bold)
+                Return Me.GetUniformFontFlag(FontStyle.Bold)
             End Get
             Set(value As Boolean?)
                 If Not value.HasValue Then Exit Property
@@ -121,7 +121,7 @@ Namespace ExtendedRTFControl
                     If f Is Nothing Then f = Me.Font
                     Return f.Italic
                 End If
-                Return Me.GetUniformFontFlag(Function(f) f.Italic)
+                Return Me.GetUniformFontFlag(FontStyle.Italic)
             End Get
             Set(value As Boolean?)
                 If Not value.HasValue Then Exit Property
@@ -148,7 +148,7 @@ Namespace ExtendedRTFControl
                     If f Is Nothing Then f = Me.Font
                     Return f.Underline
                 End If
-                Return Me.GetUniformFontFlag(Function(f) f.Underline)
+                Return Me.GetUniformFontFlag(FontStyle.Underline)
             End Get
             Set(value As Boolean?)
                 If Not value.HasValue Then Exit Property
@@ -175,7 +175,7 @@ Namespace ExtendedRTFControl
                     If f Is Nothing Then f = Me.Font
                     Return f.Strikeout
                 End If
-                Return Me.GetUniformFontFlag(Function(f) f.Strikeout)
+                Return Me.GetUniformFontFlag(FontStyle.Strikeout)
             End Get
             Set(value As Boolean?)
                 If Not value.HasValue Then Exit Property
@@ -239,7 +239,11 @@ Namespace ExtendedRTFControl
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         Public Property SelectionLeftIndent As Int32?
             Get
-                Return If(Me.SelectionLength = 0, Me.SelectionIndent, Me.GetUniformParagraphValue(Function() Me.SelectionIndent))
+                If Me.SelectionLength = 0 Then Return Me.SelectionIndent
+                Dim format As New ParagraphFormat With {.Size = Marshal.SizeOf(Of ParagraphFormat)()}
+                Dim unused = GetParagraphFormat(Me.Handle, EM_GETPARAFORMAT, IntPtr.Zero, format)
+                If (format.Mask And PFM_STARTINDENT) = 0 Then Return Nothing
+                Return Me.SelectionIndent
             End Get
             Set(value As Int32?)
                 If Not value.HasValue Then Exit Property
@@ -271,10 +275,20 @@ Namespace ExtendedRTFControl
         Public Sub ClearFormatting()
             Me.ExecuteBatch(Sub()
                                 Dim baseFont = Me.SelectionFont
-                                If baseFont Is Nothing Then baseFont = Me.Font
-                                Using resetFont As New Font(baseFont.FontFamily, baseFont.Size, FontStyle.Regular, baseFont.Unit, baseFont.GdiCharSet, baseFont.GdiVerticalFont)
-                                    Me.SelectionFont = resetFont
-                                End Using
+                                Dim mixedFont = baseFont Is Nothing
+                                If mixedFont Then baseFont = Me.Font
+                                Dim forceReset = mixedFont
+                                If Me.SelectionLength > 0 Then
+                                    Dim format = Me.GetSelectionCharacterFormat()
+                                    Const requiredMask As Int32 = CFM_SIZE Or CFM_FACE Or CFM_CHARSET Or CFM_FONT_STYLES
+                                    forceReset = forceReset OrElse (format.Mask And requiredMask) <> requiredMask
+                                End If
+                                Dim resetFont = CreateFont(baseFont, baseFont.Size, FontStyle.Regular, forceReset)
+                                If resetFont IsNot baseFont Then
+                                    Using resetFont
+                                        Me.SelectionFont = resetFont
+                                    End Using
+                                End If
                                 Me.SelectionColor = Me.ForeColor
                                 Me.SelectionBackColor = Me.BackColor
                                 Me.SelectionBullet = False
@@ -349,92 +363,21 @@ Namespace ExtendedRTFControl
         ''' <summary>
         ''' Liefert ein einheitliches Bool-Stil-Flag für die aktuelle Auswahl oder Nothing bei Mischzustand.
         ''' </summary>
-        ''' <param name="selector">Eine Funktion, die ein Font-Objekt auf ein Bool-Stil-Flag abbildet.</param>
+        ''' <param name="flag">Das abzufragende Stil-Flag.</param>
         ''' <returns>Ein einheitliches Bool-Stil-Flag oder Nothing bei Mischzustand.</returns>
-        Private Function GetUniformFontFlag(selector As Func(Of Font, Boolean)) As Boolean?
-            Dim len = Me.SelectionLength
-            If len <= 0 Then Return Nothing
-            Dim start = Me.SelectionStart
-            Dim result As Boolean? = Nothing
-            Me.BeginInternalSelectionScan()
-            Try
-                For i = 0 To len - 1
-                    Me.[Select](start + i, 1)
-                    Dim f = Me.SelectionFont
-                    If f Is Nothing Then f = Me.Font
-                    Dim v = selector(f)
-                    If Not result.HasValue Then
-                        result = v
-                    ElseIf result.Value <> v Then
-                        result = Nothing
-                        Exit For
-                    End If
-                Next
-            Finally
-                Me.[Select](start, len)
-                Me.EndInternalSelectionScan()
-            End Try
-            Return result
+        Private Function GetUniformFontFlag(flag As FontStyle) As Boolean?
+            Dim format = Me.GetSelectionCharacterFormat()
+            Dim mask = CInt(flag)
+            If (format.Mask And mask) = 0 Then Return Nothing
+            Return (format.Effects And mask) <> 0
         End Function
 
-        ''' <summary>
-        ''' Liefert einen einheitlichen Single-Wert (Schriftgröße) oder Nothing (Mischzustand).
-        ''' </summary>
-        ''' <param name="selector"></param>
-        ''' <returns></returns>
-        Private Function GetUniformFontValue(selector As Func(Of Font, Single)) As Single?
-            Dim len = Me.SelectionLength
-            If len <= 0 Then Return Nothing
-            Dim start = Me.SelectionStart
-            Dim value As Single? = Nothing
-            Me.BeginInternalSelectionScan()
-            Try
-                For i = 0 To len - 1
-                    Me.[Select](start + i, 1)
-                    Dim f = Me.SelectionFont
-                    If f Is Nothing Then f = Me.Font
-                    Dim s = selector(f)
-                    If Not value.HasValue Then
-                        value = s
-                    ElseIf Math.Abs(value.Value - s) > 0.01F Then
-                        value = Nothing
-                        Exit For
-                    End If
-                Next
-            Finally
-                Me.[Select](start, len)
-                Me.EndInternalSelectionScan()
-            End Try
-            Return value
-        End Function
-
-        ''' <summary>
-        ''' Liefert einen einheitlichen Absatzwert (Integer) oder Nothing bei Mischzustand.
-        ''' </summary>
-        ''' <param name="selector"></param>
-        ''' <returns></returns>
-        Private Function GetUniformParagraphValue(selector As Func(Of Int32)) As Int32?
-            Dim len = Me.SelectionLength
-            If len <= 0 Then Return Nothing
-            Dim start = Me.SelectionStart
-            Dim v As Int32? = Nothing
-            Me.BeginInternalSelectionScan()
-            Try
-                For i = 0 To len - 1
-                    Me.[Select](start + i, 1)
-                    Dim cur = selector()
-                    If Not v.HasValue Then
-                        v = cur
-                    ElseIf v.Value <> cur Then
-                        v = Nothing
-                        Exit For
-                    End If
-                Next
-            Finally
-                Me.[Select](start, len)
-                Me.EndInternalSelectionScan()
-            End Try
-            Return v
+        ''' <summary>Ermittelt die einheitlichen Zeichenattribute ohne Änderung der Auswahl.</summary>
+        ''' <returns>Die temporär gespeicherten nativen Formatierungsattribute.</returns>
+        Private Function GetSelectionCharacterFormat() As CharacterFormat
+            Dim format As New CharacterFormat With {.Size = Marshal.SizeOf(Of CharacterFormat)()}
+            Dim unused = GetCharacterFormat(Me.Handle, EM_GETCHARFORMAT, New IntPtr(SCF_SELECTION), format)
+            Return format
         End Function
 
         ''' <summary>
@@ -442,9 +385,11 @@ Namespace ExtendedRTFControl
         ''' </summary>
         ''' <param name="newSize">Die bereits durch die Eigenschaft validierte Schriftgröße.</param>
         Private Sub SetSelectionFontSize(newSize As Single)
+            Dim currentSize = Me.SelectionFontSize
+            If currentSize.HasValue AndAlso currentSize.Value = newSize Then Return
             Me.ApplyFontTransformation(
                     Function(f)
-                        Return New Font(f.FontFamily, newSize, f.Style, f.Unit, f.GdiCharSet, f.GdiVerticalFont)
+                        Return CreateFont(f, newSize, f.Style)
                     End Function)
         End Sub
 
@@ -454,15 +399,25 @@ Namespace ExtendedRTFControl
         ''' <param name="flag">Das FontStyle-Flag, das angewendet oder entfernt werden soll.</param>
         ''' <param name="enabled">Gibt an, ob das Flag angewendet (True) oder entfernt (False) werden soll.</param>
         Private Sub ApplyStyleFlag(flag As FontStyle, enabled As Boolean)
+            Dim current = If(Me.SelectionLength = 0, CType(Nothing, Boolean?), Me.GetUniformFontFlag(flag))
+            If current.HasValue AndAlso current.Value = enabled Then Return
             Me.ApplyFontTransformation(
                     Function(f)
                         Dim targetStyle = If(enabled, f.Style Or flag, f.Style And Not flag)
-                        If targetStyle = f.Style Then
-                            Return f ' Keine Änderung nötig -> selben Font zurückgeben (wird nicht ersetzt)
-                        End If
-                        Return New Font(f, targetStyle)
+                        Return CreateFont(f, f.Size, targetStyle)
                     End Function)
         End Sub
+
+        ''' <summary>Erstellt nur bei einer Änderung der Schriftattribute einen neuen Font.</summary>
+        ''' <param name="source">Schrift mit den zu erhaltenden Eigenschaften.</param>
+        ''' <param name="size">Gewünschte Schriftgröße in der Einheit der Ausgangsschrift.</param>
+        ''' <param name="style">Gewünschter Schriftstil.</param>
+        ''' <param name="force">Erstellt auch bei gleichen Attributen einen Font für gemischte Auswahlen.</param>
+        ''' <returns>Den Ausgangsfont oder einen vom Aufrufer freizugebenden neuen Font.</returns>
+        Private Shared Function CreateFont(source As Font, size As Single, style As FontStyle, Optional force As Boolean = False) As Font
+            If Not force AndAlso source.Size = size AndAlso source.Style = style Then Return source
+            Return New Font(source.FontFamily, size, style, source.Unit, source.GdiCharSet, source.GdiVerticalFont)
+        End Function
 
         ''' <summary>
         ''' Wendet eine Transformation auf den aktuellen Font der Auswahl oder des Carets an.
@@ -490,35 +445,29 @@ Namespace ExtendedRTFControl
             End If
             Dim start = Me.SelectionStart ' Auswahl: pro Zeichen anwenden (RichTextBox hat kein native Multi-Teil-Transform API auf .NET-Level)
             Dim len = Me.SelectionLength
-            Me.BeginUpdate()
+            Dim cache As New Collections.Generic.Dictionary(Of String, Font)(StringComparer.Ordinal)
             Try
-                ' Cache zur Wiederverwendung identischer Fonts -> reduziert GDI Handles
-                Dim cache As New Collections.Generic.Dictionary(Of String, Font)(StringComparer.Ordinal)
                 For i = 0 To len - 1
                     Me.[Select](start + i, 1)
                     Dim f = Me.SelectionFont
                     If f Is Nothing Then f = Me.Font
-                    Dim nf = transform(f)
-                    If nf Is Nothing OrElse nf Is f Then Continue For
-
-                    Dim key = FontCacheKey(nf)
-                    Dim apply As Font
-#Disable Warning BC42030 ' Die Variable wurde als Verweis übergeben, bevor ihr ein Wert zugewiesen wurde.
-                    If cache.TryGetValue(key, apply) Then
-#Enable Warning BC42030 ' Die Variable wurde als Verweis übergeben, bevor ihr ein Wert zugewiesen wurde.
-                        nf.Dispose() ' Haben bereits ein identisches Font-Objekt -> erstellen entsorgtes verwerfen
-                    Else
-                        cache(key) = nf
-                        apply = nf
+                    Dim key = FontCacheKey(f)
+                    Dim apply As Font = Nothing
+                    If Not cache.TryGetValue(key, apply) Then
+                        Dim transformed = transform(f)
+                        If transformed IsNot f Then apply = transformed
+                        cache.Add(key, apply)
                     End If
-                    Me.SelectionFont = apply
-                Next
-                Me.[Select](start, len) ' Ursprüngliche Auswahl wiederherstellen
-                For Each kv In cache ' Fonts aus Cache entsorgen (RichTextBox kopiert Formatdaten intern)
-                    kv.Value.Dispose()
+                    If apply IsNot Nothing Then Me.SelectionFont = apply
                 Next
             Finally
-                Me.EndUpdate()
+                Try
+                    Me.[Select](start, len)
+                Finally
+                    For Each cachedFont In cache.Values
+                        If cachedFont IsNot Nothing Then cachedFont.Dispose()
+                    Next
+                End Try
             End Try
         End Sub
 
@@ -588,40 +537,6 @@ Namespace ExtendedRTFControl
                 Me._redrawHandle = Me.Handle
                 Dim unused = SendMessage(Me._redrawHandle, WM_SETREDRAW, False, IntPtr.Zero)
             End If
-        End Sub
-
-        ''' <summary>
-        ''' Signalisiert Beginn eines internen Auswahl-Scans (Mischzustandserkennung): unterdrückt SelectionChanged.
-        ''' </summary>
-        Private Sub BeginInternalSelectionScan()
-            Me._suppressSelectionEvents = True
-            Me.BeginUpdate()
-        End Sub
-
-        ''' <summary>
-        ''' Beendet internen Auswahl-Scan und reaktiviert Events/Redraw (verschachtelt sicher).
-        ''' </summary>
-        Private Sub EndInternalSelectionScan()
-
-            Me._suppressSelectionEvents = False
-            Me.EndUpdate()
-
-        End Sub
-
-        ''' <summary>
-        ''' Wird aufgerufen, wenn sich die Auswahl im RichTextBox-Control ändert. Unterdrückt interne
-        ''' per-Zeichen-Select-Operationen, um unnötige UI-Events zu vermeiden.
-        ''' </summary>
-        ''' <param name="e"></param>
-        Protected Overrides Sub OnSelectionChanged(e As EventArgs)
-
-            If Me._suppressSelectionEvents Then
-                ' Intern ausgelöste per-Zeichen-Select-Operation -> nicht an UI weiterreichen.
-                Return
-            End If
-
-            MyBase.OnSelectionChanged(e)
-
         End Sub
 
 #End Region

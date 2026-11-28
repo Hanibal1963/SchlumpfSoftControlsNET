@@ -99,6 +99,18 @@ Namespace ExplorerTreeViewControl
         ''' <summary>Enthält die Generationen der noch nicht fertig eingerichteten Überwachungen.</summary>
         Private ReadOnly _pendingWatchers As New Dictionary(Of String, Int64)(StringComparer.OrdinalIgnoreCase)
 
+        ''' <summary>Bündelt Änderungen je überwachtem Verzeichnis bis zum Ablauf der Ruhezeit.</summary>
+        Private ReadOnly _pendingRefreshes As New Dictionary(Of String, RefreshRequest)(StringComparer.OrdinalIgnoreCase)
+
+        ''' <summary>Wartezeit nach der letzten Verzeichnisänderung in Millisekunden.</summary>
+        Private Const RefreshDelayMilliseconds As Int32 = 200
+
+        ''' <summary>Identifiziert einen entprellten Auftrag auch nach einer erneuten Änderung.</summary>
+        Private NotInheritable Class RefreshRequest
+            ''' <summary>Der Timer wird beim Ersetzen oder Entfernen des Auftrags entsorgt.</summary>
+            Friend Property Timer As System.Threading.Timer
+        End Class
+
         ''' <summary>Erzeugt eindeutige Generationen für die Einrichtung einer Überwachung.</summary>
         Private _watcherGeneration As Int64
 
@@ -449,6 +461,20 @@ Namespace ExplorerTreeViewControl
             Me.TV.ShowNodeToolTips = True
             Me.LoadImages()
             Me.SetRootNode()
+        End Sub
+
+        ''' <summary>Stellt Überwachungen für weiterhin geöffnete alternative Darstellungen wieder her.</summary>
+        ''' <param name="nodes">Zu durchsuchende sichtbare Knoten.</param>
+        ''' <param name="folderPath">Pfad des geschlossenen Teilbaums.</param>
+        ''' <param name="collapsedNode">Gerade geschlossener Knoten, der nicht wieder überwacht werden soll.</param>
+        Private Sub RestoreVisibleWatchers(nodes As TreeNodeCollection, folderPath As String, collapsedNode As TreeNode)
+            For Each node As TreeNode In nodes
+                If node IsNot collapsedNode AndAlso node.IsExpanded Then
+                    Dim path As String = GetDirectoryPath(node)
+                    If Not String.IsNullOrEmpty(path) AndAlso IsPathWithin(path, folderPath) Then Me.CreateFileSystemWatcher(path)
+                    Me.RestoreVisibleWatchers(node.Nodes, folderPath, collapsedNode)
+                End If
+            Next
         End Sub
 
         ''' <summary>
@@ -888,6 +914,11 @@ Namespace ExplorerTreeViewControl
                     Me.StartDriveAdd(path)
                 Next
             End If
+            SyncLock Me._watcherLock
+                For Each entry In Me._FileSystemWatchers
+                    Me.QueueWatcherRefresh(entry.Value, entry.Key)
+                Next
+            End SyncLock
         End Sub
 
         ''' <summary>Verwirft Ergebnisse, die an ein zerstörtes Handle gebunden sind.</summary>
@@ -1073,6 +1104,11 @@ Namespace ExplorerTreeViewControl
             Dim watchers As New List(Of FileSystemWatcher)
             SyncLock Me._watcherLock
                 For Each watcherPath In toRemove
+                    Dim request As RefreshRequest = Nothing
+                    If Me._pendingRefreshes.TryGetValue(watcherPath, request) Then
+                        Dim removedRefresh = Me._pendingRefreshes.Remove(watcherPath)
+                        request.Timer.Dispose()
+                    End If
                     Dim watcher As FileSystemWatcher = Nothing
                     If Me._FileSystemWatchers.TryGetValue(watcherPath, watcher) Then
                         Dim removed = Me._FileSystemWatchers.Remove(watcherPath)
@@ -1119,23 +1155,54 @@ Namespace ExplorerTreeViewControl
             Me.QueueWatcherRefresh(watcher, watcher.Path)
         End Sub
 
-        ''' <summary>Stellt eine Aktualisierung zu, sofern der zugehörige Watcher noch registriert ist.</summary>
+        ''' <summary>Bündelt Ereignisse einer registrierten Überwachung bis zum Ende einer Ruhezeit.</summary>
         ''' <param name="watcher">Auslösende Überwachung.</param>
         ''' <param name="folderPath">Überwachter Verzeichnispfad.</param>
         Private Sub QueueWatcherRefresh(watcher As FileSystemWatcher, folderPath As String)
+            SyncLock Me._watcherLock
+                Dim current As FileSystemWatcher = Nothing
+                If Me._watchersStopped OrElse Not Me._FileSystemWatchers.TryGetValue(folderPath, current) OrElse current IsNot watcher Then Return
+                Dim previous As RefreshRequest = Nothing
+                If Me._pendingRefreshes.TryGetValue(folderPath, previous) Then previous.Timer.Dispose()
+                Dim request As New RefreshRequest()
+                request.Timer = New System.Threading.Timer(Sub(state) Me.DeliverWatcherRefresh(watcher, folderPath, request), Nothing, RefreshDelayMilliseconds, System.Threading.Timeout.Infinite)
+                Me._pendingRefreshes(folderPath) = request
+            End SyncLock
+        End Sub
+
+        ''' <summary>Stellt den letzten gültigen Auftrag auf dem UI-Thread zu.</summary>
+        ''' <param name="watcher">Auslösende Überwachung.</param>
+        ''' <param name="folderPath">Überwachter Verzeichnispfad.</param>
+        ''' <param name="request">Identität des entprellten Auftrags.</param>
+        Private Sub DeliverWatcherRefresh(watcher As FileSystemWatcher, folderPath As String, request As RefreshRequest)
             Try
                 Dim unused = Me.TV.BeginInvoke(New MethodInvoker(
                     Sub()
                         SyncLock Me._watcherLock
                             Dim current As FileSystemWatcher = Nothing
                             If Me._watchersStopped OrElse Not Me._FileSystemWatchers.TryGetValue(folderPath, current) OrElse current IsNot watcher Then Return
+                            Dim pending As RefreshRequest = Nothing
+                            If Not Me._pendingRefreshes.TryGetValue(folderPath, pending) OrElse pending IsNot request Then Return
+                            Dim removed = Me._pendingRefreshes.Remove(folderPath)
+                            request.Timer.Dispose()
                         End SyncLock
-                        Dim node As TreeNode = FindNodeByPath(Me.TV.Nodes, folderPath)
-                        If TypeOf node Is DirectoryNode AndAlso node.IsExpanded Then Me.LoadSubfolders(node)
+                        Me.RefreshMatchingNodes(Me.TV.Nodes, folderPath)
                     End Sub))
             Catch ex As InvalidOperationException
                 Debug.WriteLine($"Aktualisierung für '{folderPath}' konnte nicht zugestellt werden: {ex.Message}")
             End Try
+        End Sub
+
+        ''' <summary>Aktualisiert alle sichtbaren Darstellungen des betroffenen Verzeichnisses.</summary>
+        ''' <param name="nodes">Zu durchsuchende Knoten.</param>
+        ''' <param name="folderPath">Pfad des geänderten Verzeichnisses.</param>
+        Private Sub RefreshMatchingNodes(nodes As TreeNodeCollection, folderPath As String)
+            For Each node As TreeNode In nodes
+                If TypeOf node Is DirectoryNode AndAlso node.IsExpanded AndAlso String.Equals(GetDirectoryPath(node), folderPath, StringComparison.OrdinalIgnoreCase) Then
+                    Me.LoadSubfolders(node)
+                End If
+                If node.IsExpanded Then Me.RefreshMatchingNodes(node.Nodes, folderPath)
+            Next
         End Sub
 
         ''' <summary>
@@ -1187,6 +1254,7 @@ Namespace ExplorerTreeViewControl
                 Me._pendingDriveAdds.Clear()
             End If
             Me.RemoveFileSystemWatchers(GetDirectoryPath(e.Node))
+            Me.RestoreVisibleWatchers(Me.TV.Nodes, GetDirectoryPath(e.Node), e.Node)
             Dim obsolete As New List(Of DirectoryNode)
             For Each pending As DirectoryNode In Me._pendingLoads.Keys
                 Dim ancestor As TreeNode = pending
@@ -1298,7 +1366,7 @@ Namespace ExplorerTreeViewControl
                                 Dim removed = Me._pendingDriveAdds.Remove(path)
                                 If task.IsFaulted OrElse Not Me._rootLoaded OrElse rootGeneration <> Me._rootGeneration OrElse
                                     root.TreeView IsNot Me.TV Then Return
-                                InsertDriveNode(root, task.Result)
+                                Me.InsertDriveNode(root, task.Result)
                             End Sub))
                     Catch ex As InvalidOperationException
                         Debug.WriteLine($"Laufwerk '{path}' konnte nicht zugestellt werden: {ex.Message}")

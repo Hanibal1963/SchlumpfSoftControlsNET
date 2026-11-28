@@ -81,7 +81,10 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
                 Dim ignored = destroy.Invoke(tv, Nothing)
                 Assert.IsFalse(tv.IsHandleCreated)
                 Dim navigation = control.ExpandPathAsync(Path.GetTempPath())
-                Assert.ThrowsExactly(Of InvalidOperationException)(Sub() navigation.GetAwaiter().GetResult())
+                Dim unused1 = Assert.ThrowsExactly(Of InvalidOperationException)(
+                    Sub()
+                        Dim unused = navigation.GetAwaiter().GetResult()
+                    End Sub)
             End Using
         End Sub
 
@@ -126,7 +129,10 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
                 Dim handle As IntPtr = tv.Handle
                 Dim navigation = Threading.Tasks.Task.Run(Function() control.ExpandPathAsync(Path.GetTempPath()))
                 Assert.IsTrue(WaitForCondition(Function() navigation.IsCompleted))
-                Assert.ThrowsExactly(Of InvalidOperationException)(Sub() navigation.GetAwaiter().GetResult())
+                Dim unused1 = Assert.ThrowsExactly(Of InvalidOperationException)(
+                    Sub()
+                        Dim unused = navigation.GetAwaiter().GetResult()
+                    End Sub)
             End Using
         End Sub
 
@@ -237,13 +243,13 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
                 Dim handle As IntPtr = tv.Handle
                 Dim root As TreeNode = tv.Nodes(0)
                 Dim drivePath As String = Path.GetPathRoot(Environment.SystemDirectory)
-                Dim matchingDrives As Func(Of Integer) = Function() root.Nodes.Cast(Of TreeNode)().OfType(Of DriveNode)().Count(Function(node) String.Equals(node.FullPath, drivePath, StringComparison.OrdinalIgnoreCase))
+                Dim matchingDrives As Func(Of Int32) = Function() root.Nodes.Cast(Of TreeNode)().OfType(Of DriveNode)().Count(Function(node) String.Equals(node.FullPath, drivePath, StringComparison.OrdinalIgnoreCase))
                 Assert.IsTrue(WaitForCondition(Function() matchingDrives() = 1), "Das Systemlaufwerk wurde nicht geladen.")
-                Dim initialCount As Integer = root.Nodes.Count
+                Dim initialCount As Int32 = root.Nodes.Count
                 Dim flags As Reflection.BindingFlags = Reflection.BindingFlags.Instance Or Reflection.BindingFlags.NonPublic
                 Dim added = GetType(ExplorerTreeView).GetMethod("DW_DriveAdded", flags)
                 Dim removed = GetType(ExplorerTreeView).GetMethod("DW_DriveRemoved", flags)
-                Dim pending = DirectCast(GetType(ExplorerTreeView).GetField("_pendingDriveAdds", flags).GetValue(control), Dictionary(Of String, Long))
+                Dim pending = DirectCast(GetType(ExplorerTreeView).GetField("_pendingDriveAdds", flags).GetValue(control), Dictionary(Of String, Int64))
                 Dim addArgs As New SchlumpfSoft.ControlsNET.DriveWatcherControl.DriveWatcherAddedEventArgs(drivePath)
                 Dim removeArgs As New SchlumpfSoft.ControlsNET.DriveWatcherControl.DriveWatcherRemovedEventArgs(drivePath)
 
@@ -252,13 +258,13 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
                 ignored = added.Invoke(control, {Nothing, addArgs})
                 Assert.AreEqual(0, matchingDrives())
                 Assert.IsTrue(pending.ContainsKey(drivePath))
-                Dim originalGeneration As Long = pending(drivePath)
+                Dim originalGeneration As Int64 = pending(drivePath)
                 ignored = removed.Invoke(control, {Nothing, removeArgs})
                 Assert.IsFalse(pending.ContainsKey(drivePath))
                 ignored = added.Invoke(control, {Nothing, addArgs})
                 Assert.AreNotEqual(originalGeneration, pending(drivePath))
                 ignored = added.Invoke(control, {Nothing, addArgs})
-                Dim beforeRecreate As Long = pending(drivePath)
+                Dim beforeRecreate As Int64 = pending(drivePath)
                 Dim recreate = GetType(Control).GetMethod("RecreateHandle", flags)
                 ignored = recreate.Invoke(tv, Nothing)
                 Assert.IsTrue(pending.ContainsKey(drivePath))
@@ -282,7 +288,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
                 Assert.AreEqual(6, root.Nodes.Cast(Of TreeNode)().Count(Function(node) TypeOf node Is SpecialFolderNode))
                 Assert.IsFalse(root.Nodes.Cast(Of TreeNode)().Any(Function(node) Not TypeOf node Is DirectoryNode))
                 Dim existingDrive As DriveNode = root.Nodes.Cast(Of TreeNode)().OfType(Of DriveNode)().First()
-                Dim previousCount As Integer = root.Nodes.Count
+                Dim previousCount As Int32 = root.Nodes.Count
                 Dim handler = GetType(ExplorerTreeView).GetMethod("DW_DriveAdded", Reflection.BindingFlags.Instance Or Reflection.BindingFlags.NonPublic)
                 Dim ignored = handler.Invoke(control, {Nothing, New SchlumpfSoft.ControlsNET.DriveWatcherControl.DriveWatcherAddedEventArgs(existingDrive.FullPath)})
                 Assert.AreEqual(previousCount, root.Nodes.Count)
@@ -301,8 +307,8 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
                     Dim handle As IntPtr = tv.Handle
                     Dim existing As New FolderNode("existing", root)
                     Dim missing As New FolderNode("missing", Path.Combine(root, "missing"))
-                    tv.Nodes.Add(existing)
-                    tv.Nodes.Add(missing)
+                    Dim unused2 = tv.Nodes.Add(existing)
+                    Dim unused1 = tv.Nodes.Add(missing)
                     Dim paths As New List(Of String)
                     AddHandler control.SelectedPathChanged, Sub(sender, args) paths.Add(args.SelectedPath)
                     tv.SelectedNode = existing
@@ -333,8 +339,8 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
                     Dim handle As IntPtr = tv.Handle
                     Dim firstNode As New FolderNode("first", first)
                     Dim secondNode As New FolderNode("second", second)
-                    tv.Nodes.Add(firstNode)
-                    tv.Nodes.Add(secondNode)
+                    Dim unused2 = tv.Nodes.Add(firstNode)
+                    Dim unused1 = tv.Nodes.Add(secondNode)
                     Dim paths As New List(Of String)
                     AddHandler control.SelectedPathChanged, Sub(sender, args) paths.Add(args.SelectedPath)
 
@@ -411,7 +417,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
                     Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
                     Dim handle As IntPtr = tv.Handle
                     Dim node As New FolderNode("test", root)
-                    tv.Nodes.Add(node)
+                    Dim unused1 = tv.Nodes.Add(node)
                     node.Expand()
                     Dim flags As Reflection.BindingFlags = Reflection.BindingFlags.Instance Or Reflection.BindingFlags.NonPublic
                     Dim gate As Object = GetType(ExplorerTreeView).GetField("_watcherLock", flags).GetValue(control)
@@ -427,6 +433,95 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
                     Assert.IsTrue(WaitForCondition(Function() node.ChildrenLoaded AndAlso node.Nodes.Count = 1 AndAlso TypeOf node.Nodes(0) Is FolderNode AndAlso DirectCast(node.Nodes(0), FolderNode).FullPath = child), "Die Änderung wurde nicht angezeigt.")
                     node.Collapse()
                     Assert.IsFalse(isWatching(), "Die Überwachung wurde beim Zuklappen nicht entfernt.")
+                End Using
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
+        ''' <summary>Prüft Bündelung, unabhängige Pfade und das Verwerfen beim Zuklappen.</summary>
+        <STATestMethod>
+        Public Sub DirectoryWatcher_DebouncesPerPathAndCancelsOnCollapse()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim first As String = Path.Combine(root, "first")
+            Dim second As String = Path.Combine(root, "second")
+            Dim unused = Directory.CreateDirectory(first)
+            Dim created = Directory.CreateDirectory(second)
+            Try
+                Using control As New ExplorerTreeView()
+                    control.CreateControl()
+                    Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                    Dim handle As IntPtr = tv.Handle
+                    Dim firstNode As New FolderNode("first", first)
+                    Dim secondNode As New FolderNode("second", second)
+                    Dim unused2 = tv.Nodes.Add(firstNode)
+                    Dim unused1 = tv.Nodes.Add(secondNode)
+                    firstNode.Expand()
+                    secondNode.Expand()
+                    Dim flags As Reflection.BindingFlags = Reflection.BindingFlags.Instance Or Reflection.BindingFlags.NonPublic
+                    Dim gate As Object = GetType(ExplorerTreeView).GetField("_watcherLock", flags).GetValue(control)
+                    Dim watchers = DirectCast(GetType(ExplorerTreeView).GetField("_FileSystemWatchers", flags).GetValue(control), Dictionary(Of String, FileSystemWatcher))
+                    Dim pending = DirectCast(GetType(ExplorerTreeView).GetField("_pendingRefreshes", flags).GetValue(control), System.Collections.IDictionary)
+                    Assert.IsTrue(WaitForCondition(Function()
+                                                       SyncLock gate
+                                                           Return watchers.ContainsKey(first) AndAlso watchers.ContainsKey(second) AndAlso pending.Count = 0
+                                                       End SyncLock
+                                                   End Function))
+                    Dim queue = GetType(ExplorerTreeView).GetMethod("QueueWatcherRefresh", flags)
+                    Dim generation = GetType(ExplorerTreeView).GetField("_loadGeneration", flags)
+                    Dim initial As Int64 = CLng(generation.GetValue(control))
+                    Dim ignored = queue.Invoke(control, {watchers(first), first})
+                    ignored = queue.Invoke(control, {watchers(first), first})
+                    ignored = queue.Invoke(control, {watchers(second), second})
+                    SyncLock gate
+                        Assert.AreEqual(2, pending.Count)
+                    End SyncLock
+                    Assert.AreEqual(initial, CLng(generation.GetValue(control)))
+                    Assert.IsTrue(WaitForCondition(Function() CLng(generation.GetValue(control)) = initial + 2))
+                    ignored = queue.Invoke(control, {watchers(first), first})
+                    firstNode.Collapse()
+                    SyncLock gate
+                        Assert.IsFalse(pending.Contains(first))
+                    End SyncLock
+                End Using
+            Finally
+                Directory.Delete(root, True)
+            End Try
+        End Sub
+
+        ''' <summary>Prüft die Überwachung mehrfach dargestellter Pfade nach dem Zuklappen einer Darstellung.</summary>
+        <STATestMethod>
+        Public Sub DirectoryWatcher_DuplicatePath_RemainsWatchedAfterCollapse()
+            Dim root As String = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
+            Dim unused = Directory.CreateDirectory(root)
+            Try
+                Using control As New ExplorerTreeView()
+                    control.CreateControl()
+                    Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                    Dim handle As IntPtr = tv.Handle
+                    Dim first As New FolderNode("first", root)
+                    Dim second As New FolderNode("second", root)
+                    Dim unused2 = tv.Nodes.Add(first)
+                    Dim unused1 = tv.Nodes.Add(second)
+                    first.Expand()
+                    second.Expand()
+                    Dim flags As Reflection.BindingFlags = Reflection.BindingFlags.Instance Or Reflection.BindingFlags.NonPublic
+                    Dim gate As Object = GetType(ExplorerTreeView).GetField("_watcherLock", flags).GetValue(control)
+                    Dim watchers = DirectCast(GetType(ExplorerTreeView).GetField("_FileSystemWatchers", flags).GetValue(control), Dictionary(Of String, FileSystemWatcher))
+                    Assert.IsTrue(WaitForCondition(Function()
+                                                       SyncLock gate
+                                                           Return watchers.ContainsKey(root)
+                                                       End SyncLock
+                                                   End Function))
+                    first.Collapse()
+                    Assert.IsTrue(WaitForCondition(Function()
+                                                       SyncLock gate
+                                                           Return watchers.ContainsKey(root)
+                                                       End SyncLock
+                                                   End Function))
+                    Dim child As String = Path.Combine(root, "child")
+                    Dim created = Directory.CreateDirectory(child)
+                    Assert.IsTrue(WaitForCondition(Function() second.Nodes.Cast(Of TreeNode)().OfType(Of FolderNode)().Any(Function(node) node.FullPath = child)))
                 End Using
             Finally
                 Directory.Delete(root, True)
@@ -458,7 +553,7 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
                     Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
                     Dim handle As IntPtr = tv.Handle
                     Dim node As New FolderNode("test", root)
-                    tv.Nodes.Add(node)
+                    Dim unused1 = tv.Nodes.Add(node)
                     node.Expand()
                     Dim timeout As Stopwatch = Stopwatch.StartNew()
                     While Not node.ChildrenLoaded AndAlso timeout.Elapsed < TimeSpan.FromSeconds(10)

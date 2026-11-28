@@ -144,7 +144,7 @@ Zugriffsverweigerung, fehlende Verzeichnisse, zu lange Pfade und I/O-Fehler wie 
 
 ### 7.6. Refresh-Strategie optimieren
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt
 
 **Umsetzung:**
 
@@ -152,13 +152,15 @@ Zugriffsverweigerung, fehlende Verzeichnisse, zu lange Pfade und I/O-Fehler wie 
 
 - Nur betroffene Teilbäume aktualisieren.
 
+Verzeichnisereignisse werden je überwachtem Pfad nach 200 ms Ruhezeit zusammengefasst. Aktualisiert werden nur die unmittelbaren Unterordner der geöffneten Knoten für diesen Pfad; bestehende Unterbäume bleiben erhalten. Ausstehende Aktualisierungen werden beim Entfernen der Überwachung verworfen. Nach einer Handle-Neuerstellung werden bestehende Überwachungen erneut abgeglichen.
+
 **Nutzen:** Weniger Flackern und CPU-Last bei häufigen Änderungen.
 
 ---
 
 ### 7.7. Empfohlene Reihenfolge
 
-1. Teilbaum-Refresh und Debounce optimieren (7.6).
+Aktuell sind keine Optimierungspunkte mehr offen.
 
 ---
 

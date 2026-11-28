@@ -6,13 +6,87 @@
 
 Imports System
 Imports System.Drawing
+Imports System.Text
 Imports System.Windows.Forms
+
 Imports Microsoft.VisualStudio.TestTools.UnitTesting
+
 Imports SchlumpfSoft.ControlsNET.ExtendedRTFControl
 
 Namespace SchlumpfSoftControlsNET.Tests.ExtendedRTFControl
     <TestClass>
     Public Class ExtendedRTFTests
+        ''' <summary>RTF wird mit Formatierung übernommen und als solcher gemeldet.</summary>
+        <TestMethod>
+        Public Sub LoadRtfOrPlainText_ValidRtfPreservesFormatting()
+            Using control As New ExtendedRTF()
+                Dim imported = control.LoadRtfOrPlainText("{\rtf1\ansi Hallo \b Welt\b0}")
+                Assert.IsTrue(imported)
+                Assert.AreEqual("Hallo Welt", control.Text)
+                control.Select(6, 4)
+                Assert.IsTrue(control.SelectionBold.Value)
+            End Using
+        End Sub
+
+        ''' <summary>Ungültige und leere Zeichenfolgen werden als Klartext übernommen.</summary>
+        <TestMethod>
+        Public Sub LoadRtfOrPlainText_InvalidAndEmptyStringsUsePlainText()
+            Using control As New ExtendedRTF()
+                Dim text = "{kein gültiges RTF}"
+                Assert.IsFalse(control.LoadRtfOrPlainText(text))
+                Assert.AreEqual(text, control.Text)
+                Assert.IsFalse(control.LoadRtfOrPlainText(String.Empty))
+                Assert.AreEqual(String.Empty, control.Text)
+                Dim ex = Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadRtfOrPlainText(CType(Nothing, String)))
+                Assert.AreEqual("content", ex.ParamName)
+            End Using
+        End Sub
+
+        ''' <summary>RTF-Codepages werden aus den Originalbytes statt aus der Klartextkodierung interpretiert.</summary>
+        <TestMethod>
+        Public Sub LoadRtfOrPlainText_RtfBytesUseDeclaredCodePage()
+            Using control As New ExtendedRTF()
+                Dim prefix = Encoding.ASCII.GetBytes("{\rtf1\ansi\ansicpg1251 ")
+                Dim bytes(prefix.Length + 2) As Byte
+                Array.Copy(prefix, bytes, prefix.Length)
+                bytes(prefix.Length) = &HC0
+                bytes(prefix.Length + 1) = &HE1
+                bytes(prefix.Length + 2) = CByte(AscW("}"c))
+
+                Assert.IsTrue(control.LoadRtfOrPlainText(bytes, Encoding.UTF8))
+                Assert.AreEqual(ChrW(&H410) & ChrW(&H431), control.Text)
+            End Using
+        End Sub
+
+        ''' <summary>Klartext verwendet die angegebene Kodierung und entfernt eine passende BOM.</summary>
+        <TestMethod>
+        Public Sub LoadRtfOrPlainText_PlainBytesUseSpecifiedEncoding()
+            Using control As New ExtendedRTF()
+                Dim encoding As Encoding = Encoding.Unicode
+                Dim bytes = encoding.GetPreamble().Concat(encoding.GetBytes("Grüße 世界")).ToArray()
+                Assert.IsFalse(control.LoadRtfOrPlainText(bytes, encoding))
+                Assert.AreEqual("Grüße 世界", control.Text)
+                Assert.IsFalse(control.LoadRtfOrPlainText(Array.Empty(Of Byte)(), encoding))
+                Assert.AreEqual(String.Empty, control.Text)
+            End Using
+        End Sub
+
+        ''' <summary>Undekodierbare Klartextbytes und ungültige Parameter ändern den Inhalt nicht.</summary>
+        <TestMethod>
+        Public Sub LoadRtfOrPlainText_InvalidEncodingPreservesExistingText()
+            Using control As New ExtendedRTF()
+                control.Text = "vorher"
+                Dim ex = Assert.ThrowsExactly(Of DecoderFallbackException)(Sub() control.LoadRtfOrPlainText(New Byte() {&HFF}, Encoding.UTF8))
+                Assert.IsNotNull(ex)
+                Assert.AreEqual("vorher", control.Text)
+                Dim nullContent = Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadRtfOrPlainText(CType(Nothing, Byte()), Encoding.UTF8))
+                Assert.AreEqual("content", nullContent.ParamName)
+                Dim nullEncoding = Assert.ThrowsExactly(Of ArgumentNullException)(Sub() control.LoadRtfOrPlainText(Array.Empty(Of Byte)(), Nothing))
+                Assert.AreEqual("plainTextEncoding", nullEncoding.ParamName)
+                Assert.AreEqual("vorher", control.Text)
+            End Using
+        End Sub
+
         <TestMethod>
         <DataRow(-1.0F)>
         <DataRow(0.0F)>

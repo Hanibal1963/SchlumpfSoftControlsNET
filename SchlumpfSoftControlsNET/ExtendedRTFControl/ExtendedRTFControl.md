@@ -44,6 +44,10 @@ Erweiterte RichTextBox für Windows Forms mit komfortablen Formatierungs- und Ab
 
 ## 4. Funktionen
 
+- `LoadRtfOrPlainText(content As String) As Boolean`: Ersetzt den Inhalt durch das bereits dekodierte RTF-Dokument. Leere Eingaben und von Rich Edit abgelehntes RTF werden als Klartext übernommen; die Rückgabe ist dann `False`, bei RTF `True`. `Nothing` löst `ArgumentNullException` aus.
+
+- `LoadRtfOrPlainText(content As Byte(), plainTextEncoding As Encoding) As Boolean`: Liest RTF aus den Originalbytes einschließlich der darin deklarierten Codepage. Bei Ablehnung wird Klartext mit der ausdrücklich angegebenen Kodierung dekodiert; eine dazu passende BOM wird entfernt. `True` meldet RTF, `False` Klartext einschließlich leerer Eingaben. `Nothing` löst `ArgumentNullException` aus; nicht dekodierbare Klartextbytes lösen `DecoderFallbackException` aus, ohne den bisherigen Inhalt zu ändern.
+
 - `ClearFormatting()`: Entfernt Formatierungen (Schriftstil, Vorder-/Hintergrundfarbe, Bullet-Aufzählung) aus der aktuellen Auswahl oder ohne Auswahl ab der Caret-Position.
 
 - `SetSelectionAlignment(alignment)`: Setzt die horizontale Ausrichtung der aktuellen Absatz-/Absatzauswahl.
@@ -69,6 +73,8 @@ Erweiterte RichTextBox für Windows Forms mit komfortablen Formatierungs- und Ab
 ## 6. Hinweise
 
 - Die Konstante `MIN_FONT_SIZE` ist in `ApiDefinitions` mit dem Wert `8.0F` definiert.
+
+- Der Import verwendet den Windows-Rich-Edit-Parser; dessen Akzeptanz ist keine vollständige RTF-Syntaxvalidierung. Nicht unterstützte oder bereits fehlerhaft dekodierte Eingaben können nicht automatisch repariert werden. Die geerbten APIs `Rtf`, `SelectedRtf` und `LoadFile` behalten ihr bisheriges Verhalten; der Klartext-Fallback ist nur über `LoadRtfOrPlainText` verfügbar.
 
 ---
 
@@ -110,13 +116,9 @@ Native Formatabfragen ersetzen die Selektionsscans. Ihre Ergebnisse werden nur w
 
 ### 7.5. RTF-Interoperabilität härten
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt
 
-**Umsetzung:**
-
-- Grenzfälle (leer, ungültiges RTF, fremde Encodings) robust behandeln.
-
-- Fallback auf PlainText definieren.
+Ein expliziter Import mit erkennbarer Rückgabe verwendet bei Ablehnung durch Rich Edit einen Klartext-Fallback. Byte-Eingaben erhalten die RTF-Codepage; Klartext wird mit der angegebenen Kodierung streng dekodiert.
 
 **Nutzen:** Weniger Laufzeitfehler bei externen Inhalten.
 
@@ -138,8 +140,7 @@ Native Formatabfragen ersetzen die Selektionsscans. Ihre Ergebnisse werden nur w
 
 ### 7.7. Empfohlene Reihenfolge
 
-1. Interoperabilität
-2. Dokumentation
+1. Dokumentation
 
 ---
 

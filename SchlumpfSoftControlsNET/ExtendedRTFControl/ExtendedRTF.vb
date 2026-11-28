@@ -10,6 +10,8 @@ Imports System.Windows.Forms
 Imports System.Drawing
 Imports System.Threading
 Imports System.Runtime.InteropServices
+Imports System.IO
+Imports System.Text
 
 Namespace ExtendedRTFControl
 
@@ -263,6 +265,87 @@ Namespace ExtendedRTFControl
             ' Fügen Sie Initialisierungen nach dem InitializeComponent()-Aufruf hinzu.
 
         End Sub
+
+        ''' <summary>Lädt RTF oder übernimmt bei Ablehnung durch Rich Edit den unveränderten Eingabetext als Klartext.</summary>
+        ''' <param name="content">Bereits dekodierter RTF- oder Klartext; darf nicht <see langword="Nothing"/> sein.</param>
+        ''' <returns><see langword="True"/> bei RTF-Import, sonst <see langword="False"/> für Klartext einschließlich leerer Eingaben.</returns>
+        ''' <exception cref="ArgumentNullException"><paramref name="content"/> ist <see langword="Nothing"/>.</exception>
+        ''' <remarks>Das Ergebnis meldet den gewählten Importweg; die geerbte Rtf-Eigenschaft bleibt unverändert.</remarks>
+        Public Function LoadRtfOrPlainText(content As String) As Boolean
+#If NET6_0_OR_GREATER Then
+            ArgumentNullException.ThrowIfNull(content, NameOf(content))
+#Else
+            If content Is Nothing Then Throw New ArgumentNullException(NameOf(content))
+#End If
+            If content.Length = 0 Then
+                Me.Text = String.Empty
+                Return False
+            End If
+
+            Using candidate As New RichTextBox()
+                Dim handle = candidate.Handle
+                Try
+                    candidate.Rtf = content
+                Catch ex As ArgumentException
+                    Me.Text = content
+                    Return False
+                End Try
+                Me.Rtf = candidate.Rtf
+            End Using
+            Return True
+        End Function
+
+        ''' <summary>Lädt RTF-Bytes oder dekodiert bei Ablehnung den Inhalt als Klartext.</summary>
+        ''' <param name="content">Bytes des RTF- oder Klartextdokuments; dürfen nicht <see langword="Nothing"/> sein.</param>
+        ''' <param name="plainTextEncoding">Explizite Kodierung für den Klartext-Fallback; darf nicht <see langword="Nothing"/> sein.</param>
+        ''' <returns><see langword="True"/> bei RTF-Import, sonst <see langword="False"/> für Klartext einschließlich leerer Eingaben.</returns>
+        ''' <exception cref="ArgumentNullException">Ein Parameter ist <see langword="Nothing"/>.</exception>
+        ''' <exception cref="DecoderFallbackException">Die Bytes sind mit der angegebenen Klartextkodierung nicht dekodierbar.</exception>
+        ''' <remarks>RTF wird aus den Originalbytes gelesen, damit die im Dokument angegebene Codepage erhalten bleibt.
+        ''' Eine zur Klartextkodierung passende Byte-Reihenfolge-Markierung wird entfernt; andere Kodierungen werden nicht erraten.</remarks>
+        Public Function LoadRtfOrPlainText(content As Byte(), plainTextEncoding As Encoding) As Boolean
+#If NET6_0_OR_GREATER Then
+            ArgumentNullException.ThrowIfNull(content, NameOf(content))
+            ArgumentNullException.ThrowIfNull(plainTextEncoding, NameOf(plainTextEncoding))
+#Else
+            If content Is Nothing Then Throw New ArgumentNullException(NameOf(content))
+            If plainTextEncoding Is Nothing Then Throw New ArgumentNullException(NameOf(plainTextEncoding))
+#End If
+
+            If content.Length > 0 Then
+                Using candidate As New RichTextBox(), source As New MemoryStream(content, False)
+                    Dim handle = candidate.Handle
+                    Dim parsed = True
+                    Try
+                        candidate.LoadFile(source, RichTextBoxStreamType.RichText)
+                    Catch ex As ArgumentException
+                        parsed = False
+                    End Try
+                    If parsed Then
+                        Me.Rtf = candidate.Rtf
+                        Return True
+                    End If
+                End Using
+            End If
+
+            Dim strictEncoding = DirectCast(plainTextEncoding.Clone(), Encoding)
+            strictEncoding.DecoderFallback = DecoderFallback.ExceptionFallback
+            Dim preamble = plainTextEncoding.GetPreamble()
+            Dim offset = 0
+            If preamble.Length > 0 AndAlso content.Length >= preamble.Length Then
+                Dim matches = True
+                For i = 0 To preamble.Length - 1
+                    If content(i) <> preamble(i) Then
+                        matches = False
+                        Exit For
+                    End If
+                Next
+                If matches Then offset = preamble.Length
+            End If
+            Dim text = strictEncoding.GetString(content, offset, content.Length - offset)
+            Me.Text = text
+            Return False
+        End Function
 
         ''' <summary>
         ''' Entfernt Formatierungen (Schriftstil, Vorder-/Hintergrundfarbe, Bullet-Aufzählung) vollständig aus aktueller

@@ -21,21 +21,31 @@ Unterstützt Laufwerke, spezielle Benutzerordner (Desktop, Dokumente, Downloads,
 ## 3. Eigenschaften
 
 - `SelectedPath` (nur lesen): Gibt den zuletzt erfolgreich geprüften ausgewählten Pfad zurück. Während einer laufenden Prüfung oder bei nicht zugänglicher Auswahl bleibt der bisherige Wert erhalten.
+
 - `LineColor`: Gibt die Farbe der Linien zwischen den Knoten zurück oder legt diese fest.
+
 - `ShowLines`: Gibt an, ob Linien zwischen den Knoten angezeigt werden.
+
 - `ShowPlusMinus`: Legt fest, ob die Plus- und Minuszeichen zum Anzeigen von Unterknoten angezeigt werden.
+
 - `ShowRootLines`: Gibt an, ob Linien zwischen den Stammknoten angezeigt werden.
+
 - `Indent`: Ruft den Abstand für das Einrücken der einzelnen Ebenen von untergeordneten Strukturknoten ab oder legt diesen fest.
+
 - `ItemHeight`: Ruft die Höhe des jeweiligen Strukturknotens im Strukturansicht-Steuerelement ab oder legt diese fest.
+
 - `BackColor`: Legt die Hintergrundfarbe für das Steuerelement fest oder gibt diese zurück.
+
 - `ForeColor`: Legt die Vordergrundfarbe für das Anzeigen von Text fest oder gibt diese zurück.
+
 - `Font`: Legt die Schriftart für den Text im Steuerelement fest oder gibt diese zurück.
 
 ---
 
 ## 4. Funktionen
 
-- `ExpandPath(path As String) As Boolean`: Öffnet und selektiert den Knoten zum angegebenen Verzeichnispfad (auch bei noch nicht geladenen Unterknoten) und liefert `True` bei Erfolg, sonst `False`. `Nothing`, eine leere Zeichenfolge und reine Leerzeichen liefern `False`. Die Navigation und die Auswahlprüfung erfolgen synchron und können den UI-Thread blockieren.
+- `ExpandPath(path As String) As Boolean`: Öffnet und selektiert den Knoten zum angegebenen Verzeichnispfad (auch bei noch nicht geladenen Unterknoten) und liefert `True` bei erfolgreicher Zugriffsprüfung, sonst `False`. `Nothing`, eine leere Zeichenfolge und reine Leerzeichen liefern `False`. Die Navigation und die Auswahlprüfung erfolgen synchron und können den UI-Thread blockieren.
+
 - `ExpandPathAsync(path As String) As Task(Of Boolean)`: Navigiert über noch nicht geladene Ebenen und bestätigt die Auswahl nach einer Zugriffsprüfung im Hintergrund. Die Aufgabe liefert `True` bei erfolgreicher Auswahl und sonst `False`, unter anderem für leere, fehlende oder nicht zugängliche Pfade sowie bei Abbruch. Eine neue Navigation, eine andere Auswahl, das Zuklappen eines Knotens, die Zerstörung des Handles oder die Entsorgung bricht einen laufenden Auftrag ab. Der Aufruf muss auf dem UI-Thread bei erstelltem TreeView-Handle erfolgen; andernfalls schlägt die Aufgabe mit `InvalidOperationException` fehl. Fehler bei der Pfadverarbeitung oder unerwartete Abfragefehler werden über die Aufgabe weitergegeben.
 
 ---
@@ -118,13 +128,15 @@ Die eingebetteten Symbole werden pro Prozess einmal geladen; jede Steuerelementi
 
 ### 7.5. Fehlerbehandlung verbessern
 
-**Status:** &#x1F4A1; offen
+**Status:** &#x2705; Umgesetzt
 
 **Umsetzung:**
 
 - `UnauthorizedAccessException`, `PathTooLongException`, Offline-Shares gezielt behandeln.
 
 - Defekte Knoten visuell markieren statt Ausnahme weiterreichen.
+
+Zugriffsverweigerung, fehlende Verzeichnisse, zu lange Pfade und I/O-Fehler wie nicht verfügbare Freigaben werden bei Verzeichnis- und Auswahlprüfungen unterschieden und über eine graue Darstellung mit Tooltip angezeigt. Fehlgeschlagene Knoten bleiben für einen erneuten Versuch aufklappbar; bei erfolgreicher Prüfung wird die Markierung entfernt. Kann ein Laufwerk seine Metadaten nicht liefern, bleibt es mit einem allgemeinen Symbol und einer Fehlermarkierung sichtbar. Unerwartete Fehler werden weiterhin protokolliert beziehungsweise bei asynchroner Navigation über die Aufgabe weitergegeben. Nicht darstellbare Pfade können keinem Knoten zugeordnet werden.
 
 **Nutzen:** Robuste Navigation auch in problematischen Ordnern.
 
@@ -146,8 +158,7 @@ Die eingebetteten Symbole werden pro Prozess einmal geladen; jede Steuerelementi
 
 ### 7.7. Empfohlene Reihenfolge
 
-1. Fehlerbehandlung für problematische Pfade und Offline-Laufwerke weiter verbessern (7.5).
-2. Teilbaum-Refresh und Debounce optimieren (7.6).
+1. Teilbaum-Refresh und Debounce optimieren (7.6).
 
 ---
 

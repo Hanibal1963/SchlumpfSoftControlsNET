@@ -21,6 +21,7 @@ Namespace ExplorerTreeViewControl
             Accessible
             Missing
             AccessDenied
+            PathTooLong
             Unavailable
         End Enum
 
@@ -49,6 +50,7 @@ Namespace ExplorerTreeViewControl
 
             ''' <summary>Gibt die ermittelten Unterverzeichnisse zurück.</summary>
             Friend ReadOnly Property Directories As String()
+
         End Class
 
         ''' <summary>Markiert einen noch nicht geladenen Knoten als aufklappbar, ohne das Dateisystem abzufragen.</summary>
@@ -85,6 +87,14 @@ Namespace ExplorerTreeViewControl
                 Debug.WriteLine($"Verzeichnis '{directoryPath}' nicht gefunden: {ex.Message}")
                 Return New LoadResult(DirectoryStatus.Missing, Nothing)
 
+            Catch ex As PathTooLongException
+                Debug.WriteLine($"Verzeichnispfad '{directoryPath}' ist zu lang: {ex.Message}")
+                Return New LoadResult(DirectoryStatus.PathTooLong, Nothing)
+
+            Catch ex As System.Security.SecurityException
+                Debug.WriteLine($"Zugriff auf '{directoryPath}' nicht erlaubt: {ex.Message}")
+                Return New LoadResult(DirectoryStatus.AccessDenied, Nothing)
+
             Catch ex As IOException
                 Debug.WriteLine($"Verzeichnis '{directoryPath}' nicht verfügbar: {ex.Message}")
                 Return New LoadResult(DirectoryStatus.Unavailable, Nothing)
@@ -118,9 +128,15 @@ Namespace ExplorerTreeViewControl
             End If
 
             Me.ChildrenLoaded = False
+            Me.EnsureRetryPlaceholder()
             Return False
 
         End Function
+
+        ''' <summary>Erhält die Möglichkeit zum erneuten Aufklappen nach einem fehlgeschlagenen Zugriff.</summary>
+        Friend Sub EnsureRetryPlaceholder()
+            If Me.Nodes.Count = 0 Then Me.AddPlaceholder()
+        End Sub
 
     End Class
 

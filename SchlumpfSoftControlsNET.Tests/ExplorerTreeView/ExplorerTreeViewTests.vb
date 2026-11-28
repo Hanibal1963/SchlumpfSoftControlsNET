@@ -474,14 +474,14 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
                     ignored = queue.Invoke(control, {watchers(first), first})
                     ignored = queue.Invoke(control, {watchers(second), second})
                     SyncLock gate
-                        Assert.AreEqual(2, pending.Count)
+                        Assert.HasCount(2, pending)
                     End SyncLock
                     Assert.AreEqual(initial, CLng(generation.GetValue(control)))
                     Assert.IsTrue(WaitForCondition(Function() CLng(generation.GetValue(control)) = initial + 2))
                     ignored = queue.Invoke(control, {watchers(first), first})
                     firstNode.Collapse()
                     SyncLock gate
-                        Assert.IsFalse(pending.Contains(first))
+                        Assert.DoesNotContain(pending, first)
                     End SyncLock
                 End Using
             Finally

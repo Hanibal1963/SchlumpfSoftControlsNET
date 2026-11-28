@@ -18,6 +18,7 @@
     <Copyright>Copyright (c) 2026 Andreas Sauer</Copyright>
     <PackageIcon>Icon.png</PackageIcon>
     <NeutralLanguage>de-DE</NeutralLanguage>
+    <GenerateNeutralResourcesLanguageAttribute>true</GenerateNeutralResourcesLanguageAttribute>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <AnalysisLevel>latest-recommended</AnalysisLevel>

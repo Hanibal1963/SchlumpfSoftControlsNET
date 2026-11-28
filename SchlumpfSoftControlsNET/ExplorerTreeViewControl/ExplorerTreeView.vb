@@ -487,12 +487,21 @@ Namespace ExplorerTreeViewControl
                     foundNode.Expand()
                     lastnode = foundNode
                 Next
-                If Me.TV.SelectedNode Is lastnode AndAlso Me._pendingSelection Is lastnode Then
-                    Me.TV_AfterSelect(Me.TV, New TreeViewEventArgs(lastnode))
+                If Me.TV.SelectedNode Is lastnode Then
+                    If Me._pendingSelection Is lastnode Then
+                        Me.TV_AfterSelect(Me.TV, New TreeViewEventArgs(lastnode))
+                    Else
+                        Me.ApplyAccessStatus(lastnode, CheckFolderAccess(GetDirectoryPath(lastnode)))
+                    End If
                 Else
                     Me.TV.SelectedNode = lastnode
                 End If
-                Return True
+                Dim selectedDirectory As DirectoryNode = TryCast(lastnode, DirectoryNode)
+                Return selectedDirectory IsNot Nothing AndAlso selectedDirectory.Status = DirectoryNode.DirectoryStatus.Accessible AndAlso
+                    String.Equals(Me._SelectedPath, GetDirectoryPath(lastnode), StringComparison.OrdinalIgnoreCase)
+            Catch ex As PathTooLongException
+                Debug.WriteLine($"Verzeichnispfad '{Path}' ist zu lang: {ex.Message}")
+                Return False
             Finally
                 Me._synchronousNavigation = previousSynchronousNavigation
             End Try
@@ -509,7 +518,13 @@ Namespace ExplorerTreeViewControl
             End If
             Me.CancelActiveNavigation()
             If String.IsNullOrWhiteSpace(path) Then Return False
-            Dim segments As List(Of String) = GetPathSegments(path)
+            Dim segments As List(Of String)
+            Try
+                segments = GetPathSegments(path)
+            Catch ex As PathTooLongException
+                Debug.WriteLine($"Verzeichnispfad '{path}' ist zu lang: {ex.Message}")
+                Return False
+            End Try
             Dim state As New NavigationState()
             Me._activeNavigation = state
             Try
@@ -526,6 +541,7 @@ Namespace ExplorerTreeViewControl
                                 Me._rootGeneration += 1
                                 Me._rootLoading = False
                                 root.ApplyEntries(entries)
+                                Me.MarkUnavailableDrives(root, entries)
                                 root.ToolTipText = String.Empty
                                 Me._rootLoaded = True
                             End If
@@ -559,11 +575,13 @@ Namespace ExplorerTreeViewControl
                 Dim target As TreeNode = parent
                 Dim selectionPath As String = currentPath
                 If String.IsNullOrEmpty(selectionPath) Then Return False
-                Dim accessTask = Task.Run(Function() CanOpenFolder(selectionPath))
-                If Not (Await AwaitNavigation(accessTask, state).ConfigureAwait(False)) Then Return False
+                Dim accessTask = Task.Run(Function() CheckFolderAccess(selectionPath))
+                Dim accessStatus = Await AwaitNavigation(accessTask, state).ConfigureAwait(False)
                 Return Await AwaitNavigation(Me.PostNavigation(state,
                     Function()
                         If target.TreeView IsNot Me.TV Then Return False
+                        Me.ApplyAccessStatus(target, accessStatus)
+                        If accessStatus <> DirectoryNode.DirectoryStatus.Accessible Then Return False
                         Dim changed As Boolean = Me.TV.SelectedNode IsNot target OrElse Me._pendingSelection Is target OrElse
                             Not String.Equals(Me._SelectedPath, selectionPath, StringComparison.OrdinalIgnoreCase)
                         Me._selectionGeneration += 1
@@ -814,6 +832,7 @@ Namespace ExplorerTreeViewControl
             Me._rootLoading = False
             Dim entries As List(Of ComputerNode.RootEntry) = ComputerNode.ReadEntries()
             node.ApplyEntries(entries)
+            Me.MarkUnavailableDrives(node, entries)
             node.ToolTipText = String.Empty
             Me._rootLoaded = True
         End Sub
@@ -841,6 +860,7 @@ Namespace ExplorerTreeViewControl
                                 Me.TV.BeginUpdate()
                                 Try
                                     node.ApplyEntries(task.Result)
+                                    Me.MarkUnavailableDrives(node, task.Result)
                                     node.ToolTipText = String.Empty
                                     Me._rootLoaded = True
                                 Finally
@@ -908,6 +928,7 @@ Namespace ExplorerTreeViewControl
                                     If task.IsFaulted Then
                                         node.Status = DirectoryNode.DirectoryStatus.Unavailable
                                         node.ChildrenLoaded = False
+                                        node.EnsureRetryPlaceholder()
                                     Else
                                         If task.Result.Status = DirectoryNode.DirectoryStatus.Accessible Then
                                             Me.RemoveMissingChildWatchers(node, task.Result.Directories)
@@ -1202,25 +1223,29 @@ Namespace ExplorerTreeViewControl
             Dim selectedpath As String = GetDirectoryPath(e.Node)
             If String.IsNullOrEmpty(selectedpath) Then Exit Sub
             If Me._synchronousNavigation Then
-                If CanOpenFolder(selectedpath) Then Me.PublishSelectedPath(selectedpath)
+                Dim status = CheckFolderAccess(selectedpath)
+                Me.ApplyAccessStatus(e.Node, status)
+                If status = DirectoryNode.DirectoryStatus.Accessible Then Me.PublishSelectedPath(selectedpath)
                 Return
             End If
 
             Dim selectedNode As TreeNode = e.Node
             Me._pendingSelection = selectedNode
-            Dim unused = Task.Run(Function() CanOpenFolder(selectedpath)).ContinueWith(
-                Sub(task As Task(Of Boolean))
+            Dim unused = Task.Run(Function() CheckFolderAccess(selectedpath)).ContinueWith(
+                Sub(task As Task(Of DirectoryNode.DirectoryStatus))
                     If task.IsFaulted Then
                         Debug.WriteLine($"Fehler bei der Zugriffsprüfung für '{selectedpath}': {task.Exception}")
                     End If
-                    Dim accessible As Boolean = task.Status = TaskStatus.RanToCompletion AndAlso task.Result
                     Try
                         Dim ignored = Me.TV.BeginInvoke(New MethodInvoker(
                             Sub()
                                 If Me.IsDisposed OrElse Me.Disposing OrElse generation <> Me._selectionGeneration OrElse
                                     selectedNode.TreeView IsNot Me.TV OrElse Me.TV.SelectedNode IsNot selectedNode Then Return
                                 Me._pendingSelection = Nothing
-                                If accessible Then Me.PublishSelectedPath(selectedpath)
+                                If task.Status = TaskStatus.RanToCompletion Then
+                                    Me.ApplyAccessStatus(selectedNode, task.Result)
+                                    If task.Result = DirectoryNode.DirectoryStatus.Accessible Then Me.PublishSelectedPath(selectedpath)
+                                End If
                             End Sub))
                     Catch ex As InvalidOperationException
                         Debug.WriteLine($"Auswahlprüfung für '{selectedpath}' konnte nicht zugestellt werden: {ex.Message}")
@@ -1284,12 +1309,13 @@ Namespace ExplorerTreeViewControl
         ''' <summary>Fügt einen vorbereiteten Laufwerksknoten sortiert ein, sofern er noch nicht vorhanden ist.</summary>
         ''' <param name="root">Wurzelknoten des TreeViews.</param>
         ''' <param name="entry">Im Hintergrund ermittelte Laufwerksdaten.</param>
-        Private Shared Sub InsertDriveNode(root As TreeNode, entry As ComputerNode.RootEntry)
+        Private Sub InsertDriveNode(root As TreeNode, entry As ComputerNode.RootEntry)
             For Each node As TreeNode In root.Nodes
                 Dim drive As DriveNode = TryCast(node, DriveNode)
                 If drive IsNot Nothing AndAlso String.Equals(drive.FullPath, entry.Path, StringComparison.OrdinalIgnoreCase) Then Return
             Next
             Dim newNode As New DriveNode(entry.Text, entry.Path, entry.ImageKey)
+            If entry.Unavailable Then Me.ApplyAccessStatus(newNode, DirectoryNode.DirectoryStatus.Unavailable)
             Dim inserted As Boolean = False
             For i As Int32 = 0 To root.Nodes.Count - 1
                 Dim currNode As TreeNode = root.Nodes(i)
@@ -1306,6 +1332,15 @@ Namespace ExplorerTreeViewControl
             If Not inserted Then
                 Dim unused = root.Nodes.Add(newNode)
             End If
+        End Sub
+
+        ''' <summary>Markiert Laufwerke, deren Metadaten beim Laden nicht verfügbar waren.</summary>
+        ''' <param name="root">Wurzelknoten mit den neu angelegten Laufwerken.</param>
+        ''' <param name="entries">Zugehörige Laufwerks- und Spezialordnerdaten.</param>
+        Private Sub MarkUnavailableDrives(root As ComputerNode, entries As List(Of ComputerNode.RootEntry))
+            For index As Int32 = 0 To entries.Count - 1
+                If entries(index).Unavailable Then Me.ApplyAccessStatus(root.Nodes(index), DirectoryNode.DirectoryStatus.Unavailable)
+            Next
         End Sub
 
         ''' <summary>
@@ -1348,20 +1383,45 @@ Namespace ExplorerTreeViewControl
         ''' </summary>
         ''' <param name="path"></param>
         ''' <returns></returns>
-        Private Shared Function CanOpenFolder(path As String) As Boolean
-            If String.IsNullOrWhiteSpace(path) Then Return False
+        Private Shared Function CheckFolderAccess(path As String) As DirectoryNode.DirectoryStatus
+            If String.IsNullOrWhiteSpace(path) Then Return DirectoryNode.DirectoryStatus.Missing
 
             Try
                 Using it = Directory.EnumerateFileSystemEntries(path).GetEnumerator()
                     Dim unused = it.MoveNext() ' Zugriffstest (auch bei leerem Ordner gültig)
                 End Using
-                Return True
+                Return DirectoryNode.DirectoryStatus.Accessible
             Catch ex As UnauthorizedAccessException
-                Return False
+                Debug.WriteLine($"Zugriff auf '{path}' verweigert: {ex.Message}")
+                Return DirectoryNode.DirectoryStatus.AccessDenied
+            Catch ex As DirectoryNotFoundException
+                Debug.WriteLine($"Verzeichnis '{path}' nicht gefunden: {ex.Message}")
+                Return DirectoryNode.DirectoryStatus.Missing
+            Catch ex As PathTooLongException
+                Debug.WriteLine($"Verzeichnispfad '{path}' ist zu lang: {ex.Message}")
+                Return DirectoryNode.DirectoryStatus.PathTooLong
+            Catch ex As System.Security.SecurityException
+                Debug.WriteLine($"Zugriff auf '{path}' nicht erlaubt: {ex.Message}")
+                Return DirectoryNode.DirectoryStatus.AccessDenied
             Catch ex As IOException
-                Return False
+                Debug.WriteLine($"Verzeichnis '{path}' nicht verfügbar: {ex.Message}")
+                Return DirectoryNode.DirectoryStatus.Unavailable
             End Try
         End Function
+
+        ''' <summary>Übernimmt das Ergebnis einer Auswahlprüfung und aktualisiert die Fehlermarkierung.</summary>
+        ''' <param name="node">Geprüfter Verzeichnisknoten.</param>
+        ''' <param name="status">Ergebnis der Zugriffsprüfung.</param>
+        Private Sub ApplyAccessStatus(node As TreeNode, status As DirectoryNode.DirectoryStatus)
+            Dim directoryNode As DirectoryNode = TryCast(node, DirectoryNode)
+            If directoryNode Is Nothing Then Return
+            directoryNode.Status = status
+            If status <> DirectoryNode.DirectoryStatus.Accessible Then
+                directoryNode.ChildrenLoaded = False
+                directoryNode.EnsureRetryPlaceholder()
+            End If
+            Me.UpdateNodeAccessVisual(directoryNode)
+        End Sub
 
         ''' <summary>
         ''' Aktualisiert die visuelle Darstellung des Knotens basierend auf dem Zugriff auf das zugehörige Verzeichnis.
@@ -1383,6 +1443,8 @@ Namespace ExplorerTreeViewControl
                         node.ToolTipText = "Kein Zugriff auf diesen Ordner"
                     Case DirectoryNode.DirectoryStatus.Missing
                         node.ToolTipText = "Ordner nicht gefunden"
+                    Case DirectoryNode.DirectoryStatus.PathTooLong
+                        node.ToolTipText = "Verzeichnispfad ist zu lang"
                     Case Else
                         node.ToolTipText = "Ordner nicht verfügbar"
                 End Select

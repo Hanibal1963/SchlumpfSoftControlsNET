@@ -28,11 +28,12 @@ Namespace ExplorerTreeViewControl
             ''' <param name="path">Vollständiger Pfad.</param>
             ''' <param name="imageKey">Schlüssel des Symbols.</param>
             ''' <param name="isDrive">Kennzeichnet einen Laufwerkseintrag.</param>
-            Friend Sub New(text As String, path As String, imageKey As String, isDrive As Boolean)
+            Friend Sub New(text As String, path As String, imageKey As String, isDrive As Boolean, Optional unavailable As Boolean = False)
                 Me.Text = text
                 Me.Path = path
                 Me.ImageKey = imageKey
                 Me.IsDrive = isDrive
+                Me.Unavailable = unavailable
             End Sub
 
             ''' <summary>Gibt den Anzeigenamen zurück.</summary>
@@ -47,26 +48,51 @@ Namespace ExplorerTreeViewControl
             ''' <summary>Gibt an, ob der Eintrag ein Laufwerk beschreibt.</summary>
             Friend ReadOnly Property IsDrive As Boolean
 
+            ''' <summary>Gibt an, ob die Laufwerksmetadaten nicht gelesen werden konnten.</summary>
+            Friend ReadOnly Property Unavailable As Boolean
+
         End Class
 
         ''' <summary>Ermittelt Spezialordner und Laufwerksmetadaten ohne Zugriff auf Baumknoten.</summary>
         ''' <returns>Die Daten für die unmittelbaren Wurzelknoten.</returns>
         Friend Shared Function ReadEntries() As List(Of RootEntry)
+
             Dim entries As New List(Of RootEntry)
+
             For Each name As String In {"Desktop", "Dokumente", "Downloads", "Musik", "Bilder", "Videos"}
                 entries.Add(New RootEntry(name, GetSpezialFolderPath(name), GetImageKey(name), False))
             Next
+
             For Each drive As DriveInfo In DriveInfo.GetDrives()
                 entries.Add(ReadDriveEntry(drive))
             Next
+
             Return entries
+
         End Function
 
         ''' <summary>Ermittelt die Anzeige- und Symboldaten eines Laufwerks ohne Zugriff auf Baumknoten.</summary>
         ''' <param name="drive">Das abzufragende Laufwerk.</param>
         ''' <returns>Vorbereitete Daten für den Laufwerksknoten.</returns>
         Friend Shared Function ReadDriveEntry(drive As DriveInfo) As RootEntry
-            Return New RootEntry($"{GetVolumeLabel(drive)} ({GetDriveName(drive)})", drive.Name, GetImageKey(GetDriveTypeString(drive)), True)
+
+            Try
+
+                Return New RootEntry($"{GetVolumeLabel(drive)} ({GetDriveName(drive)})", drive.Name, GetImageKey(GetDriveTypeString(drive)), True)
+
+            Catch ex As UnauthorizedAccessException
+                Debug.WriteLine($"Zugriff auf Laufwerk '{drive.Name}' verweigert: {ex.Message}")
+
+            Catch ex As IOException
+                Debug.WriteLine($"Laufwerk '{drive.Name}' nicht verfügbar: {ex.Message}")
+
+            Catch ex As System.Security.SecurityException
+                Debug.WriteLine($"Zugriff auf Laufwerk '{drive.Name}' nicht erlaubt: {ex.Message}")
+
+            End Try
+
+            Return New RootEntry(drive.Name, drive.Name, ICON_DRIVE_UNKNOWN, True, True)
+
         End Function
 
         ''' <summary>Übernimmt vorbereitete Wurzeleinträge auf dem UI-Thread.</summary>

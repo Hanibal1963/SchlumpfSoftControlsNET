@@ -39,6 +39,17 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
             End Using
         End Sub
 
+        ''' <summary>Prüft, dass ein zuvor leerer Knoten nach einem Fehler erneut geöffnet werden kann.</summary>
+        <TestMethod>
+        Public Sub DirectoryNode_FailedRefresh_RestoresRetryPlaceholder()
+            Dim node As New FolderNode("test", "C:\test")
+            Assert.IsTrue(node.ApplyLoadResult(New DirectoryNode.LoadResult(DirectoryNode.DirectoryStatus.Accessible, Array.Empty(Of String)())))
+            Assert.AreEqual(0, node.Nodes.Count)
+            Assert.IsFalse(node.ApplyLoadResult(New DirectoryNode.LoadResult(DirectoryNode.DirectoryStatus.Unavailable, Nothing)))
+            Assert.AreEqual(1, node.Nodes.Count)
+            Assert.IsFalse(node.ChildrenLoaded)
+        End Sub
+
         ''' <summary>Prüft den gemeinsamen Spezialordnercache bei gleichzeitigen Abfragen.</summary>
         <TestMethod>
         Public Sub SpecialFolderCache_ConcurrentQueriesReturnSamePaths()
@@ -462,6 +473,43 @@ Namespace SchlumpfSoftControlsNET.Tests.ExplorerTreeViewControl
             Finally
                 Directory.Delete(root, True)
             End Try
+        End Sub
+
+        ''' <summary>Prüft die gezielte Behandlung eines überlangen Pfads beim Laden.</summary>
+        <TestMethod>
+        Public Sub DirectoryNode_ReadChildren_PathTooLong_IsClassified()
+            Dim path As String = "C:\" & New String("a"c, 33000)
+            Dim result = DirectoryNode.ReadChildren(path)
+            Assert.AreEqual(DirectoryNode.DirectoryStatus.PathTooLong, result.Status)
+            Assert.IsNull(result.Directories)
+        End Sub
+
+        ''' <summary>Prüft die Fehlermarkierung und deren Rücknahme nach erneuter Auswahl.</summary>
+        <STATestMethod>
+        Public Sub Selection_MissingDirectory_IsMarkedAndCanRecover()
+            Dim path As String = IO.Path.Combine(IO.Path.GetTempPath(), Guid.NewGuid().ToString())
+            Using control As New ExplorerTreeView()
+                control.CreateControl()
+                Dim tv As TreeView = FindControl(Of TreeView)(control, "TV")
+                Dim handle As IntPtr = tv.Handle
+                Dim node As New FolderNode("missing", path)
+                Dim added = tv.Nodes.Add(node)
+                tv.SelectedNode = node
+                Assert.IsTrue(WaitForCondition(Function() node.Status = DirectoryNode.DirectoryStatus.Missing))
+                Assert.AreEqual(Color.Gray, node.ForeColor)
+                Assert.AreEqual("Ordner nicht gefunden", node.ToolTipText)
+                Assert.AreNotEqual(path, control.SelectedPath)
+                Dim created = Directory.CreateDirectory(path)
+                Try
+                    tv.SelectedNode = tv.Nodes(0)
+                    tv.SelectedNode = node
+                    Assert.IsTrue(WaitForCondition(Function() node.Status = DirectoryNode.DirectoryStatus.Accessible))
+                    Assert.AreEqual(String.Empty, node.ToolTipText)
+                    Assert.AreEqual(path, control.SelectedPath)
+                Finally
+                    Directory.Delete(path, True)
+                End Try
+            End Using
         End Sub
 
         ''' <summary>Prüft die getrennte Abfrage und anschließende Übernahme in den Baum.</summary>

@@ -70,9 +70,11 @@
 
   - Abschnitt `## 8. geplante Erweiterungen` mit allen Vorschlägen zur Erweiterung der Funktionalität (als Unterpunkte ### 8.x.) und dem letzten Abschnitt mit der Reihenfolge zur Durchführung.
 
-  - Die Unterpunkte der abschnitte 7 und 8 sollen jeweils einen Punkt `**Status** &#x1F4A1; offen:` oder `**Status** &#x2705; Umgesetzt:` oder `**Status** &#x26A0; Teilweise umgesetzt:`, einen Punkt `**Umsetzung**` (mit einer Auflistung der Schritte) und einen Punkt `**Nutzen**` (mit der erwarteten Wirkung) haben
-
   - Optionale kurze Beispiele, wenn für die Nutzung hilfreich.
+
+  - Die Unterpunkte der abschnitte 7 und 8 sollen jeweils einen Punkt `**Status** &#x1F4A1; offen:` oder `**Status** &#x2705; Umgesetzt:` oder `**Status** &#x26A0; Teilweise umgesetzt:`, einen Punkt `**Umsetzung**` (mit einer Auflistung der Schritte) und einen Punkt `**Nutzen**` (mit der erwarteten Wirkung) haben.
+
+  - Nach der Umsetzung eines Unterpunktes aus Punkt 7 oder 8 wird der Status auf &#x2705; Umgesetzt: geändert und die Umsetzungsschritte werden entfernt und der Punkt aus der Liste der Reihenfolge entfernt. Der Nutzen bleibt erhalten.
 
   - Die Reihenfolge der Überschriften bzw. Abschnitte soll wie oben beschrieben eingehalten werden. Zusätzliche Überschriften sind nur in Ausnahmefällen und auf Nachfrage erlaubt.
 
